@@ -75,7 +75,7 @@ pub struct RegAllocConfig {
 ///
 /// We avoid allocating registers to:
 /// - Alloca values (they represent stack addresses)
-/// - i128/float values (they need special register paths)
+/// - i128/f128 values (they need special register paths)
 /// - Values used only once right after definition (no benefit from register)
 pub fn allocate_registers(
     func: &IrFunction,
@@ -134,9 +134,12 @@ pub fn allocate_registers(
 
     // Helper closure to check if a type is unsuitable for GPR allocation
     let is_non_gpr_type = |ty: &IrType| -> bool {
-        ty.is_float() || ty.is_long_double()
-            || matches!(ty, IrType::I128 | IrType::U128)
-            || (is_32bit && matches!(ty, IrType::I64 | IrType::U64))
+        // On 64-bit targets, F32/F64 values are represented as raw bits in a
+        // single GPR (e.g., rax/x0/t0) across the 64-bit backends, so they can
+        // use the normal regalloc paths. Keep excluding F128 (long double) and
+        // i128 which require special handling.
+        matches!(ty, IrType::F128 | IrType::I128 | IrType::U128)
+            || (is_32bit && (ty.is_float() || matches!(ty, IrType::I64 | IrType::U64)))
     };
 
     // Use a whitelist approach: only allocate registers for values produced
@@ -155,7 +158,7 @@ pub fn allocate_registers(
         for inst in &block.instructions {
             // Values eligible for register allocation: those stored via the
             // standard accumulator path (store_rax_to on x86, store_t0_to on RISC-V).
-            // Exclude float and i128 types since they use different register paths.
+            // Exclude non-GPR types since they use different register paths.
             match inst {
                 Instruction::BinOp { dest, ty, .. }
                 | Instruction::UnaryOp { dest, ty, .. } => {
@@ -323,14 +326,13 @@ pub fn allocate_registers(
     }
 }
 
-/// Collect values whose types don't fit in a single GPR (floats, i128, and
-/// on 32-bit targets: i64/u64). Copy instructions that chain from these
-/// values must also be excluded via fixpoint propagation.
+/// Collect values whose types don't fit in a single GPR (i128/f128, and on
+/// 32-bit targets: floats and i64/u64). Copy instructions that chain from
+/// these values must also be excluded via fixpoint propagation.
 fn collect_non_gpr_values(func: &IrFunction, is_32bit: bool) -> FxHashSet<u32> {
     let is_non_gpr_type = |ty: &IrType| -> bool {
-        ty.is_float() || ty.is_long_double()
-            || matches!(ty, IrType::I128 | IrType::U128)
-            || (is_32bit && matches!(ty, IrType::I64 | IrType::U64))
+        matches!(ty, IrType::F128 | IrType::I128 | IrType::U128)
+            || (is_32bit && (ty.is_float() || matches!(ty, IrType::I64 | IrType::U64)))
     };
 
     let mut non_gpr_values: FxHashSet<u32> = FxHashSet::default();
@@ -393,9 +395,8 @@ fn collect_non_gpr_values(func: &IrFunction, is_32bit: bool) -> FxHashSet<u32> {
                     }
                     let src_is_non_gpr = match src {
                         Operand::Value(v) => non_gpr_values.contains(&v.0),
-                        Operand::Const(IrConst::F32(_)) | Operand::Const(IrConst::F64(_))
-                        | Operand::Const(IrConst::LongDouble(..))
-                        | Operand::Const(IrConst::I128(_)) => true,
+                        Operand::Const(IrConst::F32(_)) | Operand::Const(IrConst::F64(_)) if is_32bit => true,
+                        Operand::Const(IrConst::LongDouble(..)) | Operand::Const(IrConst::I128(_)) => true,
                         Operand::Const(IrConst::I64(_)) if is_32bit => true,
                         _ => false,
                     };
