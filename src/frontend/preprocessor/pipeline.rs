@@ -877,8 +877,16 @@ impl Preprocessor {
                 if keyword.chars().next().is_some_and(|c| c.is_ascii_digit()) {
                     let line_rest = format!("{} {}", keyword, rest);
                     self.handle_line_directive(&line_rest, line_num);
+                } else {
+                    // Unknown directive — emit a warning so typos like
+                    // `#defin` or `#inclde` don't go unnoticed.
+                    self.warnings.push(PreprocessorDiagnostic {
+                        file: self.current_file(),
+                        line: line_num,
+                        col,
+                        message: format!("unknown preprocessing directive #{}",keyword),
+                    });
                 }
-                // Otherwise unknown directive, ignore silently
             }
         }
 
@@ -964,5 +972,86 @@ impl Default for Preprocessor {
         Self::new()
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn unknown_directive_emits_warning() {
+        let mut pp = Preprocessor::new();
+        pp.set_filename("test.c");
+        let _output = pp.preprocess("#defin FOO 1\n");
+        assert_eq!(pp.warnings().len(), 1);
+        assert!(
+            pp.warnings()[0].message.contains("unknown preprocessing directive #defin"),
+            "expected warning about unknown directive, got: {}",
+            pp.warnings()[0].message
+        );
+    }
+
+    #[test]
+    fn unknown_directive_inclde_emits_warning() {
+        let mut pp = Preprocessor::new();
+        pp.set_filename("test.c");
+        let _output = pp.preprocess("#inclde <stdio.h>\n");
+        assert_eq!(pp.warnings().len(), 1);
+        assert!(
+            pp.warnings()[0].message.contains("#inclde"),
+            "expected warning mentioning #inclde, got: {}",
+            pp.warnings()[0].message
+        );
+    }
+
+    #[test]
+    fn known_directives_no_warning() {
+        let mut pp = Preprocessor::new();
+        pp.set_filename("test.c");
+        pp.resolve_includes = false;
+        let _output = pp.preprocess("#define FOO 1\n#undef FOO\n#ifdef BAR\n#endif\n");
+        assert!(
+            pp.warnings().is_empty(),
+            "known directives should not produce warnings, got: {:?}",
+            pp.warnings()
+        );
+    }
+
+    #[test]
+    fn null_directive_no_warning() {
+        let mut pp = Preprocessor::new();
+        pp.set_filename("test.c");
+        let _output = pp.preprocess("#\n");
+        assert!(
+            pp.warnings().is_empty(),
+            "null directive (#) should not produce a warning"
+        );
+    }
+
+    #[test]
+    fn unknown_directive_in_inactive_block_no_warning() {
+        let mut pp = Preprocessor::new();
+        pp.set_filename("test.c");
+        let _output = pp.preprocess("#if 0\n#defin FOO 1\n#endif\n");
+        assert!(
+            pp.warnings().is_empty(),
+            "unknown directives in inactive conditional blocks should not warn"
+        );
+    }
+
+    #[test]
+    fn unknown_directive_reports_correct_location() {
+        let mut pp = Preprocessor::new();
+        pp.set_filename("test.c");
+        let _output = pp.preprocess("int x;\n#defin FOO 1\n");
+        assert_eq!(pp.warnings().len(), 1);
+        assert_eq!(pp.warnings()[0].line, 2);
+        assert!(
+            pp.warnings()[0].file.ends_with("test.c"),
+            "expected file to end with 'test.c', got: {}",
+            pp.warnings()[0].file
+        );
+    }
+}
+
 
 
