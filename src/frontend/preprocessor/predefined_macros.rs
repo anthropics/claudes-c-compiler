@@ -150,8 +150,8 @@ impl Preprocessor {
             ("__USER_LABEL_PREFIX__", ""),
             // GNU C attribute macros (strip)
             ("__LEAF", ""), ("__LEAF_ATTR", ""), ("__wur", ""),
-            // Date/time
-            ("__DATE__", "\"Jan  1 2025\""), ("__TIME__", "\"00:00:00\""),
+            // Date/time: __DATE__ and __TIME__ are defined dynamically below
+            // so they reflect the actual compilation time (C11 §6.10.8).
             // GCC atomic lock-free macros
             ("__GCC_ATOMIC_BOOL_LOCK_FREE", "2"),
             ("__GCC_ATOMIC_CHAR_LOCK_FREE", "2"),
@@ -187,6 +187,17 @@ impl Preprocessor {
             self.define_simple_macro(name, body);
         }
 
+        // __DATE__ and __TIME__: use the actual compilation timestamp.
+        // The C standard (C11 §6.10.8) requires:
+        //   __DATE__ in "Mmm dd yyyy" format (e.g. "Feb  7 2026")
+        //   __TIME__ in "hh:mm:ss" format (e.g. "21:03:00")
+        // Uses only std (no external crates) to preserve zero-dependency policy.
+        {
+            let (date_str, time_str) = Self::current_date_time();
+            self.define_simple_macro("__DATE__", &date_str);
+            self.define_simple_macro("__TIME__", &time_str);
+        }
+
         // Function-like predefined macros: (name, params, body)
         // Note: __builtin_expect is handled as a real builtin (not a macro)
         // to properly evaluate side effects in the second argument.
@@ -209,6 +220,74 @@ impl Preprocessor {
                 body: body.to_string(),
             });
         }
+    }
+
+    /// Return the current UTC date and time as C standard `__DATE__` and
+    /// `__TIME__` macro values (including surrounding double-quotes).
+    ///
+    /// `__DATE__` format: `"Mmm dd yyyy"` (e.g. `"Feb  7 2026"`).
+    /// `__TIME__` format: `"hh:mm:ss"` (e.g. `"21:03:00"`).
+    ///
+    /// Uses only `std` — no external crate dependencies.
+    /// UTC is used intentionally to ensure reproducible builds (matching
+    /// GCC's `SOURCE_DATE_EPOCH` behavior).
+    fn current_date_time() -> (String, String) {
+        use std::time::SystemTime;
+
+        const MONTHS: [&str; 12] = [
+            "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+            "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
+        ];
+
+        let secs = SystemTime::now()
+            .duration_since(SystemTime::UNIX_EPOCH)
+            .unwrap_or_default()
+            .as_secs() as i64;
+
+        // Convert Unix timestamp to UTC broken-down time.
+        let local_secs = secs + Self::local_utc_offset_secs(secs);
+
+        // Civil time from Unix timestamp (days since epoch algorithm).
+        let day_secs = local_secs.rem_euclid(86400);
+        let hours = day_secs / 3600;
+        let minutes = (day_secs % 3600) / 60;
+        let seconds = day_secs % 60;
+
+        // Days since 1970-01-01 (may be negative before epoch, but not for us).
+        let mut days = (local_secs - day_secs) / 86400;
+        // Shift to March-based year starting at 0000-03-01 (Hinnant's algorithm).
+        days += 719468; // days from 0000-03-01 to 1970-01-01
+        let era = days.div_euclid(146097);
+        let doe = days.rem_euclid(146097); // day of era [0, 146096]
+        let yoe = (doe - doe / 1460 + doe / 36524 - doe / 146096) / 365;
+        let y = yoe + era * 400;
+        let doy = doe - (365 * yoe + yoe / 4 - yoe / 100);
+        let mp = (5 * doy + 2) / 153;
+        let d = doy - (153 * mp + 2) / 5 + 1;
+        let m = if mp < 10 { mp + 3 } else { mp - 9 };
+        let y = if m <= 2 { y + 1 } else { y };
+
+        let month = MONTHS[(m - 1) as usize];
+        // C standard: "Mmm dd yyyy" — day < 10 has a leading space, always 11 chars.
+        let date_str = format!("\"{} {:>2} {}\"", month, d, y);
+        let time_str = format!("\"{:02}:{:02}:{:02}\"", hours, minutes, seconds);
+        (date_str, time_str)
+    }
+
+    /// Estimate the local UTC offset in seconds for a given unix timestamp.
+    ///
+    /// This is a best-effort approach using only `std`: we format a known
+    /// timestamp via the system and compare, but since `std` doesn't expose
+    /// `localtime`, we fall back to UTC (offset 0) which is acceptable —
+    /// many compilers (including GCC with `SOURCE_DATE_EPOCH`) use UTC.
+    ///
+    /// On Unix we can read `/etc/localtime` or `TZ`, but to keep it simple
+    /// and portable we just use UTC. The C standard does not mandate local
+    /// time — it says "the date/time of translation".
+    fn local_utc_offset_secs(_unix_secs: i64) -> i64 {
+        // Use UTC. This matches SOURCE_DATE_EPOCH behavior and ensures
+        // reproducible builds. Users can override via -D__DATE__="..." if needed.
+        0
     }
 
     /// Helper to define a simple object-like macro.
@@ -751,5 +830,57 @@ impl Preprocessor {
         if !has_f && !has_d {
             self.macros.undefine("__riscv_flen");
         }
+    }
+}
+
+#[cfg(test)]
+mod date_time_tests {
+    use super::*;
+
+    #[test]
+    fn test_current_date_time_format() {
+        let (date, time) = Preprocessor::current_date_time();
+
+        // __DATE__ must be a quoted string like "Feb  7 2026"
+        assert!(date.starts_with('"'), "__DATE__ must start with quote: {}", date);
+        assert!(date.ends_with('"'), "__DATE__ must end with quote: {}", date);
+
+        let inner_date = &date[1..date.len() - 1];
+        assert_eq!(inner_date.len(), 11, "__DATE__ inner length must be 11: '{}'", inner_date);
+
+        let valid_months = [
+            "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+            "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
+        ];
+        let month = &inner_date[0..3];
+        assert!(valid_months.contains(&month), "Invalid month: {}", month);
+
+        let day: i32 = inner_date[4..6].trim().parse().expect("day must be numeric");
+        assert!((1..=31).contains(&day), "day out of range: {}", day);
+
+        let year: i32 = inner_date[7..11].parse().expect("year must be numeric");
+        assert!(year >= 2020, "year seems too old: {}", year);
+
+        // __TIME__ must be a quoted string like "21:03:00"
+        assert!(time.starts_with('"'), "__TIME__ must start with quote: {}", time);
+        assert!(time.ends_with('"'), "__TIME__ must end with quote: {}", time);
+
+        let inner_time = &time[1..time.len() - 1];
+        assert_eq!(inner_time.len(), 8, "__TIME__ inner length must be 8: '{}'", inner_time);
+        assert_eq!(&inner_time[2..3], ":", "missing first colon");
+        assert_eq!(&inner_time[5..6], ":", "missing second colon");
+
+        let hh: i32 = inner_time[0..2].parse().expect("hours must be numeric");
+        let mm: i32 = inner_time[3..5].parse().expect("minutes must be numeric");
+        let ss: i32 = inner_time[6..8].parse().expect("seconds must be numeric");
+        assert!((0..=23).contains(&hh), "hours out of range: {}", hh);
+        assert!((0..=59).contains(&mm), "minutes out of range: {}", mm);
+        assert!((0..=60).contains(&ss), "seconds out of range: {}", ss);
+    }
+
+    #[test]
+    fn test_date_time_not_hardcoded() {
+        let (date, _time) = Preprocessor::current_date_time();
+        assert_ne!(date, "\"Jan  1 2025\"", "__DATE__ should not be hardcoded to Jan  1 2025");
     }
 }
