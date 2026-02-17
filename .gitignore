@@ -6,3 +6,4 @@ Cargo.lock
 a.out
 dump.rdb
 core
+.direnv
