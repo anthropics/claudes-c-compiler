@@ -1080,12 +1080,12 @@ pub(super) fn emit_executable(
     sh_count += 1;
 
     // Align and append .shstrtab data
-    while !out.len().is_multiple_of(8) { out.push(0); }
+    while !crate::common::is_multiple_of::is_multiple_of(out.len(), 8) { out.push(0); }
     let shstrtab_data_offset = out.len() as u64;
     out.extend_from_slice(&shstrtab);
 
     // Align section header table to 8 bytes
-    while !out.len().is_multiple_of(8) { out.push(0); }
+    while !crate::common::is_multiple_of::is_multiple_of(out.len(), 8) { out.push(0); }
     let shdr_offset = out.len() as u64;
 
     // Write section headers

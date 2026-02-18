@@ -476,7 +476,7 @@ fn classify_args_core(
                     // Note: ARM AAPCS64 does NOT require even-aligned pairs for composites.
                     if regs_needed == 2 && config.align_struct_pairs {
                         let struct_align = info.struct_align.unwrap_or(slot_size);
-                        if struct_align > slot_size && !int_idx.is_multiple_of(2) {
+                        if struct_align > slot_size && (int_idx % 2 == 1) {
                             int_idx += 1; // skip to even register
                         }
                     }
@@ -503,7 +503,7 @@ fn classify_args_core(
                 result.push(CoreArgClass::LargeStructStack { size });
             }
         } else if info.is_i128 {
-            if config.align_i128_pairs && !int_idx.is_multiple_of(2) {
+            if config.align_i128_pairs && !crate::common::is_multiple_of::is_multiple_of(int_idx, 2) {
                 int_idx += 1;
             }
             if int_idx + 1 < config.max_int_regs {
@@ -522,7 +522,7 @@ fn classify_args_core(
                     result.push(CoreArgClass::F128Stack);
                 }
             } else if config.f128_in_gp_pairs {
-                if config.align_i128_pairs && !int_idx.is_multiple_of(2) {
+                if config.align_i128_pairs && !crate::common::is_multiple_of::is_multiple_of(int_idx, 2) {
                     int_idx += 1;
                 }
                 if int_idx + 1 < config.max_int_regs {

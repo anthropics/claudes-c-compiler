@@ -28,7 +28,7 @@ impl X86Codegen {
 
     pub(super) fn emit_call_stack_args_impl(&mut self, args: &[Operand], arg_classes: &[CallArgClass],
                             _arg_types: &[IrType], stack_arg_space: usize, _fptr_spill: usize, _f128_temp_space: usize) -> i64 {
-        let need_align_pad = !stack_arg_space.is_multiple_of(16);
+        let need_align_pad = !crate::common::is_multiple_of::is_multiple_of(stack_arg_space, 16);
         if need_align_pad {
             self.state.emit("    subq $8, %rsp");
         }
@@ -265,7 +265,7 @@ impl X86Codegen {
     }
 
     pub(super) fn emit_call_cleanup_impl(&mut self, stack_arg_space: usize, _f128_temp_space: usize, _indirect: bool) {
-        let need_align_pad = !stack_arg_space.is_multiple_of(16);
+        let need_align_pad = !crate::common::is_multiple_of::is_multiple_of(stack_arg_space, 16);
         let total_cleanup = stack_arg_space + if need_align_pad { 8 } else { 0 };
         if total_cleanup > 0 {
             self.state.out.emit_instr_imm_reg("    addq", total_cleanup as i64, "rsp");
