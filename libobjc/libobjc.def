@@ -1,0 +1,100 @@
+;  GNU Objective C Runtime DLL Export Definitions
+;  Copyright (C) 1997-2026 Free Software Foundation, Inc.
+;  Contributed by Scott Christley <scottc@net-community.com>
+;
+;  This file is part of GCC.
+;
+;  GCC is free software; you can redistribute it and/or modify it under the
+;  terms of the GNU General Public License as published by the Free Software
+;  Foundation; either version 3, or (at your option) any later version.
+;
+;  GCC is distributed in the hope that it will be useful, but WITHOUT ANY
+;  WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+;  FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
+;  details.
+;
+;  You should have received a copy of the GNU General Public License along with
+;  GCC; see the file COPYING3.  If not, see <http://www.gnu.org/licenses/>.
+
+; FIXME: This file needs to be updated or removed
+
+LIBRARY libobjc
+EXPORTS
+search_for_method_in_list
+objc_get_uninstalled_dtable
+_objc_load_callback
+objc_malloc
+objc_atomic_malloc
+objc_realloc
+objc_calloc
+objc_free
+__objc_init_thread_system
+objc_mutex_allocate
+objc_mutex_deallocate
+objc_mutex_lock
+objc_mutex_trylock
+objc_mutex_unlock
+objc_thread_detach
+objc_thread_exit
+objc_thread_get_data
+objc_thread_get_priority
+objc_thread_id
+objc_thread_set_data
+objc_thread_set_priority
+objc_thread_yield
+objc_thread_add
+objc_thread_remove
+__objc_class_name_Object
+__objc_class_name_Protocol
+__objc_class_name_NXConstantString
+class_create_instance
+object_copy
+object_dispose
+__objc_init_selector_tables
+__objc_register_selectors_from_class
+__sel_register_typed_name
+sel_get_any_typed_uid
+sel_get_any_uid
+sel_get_name
+sel_get_type
+sel_get_typed_uid
+sel_get_uid
+sel_is_mapped
+sel_register_name
+sel_register_typed_name
+sel_types_match
+method_get_first_argument
+method_get_next_argument
+method_get_nth_argument
+method_get_number_of_arguments
+method_get_sizeof_arguments
+objc_aligned_size
+objc_alignof_type
+objc_get_type_qualifiers
+objc_promoted_size
+objc_sizeof_type
+objc_skip_argspec
+objc_skip_offset
+objc_skip_type_qualifiers
+objc_skip_typespec
+__objc_exec_class
+__objc_init_dispatch_tables
+__objc_install_premature_dtable
+__objc_print_dtable_stats
+__objc_update_dispatch_table_for_class
+class_add_method_list
+class_get_class_method
+class_get_instance_method
+get_imp
+nil_method
+objc_msg_lookup
+objc_msg_lookup_super
+objc_msg_sendv
+__objc_add_class_to_hash
+__objc_init_class_tables
+__objc_resolve_class_links
+class_pose_as
+objc_get_class
+objc_get_meta_class
+objc_lookup_class
+objc_next_class

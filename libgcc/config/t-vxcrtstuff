@@ -1,0 +1,12 @@
+# crtbegin/crtend for VxWorks
+
+vx_crtbegin.o: $(srcdir)/config/vxcrtstuff.c
+	$(crt_compile) $(CRTSTUFF_T_CFLAGS) -DCRT_BEGIN -c $<
+
+vx_crtend.o: $(srcdir)/config/vxcrtstuff.c
+	$(crt_compile) $(CRTSTUFF_T_CFLAGS) -DCRT_END -c $<
+
+# We do pretty different things for kernel vs rtp modes, all
+# controlled thanks to __RTP__ and (optional) multilibs.
+
+EXTRA_PARTS += vx_crtbegin.o vx_crtend.o

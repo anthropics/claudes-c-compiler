@@ -1,0 +1,138 @@
+# Top level -*- makefile -*- fragment for LTO
+#   Copyright (C) 2009-2026 Free Software Foundation, Inc.
+
+#This file is part of GCC.
+
+#GCC is free software; you can redistribute it and/or modify
+#it under the terms of the GNU General Public License as published by
+#the Free Software Foundation; either version 3, or (at your option)
+#any later version.
+
+#GCC is distributed in the hope that it will be useful,
+#but WITHOUT ANY WARRANTY; without even the implied warranty of
+#MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#GNU General Public License for more details.
+
+# You should have received a copy of the GNU General Public License
+# along with GCC; see the file COPYING3.  If not see
+# <http://www.gnu.org/licenses/>.
+
+# Variables
+
+# The name of the LTO compiler.
+LTO_EXE = lto1$(exeext)
+LTO_DUMP_EXE = lto-dump$(exeext)
+LTO_DUMP_INSTALL_NAME := $(shell echo lto-dump|sed '$(program_transform_name)')
+# The LTO-specific object files inclued in $(LTO_EXE).
+LTO_OBJS = lto/lto-lang.o lto/lto.o lto/lto-object.o attribs.o lto/lto-partition.o lto/lto-symtab.o lto/lto-common.o
+lto_OBJS = $(LTO_OBJS)
+lto_FDAS = lto1.fda
+LTO_DUMP_OBJS = lto/lto-lang.o lto/lto-object.o attribs.o lto/lto-partition.o lto/lto-symtab.o lto/lto-dump.o lto/lto-common.o
+lto_dump_OBJS = $(LTO_DUMP_OBJS)
+
+ifeq ($(if $(wildcard ../stage_current),$(shell cat \
+  ../stage_current)),stageautofeedback)
+$(LTO_OBJS): CFLAGS += -fauto-profile=lto1.fda
+$(LTO_OBJS): lto1.fda
+endif
+
+# Rules
+
+lto: $(LTO_EXE) $(LTO_DUMP_EXE)
+lto1.serial = $(LTO_EXE)
+lto2.serial = $(LTO_DUMP_EXE)
+
+.PHONY: lto
+
+# These hooks are used by the main GCC Makefile.  Consult that
+# Makefile for documentation.
+lto.all.cross:
+lto.start.encap:
+lto.rest.encap:
+lto.tags:
+lto.install-common: installdirs
+	$(INSTALL_PROGRAM) $(LTO_DUMP_EXE) \
+	$(DESTDIR)$(bindir)/$(LTO_DUMP_INSTALL_NAME)$(exeext)
+
+lto.install-man:
+lto.install-info:
+lto.dvi:
+lto.install-dvi:
+lto.pdf:
+lto.install-pdf:
+lto.html:
+lto.install-html:
+lto.uninstall:
+lto.info:
+lto.man:
+lto.srcextra:
+lto.srcman:
+lto.srcinfo:
+lto.install-plugin:
+
+lto.mostlyclean:
+	rm -f $(LTO_OBJS) $(LTO_EXE) lto1*.fda $(LTO_DUMP_OBJS) $(LTO_DUMP_EXE) lto-dump.fda
+
+lto.clean:
+lto.distclean:
+lto.maintainer-clean:
+lto.stage1:
+lto.stage2:
+lto.stage3:
+lto.stage4:
+lto.stageprofile:
+lto.stagefeedback:
+
+# LTO rules.
+
+# Use strict warnings for this front end.
+lto-warn = $(STRICT_WARN)
+
+$(LTO_EXE): $(LTO_OBJS) $(BACKEND) $(LIBDEPS) $(lto1.prev)
+	@$(call LINK_PROGRESS,$(INDEX.lto1),start)
+	+$(LLINKER) $(ALL_LINKERFLAGS) $(LDFLAGS) -o $@ \
+		$(LTO_OBJS) $(BACKEND) $(BACKENDLIBS) $(LIBS)
+	@$(call LINK_PROGRESS,$(INDEX.lto1),end)
+
+$(LTO_DUMP_EXE): $(LTO_DUMP_OBJS) $(BACKEND) $(LIBDEPS) $(lto2.prev)
+	@$(call LINK_PROGRESS,$(INDEX.lto2),start)
+	+$(LLINKER) $(ALL_LINKERFLAGS) $(LDFLAGS) -o $@ \
+		$(LTO_DUMP_OBJS) $(BACKEND) $(BACKENDLIBS) $(LIBS)
+	@$(call LINK_PROGRESS,$(INDEX.lto2),end)
+
+lto/lto-dump.o: $(LTO_OBJS)
+
+components_in_prev = "bfd opcodes binutils fixincludes gas gcc gmp mpfr mpc isl gold intl ld libbacktrace libcpp libcody libdecnumber libiberty libiberty-linker-plugin libiconv zlib lto-plugin libctf libsframe"
+components_in_prev_target = "libstdc++-v3 libsanitizer libvtv libgcc libbacktrace libphobos zlib libgomp libatomic"
+
+lto1.fda: create_fdas_for_lto1
+	$(PROFILE_MERGER) $(shell ls -ha lto1_*.fda) --output_file lto1.fda -gcov_version 3
+
+create_fdas_for_lto1: ../stage1-gcc/lto1$(exeext) ../prev-gcc/$(PERF_DATA)
+	for component_in_prev in "$(components_in_prev)"; do \
+	  perf_path=../prev-$$component_in_prev/$(PERF_DATA); \
+	  echo "Perf path:"; \
+	  echo $$perf_path; \
+	  if [ -f $$perf_path ]; then \
+	    profile_name=lto1_$$component_in_prev.fda; \
+	    $(CREATE_GCOV) -binary ../stage1-gcc/lto1$(exeext) -gcov $$profile_name -profile $$perf_path -gcov_version 3 || exit 1; \
+	  fi; \
+	done;
+
+	for component_in_prev_target in "$(components_in_prev_target)"; do \
+	  perf_path=../prev-$(TARGET_SUBDIR)/$$component_in_prev_target/$(PERF_DATA); \
+	  echo "Perf path:"; \
+	  echo $$perf_path; \
+	  if [ -f $$perf_path ]; then \
+	    profile_name=lto1_$$component_in_prev_target.fda; \
+	    $(CREATE_GCOV) -binary ../prev-gcc/lto1$(exeext) -gcov $$profile_name -profile $$perf_path -gcov_version 3 || exit 1; \
+	  fi; \
+	done;
+
+	$(STAMP) $@
+
+# LTO testing is done as part of C/C++/Fortran etc. testing.
+check-lto:
+
+# No LTO-specific selftests
+selftest-lto:

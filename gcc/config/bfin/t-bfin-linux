@@ -1,0 +1,52 @@
+# Copyright (C) 2007-2026 Free Software Foundation, Inc.
+#
+# This file is part of GCC.
+#
+# GCC is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3, or (at your option)
+# any later version.
+#
+# GCC is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with GCC; see the file COPYING3.  If not see
+# <http://www.gnu.org/licenses/>.
+
+## Target part of the Makefile
+
+MULTILIB_OPTIONS=mcpu=bf532-none
+MULTILIB_DIRNAMES=bf532-none
+
+MULTILIB_MATCHES=mcpu?bf532-none=mcpu?bf512-none mcpu?bf532-none=mcpu?bf514-none
+MULTILIB_MATCHES+=mcpu?bf532-none=mcpu?bf516-none mcpu?bf532-none=mcpu?bf518-none
+MULTILIB_MATCHES+=mcpu?bf532-none=mcpu?bf522-none mcpu?bf532-none=mcpu?bf523-none
+MULTILIB_MATCHES+=mcpu?bf532-none=mcpu?bf524-none mcpu?bf532-none=mcpu?bf525-none
+MULTILIB_MATCHES+=mcpu?bf532-none=mcpu?bf526-none mcpu?bf532-none=mcpu?bf527-none
+MULTILIB_MATCHES+=mcpu?bf532-none=mcpu?bf531-none mcpu?bf532-none=mcpu?bf533-none
+MULTILIB_MATCHES+=mcpu?bf532-none=mcpu?bf534-none mcpu?bf532-none=mcpu?bf536-none
+MULTILIB_MATCHES+=mcpu?bf532-none=mcpu?bf537-none mcpu?bf532-none=mcpu?bf538-none
+MULTILIB_MATCHES+=mcpu?bf532-none=mcpu?bf539-none mcpu?bf532-none=mcpu?bf542-none
+MULTILIB_MATCHES+=mcpu?bf532-none=mcpu?bf542m-none
+MULTILIB_MATCHES+=mcpu?bf532-none=mcpu?bf544-none
+MULTILIB_MATCHES+=mcpu?bf532-none=mcpu?bf544m-none
+MULTILIB_MATCHES+=mcpu?bf532-none=mcpu?bf547-none
+MULTILIB_MATCHES+=mcpu?bf532-none=mcpu?bf547m-none
+MULTILIB_MATCHES+=mcpu?bf532-none=mcpu?bf548-none
+MULTILIB_MATCHES+=mcpu?bf532-none=mcpu?bf548m-none
+MULTILIB_MATCHES+=mcpu?bf532-none=mcpu?bf549-none
+MULTILIB_MATCHES+=mcpu?bf532-none=mcpu?bf549m-none
+MULTILIB_MATCHES+=mcpu?bf532-none=mcpu?bf561-none
+MULTILIB_MATCHES+=mcpu?bf532-none=mcpu?bf592-none
+
+# This rule uses MULTILIB_MATCHES to generate a definition of
+# SYSROOT_SUFFIX_SPEC.
+linux-sysroot-suffix.h: $(srcdir)/config/bfin/print-sysroot-suffix.sh
+	$(SHELL) $(srcdir)/config/bfin/print-sysroot-suffix.sh \
+	  "$(SYSTEM_HEADER_DIR)/../.." "$(MULTILIB_MATCHES)" \
+	  "$(MULTILIB_OPTIONS)" > $@
+
+generated_files += linux-sysroot-suffix.h

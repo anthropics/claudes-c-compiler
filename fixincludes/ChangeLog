@@ -1,0 +1,2220 @@
+2026-02-15  Rainer Orth  <ro@CeBiTec.Uni-Bielefeld.DE>
+
+	PR libstdc++/113450
+	PR libstdc++/123176
+	* inclhack.def (solaris_int8_t): New fix.
+	* fixincl.x: Regenerate.
+	* tests/base/sys/int_types.h: New file.
+
+2026-01-09  Ben Boeckel  <ben.boeckel@kitware.com>
+
+	* README: Replace gcc-bugs@ with bug reporting link.
+
+2026-01-07  Rainer Orth  <ro@CeBiTec.Uni-Bielefeld.DE>
+
+	* inclhack.def (AAB_solaris_sys_varargs_h): Remove.
+	(solaris___restrict): Likewise.
+	(solaris_complex): Likewise.
+	(solaris_complex_cxx): Likewise.
+	(solaris_cxx_linkage): Likewise.
+	(solaris_getc_strict_stdc): Likewise.
+	(solaris_gets_c11): Likewise.
+	(solaris_gets_cxx14): Likewise.
+	(solaris_int_limits_2): Likewise.
+	(solaris_math_1): Likewise.
+	(solaris_math_10): Likewise.
+	(solaris_math_2): Likewise.
+	(solaris_math_3): Likewise.
+	(solaris_math_4): Likewise.
+	(solaris_math_8): Likewise.
+	(solaris_math_9): Likewise.
+	(solaris_math_11): Likewise.
+	(solaris_once_init_1): Likewise.
+	(solaris_posix_spawn_restrict): Likewise.
+	(solaris_rwlock_init_1): Likewise.
+	(solaris_std___filbuf): Likewise.
+	(solaris_std_gets_cxx14): Likewise.
+	(solaris_stdio_tag): Likewise.
+	(solaris_stdlib_noreturn): Likewise.
+	(gnu_types): Simplify Solaris guard.
+	(stdio_stdarg_h): Likewise.
+	(stdio_va_list): Likewise.
+	(stdio_va_list_clients): Bypass on Solaris.
+	(strict_ansi_only): Likewise.
+	* fixincl.x: Regenerate.
+	* tests/base/iso/math_c99.h: Remove.
+	* tests/base/iso/stdio_iso.h: Likewise.
+	* tests/base/iso/stdlib_c99.h: Likewise.
+	* tests/base/iso/stdlib_iso.h: Likewise.
+	* tests/base/spawn.h: Likewise.
+	* tests/base/stdio_tag.h: Likewise.
+	* tests/base/sys/feature_tests.h: Likewise.
+	* tests/base/complex.h 	[SOLARIS_COMPLEX_CHECK]: Remove.
+	[SOLARIS_COMPLEX_CXX_CHECK]: Likewise.
+	* tests/base/pthread.h [SOLARIS_ONCE_INIT_1_CHECK]: Likewise.
+	[SOLARIS_RWLOCK_INIT_1_CHECK]: Likewise
+	* tests/base/stdio.h [SOLARIS_STD___FILBUF_CHECK]: Likewise.
+	[SOLARIS_GETS_CXX14_CHECK]: Likewise.
+	* tests/base/sys/int_limits.h [SOLARIS_INT_LIMITS_2_CHECK]: Likewise.
+
+2025-08-28  Jonathan Wakely  <jwakely@redhat.com>
+
+	PR bootstrap/118009
+	PR bootstrap/119089
+	* inclhack.def (pthread_incomplete_struct_argument): Add bypass.
+	* fixincl.tpl: Remove reference to svn in comment.
+	* fixincl.x: Regenerate.
+
+2025-08-15  Francois-Xavier Coudert  <fxcoudert@gcc.gnu.org>
+
+	* fixincl.x: Regenerate.
+	* inclhack.def (stdio_va_list): Skip on recent darwin.
+
+2025-08-15  Francois-Xavier Coudert  <fxcoudert@gcc.gnu.org>
+
+	* fixincl.x: Regenerate.
+	* inclhack.def (stdio_stdarg_h): Skip on darwin.
+
+2024-07-11  Iain Sandoe  <iain@sandoe.co.uk>
+
+	Revert:
+	2024-07-10  Francois-Xavier Coudert  <fxcoudert@gcc.gnu.org>
+
+	* fixincl.x: Regenerate.
+	* inclhack.def (stdio_stdarg_h): Skip on darwin.
+
+2024-07-10  Francois-Xavier Coudert  <fxcoudert@gcc.gnu.org>
+
+	* fixincl.x: Regenerate.
+	* inclhack.def (stdio_stdarg_h): Skip on darwin.
+
+2024-07-10  Francois-Xavier Coudert  <fxcoudert@gcc.gnu.org>
+
+	* fixincl.x: Regenerate.
+	* inclhack.def (darwin_objc_runtime_1): Add bypass.
+
+2024-06-27  Francois-Xavier Coudert  <fxcoudert@gcc.gnu.org>
+
+	* fixincl.x: Regenerate.
+	* inclhack.def (apple_local_stdio_fn_deprecation): Also apply to
+	_stdio.h.
+
+2024-06-11  Francois-Xavier Coudert  <fxcoudert@gcc.gnu.org>
+
+	* fixincl.x: Regenerate.
+	* inclhack.def (math_exception): Bypass on __cplusplus.
+	* tests/base/math.h: Regenerate.
+
+2024-06-07  Francois-Xavier Coudert  <fxcoudert@gcc.gnu.org>
+
+	* fixincl.x: Regenerate.
+	* inclhack.def (darwin_stdint_7, darwin_dispatch_object_1,
+	darwin_os_trace_2, darwin_os_base_1): Include bypasses
+	for recent headers, fixed by Apple.
+
+2024-05-07  Zac Walker  <zacwalker@microsoft.com>
+
+	* mkfixinc.sh: Extend for *-mingw32* targets.
+
+2023-11-22  Francois-Xavier Coudert  <fxcoudert@gcc.gnu.org>
+
+	* configure: Regenerated.
+
+2023-10-30  Iain Sandoe  <iain@sandoe.co.uk>
+
+	* configure: Regenerate.
+
+2023-08-17  Rainer Orth  <ro@CeBiTec.Uni-Bielefeld.DE>
+
+	* inclhack.def (darwin_flt_eval_method): Handle macOS 14 guard
+	variant.
+	* fixincl.x: Regenerate.
+	* tests/base/math.h [DARWIN_FLT_EVAL_METHOD_CHECK]: Update test.
+
+2023-08-07  Nick Alcock  <nick.alcock@oracle.com>
+
+	* configure: Regenerate.
+
+2023-06-15  Marek Polacek  <polacek@redhat.com>
+
+	* Makefile.in: Set and use PICFLAG and LD_PICFLAG.  Use the "pic"
+	build of libiberty if PICFLAG is set.
+	* configure.ac:
+	* configure: Regenerate.
+
+2023-03-28  Xi Ruoyao  <xry111@xry111.site>
+
+	PR other/109293
+	* configure.ac (AC_CHECK_DECLS): Add memmem.
+	* configure: Regenerate.
+	* config.h.in: Regenerate.
+	* system.h (memmem): Declare if HAVE_DECL_MEMMEM is zero.
+
+2023-02-17  Rainer Orth  <ro@CeBiTec.Uni-Bielefeld.DE>
+
+	* inclhack.def (solaris_math_12): Add bypass.
+	* fixincl.x: Regenerate.
+
+2023-01-21  Iain Sandoe  <iain@sandoe.co.uk>
+
+	* fixincl.x: Regenerate.
+	* inclhack.def (darwin_objc_runtime_1): New hack.
+	* tests/base/objc/runtime.h: New file.
+
+2023-01-21  Iain Sandoe  <iain@sandoe.co.uk>
+
+	PR target/107568
+	* fixincl.x: Regenerate.
+	* inclhack.def: Add a fix for MacOS13 SDK function deprecations
+	in stdio.h.
+	* tests/base/stdio.h (__deprecated_msg): New test.
+
+2022-11-23  Marek Polacek  <polacek@redhat.com>
+
+	Revert:
+	2022-11-23  Marek Polacek  <polacek@redhat.com>
+
+	* Makefile.in: Set and use PICFLAG and LD_PICFLAG.  Use the "pic"
+	build of libiberty if PICFLAG is set.
+	* configure.ac:
+	* configure: Regenerate.
+
+2022-11-23  Marek Polacek  <polacek@redhat.com>
+
+	* Makefile.in: Set and use PICFLAG and LD_PICFLAG.  Use the "pic"
+	build of libiberty if PICFLAG is set.
+	* configure.ac:
+	* configure: Regenerate.
+
+2022-10-07  Jakub Jelinek  <jakub@redhat.com>
+
+	PR bootstrap/107059
+	* inclhack.def (glibc_cxx_floatn_5): New.
+	* fixincl.x: Regenerated.
+	* tests/base/bits/floatn.h: Regenerated.
+
+2022-10-07  Jakub Jelinek  <jakub@redhat.com>
+
+	PR bootstrap/107059
+	* inclhack.def (glibc_cxx_floatn_2): Handle #elif the same as #if.
+	(glibc_cxx_floatn_4): New.
+	* fixincl.x: Regenerated.
+	* tests/base/bits/floatn.h: Regenerated.
+
+2022-09-27  Jakub Jelinek  <jakub@redhat.com>
+
+	* inclhack.def (glibc_cxx_floatn_1, glibc_cxx_floatn_2,
+	glibc_cxx_floatn_3): Add to files also "*/bits/floatn.h"
+	and "*/bits/floatn-common.h".
+	* fixincl.x: Regenerated.
+
+2022-09-27  Jakub Jelinek  <jakub@redhat.com>
+
+	PR c++/106652
+	PR c++/85518
+	* inclhack.def (glibc_cxx_floatn_1, glibc_cxx_floatn_2,
+	glibc_cxx_floatn_3): New fixes.
+	* tests/base/bits/floatn.h: New file.
+	* fixincl.x: Regenerated.
+
+2022-08-31  Martin Liska  <mliska@suse.cz>
+
+	* configure: Regenerate.
+
+2022-08-31  Martin Liska  <mliska@suse.cz>
+
+	* configure: Regenerate.
+
+2022-08-25  Martin Liska  <mliska@suse.cz>
+
+	* config.h.in: Regenerate.
+	* configure: Regenerate.
+
+2022-02-27  John David Anglin  <danglin@gcc.gnu.org>
+
+	* inclhack.def (hpux_math_constexpr): New hack.
+	* fixincl.x: Regenerate.
+	* tests/base/math.h: Update.
+
+2022-02-04  Martin Liska  <mliska@suse.cz>
+
+	* fixinc.in: Use cd OLDDIR instead of cd .. .
+
+2022-02-03  Martin Liska  <mliska@suse.cz>
+
+	* fixinc.in: Use mkdir -p rather that a loop.
+
+2022-01-16  Olivier Hainque  <hainque@adacore.com>
+
+	* inclhack.def (vxworks_posix_open): New hack.
+	* tests/base/fcntl.h: Update.
+	* fixincl.x: Regenerate.
+
+2022-01-16  Olivier Hainque  <hainque@adacore.com>
+
+	* inclhack.def (vxworks_time_h_syslib): New hack.
+	* tests/base/time.h: Update.
+	* fixincl.x: Regenerate.
+
+2022-01-16  Olivier Hainque  <hainque@adacore.com>
+
+	* inclhack.def (vxworks_math_h_fp_c99): New hack.
+	* tests/base/math.h: Update.
+	* fixincl.x: Regenerate.
+
+2022-01-06  Olivier Hainque  <hainque@adacore.com>
+
+	* inclhack.def (vxworks_next_yvals): New hack.
+	* tests/base/yvals.h: New expected test result.
+	* fixincl.x: Regenerate.
+
+2022-01-04  Olivier Hainque  <hainque@adacore.com>
+
+	* inclhack.def (vxworks_posix_mkdir): Refine to expose a
+	varargs interface.
+	* tests/base/sys/stat.h: Update expected results.
+	* fixincl.x: Regenerate.
+
+2022-01-01  Francois-Xavier Coudert  <fxcoudert@gcc.gnu.org>
+
+	* inclhack.def: Add new fix on darwin.
+	* fixincl.x: Regenerate.
+	* tests/base/math.h: Regenerate.
+
+2021-11-23  Xi Ruoyao  <xry111@mengyan1223.wang>
+
+	PR bootstrap/103306
+	* fixincl.c (process): Don't call abort().
+
+2021-11-13  Xi Ruoyao  <xry111@mengyan1223.wang>
+
+	PR other/21823
+	PR bootstrap/80047
+	* fixincl.c (process): Simplify the handling for highly
+	unlikely access() failure, to avoid using non-standard
+	extensions.
+
+2021-08-30  John David Anglin  <danglin@gcc.gnu.org>
+
+	* inclhack.def (hpux_c99_inttypes5): New hack to define PRIdPTR, etc.
+	* fixincl.x: Regenerate.
+	* tests/base/inttypes.h: Update.
+
+2021-07-06  Clément Chigot  <clement.chigot@atos.net>
+
+	* inclhack.def (aix_externcpp1): Improve select regexp.
+	* fixincl.x: Regenerate.
+	* tests/base/sys/socket.h: Update.
+
+2021-06-30  Xi Ruoyao  <xry111@mengyan1223.wang>
+
+	PR other/91085
+	* fixfixes.c (check_has_inc): New static function.
+	(machine_name_fix): Don't replace header names in
+	__has_include(...).
+	* inclhack.def (machine_name): Adjust test.
+	* tests/base/testing.h: Update.
+
+2020-12-14  Ilya Leoshkevich  <iii@linux.ibm.com>
+
+	* fixincl.x: Rerun genfixes.
+	* inclhack.def(aix_physadr_t): Change test_text to something
+	that needs to be replaced.
+	* tests/base/sys/types.h(aix_physadr_t): Add expectation.
+
+2020-11-18  Nathan Sidwell  <nathan@acm.org>
+
+	* inclhack.def (aix_physaddr_t): New.
+	* fixincl.x: Regenerated.
+
+2020-10-03  Clément Chigot  <clement.chigot@atos.net>
+
+	* inclhack.def (aix_malloc): Add more context to select.
+	* fixincl.x: Regenerate.
+	* tests/base/malloc.h: Update expected results.
+
+2020-09-26  David Edelsohn  <dje.gcc@gmail.com>
+
+	PR target/97044
+	* inclhack.def (aix_inttypes): New fix.
+	* fixincl.x: Regenerate.
+	* tests/base/sys/inttypes.h: New file.
+
+2020-09-17  David Edelsohn  <dje.gcc@gmail.com>
+
+	* inclhack.def (aix_externcpp1): Add more context to select.
+	(aix_externcpp2): Same.
+	* fixincl.x: Regenerate.
+	* tests/base/sys/socket.h: Update expected results.
+
+2020-09-17  Torbjörn SVENSSON  <torbjorn.svensson@st.com>
+	    Christophe Lyon  <christophe.lyon@linaro.org>
+
+	* fixfixes.c (pz_tmp_base, pz_tmp_dot): Define only with
+	_PC_NAME_MAX.
+
+2020-02-20  Alexandre Oliva <oliva@adacore.com>
+
+	* mkheaders.in: Don't require build-time shell on host.
+
+2020-02-13  Matheus Castanho  <msc@linux.ibm.com>
+
+	* fixinc.in: Skip machine_name fix on powerpc*-*-linux*.
+
+2020-02-13  Alexandre Oliva <oliva@adacore.com>
+
+	* mkheaders.in: Re-create subdirs, copy limits.h into subdir.
+	* mkfixinc.sh: Create dummy fixinc for *-*-vxworks7*.
+
+2020-01-25  John David Anglin  <danglin@gcc.gnu.org>
+
+	* inclhack.def (hpux_c99_inttypes4): New, add missing SCNuMAX defines.
+	* fixincl.x: Regenerate.
+	* tests/base/inttypes.h: Update for above fix.
+
+2019-12-30  John David Anglin  <danglin@gcc.gnu.org>
+
+	PR libgomp/93066
+	* inclhack.def (hpux_c99_inttypes3): Fix defines for INTPTR_MAX
+	and UINTPTR_MAX, and missing define for SIZE_MAX.
+	* fixincl.x: Regenerate.
+	* tests/base/inttypes.h: Update for above fix.
+
+2019-08-18  C.G. Dogan <gcc+cgdogan.00@gmail.com>
+	    Iain Sandoe  <iain@sandoe.co.uk>
+
+	PR target/83531
+	* inclhack.def (darwin_api_availability): New, strip leading
+	underscores from API_XXXX defines.
+	* fixincl.x: Regenerate.
+	* tests/base/os/availability.h: New file.
+
+2019-06-21  Iain Sandoe  <iain@sandoe.co.uk>
+
+	* inclhack.def: Replace the complex test using __STRICT_ANSI__ and
+	__STDC_VERSION__ with a test using __DARWIN_NO_LONG_LONG.
+	Ensure that the top level math.h uses <> to wrap included headers
+	rather than "".
+	* fixincl.x: Regenerated.
+	* tests/base/architecture/ppc/math.h: Update test to include the
+	__DARWIN_NO_LONG_LONG case.
+
+2019-06-21  Iain Sandoe  <iain@sandoe.co.uk>
+
+	* inclhack.def: Guard __has_attribute and __has_extension in
+	os/base.h.
+	Guard Apple blocks syntax in dispatch/object.h.
+	* fixincl.x: Regenerate.
+	* tests/base/dispatch/object.h: New file.
+	* tests/base/os/base.h: New file.
+
+2019-05-11  Iain Sandoe  <iain@sandoe.co.uk>
+	PR target/90379
+	PR bootstrap/89864
+	* inclhack.def (darwin_ucred__Atomic): Do not supply test_text
+	for wrap fixes.
+	* fixincl.x: Regenerated.
+
+2019-04-18  Erik Schnetter  <schnetter@gmail.com>
+	  Jakub Jelinek  <jakub@redhat.com>
+	  Iain Sandoe  <iain@sandoe.co.uk>
+
+	PR bootstrap/89864
+	* inclhack.def (darwin_ucred__Atomic): New, work around _Atomic keyword
+	use in headers included by C++.
+	* fixincl.x: Regenerated.
+
+2018-10-31  Joseph Myers  <joseph@codesourcery.com>
+
+	PR bootstrap/82856
+	* configure.ac: Remove AC_PREREQ.
+	* aclocal.m4, configure: Regenerate.
+
+2018-10-16  Rasmus Villemoes  <rv@rasmusvillemoes.dk>
+
+	* inclhack.def (AAB_vxworks_regs_vxtypes): Add unconditional
+	include of vxCpu.h, guard include of vxTypesOld.h by
+	!_ASMLANGUAGE.
+	* fixincl.x: Regenerate.
+
+2018-09-03  Rasmus Villemoes  <rv@rasmusvillemoes.dk>
+
+	* inclhack.def (vxworks_ioctl_macro): Remove parentheses from
+	expansion of ioctl macro.
+	* fixincl.x: Regenerate.
+
+2018-07-23  David Edelsohn  <dje.gcc@gmail.com>
+
+	* inclhack.def (aix_unistd): New.
+	* fixincl.x: Regenerate.
+	* tests/base/unistd.h [AIX_UNISTD_CHECK]: New test.
+
+2018-06-27  Rasmus Villemoes  <rv@rasmusvillemoes.dk>
+
+	* tests/base/ioLib.h [VXWORKS_IOLIB_INCLUDE_UNISTD_CHECK]: Add
+	missing hunk.
+
+2018-06-12    Rasmus Villemoes <rasmus.villemoes@prevas.dk>
+
+	* genfixes: exit 1 when autogen not found.
+	* genfixes: Remove some redundant code.
+	* genfixes: Update URL to autogen source code.
+
+	* inclhack.def: Fix fixup for assert.h on vxworks.
+	* fixincl.x: Regenerate.
+
+2018-05-25  Rasmus Villemoes  <rasmus.villemoes@prevas.dk>
+
+	* inclhack.def (vxworks_iolib_include_unistd): New fix.
+
+2018-04-18  David Malcolm  <dmalcolm@redhat.com>
+
+	PR jit/85384
+	* configure: Regenerate.
+
+2018-02-22  David Edelsohn  <dje.gcc@gmail.com>
+
+	* inclhack.def (aix_stdlib_vec_malloc): New.
+	(aix_stdlib_vec_calloc): New.
+	* fixincl.x: Regenerate.
+	* tests/base/stdlib.h [AIX_STDLIB_VEC_MALLOC]: New test.
+	[AIX_STDLIB_VEC_CALLOC]: New test.
+
+2017-10-13  Mike Frysinger  <vapier@chromium.org>
+
+	* fixinc.in (dirname): Change sed from 's|[^/]*/||' to
+	's|[^/]*//*||'.
+
+2017-06-12  Doug Rupp  <rupp@adacore.com>
+
+	* inclhack.def (AAB_vxworks_stdint): Remove hack.
+	* fixincl.x: Regenerate.
+
+2017-02-25  John David Anglin  <danglin@gcc.gnu.org>
+
+	PR target/68739
+	* inclhack.def (hpux11_pthread_pointer): New fix.
+	(hpux11_pthread_const): Adjust to remove void * cast from define.
+	* fixincl.x: Regenerate.
+
+2017-02-11  John David Anglin  <danglin@gcc.gnu.org>
+
+	* tests/base/alloca.h: New file.
+	* inclhack.def (hppa_hpux11_alloca): New fix.
+	* fixincl.x: Regenerate.
+
+2017-01-17  Jakub Jelinek  <jakub@redhat.com>
+
+	PR other/79046
+	* configure.ac: Add GCC_BASE_VER.
+	* Makefile.in (gcc_version): Use @get_gcc_base_ver@ instead of cat to
+	get version from BASE-VER file.
+	* configure: Regenerated.
+
+2017-01-13  Rainer Orth  <ro@CeBiTec.Uni-Bielefeld.DE>
+
+	PR libstdc++/78979
+	* inclhack.def (solaris_gets_c11, solaris_gets_cxx14)
+	(solaris_std_gets_cxx14, solaris_stdlib_noreturn): New fixes.
+	* fixincl.x: Regenerate.
+	* tests/base/iso/stdio_iso.h [SOLARIS_GETS_C11_CHECK,
+	SOLARIS_GETS_CXX14_CHECK, SOLARIS_STD_GETS_CXX14_CHECK,
+	SOLARIS_STDLIB_NORETURN_CHECK]: New tests.
+
+2016-11-21  Rainer Orth  <ro@CeBiTec.Uni-Bielefeld.DE>
+
+	* inclhack.def (solaris_math_12): New fix.
+	(hpux11_fabsf): Replace bypass by *-hp-hpux11* mach selector.
+	* fixincl.x: Regenerate.
+	* tests/base/math.h [SOLARIS_MATH_12_CHECK]: New test.
+
+2016-11-20  Rainer Orth  <ro@CeBiTec.Uni-Bielefeld.DE>
+
+	PR sanitizer/78267
+	* inclhack.def (darwin_availabilityinternal, darwin_os_trace_1)
+	(darwin_os_trace_2, darwin_os_trace_3): New fixes.
+	(hpux_stdint_least_fast): Remove spurious _EOFix_.
+	* fixincl.x: Regenerate.
+	* tests/bases/AvailabilityInternal.h: New file.
+	* tests/bases/os/trace.h: New file.
+
+2016-09-30  Tadek Kijkowski  <tkijkowski@gmail.com>
+
+	* check.tpl: Convert line endings to unix on test outputs
+	* fixfixes.c: Fixed passing file name to apply_fix when
+	SEPARATE_FIX_PROC is defined
+	* fixincl.c: Use system_with_shell, fixes for MinGW and DJGPP
+	* fixlib.c, fixlib.h: Added system_with_shell and fix_path_separators
+
+2016-09-04  John David Anglin  <danglin@gcc.gnu.org>
+
+	* inclhack.def (hpux_longjmp): Adjust select regular expression.
+	* fixincl.x: Regenerate.
+
+2016-08-13  John David Anglin  <danglin@gcc.gnu.org>
+
+	* inclhack.def (hpux_longjmp): New fix.
+	* fixincl.x: Regenerate.
+	* tests/base/setjmp.h: New test file.
+
+2016-08-09  Bernd Edlinger  <bernd.edlinger@hotmail.de>
+
+	PR bootstrap/72833
+	* fixincl.tpl (version-compare): Fix generation with autogen 5.18.
+	* inclhack.def (darwin_longjmp_noreturn): New fix.
+	* fixincl.x: Regenerated.
+	* tests/base/i386/setjmp.h [DARWIN_LONGJMP_NORETURN_CHECK]: new test.
+
+2016-08-01  Muhammad Bilal  <mbilal@codesourcery.com>
+
+	* fixinc.in: Use --parents option to make LIB directory.
+
+2016-06-21  Trevor Saunders  <tbsaunde+gcc@tbsaunde.org>
+
+	* mkfixinc.sh: Remove interix support.
+
+2016-06-13  David Edelsohn  <dje.gcc@gmail.com>
+
+	* inclhack.def (aix_stdlib_malloc): New fix.
+	(aix_stdlib_realloc): New fix.
+	(aix_stdlib_calloc): New fix.
+	(aix_stdlib_valloc): New fix.
+	* fixincl.x: Regenerate.
+	* tests/base/stdlib.h [AIX_STDLIB_MALLOC]: New test.
+	[AIX_STDLIB_REALLOC]: New test.
+	[AIX_STDLIB_CALLOC]: New test.
+	[AIX_STDLIB_VALLOC]: New test.
+
+2016-01-31  John David Anglin  <danglin@gcc.gnu.org>
+
+	PR target/68741
+	* inclhack.def (hpux_vsscanf): New fix.
+	* fixincl.x: Regenerated.
+	* tests/base/stdio.h [HPUX_VSSCANF_CHECK]: New test.
+
+2015-08-14  David Edelsohn  <dje.gcc@gmail.com>
+
+	* inclhack.def (aix_stdio_inline): New fix.
+	(aix_strtof_const): Limit to *-*-aix*.
+	(aix_sysmachine): Same.
+	(aix_syswait_2): Same.
+	(aix_volatile): Same.
+	* fixincl.x: Regenerated.
+	* test/base/stdio.h [AIX_STDIO_INLINE]: New test.
+
+2015-07-28  Eric Gallager  <egall@gwmail.gwu.edu>
+
+	* check.tpl: Ignore .DS_Store directories.
+
+2015-05-21  David Edelsohn  <dje.gcc@gmail.com>
+
+	* inclhack.def (aix_externc): New fix.
+	(aix_externcpp[12]): New fix.
+	* fixincl.x: Regenerate.
+	* test/base/ctype.h [AIX_EXTERNC_CHECK]: New test.
+	* test/base/sys/socket.h [AIX_EXTERNCPP[12]_CHECK]: New test.
+	* test/base/fcntl.h: New file.
+
+2015-05-13  Michael Haubenwallner  <michael.haubenwallner@ssi-schaefer.com>
+
+	* aclocal.m4: Regenerated with automake-1.11.6.
+
+2015-04-22  Gregor Richards  <gregor.richards@uwaterloo.ca>
+
+	* mkfixinc.sh: Add *-musl* with no fixes.
+
+2015-03-28  John David Anglin  <danglin@gcc.gnu.org>
+
+	PR libstdc++/65500
+	* inclhack.def (hpux11_lwp_rwlock_valid): New fix.
+	* fixincl.x: Regenerate.
+	* tests/base/sys/pthread.h [HPUX11_LWP_RWLOCK_VALID_CHECK]: New test.
+
+2015-02-16  Daniel Richard G.  <skunk@iskunk.org>
+
+	PR bootstrap/48009
+	PR bootstrap/53348
+	* inclhack.def (aix_strtof_const): New fix.
+	* fixincl.x: Regenerate.
+	* tests/base/stdlib.h: New test.
+
+2015-02-10  Rainer Orth  <ro@CeBiTec.Uni-Bielefeld.DE>
+
+	* inclhack.def (solaris_math_11): New fix.
+	* fixincl.x: Regenerate.
+	* tests/base/iso/math_c99.h [SOLARIS_MATH_11_CHECK]: New test.
+
+2015-02-06  David Edelsohn  <dje.gcc@gmail.com>
+
+	PR bootstrap/53348
+	* inclhack.def (aix_pthread): Accept tab after define.
+	* fixincl.x: Regenerate.
+
+2015-01-24  Bruce Korb  <bkorb@gnu.org>
+
+	* README: add some clarification on use of test_text
+
+2014-12-21  Bruce Korb  <bkorb@gnu.org>
+
+	* fixincludes/fixincl.tpl: add handling for "sum" selection
+	criteria and clean up layout
+	* fixincludes/fixlib.h: enumerate TT_CKSUM test type
+	* fixincludes/fixincl.c (fix_applies): add code to handle
+	the new test type
+	(cksum_test): function to handle it
+	* fixincludes/README: doc it and remove explanations from
+	more than a decade ago.
+
+2014-12-15  Uros Bizjak  <ubizjak@gmail.com>
+
+	* server.c (server_setup): Check return value of
+	getcwd and in case of error set buff[0] to 0.
+
+2014-10-21  Uros Bizjak  <ubizjak@gmail.com>
+
+	* inclhack.def (glibc_c99_inline_4): Add pthread.h to files.
+	* fixincl.x: Regenerate.
+
+2014-08-04  Alexander Ivchenko  <alexander.ivchenko@intel.com>
+
+	* inclhack.def (complier_h_tradcpp): Remove.
+	* fixincl.x: Regenerate.
+	* tests/base/linux/compiler.h: Remove.
+
+2014-04-22  Rainer Orth  <ro@CeBiTec.Uni-Bielefeld.DE>
+
+	* inclhack.def (math_exception): Bypass on *-*-solaris2.1[0-9]*.
+	(solaris_int_types): Remove.
+	(solaris_longjmp_noreturn): Remove.
+	(solaris_mutex_init_2): Remove.
+	(solaris_once_init_2): Remove.
+	(solaris_sys_va_list): Remove.
+	* fixincl.x: Regenerate.
+	* tests/base/iso/setjmp_iso.h: Remove.
+	* tests/base/pthread.h [SOLARIS_MUTEX_INIT_2_CHECK]: Remove.
+	[SOLARIS_ONCE_INIT_1_CHECK]: Remove wrapping done by
+	solaris_once_init_2.
+	[SOLARIS_ONCE_INIT_2_CHECK]: Remove.
+	* tests/base/sys/int_types.h: Remove.
+	* tests/base/sys/va_list.h: Remove.
+
+2013-12-20  Bernhard Reutner-Fischer  <aldot@gcc.gnu.org>
+
+	Makefile.in: Use $(FI) instead of fixincl@EXEEXT@.
+
+2013-12-07  Bruce Korb  <bkorb@gnu.org>
+
+	* inclhack.def: many of the headers found under "bits/" are
+	often stashed under architecture directories.  Apply fixes
+	to those, too.  Also, re-ordered misordered fixes.
+	* tests/base/linux/vt.h: 80 columns in .def file limitation
+	* tests/base/iso/math_c99.h: adjust ordering
+	* tests/base/rtldef/string.h: likewise
+	* tests/base/bits/fenv.h: likewise
+	* tests/base/pthread.h: likewise
+
+2013-12-06  Richard Biener  <rguenther@suse.de>
+
+	* inclhack.def (suse_linux_vt_cxx): New fix for linux/vt.h
+	being not compatible with C++.
+	* fixincl.x: Regenerate.
+	* tests/base/linux/vt.h: New test.
+
+2013-09-20  Alan Modra  <amodra@gmail.com>
+
+	* configure: Regenerate.
+
+2013-09-02  David Edelsohn  <dje.gcc@gmail.com>
+
+	* inclhack.def (aix_assert): New fix.
+	* fixincl.x: Regenerate.
+	* tests/base/assert.h [AIX_ASSERT_CHECK]: New check.
+
+2013-07-06  Bruce Korb  <bkorb@gnu.org>
+
+	* inclhack.def (cdef_cplusplus): removed, per Bug 51776
+	* tests/base/sys/cdefs.h (CDEF_CPLUSPLUS_CHECK): obsolete
+
+2013-05-23  Alexander Ivchenko  <alexander.ivchenko@intel.com>
+
+	* inclhack.def (complier_h_tradcpp): New.
+	* fixincl.x: Rebuilt.
+	* tests/base/linux/compiler.h: New.
+
+2013-05-17  Rainer Orth  <ro@CeBiTec.Uni-Bielefeld.DE>
+
+	* inclhack.def (solaris_pow_int_overload): Update comment.
+	Change guard to match <cmath>.
+	* fixincl.x: Regenerate.
+	* tests/base/iso/math_iso.h [SOLARIS_POW_INT_OVERLOAD_CHECK]:
+	Matching change.
+
+2013-05-04  David Edelsohn  <dje.gcc@gmail.com>
+
+	* inclhack.def (aix_null): New.
+	(void_null): Update replacement definition of NULL.
+	* fixincl.x: Regenerate.
+	* tests/base/curses.h: Update for new fix.
+
+2013-01-16  Alexandre Oliva  <aoliva@redhat.com>
+
+	* inclhack.def (feraiseexcept_nosse_invalid): New.
+	(feraiseexcept_nosse_divbyzero): Likewise.
+	* fixincl.x: Rebuilt.
+	* tests/base/bits/fenv.h: New.
+
+2013-01-14  Richard Biener  <rguenther@suse.de>
+
+	* fixlib.h (verbose_level, fixinc_mode): Mark extern.
+
+2012-10-29  Bruce Korb  <bkorb@gnu.org>
+
+	* README: testing wrap and replacement fixes is pointless.
+	* fixincl.c: export verbosity enumerations to fixlib.h
+	(run_compiles): mark replacement fixes to be skipped when
+	in testing mode
+	* fixlib.h: add a test mode and enumerations from fixincl.c
+	* check.tpl: set TEST_MODE in environment
+	* fixopts.c (initialize_opts): check for TEST_MODE in environment
+	* inclhack.def: move AAB_darwin7_9_long_double_funcs to
+	darwin_9_long_double_funcs_2.  It is not a replacement fix.
+	* fixincl.x: regenerate
+	* tests/base/ioLib.h: the need for this is now exposed, so add it.
+	* tests/base/architecture/ppc/math.h: the correct result is now needed.
+
+2012-10-29  Robert Mason  <rbmj@verizon.net>
+
+	* fixinc.in: Omit machine name checks for vxworks
+	* fixincludes/inclhack.def (AAB_vxworks_assert) new replacement fix
+	(AAB_vxworks_regs_vxtypes): another
+	(AAB_vxworks_stdint): yet another
+	(AAB_vxworks_unistd): and another
+	(vxworks_ioctl_macro): reformatting fix
+	(vxworks_mkdir_macro): again
+	(vxworks_regs): and again
+	(vxworks_write_const): and again
+	* tests/base/ioLib.h: new test result
+	* tests/base/math.h: likewise
+	* tests/base/sys/stat.h: likewise
+	* tests/base/testing.h: and again
+
+2012-09-29  David Edelsohn  <dje.gcc@gmail.com>
+
+	* inclhack.def (AAB_aix_fcntl): New fix.
+	* fixincl.x: Regenerate.
+
+2012-06-19  David Edelsohn  <dje.gcc@gmail.com>
+
+	* inclhack.def (aix_mutex_initializer_1): New fix.
+	(aix_cond_initializer_1): New fix.
+	(aix_rwlock_initializer): New fix.
+	* fixincl.x: Regenerate.
+	* tests/base/pthread.h [AIX_MUTEX_INITIALIZER_1_CHECK]: New.
+	[AIX_COND_INITIALIZER_1_CHECK]: New.
+	[AIX_RWLOCK_INITIALIZER_1_CHECK]: New.
+
+2012-05-29  Thomas Schwinge  <thomas@codesourcery.com>
+
+	* configure.ac: Use GCC_AC_FUNC_MMAP_BLACKLIST instead of
+	gcc_AC_FUNC_MMAP_BLACKLIST.
+	* Makefile.in (ACLOCAL_AMFLAGS): Don't include ../gcc.
+	* aclocal.m4: Regenerate.
+	* configure: Regenerate.
+
+2012-04-24  Tristan Gingold  <gingold@adacore.com>
+
+	* fixincl.c (fix_with_system): Add missing specifier.
+	* configure.ac: Default to twoprocess on vms.
+	* configure: Regenerate.
+
+2012-03-23  David Edelsohn  <dje.gcc@gmail.com>
+
+	* inclhack.def (aix_malloc): New.
+	* fixincl.x: Regenerate.
+	* tests/base/malloc.h [AIX_MALLOC_CHECK]: New.
+
+2012-03-22  Rainer Orth  <ro@CeBiTec.Uni-Bielefeld.DE>
+
+	PR other/52626
+	* tests/base/pthread.h [SOLARIS_MUTEX_INIT_2_CHECK]
+	(PTHREAD_COND_INITIALIZER): Adapt for solaris_cond_init removal.
+
+2012-03-15  Tristan Gingold  <gingold@adacore.com>
+
+	* README (EXAMPLES OF FIXES): Update.
+
+2012-03-14  Rainer Orth  <ro@CeBiTec.Uni-Bielefeld.DE>
+
+	* inclhack.def (math_exception): Remove duplicate.
+	(solaris_cond_init): Remove.
+	(solaris_sys_va_list): Remove Solaris 8 support.
+	* fixincl.x: Regenerate.
+	* tests/base/pthread.h [SOLARIS_COND_INIT_CHECK]: Remove.
+
+2012-03-14  Rainer Orth  <ro@CeBiTec.Uni-Bielefeld.DE>
+
+	* inclhack.def (broken_cabs): Remove IRIX and SunOS 4 support.
+	(irix___restrict): Remove.
+	(irix___generic1): Remove.
+	(irix___generic2): Remove.
+	(irix_asm_apostrophe): Remove.
+	(irix_complex): Remove.
+	(irix_pthread_init): Remove.
+	(irix_socklen_t): Remove.
+	(irix_stdint_c99_mode): Remove.
+	(irix_stdint_c99_types): Remove.
+	(irix_stdint_c99_macros): Remove.
+	(irix_stdio_va_list): Remove IRIX 6.5 support.
+	(irix_wcsftime): Remove.
+	(stdio_va_list): Remove IRIX 6.5 support.
+	(svr4_profil): Remove IRIX bypass.
+	* fixincl.x: Regenerate.
+
+	* tests/base/complex.h [IRIX_COMPLEX_CHECK]: Remove.
+	* tests/base/internal/math_core.h: Remove.
+	* tests/base/internal/sgimacros.h: Remove.
+	* tests/base/internal/wchar_core.h: Remove.
+	* tests/base/math.h [BROKEN_CABS_CHECK]: Remove IRIX and SunOS 4
+	support.
+	* tests/base/pthread.h [IRIX_PTHREAD_INIT_CHECK]: Remove.
+	* tests/base/stdint-irix65.h: Remove.
+	* tests/base/stdint.h [IRIX_STDINT_C99_MODE_CHECK]: Remove.
+	* tests/base/sys/asm.h: Remove.
+	* tests/base/sys/socket.h [IRIX_SOCKLEN_T_CHECK]: Remove.
+
+2012-03-12  Rainer Orth  <ro@CeBiTec.Uni-Bielefeld.DE>
+
+	* inclhack.def (alpha___extern_prefix): Remove.
+	(alpha___extern_prefix_standards): Remove.
+	(alpha___extern_prefix_sys_stat): Remove.
+	(alpha_bad_lval): Remove.
+	(alpha_pthread): Remove.
+	(alpha_pthread_gcc): Remove.
+	(alpha_pthread_init): Remove.
+	* fixincl.x: Regenerate.
+	* tests/base/pthread.h [ALPHA_PTHREAD_CHECK]: Remove.
+	[ALPHA_PTHREAD_GCC_CHECK]: Remove.
+	[ALPHA_PTHREAD_INIT_CHECK]: Remove.
+	* tests/base/standards.h: Remove.
+	* tests/base/sys/stat.h [ALPHA___EXTERN_PREFIX_SYS_STAT_CHECK]:
+	Remove.
+	* tests/base/testing.h [ALPHA___EXTERN_PREFIX_CHECK]: Remove.
+	[ALPHA_BAD_LVAL_CHECK]: Remove.
+
+2012-03-12  Tristan Gingold  <gingold@adacore.com>
+
+	* inclhack.def (vms_use_quoted_include,vms_add_missing_braces)
+	(vms_do_not_redeclare_hostalias, vms_decc_builtin)
+	(vms_no_64bit_getopt, vms_forward_declare_struct)
+	(vms_use_fast_setjmp): New fixes.
+	* fixincl.x: Regenerate.
+	* tests/base/rtldef/string.h: Update.
+	* tests/base/rtldef/if.h, tests/base/rtldef/resolv.h,
+	* tests/base/rtldef/setjmp.h, tests/base/rtldef/signal.h,
+	* tests/base/rtldef/stdio.h, tests/base/rtldef/wait.h: New files.
+
+2012-01-11  Bruce Korb <bkorb@gnu.org>
+	    Steven G. Kargl  <kargl@gcc.gnu.org>
+	    Andreas Tobler  <andreast@fgznet.ch>
+
+	PR bootstrap/51705
+	PR preprocessor/51776
+	* inclhack.def (cdef_cplusplus): Add a replacement for [[noreturn]].
+	* fixincl.x: Regenerate.
+	* tests/base/sys/cdefs.h: Update.
+
+	* genfixes: Remove the 'Ver.' from the version check.
+
+2011-12-20  Andreas Schwab  <schwab@linux-m68k.org>
+
+	* configure: Regenerate.
+
+2011-12-19  Andreas Schwab  <schwab@linux-m68k.org>
+
+	* configure: Regenerate.
+
+2011-11-16  David Edelsohn  <dje.gcc@gmail.com>
+
+	* inclhack.def (aix_once_init_[12]): New fixes.
+	* fixincl.x: Regenerate.
+	* tests/base/pthread.h: Update.
+
+2011-10-25  Mike Stump  <mikestump@comcast.net>
+
+	PR target/48851
+	* inclhack.def (void_null): New bypass.
+	* fixincl.x: Regenerate.
+
+2011-09-26  Tristan Gingold  <gingold@adacore.com>
+
+	* inclhack.def (ms_define_can_use_extern_prefix):
+	(vms_use_pragma_extern_model, vms_disable_decc_string_builtins):
+	New fixes.
+	* fixincl.x: Regenerate.
+	* tests/base/rtldef/string.h: New test.
+	* tests/base/rtldef/decc$types.h: Likewise.
+	* tests/base/testing.h: Update
+
+2011-09-22  Tristan Gingold  <gingold@adacore.com>
+
+	* mkfixinc.sh (target): Remove alpha-vms from particular targets.
+
+2011-08-23  Steve Ellcey  <sje@cup.hp.com>
+
+	PR libstdc++/50153
+	* inclhack.def (hpux11_abs): Extend to all hpux machines.
+	* fixincl.x: Regenerate.
+
+2011-08-10  Rainer Orth  <ro@CeBiTec.Uni-Bielefeld.DE>
+	    Marc Glisse  <marc.glisse@normalesup.org>
+
+	PR libstdc++-v3/1773
+	* inclhack.def (solaris_cxx_linkage, solaris_getc_strict_stdc)
+	(solaris_longjmp_noreturn, solaris_pow_int_overload)
+	(solaris_std___filbuf): New fixes.
+	* tests/base/iso/math_iso.h, tests/base/iso/setjmp_iso.h,
+	tests/base/iso/stdio_iso.h, tests/base/iso/stdlib_iso.h: New tests.
+	* tests/base/stdio.h [SOLARIS_STD___FILBUF_CHECK]: New test.
+
+2011-07-25  Rainer Orth  <ro@CeBiTec.Uni-Bielefeld.DE>
+
+	PR c++/49347
+	* inclhack.def (solaris_posix_spawn_restrict): New fix.
+	* fixincl.x: Regenerate.
+	* tests/base/spawn.h: New test.
+
+2011-06-08  Douglas B Rupp  <rupp@gnat.com>
+
+	* configure.ac (AC_USE_SYSTEM_EXTENSIONS): Add.
+	* configure: Regenerate.
+	* config.h.in: Regenerate.
+
+2011-06-06  Peter O'Gorman  <pogma@thewrittenword.com>
+
+	* inclhack.def (aix_net_if_arp): New fix.
+	* fixincl.x: Regenerate.
+	* tests/base/net/if_arp.h [AIX_NET_IF_ARP_CHECK]: New test.
+
+2011-05-17  Tristan Gingold  <gingold@adacore.com>
+
+	* inclhack.def (solaris_complex_cxx): Fix syntax.
+	* fixincl.x: Regenerate.
+
+2011-05-17  Tristan Gingold  <gingold@adacore.com>
+
+	* check.tpl: Shell-quote testing file.
+
+2011-03-22  Joseph Myers  <joseph@codesourcery.com>
+
+	* mkfixinc.sh: Don't handle i?86-moss-msdos* or i?86-*-pe.
+
+2010-11-20  Ralf Wildenhues  <Ralf.Wildenhues@gmx.de>
+
+	PR other/46202
+	* Makefile.in (install-strip): New phony target.
+	(all, check, install): Also mark as phony.
+
+2010-11-09  Rainer Orth  <ro@CeBiTec.Uni-Bielefeld.DE>
+
+	* inclhack.def (irix_pthread_init): New fix.
+	* fixincl.x: Regenerate.
+	* tests/base/pthread.h [IRIX_PTHREAD_INIT_CHECK]: New test.
+
+2010-10-20  Rainer Orth  <ro@CeBiTec.Uni-Bielefeld.DE>
+
+	PR c++/46024
+	* inclhack.def (solaris_sys_va_list): New fix.
+	* fixincl.x: Regenerate.
+	* tests/base/sys/va_list.h: New test.
+
+2010-09-07  John David Anglin  <dave.anglin@nrc-cnrc.gc.ca>
+
+	* inclhack.def (hpux_htonl): Allow trailing whitespace in select.
+	* fixincl.x: Regenerate.
+
+2010-07-12  Rainer Orth  <ro@CeBiTec.Uni-Bielefeld.DE>
+
+	* inclhack.def (solaris_cond_init): New fix.
+	* fixincl.x: Regenerate.
+	* tests/base/pthread.h [SOLARIS_COND_INIT_CHECK]: New test.
+	[SOLARIS_MUTEX_INIT_2_CHECK]: Adapt.
+
+2010-06-21  Rainer Orth  <ro@CeBiTec.Uni-Bielefeld.DE>
+
+	* inclhack.def (solaris__restrict, solaris_complex_cxx): New fixes
+	* fixincl.x: Regenerate.
+	* tests/base/complex.h [SOLARIS_COMPLEX_CXX_CHECK]: New test.
+	* tests/base/sys/feature_tests.h: New file.
+
+2010-06-03  Joern Rennecke <joern.rennecke@embecosm.com>
+	    Ralf Wildenhues  <Ralf.Wildenhues@gmx.de>
+
+	PR bootstrap/42798
+	* configure.ac: Check for declaration of 'basename(char *)'.
+	* configure: Regenerate.
+
+2010-04-12  Rainer Orth  <ro@CeBiTec.Uni-Bielefeld.DE>
+
+	* inclhack.def (alpha_wchar): Remove.
+	* fixincl.x: Regenerate.
+	* tests/base/wchar.h: Remove.
+
+2010-04-02  Ralf Wildenhues  <Ralf.Wildenhues@gmx.de>
+
+	* aclocal.m4: Regenerate.
+
+2010-03-31  Rainer Orth  <ro@CeBiTec.Uni-Bielefeld.DE>
+
+	* inclhack.def (alpha_assert): Allow for more whitespace in
+	select.
+	* fixincl.x: Regenerate.
+
+2010-03-28  H.J. Lu  <hongjiu.lu@intel.com>
+
+	PR target/40722
+	* mkfixinc.sh: Revert the last change for mingw.
+
+2010-03-24  Joseph Myers  <joseph@codesourcery.com>
+
+	* inclhack.def (glibc_strncpy): New fix.
+	* fixincl.x: Regenerate.
+	* tests/base/bits/string2.h: Update.
+
+2010-03-23  H.J. Lu  <hongjiu.lu@intel.com>
+
+	PR target/40722
+	* mkfixinc.sh: Fix stdlib.h for mingw.
+
+2010-02-19  Bruce Korb  <bkorb@gnu.org>
+
+	* inclhack.def: remove vestiges of inadvertently committed changes
+
+2010-02-10  Bruce Korb  <bkorb@gnu.org>
+
+	* README: fix up references to old gcc/fixinc directory
+
+2010-01-29  Rainer Orth  <ro@CeBiTec.Uni-Bielefeld.DE>
+
+	* inclhack.def (solaris_int_limits_3): New fix.
+	* fixincl.x: Regenerate.
+	* tests/base/sys/int_limits.h [SOLARIS_INT_LIMITS_3_CHECK]: New
+	test.
+
+	* inclhack.def (solaris_int_const, solaris_int_limits_1,
+	solaris_int_limits_2 ): Applies to Solaris 2 in general.
+	Remove select.
+	Add mach for *-*-solaris2*.
+	Change second c_fix_arg to select.
+	Remove #pragma ident from test_text.
+	* fixincl.x: Regenerate.
+	* tests/base/sys/int_const.h [SOLARIS_INT_CONST_CHECK]: Remove
+	#pragma trigger text.
+	* tests/base/sys/int_limits.h [SOLARIS_INT_LIMITS_1_CHECK,
+	SOLARIS_INT_LIMITS_2_CHECK]: Likewise.
+
+2010-01-26  Rainer Orth  <ro@CeBiTec.Uni-Bielefeld.DE>
+
+	* inclhack.def (aix_stdint_1): Add stdint-aix.h to files.
+	(aix_stdint_2): Likewise.
+	(aix_stdint_3): Likewise.
+	(aix_stdint_4): Likewise.
+	(aix_stdint_5): Likewise.
+	(darwin_stdint_1): Add stdint-darwin.h to files.
+	(darwin_stdint_2): Likewise.
+	(darwin_stdint_3): Likewise.
+	(darwin_stdint_4): Likewise.
+	(darwin_stdint_5): Likewise.
+	(darwin_stdint_6): Likewise.
+	(darwin_stdint_7): Likewise.
+	(hpux_c99_intptr): Add stdint-hpux11.h to files.
+	(hpux_c99_inttypes): Likewise.
+	(hpux_c99_inttypes2): Likewise.
+	(hpux_stdint_least_fast): Likewise.
+	(irix_stdint_c99): Renamed to irix_stdint_c99_mode.
+	(irix_stdint_c99_types): New fix.
+	(irix_stdint_c99_macros): New fix.
+	(newlib_stdint_1): Add stdint-newlib.h to files.
+	(newlib_stdint_2): Likewise.
+	fixincl.x: Regenerate.
+	tests/base/stdint-aix.h: New file.
+	tests/base/stdint.h [AIX_STDINT_1_CHECK, AIX_STDINT_2_CHECK,
+	AIX_STDINT_3_CHECK, AIX_STDINT_4_CHECK, AIX_STDINT_5_CHECK]: Moved ...
+	tests/base/stdint-aix.h: ... here.
+	[AIX_STDINT_3_CHECK]: Updated to match aix_stdint_3 fix.
+	[AIX_STDINT_4_CHECK]: Updated to match aix_stdint_4 fix.
+	[AIX_STDINT_5_CHECK]: Updated to match aix_stdint_5 fix.
+	tests/base/stdint-darwin.h: New file.
+	tests/base/stdint.h [DARWIN_STDINT_1_CHECK, DARWIN_STDINT_2_CHECK,
+	DARWIN_STDINT_3_CHECK, DARWIN_STDINT_4_CHECK,
+	DARWIN_STDINT_5_CHECK, DARWIN_STDINT_6_CHECK]: Moved ...
+	tests/base/stdint-darwin.h: ... here.
+	[DARWIN_STDINT_1_CHECK]: Updated to match darwin_stdint_1 fix.
+	[DARWIN_STDINT_4_CHECK]: Updated to match darwin_stdint_4 fix.
+	[DARWIN_STDINT_6_CHECK]: Updated to match darwin_stdint_6 fix.
+	tests/base/stdint-hpux11.h: New file.
+	tests/base/stdint.h [HPUX_C99_INTPTR_CHECK,
+	HPUX_C99_INTTYPES2_CHECK, HPUX_STDINT_LEAST_FAST_CHECK]: Moved ...
+	tests/base/stdint-hpux11.h: ... here.
+	[HPUX_C99_INTPTR_CHECK]: Updated to match hpux_c99_intptr fix.
+	[HPUX_C99_INTTYPES2_CHECK]: Updated to match hpux_c99_inttypes2 fix.
+	tests/base/stdint.h [IRIX_STDINT_C99_CHECK]: Renamed guard to
+	IRIX_STDINT_C99_MODE_CHECK.
+	tests/base/stdint-irix65.h: New file.
+	tests/base/stdint-newlib.h: New file.
+	tests/base/stdint.h [NEWLIB_STDINT_1_CHECK,
+	NEWLIB_STDINT_2_CHECK]: Moved ...
+	tests/base/stdint-newlib.h: ... here.
+
+2009-12-05  Ralf Wildenhues  <Ralf.Wildenhues@gmx.de>
+
+	* configure: Regenerate.
+
+2009-10-21  Steve Ellcey  <sje@cup.hp.com>
+
+	* inclhack.def (hpux_stdint_least_fast): Simplify.
+	* fixincl.x: Regenerate.
+	* tests/base/stdint.h: Update.
+
+2009-09-15  Ralf Wildenhues  <Ralf.Wildenhues@gmx.de>
+
+	* inclhack.def (isc_fmod, isc_omits_with_stdc)
+	(nested_sys_limits, sco_math): Remove.
+	* tests/base/math.h (ISC_FMOD_CHECK, SCO_MATH_CHECK): Remove.
+	* tests/base/stdio.h (ISC_OMITS_WITH_STDC_CHECK): Remove.
+	* tests/base/sys/limits.h: Remove.
+	* fixincl.x: Regenerate.
+
+2009-09-08  Ralf Wildenhues  <Ralf.Wildenhues@gmx.de>
+
+	PR testsuite/29737
+	PR bootstrap/35938
+	PR testsuite/39655
+	* check.tpl: Fix typos.
+	* README: Likewise.  Also, document that 'select' uses ERE.
+	* mkheaders.in: Update copyright years in --version output.
+	* inclhack.def (sco_math): Add missing final newline in sed
+	script 'a', 'c', or 'i' commands, for BSD sed.
+	(sco_math): In the text of 'a', 'c', or 'i' sed
+	commands, prepend leading white space with a backslash to avoid
+	the whitespace to be removed by BSD sed.
+	(sco_math): Match plain 'C++' instead of 'C\+\+' in sed regex.
+	(x11_new): Fix sed expression, for BSD sed.
+	(glibc_mutex_init): Fix newlines in sed 's' command replacement
+	part, for GNU sed 3.02 and Solaris sed.
+	(glibc_mutex_init): Replace unportable \+ sed regex operator
+	with \{1,\}.
+	(glibc_c99_inline_2, glibc_mutex_init): Avoid unportable sed
+	alternation \| regex operator.
+	(solaris_complex): Remove superfluous backslashes from
+	replacement string.  Replace \+ operator with \{1,\}.
+	* tests/base/Xm/Traversal.h: This is fixed for BSD sed now.
+	* fixincl.x: Regenerate.
+
+2009-09-02  Rainer Orth  <ro@CeBiTec.Uni-Bielefeld.DE>
+
+	PR libfortran/41169
+	* inclhack.def (irix_complex): New fix.
+	(solaris_complex): Likewise.
+	* fixincl.x: Regenerate.
+	* tests/base/complex.h [IRIX_COMPLEX_CHECK, SOLARIS_COMPLEX_CHECK]:
+	New tests.
+
+2009-08-28   Bruce Korb <bkorb@gnu.org>
+	     Steve Ellcey  <sje@cup.hp.com>
+
+	* README (files): Describe files entry.
+	* inclhack.def (hpux_stdint_least): Remove.
+	(hpux_stdint_fast): Remove.
+	(hpux_stdint_fast): Remove.
+	(hpux_stdint_least_fast): New.
+	(hpux_inttype_int_least8_t): Remove.
+	(hpux_inttype_int8_t): Modify.
+	* fixincl.x: Regenerate.
+	* tests/base/stdint.h: Update.
+	* tests/base/sys/_inttypes.h: Update.
+
+2009-08-28  Steve Ellcey  <sje@cup.hp.com>
+
+	* inclhack.def (hpux_imaginary_i): Remove spaces.
+	* fixincl.x: Regenerate.
+	* tests/base/stdint.h: Update AIX fixes. 
+	* tests/base/complex.h: Change HPUX_IMAGINARY_I_CHECK fix.
+
+2009-08-24  Ralf Wildenhues  <Ralf.Wildenhues@gmx.de>
+
+	* configure.ac (AC_PREREQ): Bump to 2.64.
+
+2009-08-22  Ralf Wildenhues  <Ralf.Wildenhues@gmx.de>
+
+	* aclocal.m4: Regenerate.
+	* configure: Regenerate.
+	* config.h.in: Regenerate.
+
+2009-08-17  David Edelsohn  <edelsohn@gnu.org>
+
+	* inclhack.def (aix_complex): Redefine _Complex_I.  Do not
+	redefine I.
+	* (aix_stdint_[12345]): New fixes.
+	* fixincl.x: Regenerate.
+	* tests/base/complex.h: Update check.
+	* tests/base/stdint.h: Add AIX stdint.h checks.
+
+2009-08-14  Steve Ellcey  <sje@cup.hp.com>
+
+	* inclhack.def (hpux_imaginary_i): New fix.
+	* fixincl.x: Regenerate.
+	* tests/base/complex.h: New file.
+
+2009-08-12  David Edelsohn  <edelsohn@gnu.org>
+
+	* inclhack.def (aix_complex): New fix.
+	* fixincl.x: Regenerate.
+
+2009-08-01  John David Anglin  <dave.anglin@nrc-cnrc.gc.ca>
+
+	* inclhack.def (hpux_inttype_int_least8_t): Also apply on hpux10*.
+	(hpux_inttype_int8_t): Likewise.
+	* fixincl.x: Regenerate.
+
+2009-07-30  Ralf Wildenhues  <Ralf.Wildenhues@gmx.de>
+
+	* Makefile.in (AUTOCONF, AUTOHEADER, ACLOCAL, ACLOCAL_AMFLAGS):
+	New variables.
+	($(srcdir)/configure, $(srcdir)/config.h.in, $(srcdir)/aclocal.m4):
+	Use them.
+
+2009-07-04  Francois-Xavier Coudert  <fxcoudert@gcc.gnu.org>
+
+	* inclhack.def (darwin_stdint_5, darwin_stdint_6,
+	darwin_stdint_7): New fixes.
+	* fixincl.x: Regenerate.
+	* tests/base/stdint.h: Adjust test for new fixes.
+
+2009-07-03  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* inclhack.def (solaris_int_types): New fix.
+	* fixincl.x: Regenerate.
+	* tests/base/sys/int_types.h: New file.
+
+2009-06-09  Francois-Xavier Coudert  <fxcoudert@gcc.gnu.org>
+
+	* inclhack.def (darwin_stdint_1, darwin_stdint_2, darwin_stdint_3,
+	darwin_stdint_4): New fixes.
+	* tests/base/stdint.h: Adjust test results for new fixes.
+	* fixincl.x: Regenerate.
+
+2009-05-29  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* inclhack.def (solaris_int_const): New fix.
+	(solaris_int_limits_1): Likewise.
+	(solaris_int_limits_2): Likewise.
+	* fixincl.x: Regenerate.
+	* tests/base/sys/int_const.h: New file.
+	* tests/base/sys/int_limits.h: Likewise.
+
+2009-05-15  Joseph Myers  <joseph@codesourcery.com>
+
+	* inclhack.def (glibc_tgmath): Correct bypass.
+	* fixincl.x: Regenerate.
+
+2009-04-28  Steve Ellcey  <sje@cup.hp.com>
+
+	* inclhack.def (hpux11_uint32_c): Remove.
+	(hpux_long_double): Disable on hpux11.3*.
+	(hpux_long_double_2): New.
+	(hpux_c99_intptr): New.
+	(hpux_c99_inttypes): New.
+	(hpux_c99_inttypes2): New.
+	(hpux_stdint_least): New.
+	(hpux_stdint_fast): New.
+	(hpux_inttype_int_least8_t): New.
+	(hpux_inttype_int8_t): New.
+	* fixincl.x: Regenerate.
+	* tests/base/sys/_inttypes.h: New.
+	* tests/base/inttypes.h: Update.
+	* tests/base/stdlib.h: Update.
+	* tests/base/stdint.h: Update.
+
+2009-04-28  Joseph Myers  <joseph@codesourcery.com>
+
+	* inclhack.def (glibc_stdint): New fix.
+	* fixincl.x: Regenerate.
+	* tests/base/stdint.h: Update.
+
+2009-04-09  Jakub Jelinek  <jakub@redhat.com>
+
+	* Makefile.in: Change copyright header to refer to version
+	3 of the GNU General Public License and to point readers at the
+	COPYING3 file and the FSF's license web page.
+	* fixfixes.c: Likewise.
+	* fixinc.in: Likewise.
+	* fixincl.c: Likewise.
+	* fixlib.c: Likewise.
+	* fixlib.h: Likewise.
+	* fixopts.c: Likewise.
+	* fixtests.c: Likewise.
+	* genfixes: Likewise.
+	* mkheaders.in: Likewise.
+	* system.h: Likewise.
+
+2009-03-31  Joseph Myers  <joseph@codesourcery.com>
+
+	PR c/448
+	* inclhack.def (newlib_stdint_1, newlib_stdint_2): New fixes.
+	* fixincl.x: Regenerate.
+	* tests/base/stdint.h: Update.
+
+2009-03-29  Joseph Myers  <joseph@codesourcery.com>
+
+	* tests/base/math.h, tests/base/pthread.h, tests/base/sys/wait.h:
+	Update.
+
+2009-03-29  Joseph Myers  <joseph@codesourcery.com>
+
+	PR c/456
+	PR c/5675
+	PR c/19976
+	PR c/29116
+	PR c/31871
+	PR c/35198
+	* inclhack.def (glibc_tgmath): New fix.
+	* fixincl.x: Regenerate.
+	* tests/base/tgmath.h: New.
+
+2009-03-28  Joseph Myers  <joseph@codesourcery.com>
+
+	* inclhack.def (aix_syswait, exception_structure,
+	pthread_page_size): Remove.
+	(math_exception): Remove mention of fixproto in comment.
+	* fixincl.x: Regenerate.
+	* mkheaders.in: Do not handle STMP_FIXPROTO.
+
+2009-03-27  Sandra Loosemore  <sandra@codesourcery.com>
+
+	* server.c (run_shell): Quote directory name passed to cd.
+
+2009-03-01  Bruce Korb  <bkorb@gnu.org>
+	Apply a positively ancient patch:
+
+	2004-10-15  Giovanni Bajo  <giovannibajo@libero.it>
+
+	* inclhack.def (alpha_if_semicolon): new fix from long, long ago
+	* tests/base/net/if.h: Add new test.
+
+2009-01-06  Andreas Tobler  <a.tobler@schweiz.org>
+
+	* tests/base/locale.h: Add new test.
+	* tests/base/stdarg.h: Likewise.
+
+2009-01-05  Steve Ellcey  <sje@cup.hp.com>
+
+	* inclhack.def (hpux_spu_info):  Add files line.
+	* fixincl.x: Regenerate.
+
+2009-01-01  Andreas Tobler  <a.tobler@schweiz.org>
+
+	* inclhack.def (openbsd_null_definition): Redefine NULL to (void *)0
+	in case of C.
+	* fixincl.x: Regenerate.
+
+2008-12-31  Andreas Tobler  <a.tobler@schweiz.org>
+
+	PR target/35460
+	* inclhack.def (openbsd_va_start): Use __builtin_va_start
+	for OpenBSD.
+	* fixincl.x: Regenerate.
+
+2008-12-18  Ralf Wildenhues  <Ralf.Wildenhues@gmx.de>
+
+	* configure: Regenerate.
+
+2008-12-15  Steve Ellcey  <sje@cup.hp.com>
+
+	* inclhack.def (hpux_spu_info): Match PA as well as IA64.
+	* fixincl.x: Regenerate.
+
+2008-09-06  H.J. Lu  <hongjiu.lu@intel.com>
+
+	* configure.ac: Fix a typo.
+	* configured: Regenerate.
+
+2008-09-06  Bruce Korb  <bkorb@gnu.org>
+
+	* fixincl.tpl (sed): make the program executable configurable.
+	Some platforms have some rather oddball defaults.
+	* config.h.in (SED_PROGRAM): define the default sed.
+	* fixincl.x: regenerated
+	* tests/base/internal/wchar_core.h: fix bad sample text
+	* tests/base/math.h: fix bad sample text
+	* configure.ac: search for working sed
+	* inclhack.def (glibc_mutex_init): fix non-portable construct
+	and re-order a few misordered entries.
+
+2008-06-17  Ralf Wildenhues  <Ralf.Wildenhues@gmx.de>
+
+	* configure: Regenerate.
+
+2008-06-07  Joseph Myers  <joseph@codesourcery.com>
+
+	* inclhack.def (AAB_svr4_replace_byteorder,
+	AAB_ultrix_ansi_compat, AAB_ultrix_limits, AAB_ultrix_memory,
+	libc1_G_va_list, libc1_ifdefd_memx, nested_motorola,
+	ptx_sys_mc_param_h, sco_regset, sco_static_func, sco_utime,
+	solaris_mutex_init_1, solaris_socket, solaris_unistd,
+	solaris_widec, svr4_krnl, ultrix_atexit_param, ultrix_atof_param,
+	ultrix_const3, ultrix_fix_fixproto, ultrix_ifdef, ultrix_locale,
+	ultrix_math_ifdef, ultrix_nested_ioctl, ultrix_nested_svc,
+	ultrix_stat, ultrix_static, ultrix_stdlib, ultrix_strings,
+	ultrix_strings2, ultrix_sys_time, ultrix_unistd,
+	unicosmk_restrict, uw7_byteorder_fix, windiss_math1,
+	windiss_math2, windiss_valist): Remove.
+	* fixincl.x: Regenerate.
+	* mkfixinc.sh: (arm-semi-aof, hppa1.1-*-osf*, hppa1.1-*-bsd*,
+	i370-*-openedition, i?86-*-moss*, i?86-*-uwin*,
+	powerpc-*-eabiaix*): Remove.
+	* tests/base/math.h: Update.
+	* tests/base/pthread.h: Update.
+	* tests/base/stdio.h: Update.
+	* tests/base/stdlib.h: Update.
+	* tests/base/string.h: Update.
+	* tests/base/strings.h: Update.
+	* tests/base/sys/file.h: Update.
+	* tests/base/sys/limits.h: Update.
+	* tests/base/sys/socket.h: Update.
+	* tests/base/sys/stat.h: Update.
+	* tests/base/sys/time.h: Update.
+	* tests/base/testing.h: Update.
+	* tests/base/unistd.h: Update.
+	* tests/base/_G_config.h: Remove.
+	* tests/base/arpa: Remove directory.
+	* tests/base/fs: Remove directory.
+	* tests/base/locale.h: Remove.
+	* tests/base/machine: Remove directory.
+	* tests/base/rpc/svc.h: Remove.
+	* tests/base/sys/ioctl.h: Remove.
+	* tests/base/sys/regset.h: Remove.
+	* tests/base/sys/times.h: Remove.
+	* tests/base/sys/utsname.h: Remove.
+	* tests/base/widec.h: Remove.
+
+2008-05-24  Kaveh R. Ghazi  <ghazi@caip.rutgers.edu>
+
+	* inclhack.def (solaris_math_4): Use GCC's __builtin_fpclassify.
+	* tests/base/iso/math_c99.h: Update.
+	* fixincl.x: Regenerate.
+
+2008-05-14  Joseph Myers  <joseph@codesourcery.com>
+
+	* inclhack.def (AAB_fd_zero_asm_posix_types_h): Bypass on
+	posix_types_64.
+	* fixincl.x: Regenerate.
+
+2008-04-25  Kai Tietz  <kai.tietz@onvision.com>
+
+	* fixincl.c (fix_with_system): Cast pointer difference to long.
+	* fixlib.c (make_raw_shell_str): Cast compare to avoid sign warning.
+
+2008-04-18  Paolo Bonzini  <bonzini@gnu.org>
+
+	PR bootstrap/35457
+	* Makefile.in: Rewrite aclocal.m4 rule.
+	* aclocal.m4: Regenerate.
+	* configure: Regenerate.
+
+2008-03-07  Peter O'Gorman  <pogma@thewrittenword.com>
+
+	PR c++/20366
+	* inclhack.def (AAB_aix_stdio): Hack stdio.h for -D_LARGE_FILES.
+	* fixincl.x: Regenerate.
+	* tests/base/stdio.h: Add test.
+
+2008-02-25  Ben Elliston  <bje@au.ibm.com>
+
+	PR other/32948
+	* fixincl.c (fix_applies): Remove unused variable `name_len'.
+
+2008-02-19  Kaveh R. Ghazi  <ghazi@caip.rutgers.edu>
+
+	* inclhack.def (solaris_math_10): New.
+	* tests/base/iso/math_c99.h: Update.
+
+	* fixincl.x: Regenerate.
+
+2008-02-04  Ismail Dönmez  <ismail@pardus.org.tr>
+
+	* inclhack.def: (bsd_stdio_attrs_conflict, freebsd_gcc3_breakage,
+	freebsd_gcc4_breakage, hppa_hpux_fp_macros, hpux11_abs,
+	netbsd_c99_inline_1, netbsd_c99_inline_2, netbsd_extra_semicolon):  Add
+	quotes around mach entries.
+	* fixincl.x: Regenerate with latest autogen (5.9.4), updating license
+	to GPLv3.
+
+2008-02-04  Hans-Peter Nilsson  <hp@axis.com>
+
+	PR other/31405
+	* inclhack.def: (glibc_c99_inline_1a): Re-add last change.
+	(glibc_c99_inline_3) <bypass>: Change from __STDC_VERSION__ to
+	__extern_inline|__GNU_STDC_INLINE__.
+	(glibc_c99_inline_4) <files>: Add wchar.h and */wchar.h.
+	<bypass>: Change from __STDC_VERSION__ to
+	__extern_inline|__GNU_STDC_INLINE__.
+	<first c_fix_arg>: Change from #ifdef-wrapping the extern part to
+	appending attribute-gnu_inline.
+	<second c_fix_arg>: Remove.
+	<test_text>: Remove __extern_inline line.
+	* tests/base/features.h: Re-add.
+	* tests/base/sys/sysmacros.h: Adjust.
+	* fixincl.x: Regenerate.
+
+2008-01-06  Hans-Peter Nilsson  <hp@axis.com>
+
+	Revert last change.
+
+2007-12-18  Hans-Peter Nilsson  <hp@axis.com>
+
+	* inclhack.def: (glibc_c99_inline_1a, glibc_c99_inline_5): New.
+	* fixincl.x: Regenerate.
+	* tests/base/wchar.h: Update.
+	* tests/base/features.h: New.
+
+2007-10-14  John David Anglin  <dave.anglin@nrc-cnrc.gc.ca>
+
+	PR target/33700
+	* inclhack.def (hpux11_pthread_const): New.
+	* fixincl.x: Regenerate.
+	* tests/base/sys/pthread.h: Update.
+
+2007-10-12  Kai Tietz  <kai.tietz@onevision.com>
+
+	* configure.ac: x86_64 mingw target uses twoprocess.
+	* mkfixinc.sh: Add x86_64 mingw target.
+	* configure: Regenerate.
+
+2007-10-09  Geoffrey Keating  <geoffk@apple.com>
+
+	* inclhack.def (darwin_externc): New.
+	* fixincl.x: Regenerate.
+	* tests/base/mach-o/swap.h: New.
+
+2007-08-03  Kaveh R. Ghazi  <ghazi@caip.rutgers.edu>
+
+	* inclhack.def (solaris_math_5, solaris_math_6, solaris_math_7):
+	Delete fixes.
+	* tests/base/iso/math_c99.h: Delete associated test baselines.
+	* fixincl.x: Regenerate.
+
+2007-07-24  Krister Walfridsson  <cato@df.lth.se>
+
+	PR target/30058
+	* inclhack.def (netbsd_c99_inline_2): New.
+	* fixincl.x: Regenerate.
+	* tests/base/signal.h: Update.
+
+2007-07-18  Kaveh R. Ghazi  <ghazi@caip.rutgers.edu>
+
+	PR target/32641
+
+	* inclhack.def (solaris_math_4, solaris_math_5, solaris_math_6,
+	solaris_math_7): Constify and make FP exception-safe.
+	* tests/base/iso/math_c99.h: Update.
+
+	* fixincl.x: Regenerate.
+
+2007-07-05  Rainer Orth  <ro@TechFak.Uni-Bielefeld.DE>
+
+	PR libgcj/28190
+	* inclhack.def (irix_stdint_c99): New fix.
+	* fixincl.x: Regenerate.
+	* tests/base/stdint.h: New test.
+
+2007-06-06  Steve Ellcey  <sje@cup.hp.com>
+
+	PR testsuite/31828
+	* inclhack.def (hppa_hpux_fp_macros): New.
+	* fixincl.x: Regenerate.
+	* tests/base/math.h: Update.
+
+2007-03-26  Jakub Jelinek  <jakub@redhat.com>
+
+	* inclhack.def (glibc_c99_inline_1): Define __USE_EXTERN_INLINES
+	if __extern_inline or __GNUC_GNU_INLINE__ is defined rather than
+	__STDC_VERSION__ < 199901L.
+	(glibc_c99_inline_2): Replace #if __STDC_VERSION__ < 199901L
+	with #ifdef __GNUC_GNU_INLINE__.
+	(glibc_c99_inline_3): Add select.  Replace __STDC_VERSION__ >= 199901L
+	with defined(__GNUC_STDC_INLINE__).
+	(glibc_c99_inline_4): Change select, add second c_fix_arg.
+	Replace #if __STDC_VERSION__ < 199901L with
+	#ifdef __GNUC_GNU_INLINE__.
+	* fixincl.x: Regenerated.
+	* tests/base/bits/string2.h: Update.
+	* tests/base/sys/sysmacros.h: Update.
+	* tests/base/sys/stat.h: Update.
+
+2007-03-18  Krister Walfridsson  <cato@df.lth.se>
+
+	PR target/30058
+	* inclhack.def (netbsd_c99_inline_1): New.
+	* fixincl.x: Regenerate.
+	* tests/base/signal.h: New.
+
+2007-03-12  Brooks Moses  <brooks.moses@codesourcery.com>
+
+	* Makefile.in: Add dummy "install-info" target.
+
+2007-03-06  Joseph Myers  <joseph@codesourcery.com>
+
+	* mkheaders.in: Fix headers for each multilib required.
+
+2007-03-01  Brooks Moses  <brooks.moses@codesourcery.com>
+
+	* Makefile.in: Add dummy install-pdf target.
+
+2007-02-27  Joseph Myers  <joseph@codesourcery.com>
+
+	* mkheaders.in (incdir): Use include-fixed not include.
+
+2007-02-15  Brooks Moses  <brooks.moses@codesourcery.com>
+
+	* Makefile.in: Added "pdf" target to .PHONY.
+
+2007-02-05  Richard Guenther  <rguenther@suse.de>
+
+	* inclhack.def (glibc_c99_inline_4): Adjust selector to cope
+	with older glibc.  Adjust version number for C99.
+	* fixincl.x: Regenerated.
+
+2007-02-04  Mike Stump  <mrs@apple.com>
+
+	* mkheaders.in: Allow optional isysroot parameter.
+
+2007-02-03  Bruce Korb <bkorb@gnu.org>
+
+	* inclhack.def (glibc_c99_inline_4): replace "extern" only if
+	surrounded by space characters.
+
+2007-01-25  Daniel Franke <franke.daniel@gmail.com>
+
+	PR target/30272
+	* inclhack.def(broken_cabs): Also remove definition of cabsl.
+	* fixincl.x: Regenerate.
+	* tests/base/math.h: Update.
+
+2007-01-05  Bruce Korb <bkorb@gnu.org>, 
+	    Daniel Franke <franke.daniel@gmail.com>
+
+	PR target/30008
+	* fixincl.tpl (List): separate file name patterns with a NUL byte instead
+	of a vertical bar ("|").
+	* fixincl.c (fix_applies, machine_matches): Use fnmatch for name
+	matching.  Set SKIP_TEST flag if we are not to run a test.
+	* fixincl.x: Regenerate.
+	* inclhack.def (glibc_c99_inline_[1234], broken_cabs, broken_nan,
+	kandr_concat, sco_math): Replace lists of specfic file names by search
+	patterns.
+
+2006-12-12  Olivier Hainque  <hainque@adacore.com>
+
+	* fixincludes/mkfixinc.sh: Add "*-*-vxworks*" to the list of
+	targets for which a no-op fixer is appropriate.
+
+2006-11-07  Richard Guenther  <rguenther@suse.de>
+
+	* inclhack.def (glibc_c99_inline_2): Adjust for glibc 2.3
+	systems.
+	* fixincl.x: Regenerate.
+
+2006-11-02  Geoffrey Keating  <geoffk@apple.com>
+
+	* inclhack.def (glibc_c99_inline_1): New.
+	* inclhack.def (glibc_c99_inline_2): New.
+	* inclhack.def (glibc_c99_inline_3): New.
+	* inclhack.def (glibc_c99_inline_4): New.
+	* fixincl.x: Regenerate.
+	* tests/base/bits/string2.h: New.
+	* tests/base/sys/sysmacros.h: New.
+	* tests/base/sys/stat.h: Update.
+
+2006-11-01  Steve Ellcey  <sje@cup.hp.com>
+
+	* tests/base/sys/socket.h: Update.
+
+2006-10-31  Steve Ellcey  <sje@cup.hp.com>
+
+	* inclhack.def (hpux11_extern_sendfile): New.
+	(hpux11_extern_sendpath): New.
+	* fixincl.x: Regenerate.
+
+2006-10-29  Joseph Myers  <joseph@codesourcery.com>
+
+	* inclhack.def (AAB_fd_zero_asm_posix_types_h): Bypass on x86_64.
+	* fixincl.x: Regenerate.
+
+2006-10-10  Brooks Moses  <bmoses@stanford.edu>
+
+	* Makefile.in: Added empty "pdf" target.
+
+2006-10-07  John David Anglin  <dave.anglin@nrc-cnrc.gc.ca>
+
+	PR target/29300
+	* inclhack.def (hpux_pthread_initializers): New hack.
+	* tests/base/sys/pthread.h: New file.
+
+	* fixincl.x: Regenerate.
+
+2006-10-03  Uros Bizjak <uros@kss-loka.si>
+
+	* inclhack.def (glibc_mutex_init): Also fix
+	PTHREAD_MUTEX_(RECURSIVE|ERRORCHECK|ADAPTIVE)_NP and
+	PTHREAD_RWLOCK_PREFER_WRITER_NONRECURSIVE_NP initializers.
+	* tests/base/pthread.h: Update.
+
+	* fixincl.x: Regenerate.
+
+2006-10-01  Uros Bizjak <uros@kss-loka.si>
+
+	* inclhack.def (glibc_mutex_init): New fix.
+	* tests/base/pthread.h: Update.
+
+	* fixincl.x: Regenerate.
+
+2006-09-29  Kaveh R. Ghazi  <ghazi@caip.rutgers.edu>
+
+	* inclhack.def (solaris_mutex_init_2): Update for Solaris9.
+	Prevent it from running on solaris10 or later.
+	(solaris_once_init_2): Fix comment.
+	* tests/base/pthread.h: Update.
+
+	* fixincl.x: Regenerate.
+
+2006-09-27  Kaveh R. Ghazi  <ghazi@caip.rutgers.edu>
+
+	* inclhack.def (solaris_once_init_2): New fix.
+	* tests/base/pthread.h: Update.
+
+	* fixincl.x: Regenerate.
+
+2006-09-27  Kaveh R. Ghazi  <ghazi@caip.rutgers.edu>
+
+	* inclhack.def (solaris_mutex_init_2): Remove test for
+	PTHREAD_RWLOCK_INITIALIZER.
+	(solaris_rwlock_init_1): New.
+	* tests/base/pthread.h: Update.
+
+	* inclhack.def (solaris_once_init_1): New.
+	* tests/base/pthread.h: Adjust for new fix.
+
+	* fixincl.x: Regenerate.
+
+2006-07-17  Roger Sayle  <roger@eyesopen.com>
+
+	* tests/base/errno.h: New file.
+	* tests/base/architecture/ppc/math.h: Likewise.
+	* tests/base/ia64/sys/getppdp.h: Likewise.
+
+2006-07-10  Laurynas Biveinis  <laurynas.biveinis@gmail.com>
+
+	PR bootstrap/20437
+	* Makefile.in (configure, config.h.in): Change into $(srcdir)
+	before autoconf or autoheader call.
+
+2006-06-23  Steve Ellcey  <sje@cup.hp.com>
+
+	PR target/28084
+	* inclhack.def (hpux_extern_errno): New.
+	* fixincl.x: Regenerate.
+
+2006-05-23  Carlos O'Donell  <carlos@codesourcery.com>
+
+	* Makefile.in: Add dvi info html and install-html to .PHONY
+	Add install-html target.
+
+2006-05-16  Mike Stump  <mrs@apple.com>
+
+	* configure.ac: Add -Wno-overlength-strings.
+	* configure: Regenerate.
+
+2006-05-14  Bernhard Fischer  <aldot@gcc.gnu.org>
+
+	* README: Fix typo.
+
+2006-02-18  Steve Ellcey  <sje@cup.hp.com>
+
+	PR target/26189
+	* inclhack.def (hpux_spu_info): New.
+	* fixincl.x: Regenerate
+
+2006-01-31  Marcin Dalecki  <martin@dalecki.de>
+
+	* configure.ac: Check for asprintf, basename, vasprintf.
+	* config.h.in: Regenerate.
+	* configure: Regenerate.
+
+2006-01-19  Andrew Pinski  <pinskia@physics.uc.edu>
+
+	PR target/15642
+	* inclhack.def (AAB_darwin7_9_long_double_funcs [replace]): Define
+	__APPLE_CC_ as 1345.
+	(broken_nan): New.
+	* fixincl.x: Regenerate.
+
+2005-11-24  Bruce Korb  <bkorb@gnu.org>
+
+	* fixincl.c (write_replacement): "here strings" in AutoGen
+	often/generally don't have a terminating newline.  Check the
+	last byte for '\n'.
+
+2005-11-13  Andreas Jaeger  <aj@suse.de>
+
+	* check.tpl: Handle CVS additionally.
+
+2005-11-05  Andreas Jaeger  <aj@suse.de>
+
+	* check.tpl: Adopt for move to subversion.
+
+2005-09-15  Joseph S. Myers  <joseph@codesourcery.com>
+
+	PR c++/23139
+	* inclhack.def (huge_val_hex, huge_valf_hex, huge_vall_hex): New
+	fixes.
+	* fixincl.x: Regenerate.
+	* tests/base/bits/huge_val.h: New file.
+
+2005-08-14  Kelley Cook  <kcook@gcc.gnu.org>
+
+	* All files: Update with new FSF address.
+
+2005-07-16  Kaveh R. Ghazi  <ghazi@caip.rutgers.edu>
+
+	* Makefile.in (WARN_CFLAGS): New.
+	(.c.o): Add $(WARN_CFLAGS).
+	* aclocal.m4: Include ../config/warnings.m4.
+	* configure.ac: Invoke ACX_PROG_CC_WARNING_OPTS,
+	ACX_PROG_CC_WARNING_ALMOST_PEDANTIC and
+	ACX_PROG_CC_WARNINGS_ARE_ERRORS.
+	* fixopts.c (initialize_opts): Fix old-style definintion.
+
+	* configure: Regenerate.
+
+2005-06-24  Geoffrey Keating  <geoffk@geoffk.org>
+
+	* inclhack.def (AAB_darwin7_9_long_double_funcs): New.
+	(AAB_darwin7_9_long_double_funcs_2): New.
+	* fixincl.x: Regenerate.
+
+2005-06-15  Rainer Orth  <ro@TechFak.Uni-Bielefeld.DE>
+
+	PR libfortran/15266
+	* inclhack.def (broken_cabs): Mention IRIX 5/6 problem.
+	Use double quotes in select so \t matches tabs.
+	Add IRIX testcase.
+	* fixincl.x: Regenerate.
+	* tests/base/math.h [BROKEN_CABS_CHECK]: Adapt for new testcase.
+
+2005-05-22  Danny Smith  <dannysmith@users.souceforge.net>
+
+	PR target/21683
+	* fixincl.c: Don't include <sys/wait.h> if SEPARATE_FIX_PROC.
+
+2005-05-19  Eric Botcazou  <ebotcazou@libertysurf.fr>
+	    Joseph S. Myers  <joseph@codesourcery.com>
+
+	PR target/19933
+	PR target/21315
+	* inclhack.def: New fixes solaris_math_[1-9].
+	* fixincl.x: Regenerate.
+	* tests/base/iso/math_c99.h: New.
+
+2005-05-19  Kelley Cook  <kcook@gcc.gnu.org>
+
+	* aclocal.m4: Remove superfluous reference to accross.m4.
+
+2005-05-15  Gabriel Dos Reis  <gdr@integrable-solutions.net>
+
+	* fixlib.c (load_file_data): Use XRESIZVEC in lieu of xrealloc.
+	* server.c (load_data): Likewise.
+	(run_shell): Use XCNEW (char) in lieu of xcalloc (1, 1).
+	* fixincl.c: #include <sys/wait.h>
+	(run_compiles): Use XCNEWVEC instead of xcalloc.
+	(fix_with_system, start_fixer): Use XNEWVEC instead of xmalloc.
+	* fixfixes.c (FIX_PROC_HEAD, main): Likewise.
+
+2005-05-10  Joseph S. Myers  <joseph@codesourcery.com>
+
+	* inclhack.def (stdio_stdarg_h, stdio_va_list): Bypass on
+	*-*-solaris2.1[0-9]*, not just *-*-solaris2.1[0-9].
+	* fixincl.x: Regenerate.
+
+2005-05-06  Bruce Korb  <bkorb@gnu.org>
+	Joseph S. Myers <joseph@codesourcery.com>
+
+	* fixinc/inclhack.def: Correct backslashes
+	* fixinc/fixincl.x: regen
+
+2005-04-19  Kaveh R. Ghazi  <ghazi@caip.rutgers.edu>
+
+	* system.h (fopen, fdopen, freopen): Define these to the unlocked
+	libiberty functions.
+
+2005-04-11  Kaveh R. Ghazi  <ghazi@caip.rutgers.edu>
+
+	* configure.ac (fixincludes_UNLOCKED_FUNCS): New.
+	(AC_CHECK_FUNCS, AC_CHECK_DECLS): Check for fixincludes_UNLOCKED_FUNCS.
+	* system.h (putchar, getc, getchar, clearerr, feof, fileno,
+	fflush, fgetc, fgets, ferror, fread): Redefine to the associated
+	_unlocked function.
+	(fwrite_unlocked): Fix prototype.
+
+	* configure, config.h.in: Regenerate.
+
+2005-03-21  Zack Weinberg  <zack@codesourcery.com>
+
+	* Makefile.in: Set gcc_version directly, not via substitution.
+	(libsubdir): Use $(gcc_version), not $(version).
+	(mkheaders.almost): New rule.
+	(mkheaders): Generate from mkheaders.almost.
+	(clean): Also delete mkheaders.almost.
+	* aclocal.m4: Do not include ../config/gcc-version.m4.
+	* configure.ac: Do not invoke TL_AC_GCC_VERSION.  Generate
+	mkheaders.almost from mkheaders.in.
+	* configure: Regenerate.
+
+2005-03-21  Richard Guenther  <rguenth@gcc.gnu.org>
+
+	PR target/20166
+	* inclhack.def: Add fix for array of incomplete structures
+	in function prototype in pthread.h.
+	* fixincl.x: Regenerate.
+	* tests/base/pthread.h: Adjust.
+
+2005-03-15  Joseph S. Myers  <joseph@codesourcery.com>
+
+	* inclhack.def (hpux_htonl): New fix.
+	* tests/base/netinet/in.h: New test.
+	* fixincl.x: Regenerate.
+
+2005-02-23  James E Wilson  <wilson@specifixinc.com>
+
+	* Makefile.in (full-stamp, test-stamp, $(AF)): Add $(CFLAGS) to link.
+
+2004-12-13  Andrew Pinski  <pinskia@physics.uc.edu>
+
+	PR 18458
+	* Makefile.in (install): Add @EXEEXT@ to the end of the program name,
+	fixincl.
+
+2004-12-02  Richard Sandiford  <rsandifo@redhat.com>
+
+	* configure.ac: Use TL_AC_GCC_VERSION to set gcc_version.
+	* aclocal.m4: Include ../config/gcc-version.m4.
+	* configure: Regenerate.
+
+2004-11-26  Mark Mitchell  <mark@codesourcery.com>
+
+	* inclhack.def (gnu_types): Do not use on Solaris 2.1x.
+	(stdio_va_list): Likewise.
+	(stdio_stdarg.h): Likewise.
+	(solaris_stdio_tag): Add bypass.
+	* fixincl.x: Regenerated.
+
+2004-11-23  Geoffrey Keating  <geoffk@apple.com>
+
+	* mkfixinc.sh: Check error code from 'cat'.  Don't try running
+	built fixincl program.
+	* mkheaders.in: Use @SHELL@ rather than ${SHELL} to avoid picking
+	up csh from user.
+
+2004-11-20  Roger Sayle  <roger@eyesopen.com>
+
+	* inclhack.def (alpha_pthread_init): Fix technical problems with
+	the last check-in caused by CVS variable substitution.
+	* fixincl.x: Likewise.
+	* tests/base/pthread.h: Likewise.
+
+2004-11-20  Roger Sayle  <roger@eyesopen.com>
+	    Bruce Korb  <bkorb@gnu.org>
+
+	* inclhack.def (alpha_pthread_init): New fix.
+	* fixincl.x: Regenerate.
+	* tests/base/pthread.h: Update for new test.
+
+2004-11-15  Bruce Korb  <bkorb@gnu.org>
+
+	* fixincl.c(fix_with_system): correct misuse of variables and
+	incorrect application of "sizeof()".
+
+2004-11-13  Joseph S. Myers  <joseph@codesourcery.com>
+
+	* inclhack.def (hpux_maxint, limits_ifndefs, math_huge_val_ifndef,
+	svr4__p, undefine_null): Remove.
+	* fixincl.x: Regenerate.
+	* tests/base/AvailabilityMacros.h, tests/base/com_err.h: New.
+	* tests/base/sys/param.h: Remove.
+	* tests/base/curses.h, tests/base/math.h, tests/base/testing.h,
+	tests/base/sys/limits.h: Update.
+
+2004-11-12  Mike Stump  <mrs@apple.com>
+
+	* Makefile.in (html): Add html generation support.
+
+2004-11-12  Joseph S. Myers  <joseph@codesourcery.com>
+
+	* inclhack.def (sco_math): Bypass on __GNUG__.
+	(sysz_stdlib_for_sun): Bypass on _CLASSIC_ANSI_TYPES.
+	* fixincl.x: Regenerate.
+
+2004-11-09  Joseph S. Myers  <joseph@codesourcery.com>
+
+	* inclhack.def (hpux8_bogus_inlines): Bypass on __GNUG__.
+	(int_abort_free_and_exit, sun_malloc, sysv68_string): Bypass on
+	_CLASSIC_ANSI_TYPES.
+	(sun_auth_proto): Bypass on __cplusplus.
+	* fixincl.x: Regenerate.
+
+2004-11-05  Geoffrey Keating  <geoffk@apple.com>
+
+	* Makefile.in (mostlyclean): Add fixinc.sh.
+	(clean): Add mkheaders.
+	(distclean): New.
+	(dvi): New.
+	(info): New.
+	(installcheck): New.
+
+2004-11-05  Paolo Bonzini  <bonzini@gnu.org>
+
+	* Makefile.in (mostlyclean, distclean): New targets.
+
+2004-11-04  Geoffrey Keating  <geoffk@apple.com>
+
+	* configure.ac: Add code to determine noncanonical_target,
+	local_prefix, gcc_version; process mkheaders.in to make mkheaders.
+	* configure: Regenerate.
+	* fixinc.in: Move here from gcc/; fix many cross-hosting bugs.
+	* mkfixinc.sh: Move here from gcc/; update for changes to fixinc.in.
+	* mkheaders.in: Move here from gcc/; remove some unnecessary macros;
+	update for changes to fixinc.in.
+	* Makefile.in: Add many new macros.
+	(install): New target.
+	(mkheaders): New target.
+	(fixinc.sh): New target.
+	(all): Add mkheaders and fixinc.sh.
+	* README-fixinc: Move here from gcc/.
+
+2004-11-01  Mike Stump  <mrs@apple.com>
+
+	* inclhack.def (stdio_va_list): Break out clients from here...
+	(stdio_va_list_clients): ...to here.  Also, don't fix if stdarg.h is
+	included or ifdef va_start.
+	* fixincl.x: Regenerate.
+
+2004-10-28  Mike Stump  <mrs@apple.com>
+
+	* inclhack.def (void_null): Avoid changing NULL on C++ friendly
+	systems.
+	* fixincl.x: Regenerate.
+
+2004-10-27  Geoffrey Keating  <geoffk@apple.com>
+
+	* inclhack.def (darwin_gcc4_breakage): New.
+	* fixincl.x: Regenerate.
+
+2004-10-27  Aaron W. LaFramboise  <aaronavay62@aaronwl.com>
+
+	PR bootstrap/17832
+
+	* fixfixes.c (main): Check for _PC_NAME_MAX.
+
+2004-10-27  Paolo Bonzini  <bonzini@gnu.org>
+
+	PR other/17991
+
+	* configure.ac: Fix typo.
+	* configure: Regenerate.
+	* fixincl.c (fix_with_system): tSCC is not a pointer.  Fix.
+
+2004-10-20  Aaron W. LaFramboise  <aaronavay62@aaronwl.com>
+
+	PR bootstrap/17832
+
+	* fixincl.c (SIGCHLD): Remove definition.
+	(initialize): Remove SIGIOT and SIGPIPE checks.
+	(create_file): Fix mkdir() for Win32.
+	(internal_fix): Use dup2() instead of fcntl().
+
+	* fixlib.h (SIGQUIT): Define if undefined.
+	(SIGIOT): Same.
+	(SIGPIPE): Same.
+	(SIGALRM): Same.
+	(SIGKILL): Same.
+
+	* procopen.c (chain_open): Use dup2() instead of fcntl().
+
+2004-08-14  Paolo Bonzini  <bonzini@gnu.org>
+
+	PR other/17991
+
+	* Makefile.in (ALLOBJ, TESTOBJ, FIXOBJ): Add fixopts.o.
+	Update copyright year.
+	* fixfixes.c (main): Call initialize_opts from fixopts.c.
+	* fixincl.c (initialize): Call initialize_opts from fixopts.c,
+	do not include code for parsing options (environment vars).
+	(fix_with_system): Use a search path for applyfix, so that you
+	can run the test suite with two-process fixincludes.
+	* fixopts.c: New file.
+	* configure.ac: Add --enable-twoprocess.  Export ac_exeext
+	to config.h.  Default to --enable-twoprocess for MinGW32.
+	* config.h.in: Regenerate.
+	* configure: Regenerate.
+
+2004-10-04  Loren J. Rittle  <ljrittle@acm.org>
+
+	* tests/base/sys/cdefs.h: Update from test area.
+
+2004-09-17  Roger Sayle  <roger@eyesopen.com>
+
+	* inclhack.def (linux_ia64_ucontext): New fix.
+	* fixincl.x: Regenerate.
+	* tests/base/sys/ucontext.h: New file.
+
+2004-09-15  Roger Sayle  <roger@eyesopen.com>
+
+	* tests/base/sys/time.h: Correct mismatch in 2004-09-10 check-in.
+	* tests/base/stdlib.h: Likewise.
+
+2004-09-13  Loren J. Rittle  <ljrittle@acm.org>
+
+	* inclhack.def (freebsd_gcc4_breakage): Add.
+	* fixincl.x: Regenerate.
+	* tests/base/sys/cdefs.h: Update for new test.
+
+2004-09-10  Adam Nemet  <anemet@lnxw.com>
+
+	* inclhack.def (lynx_void_int): Remove.
+	(lynxos_fcntl_proto): Remove.
+	(lynxos_no_warning_in_sys_time_h): New fix.
+	(lynxos_missing_putenv): New fix.
+	* fixincl.x: Regenerate.
+	* tests/base/fcntl.h: Remove.
+	* tests/base/sys/time.h: Update from test area.
+	* tests/base/curses.h: Likewise.
+	* tests/base/stdlib.h: Likewise.
+
+2004-09-03  Jan Beulich  <jbeulich@novell.com>
+
+	* inclhack.def: Suppress exception_structure and math_exception
+	for NetWare headers.
+	* fixincl.x: Regenerate.
+
+2004-08-31  Paolo Bonzini  <bonzini@gnu.org>
+
+	* .cvsignore: New.
+	* Makefile.in: From gcc/fixinc/Makefile.in, making it fully
+	autoconfiscated.
+	* configure.ac: New.
+	* config.h.in: Generate.
+	* configure: Generate.
+	* aclocal.m4: New.
+	* fixlib.h: Remove inclusions of gcc files.
+	* system.h: New.
+
+	Other files copied from gcc/fixinc.

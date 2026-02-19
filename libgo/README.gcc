@@ -1,0 +1,6 @@
+The files in this directory are mirrored from the gofrontend project
+hosted at https://go.googlesource.com/gofrontend/ and mirrored at
+https://github.com/golang/gofrontend.  These files are the
+ones in the libgo subdirectory of that project.
+
+To change these files, see https://go.dev/doc/gccgo_contribute.

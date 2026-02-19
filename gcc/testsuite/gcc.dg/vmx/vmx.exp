@@ -1,0 +1,57 @@
+#   Copyright (C) 2004-2026 Free Software Foundation, Inc.
+
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+# 
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+# 
+# You should have received a copy of the GNU General Public License
+# along with GCC; see the file COPYING3.  If not see
+# <http://www.gnu.org/licenses/>.
+
+# GCC testsuite that uses the `dg.exp' driver.
+
+# Load support procs.
+load_lib gcc-dg.exp
+
+# Skip these tests for non-PowerPC targets and for targets where AltiVec
+# is not supported.
+if {![istarget powerpc*-*-*]
+    || ![check_effective_target_powerpc_altivec_ok] } {
+    return
+}
+
+# If a testcase doesn't have special options, use these.
+# -pedantic-errors is inappropriate here, as this subdirectory tests
+# nothing but extensions.
+global DEFAULT_VMXCFLAGS
+if ![info exists DEFAULT_VMXCFLAGS] then {
+    set DEFAULT_VMXCFLAGS "-maltivec -mabi=altivec -std=gnu99 -mno-vsx"
+}
+
+# If the target system supports AltiVec instructions, the default action
+# for a test is 'run', otherwise it's 'compile'.
+global dg-do-what-default
+set save-dg-do-what-default ${dg-do-what-default}
+if { [check_vmx_hw_available ] } {
+  set dg-do-what-default run
+} else {
+  set dg-do-what-default compile
+}
+
+# Initialize `dg'.
+dg-init
+
+# Main loop.
+gcc-dg-runtest [lsort [glob -nocomplain $srcdir/$subdir/*.c]] \
+	"" $DEFAULT_VMXCFLAGS
+
+# All done.
+dg-finish
+
+set dg-do-what-default ${save-dg-do-what-default}

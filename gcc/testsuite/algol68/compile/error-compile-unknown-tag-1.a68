@@ -1,0 +1,4 @@
+module Bar = def pub int idpublic = 30;
+                 int idprivate = 40;
+                 xxx { dg-error "" }
+             fed

@@ -1,0 +1,55 @@
+# Copyright (C) 2001-2026 Free Software Foundation, Inc.
+#
+# This file is part of GCC.
+#
+# GCC is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3, or (at your option)
+# any later version.
+#
+# GCC is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with GCC; see the file COPYING3.  If not see
+# <http://www.gnu.org/licenses/>.
+
+# This file lists all the sources which should *not* be scanned for
+# strings to translate.  Only the first word on each line is used; the
+# rest is ignored.  Only files with an extension of .c, .cc, .h, or
+# .def are examined to begin with.
+
+#   These files are part of libgcc, or target headers provided by gcc.
+gcov-io.h
+gcov-iov.c
+limitx.h
+limity.h
+
+#   These programs are meant to be executed only by GCC maintainers or
+#   installers.  Such files do not need to be translated, as these
+#   people typically need to be able to read English anyway.
+genattr.cc
+genattrtab.cc
+genautomata.cc
+gencheck.cc
+gencodes.cc
+genconditions.cc
+genconfig.cc
+genconstants.cc
+genemit.cc
+genextract.cc
+genflags.cc
+gengenrtl.cc
+gengtype.cc
+genhooks.cc
+genmodes.cc
+genopinit.cc
+genoutput.cc
+genpeep.cc
+genpreds.cc
+genrecog.cc
+gensupport.cc
+gensupport.h
+read-md.cc

@@ -1,0 +1,269 @@
+# Copyright (C) 2006-2026 Free Software Foundation, Inc.
+
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+# 
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+# 
+# You should have received a copy of the GNU General Public License
+# along with GCC; see the file COPYING3.  If not see
+# <http://www.gnu.org/licenses/>.
+
+# This file was written by James A. Morrison (ja2morri@uwaterloo.ca)
+# based on gcc.exp written by Rob Savoye (rob@cygnus.com).
+
+# This file is loaded by the tool init file (eg: unix.exp).  It provides
+# default definitions for gnat_start, etc. and other supporting cast members.
+
+load_lib prune.exp
+load_lib gcc-defs.exp
+load_lib gcc.exp
+load_lib timeout.exp
+
+#
+# GNAT_UNDER_TEST is the compiler under test.
+#
+
+#
+# default_gnat_version -- extract and print the version number of the compiler
+#
+
+proc default_gnat_version { } {
+    global GNAT_UNDER_TEST
+
+    gnat_init
+
+    # ignore any arguments after the command
+    set compiler [lindex $GNAT_UNDER_TEST 0]
+
+    if ![is_remote host] {
+	set compiler_name [which $compiler]
+    } else {
+	set compiler_name $compiler
+    }
+
+    # verify that the compiler exists
+    if { $compiler_name != 0 } then {
+	set tmp [remote_exec host "$compiler --version"]
+	set status [lindex $tmp 0]
+	set output [lindex $tmp 1]
+	regexp "^GNATMAKE (\[^\n\r\]*)" $output verline version
+	if { $status == 0 && [info exists version] } then {
+	    # test_summary expects "version" as second field.
+	    clone_output "$compiler_name version $version\n"
+	} else {
+	    clone_output "Couldn't determine version of $compiler_name: $output\n"
+	}
+    } else {
+	# compiler does not exist (this should have already been detected)
+	warning "$compiler does not exist"
+    }
+}
+
+#
+# gnat_version -- Call default_gnat_version, so we can override it if needed.
+#
+
+proc gnat_version { } {
+    default_gnat_version
+}
+
+#
+# gnat_init -- called at the start of each .exp script.
+#
+
+set gnat_initialized 0
+
+proc gnat_init { args } {
+    global rootme
+    global tmpdir
+    global libdir
+    global gluefile wrap_flags
+    global gnat_initialized
+    global GNAT_UNDER_TEST
+    global TOOL_EXECUTABLE
+    global gnat_target_current
+    global gcc_warning_prefix
+    global gcc_error_prefix
+
+    set gnat_target_current ""
+
+    if { $gnat_initialized == 1 } { return }
+
+    if ![info exists GNAT_UNDER_TEST] then {
+	if [info exists TOOL_EXECUTABLE] {
+	    set GNAT_UNDER_TEST "$TOOL_EXECUTABLE"
+	} else {
+	    set GNAT_UNDER_TEST "[local_find_gnatmake]"
+	}
+    }
+
+    if ![info exists tmpdir] then {
+	set tmpdir /tmp
+    }
+
+    # Setting these variables enables the use of relative line numbers
+    # in dg-error and dg-warning wrappers in gcc-dg.exp.
+    set gcc_warning_prefix ""
+    set gcc_error_prefix ""
+}
+
+proc gnat_target_compile { source dest type options } {
+    global rootme
+    global tmpdir
+    global gluefile wrap_flags
+    global srcdir
+    global GNAT_UNDER_TEST
+    global TOOL_OPTIONS
+    global gnat_target_current
+    global TEST_ALWAYS_FLAGS
+
+    # dg-require-effective-target tests must be compiled as C.
+    if [ string match "*.c" $source ] then {
+	return [gcc_target_compile $source $dest $type $options]
+    }
+
+    # If we detect a change of target, we need to recompute both
+    # GNAT_UNDER_TEST and the appropriate RTS.
+    if { $gnat_target_current!="[current_target_name]" } {
+	set gnat_target_current "[current_target_name]"
+	if [info exists TOOL_OPTIONS] {
+	    set rtsdir "[get_multilibs ${TOOL_OPTIONS}]/libada"
+	} else {
+	    set rtsdir "[get_multilibs]/libada"
+	}
+	if [info exists TOOL_EXECUTABLE] {
+	    set GNAT_UNDER_TEST "$TOOL_EXECUTABLE"
+	} else {
+	    set GNAT_UNDER_TEST "[local_find_gnatmake]"
+	}
+        set GNAT_UNDER_TEST "$GNAT_UNDER_TEST --RTS=$rtsdir"
+
+	# gnatlink looks for system.ads itself and has no --RTS option, so
+	# specify via environment
+	setenv ADA_INCLUDE_PATH "$rtsdir/adainclude"
+	setenv ADA_OBJECTS_PATH "$rtsdir/adainclude"
+	# Always log so compilations can be repeated manually.
+	verbose -log "ADA_INCLUDE_PATH=$rtsdir/adainclude"
+	verbose -log "ADA_OBJECTS_PATH=$rtsdir/adainclude"
+    }
+
+    lappend options "compiler=$GNAT_UNDER_TEST -q -f"
+    lappend options "timeout=[timeout_value]"
+
+    if { [target_info needs_status_wrapper]!="" && [info exists gluefile] } {
+	lappend options "libs=${gluefile}"
+	lappend options "ldflags=$wrap_flags"
+    }
+
+    # TEST_ALWAYS_FLAGS are flags that should be passed to every
+    # compilation.  They are passed first to allow individual
+    # tests to override them.
+    if [info exists TEST_ALWAYS_FLAGS] {
+	set options [concat "{additional_flags=$TEST_ALWAYS_FLAGS}" $options]
+    }
+
+    # TOOL_OPTIONS must come first, so that it doesn't override testcase
+    # specific options.
+    if [info exists TOOL_OPTIONS] {
+	set options [concat "additional_flags=$TOOL_OPTIONS" $options]
+    }
+
+    set options [concat "{ada}" $options]
+
+    return [target_compile $source $dest $type $options]
+}
+
+# Prune messages from GNAT that aren't useful.
+
+proc prune_gnat_output { text } {
+    #send_user "Before:$text\n"
+    regsub -all "(^|\n)\[^\n\]*: In (function|method) \[^\n\]*" $text "" text
+    regsub -all "(^|\n)\[^\n\]*: At top level:\[^\n\]*" $text "" text
+
+    # prune the output from gnatmake.
+    regsub -all "(^|\n)\[^\n\]*gnatmake: [^\n\]*" $text "" text
+
+    # It would be nice to avoid passing anything to gnat that would cause it to
+    # issue these messages (since ignoring them seems like a hack on our part),
+    # but that's too difficult in the general case.  For example, sometimes
+    # you need to use -B to point gnat at crt0.o, but there are some targets
+    # that don't have crt0.o.
+    regsub -all "(^|\n)\[^\n\]*file path prefix \[^\n\]* never used" $text "" text
+    regsub -all "(^|\n)\[^\n\]*linker input file unused since linking not done" $text "" text
+
+    #send_user "After:$text\n"
+
+    return $text
+}
+
+# find_gnatmake for some version of DejaGnu will hardcode a -I...rts/ada flag
+# which prevent multilib from working, so define a new one.
+
+proc local_find_gnatmake {} {
+    global target_triplet
+    global tool_root_dir
+    global host_triplet
+
+    if ![is_remote host] {
+	if { "$host_triplet" == "$target_triplet" } {
+	    set gnatmake gnatmake
+	} else {
+	    set gnatmake gnatmake-cross
+	}
+	set file [lookfor_file $tool_root_dir $gnatmake]
+        if { $file == "" } {
+	    set file [lookfor_file $tool_root_dir gcc/$gnatmake]
+        }
+        if { $file != "" } {
+	    set root [file dirname $file]
+	    # Need to pass full --GCC, including multilib flags, to gnatlink,
+	    # otherwise gcc from PATH is invoked.
+	    set dest [target_info name]
+	    set gnatlink_gcc "--GCC=$root/xgcc -B$root [board_info $dest multilib_flags]"
+	    # Escape blanks to get them through DejaGnu's exec machinery.
+	    regsub -all {\s} "$gnatlink_gcc" {\\&} gnatlink_gcc
+	    set CC "$file --GCC=$root/xgcc --GNATBIND=$root/gnatbind --GNATLINK=$root/gnatlink -cargs -B$root -largs $gnatlink_gcc -margs";
+        } else {
+	    set CC [transform gnatmake]
+        }
+    } else {
+        set CC [transform gnatmake]
+    }
+    return $CC
+}
+
+proc find_gnatclean {} {
+    global target_triplet
+    global tool_root_dir
+    global host_triplet
+
+    if ![is_remote host] {
+	if { "$host_triplet" == "$target_triplet" } {
+	    set gnatclean gnatclean
+	} else {
+	    set gnatclean gnatclean-cross
+	}
+	set file [lookfor_file $tool_root_dir $gnatclean]
+        if { $file == "" } {
+	    set file [lookfor_file $tool_root_dir gcc/$gnatclean]
+        }
+        if { $file != "" } {
+	    set gnatclean $file;
+        } else {
+	    set gnatclean [transform gnatclean]
+        }
+    } else {
+        set gnatclean [transform gnatclean]
+    }
+    return $gnatclean
+}
+
+# Local Variables:
+# tcl-indent-level:4
+# End:

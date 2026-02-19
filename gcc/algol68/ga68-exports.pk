@@ -1,0 +1,511 @@
+/* ga68-exports.pk - GCC Algol 68 exports format.
+
+   Copyright (C) 2025 Jose E. Marchesi
+
+   This program is free software: you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation, either version 3 of the License, or
+   (at your option) any later version.
+
+   This program is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+
+   You should have received a copy of the GNU General Public License
+   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+
+/* GNU Algol 68 source files (compilation units, or "packets") may
+   contain either a single particular-program or a set of one or more
+   module definitions.
+
+   When compiling a compilation unit containing module definitions,
+   the ga68 compiler emits an ELF section called .a68_exports along
+   with the usual compiled object code.  This section contains
+   information that reflects the PUBlicized identifiers exported by
+   module definitions: modes, operators, procedures, identifiers,
+   other module definitions, etc.  This interface is complete enough
+   to allow other compilation units to access these declarations.
+
+   The information that is in a module interface is defined in the MR
+   document using a sort of grammar.  It is:
+
+     module interface :
+       unique code & external symbol & hole description option &
+       mode table & definition summary.
+
+     definition summary :
+       set of definition groups.
+
+     definition group :
+       module identity & set of definition extracts.
+
+     definition extract :
+       mode extract ;
+       operation extract ;
+       priority extract ;
+       identifier extract ;
+       definition module extract ;
+       invocation extract.
+
+     mode extract :
+       mode marker & mode indication & mode & mdextra.
+
+     operation extract :
+       operation marker & operator & mode & mdextra.
+
+     priority extract :
+       priority marker & operator & integer priority & mdextra.
+
+     identifier extract :
+       identifier marker & identifier & mode & mdextra.
+
+     definition module extract :
+       definition module marker & definition module indication &
+       definition summary & mdextra.
+
+     invocation extract :
+       module identity.
+
+     mdextra :
+       extra machine-dependent information.
+
+   This pickle precisely describes how the module interfaces are
+   encoded in the .a68_exports ELF section, which are of type PROGBITS
+   and thus are concatenated by ELF linkers.  This works well because
+   each compilation unit may contain several module definitions, but a
+   module definition cannot be splitted among several compilation
+   units.  */
+
+/* The exports format is versioned.  A bump in the format version
+   number indicates the presence of a backward incompatibility.  This
+   is important because .ga68_exports section may contain module
+   definition interfaces having different versions, so compilers and
+   tools designed to operate on version "n" must ignore, or error on,
+   modules definition interfaces with later versions.  */
+
+var ga68_exports_ver = 1;
+
+/* References other sections and the .ga68_export section itself are
+   realized via link-time relocations:
+
+   References to code addresses are relative to some text section.
+   References to data in .ga68_export are relative to the start of the
+   section.  */
+
+load elf;
+
+type ga68_text_reloc_64 = Elf64_Addr;
+type ga68_data_reloc_64 = Elf64_Addr;
+type ga68_text_reloc_32 = Elf32_Addr;
+type ga68_data_reloc_32 = Elf32_Addr;
+
+/* Strings are encoded in-place and are both pre-sized and
+   NULL-terminated.  This is to ease reading them quickly and
+   efficiently.  Note that the size includes the final NULL
+   character.  */
+
+type ga68_str =
+  struct
+  {
+    offset<uint<16>,B> len;
+    string s: s'size == len;
+  };
+
+/* Each module definition interface includes a table of modes, that
+   contains not only the modes for which mode extracts exist, but also
+   the indirectly referred modes: since Algol 68 used structural
+   equivalence of modes, each mode has to be defined fully.  The
+   encoding therefore tries to be as compact as possible while
+   allowing being read with a reasonable level of performance and
+   convenience.  */
+
+var GA68_MODE_UNKNOWN   = 0UB,
+    GA68_MODE_VOID      = 1UB,
+    GA68_MODE_INT       = 2UB,
+    GA68_MODE_REAL      = 3UB,
+    GA68_MODE_BITS      = 4UB,
+    GA68_MODE_BYTES     = 5UB,
+    GA68_MODE_CHAR      = 6UB,
+    GA68_MODE_BOOL      = 7UB,
+    GA68_MODE_CMPL      = 8UB,
+    GA68_MODE_ROW       = 9UB,
+    GA68_MODE_STRUCT    = 10UB,
+    GA68_MODE_UNION     = 11UB,
+    GA68_MODE_NAME      = 12UB,
+    GA68_MODE_PROC      = 13UB,
+    GA68_MODE_STRING    = 14UB,
+    GA68_MODE_FLEX      = 15UB;
+
+type ga68_mode_64 =
+  struct
+  {
+    uint<8> kind : kind in [GA68_MODE_VOID, GA68_MODE_INT,
+                            GA68_MODE_REAL, GA68_MODE_BITS,
+                            GA68_MODE_BYTES, GA68_MODE_CHAR,
+                            GA68_MODE_CMPL, GA68_MODE_ROW,
+                            GA68_MODE_STRUCT, GA68_MODE_UNION,
+                            GA68_MODE_NAME, GA68_MODE_PROC,
+                            GA68_MODE_FLEX];
+
+    union
+    {
+      int<8> sizety : kind in [GA68_MODE_INT, GA68_MODE_REAL,
+                               GA68_MODE_CMPL, GA68_MODE_BITS,
+                               GA68_MODE_BYTES];
+      struct
+      {
+        ga68_data_reloc_64 mode;
+      } name : kind == GA68_MODE_NAME || kind == GA68_MODE_FLEX;
+
+      struct
+      {
+        type triplet = struct { ga68_text_reloc_64 lb; ga68_text_reloc_64 ub; };
+
+        uint<8> ndims;
+        triplet[ndims] dims;
+        ga68_data_reloc_64 row_of;
+      } row : kind == GA68_MODE_ROW;
+
+      struct
+      {
+        type field = struct { ga68_data_reloc_64 mode; ga68_str name; };
+
+        uint<16> nfields;
+        field[nfields] fields;
+      } sct : kind == GA68_MODE_STRUCT;
+
+      /* When assigning overhead values to union modes, the list of
+	 united modes is ordered so that overhead values are assigned
+         consistently across compilation units.  Overhead values are
+         assigned to the modes in the ordered list in ascending order
+         starting from zero.
+
+         Modes are ordered in the following order:
+
+           UNION
+           STRUCT
+           STANDARD
+           ROWS
+           REF
+           PROC
+           FLEX
+
+	 A STANDARD mode is one of the following: (VOID, STRING, REAL,
+	 INT, COMPL, CHAR, BYTES, BOOL, BITS)
+
+         When two modes occupy the same row in the list above, the
+         ordering is determined as follows:
+
+         UNION:
+
+           The union with greater number of united modes is ordered
+	   first.  Unions having an equal number of united modes are
+           ordered based on the ordering of their first non-equivalent
+           mode.
+
+         STRUCT:
+
+           The struct with the largest number of fields is ordered first.
+           Structs having an equal number of fields are ordered based
+           on the first field that has non-equivalent modes or
+           non-matching field selectors.  If the modes are not equivalent,
+           the structs are ordered in the ordering of those modes.
+           Otherwise, the struct are ordered in the lexicographical
+           order of the field selectors.
+
+         STANDARD:
+
+           The mode with the greatest size of longsety and smaller size
+           of shortsety is ordered first.  If the size of shortsety and
+	   longsety are equal, the modes are ordered as follows:
+
+               VOID
+               STRING
+               REAL
+               INT
+               COMPL
+               CHAR
+               BYTES
+               BOOL
+               BITS
+
+         ROWS:
+
+           The mode with greater number of dimensions is ordered first.
+           Otherwise, the ordering of the modes of the elements is used.
+
+         REF:
+
+           The ordering is the ordering of the referred mode.
+
+         PROC:
+
+           The ordering is the ordering of the mode of the value yielded
+           by the procedure.  If the procedure yields values of the the
+           same mode, the procedure with greater number of arguments is
+           ordered first.  If the number of arguments is equal, the
+           ordering is the ordering of the modes of the first arguments
+           having non-equivalent modes.
+
+         FLEX:
+
+           The ordering is the ordering of the referred mode. */
+
+      struct
+      {
+        uint<8> nmodes;
+        ga68_data_reloc_64[nmodes] modes;
+      } uni : kind == GA68_MODE_UNION;
+
+      struct
+      {
+        type arg = struct { ga68_data_reloc_64 mode; ga68_str name; };
+
+        ga68_data_reloc_64 ret_mode;
+        uint<8> nargs;
+        arg[nargs] args;
+      } routine : kind == GA68_MODE_PROC;
+
+      struct { } _ : kind in [GA68_MODE_UNKNOWN, GA68_MODE_VOID,
+                              GA68_MODE_CHAR, GA68_MODE_BOOL,
+                              GA68_MODE_STRING];
+
+    } data;
+  };
+
+type ga68_mode_32 =
+  struct
+  {
+    uint<8> kind : kind in [GA68_MODE_VOID, GA68_MODE_INT,
+                            GA68_MODE_REAL, GA68_MODE_BITS,
+                            GA68_MODE_BYTES, GA68_MODE_CHAR,
+                            GA68_MODE_CMPL, GA68_MODE_ROW,
+                            GA68_MODE_STRUCT, GA68_MODE_UNION,
+                            GA68_MODE_NAME, GA68_MODE_PROC,
+                            GA68_MODE_FLEX];
+
+    union
+    {
+      int<8> sizety : kind in [GA68_MODE_INT, GA68_MODE_REAL,
+                               GA68_MODE_CMPL, GA68_MODE_BITS,
+                               GA68_MODE_BYTES];
+      struct
+      {
+        ga68_data_reloc_32 mode;
+      } name : kind == GA68_MODE_NAME || kind == GA68_MODE_FLEX;
+
+      struct
+      {
+        type triplet = struct { ga68_text_reloc_32 lb; ga68_text_reloc_32 ub; };
+
+        uint<8> ndims;
+        triplet[ndims] dims;
+        ga68_data_reloc_32 row_of;
+      } row : kind == GA68_MODE_ROW;
+
+      struct
+      {
+        type field = struct { ga68_data_reloc_32 mode; ga68_str name; };
+
+        uint<16> nfields;
+        field[nfields] fields;
+      } sct : kind == GA68_MODE_STRUCT;
+
+      struct
+      {
+        uint<8> nmodes;
+        ga68_data_reloc_32[nmodes] modes;
+      } uni : kind == GA68_MODE_UNION;
+
+      struct
+      {
+        type arg = struct { ga68_data_reloc_32 mode; ga68_str name; };
+
+        ga68_data_reloc_32 ret_mode;
+        uint<8> nargs;
+        arg[nargs] args;
+      } routine : kind == GA68_MODE_PROC;
+
+      struct { } _ : kind in [GA68_MODE_UNKNOWN, GA68_MODE_VOID,
+                              GA68_MODE_CHAR, GA68_MODE_BOOL,
+                              GA68_MODE_STRING];
+
+    } data;
+  };
+
+/* Each module definition interface includes a table of "extracts",
+   one per identifier PUBlicized by the module definition.
+
+   Mode extracts represent declarations of mode indications, like for
+   example `mode Foo = struct (int i, real r)'.
+
+   Identifier extracts represent declarations of constants, variables,
+   procedures and operators.  Examples are `real pi = 3.14', `int
+   counter', `proc double = (int a) int : a * 2' and `op // = (int a,
+   b) int: a % b'.
+
+   Priority extracts represent declarations of priorities for dyadic
+   operators, like for example `prio // = 9'.
+
+   Finally, module extracts represent the PUBlication of some other
+   module definition.  For example, the module definition `mode Foo =
+   access A, B def ... fed' will include module extracts for both "A"
+   and "B" in its interface.
+
+   Some of the extracts may need some additional compiler-specific or
+   machine-specific information, whose contents are not specified
+   here.  */
+
+var GA68_EXTRACT_MODU  = 0UB,
+    GA68_EXTRACT_IDEN = 1UB,
+    GA68_EXTRACT_MODE = 2UB,
+    GA68_EXTRACT_PRIO = 3UB,
+    GA68_EXTRACT_OPER = 4UB;
+
+type ga68_extract_64 =
+  struct
+  {
+    Elf64_Off extract_size;
+    union
+    {
+      struct
+      {
+        uint<8> mark : mark == GA68_EXTRACT_MODU;
+        ga68_str module_indication;
+      } module;
+
+      struct
+      {
+        uint<8> mark : mark == GA68_EXTRACT_IDEN;
+        ga68_str name;
+        ga68_data_reloc_64 mode;
+      } identifier;
+
+      struct
+      {
+        uint<8> mark : mark == GA68_EXTRACT_MODE;
+        ga68_str mode_indication;
+        ga68_data_reloc_64 mode;
+      } mode;
+
+      struct
+      {
+        uint<8> mark : mark == GA68_EXTRACT_PRIO;
+        ga68_str opname;
+        uint<8> prio;
+      } prio;
+
+      struct
+      {
+        uint<8> mark : mark == GA68_EXTRACT_OPER;
+        ga68_str opname;
+        ga68_mode_64 mode;
+      } oper;
+
+    } extract : extract'size == extract_size;
+
+    Elf64_Off mdextra_size;
+    uint<8>[mdextra_size] data;
+  };
+
+type ga68_extract_32 =
+  struct
+  {
+    type ga68_mdextra =
+      struct
+        {
+          Elf32_Off mdextra_size;
+          uint<8>[mdextra_size] data;
+        };
+
+    Elf32_Off extract_size;
+    union
+    {
+      struct
+      {
+        uint<8> mark : mark == GA68_EXTRACT_MODU;
+        ga68_str module_indication;
+      } module;
+
+      struct
+      {
+        uint<8> mark : mark == GA68_EXTRACT_IDEN;
+        ga68_str name;
+        ga68_data_reloc_32 mode;
+        ga68_mdextra mdextra;
+      } identifier;
+
+      struct
+      {
+        uint<8> mark : mark == GA68_EXTRACT_MODE;
+        ga68_str mode_indication;
+        ga68_data_reloc_32 mode;
+      } mode;
+
+      struct
+      {
+        uint<8> mark : mark == GA68_EXTRACT_PRIO;
+        ga68_str opname;
+        uint<8> prio;
+      } prio;
+
+      struct
+      {
+        uint<8> mark : mark == GA68_EXTRACT_OPER;
+        ga68_str opname;
+        ga68_mode_32 mode;
+        ga68_mdextra mdextra;
+      } oper;
+
+    } extract : extract'size == extract_size;
+  };
+
+/* The contents of the .ga68_exports section can be mapped as a
+   ga68_module[sec.sh_size] */
+
+type ga68_module_64 =
+  struct
+  {
+    uint<8>[2] magic : magic == [0x0aUB, 0x68UB];
+    uint<16> version : version == ga68_exports_ver;
+
+    /* Module identification.
+       Add a hash or UUID?  */
+    ga68_str name;
+
+    /* Entry points.  */
+    ga68_str prelude;
+    ga68_str poslude;
+
+    /* Table of modes.  */
+    Elf64_Off modes_size;
+    ga68_mode_64[modes_size] modes;
+
+    /* Table of extracts.  */
+    Elf64_Off extracts_size;
+    ga68_extract_64[extracts_size] extracts;
+  };
+
+type ga68_module_32 =
+  struct
+  {
+    uint<8>[2] magic : magic == [0x0aUB, 0x68UB];
+    uint<16> version : version == ga68_exports_ver;
+
+    /* Module identification.
+       Add a hash or UUID?  */
+    ga68_str name;
+
+    /* Entry points.  */
+    ga68_str prelude;
+    ga68_str poslude;
+
+    /* Table of modes.  */
+    Elf32_Off modes_size;
+    ga68_mode_32[modes_size] modes;
+
+    /* Table of extracts.  */
+    Elf32_Off extracts_size;
+    ga68_extract_32[extracts_size] extracts;
+  };

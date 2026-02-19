@@ -1,0 +1,54 @@
+# Copyright (C) 2004-2026 Free Software Foundation, Inc.
+#
+# This file is part of GCC.
+#
+# GCC is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3, or (at your option)
+# any later version.
+#
+# GCC is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with GCC; see the file COPYING3.  If not see
+# <http://www.gnu.org/licenses/>.
+
+# Solaris-specific format checking and pragmas.
+sol2-c.o: $(srcdir)/config/sol2-c.cc
+	$(COMPILE) $<
+	$(POSTCOMPILE)
+
+# Solaris-specific C++ mangling.
+sol2-cxx.o: $(srcdir)/config/sol2-cxx.cc
+	$(COMPILE) $<
+	$(POSTCOMPILE)
+
+# Solaris-specific D support.
+sol2-d.o: $(srcdir)/config/sol2-d.cc
+	$(COMPILE) $<
+	$(POSTCOMPILE)
+
+# Solaris-specific Rust support.
+sol2-rust.o: $(srcdir)/config/sol2-rust.cc
+	$(COMPILE) $<
+	$(POSTCOMPILE)
+
+# Corresponding stub routines.
+sol2-stubs.o: $(srcdir)/config/sol2-stubs.cc
+	$(COMPILE) $<
+	$(POSTCOMPILE)
+
+# Solaris-specific attributes
+sol2.o: $(srcdir)/config/sol2.cc
+	$(COMPILE) $<
+	$(POSTCOMPILE)
+
+# Install clearcap.map if present.
+install: install-clearcap-map
+
+# Ignore failures: file only exists if linker supports it.
+install-clearcap-map:
+	-$(INSTALL_DATA) clearcap.map $(DESTDIR)$(libdir)

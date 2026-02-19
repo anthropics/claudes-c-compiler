@@ -1,0 +1,61 @@
+#!/bin/sh
+#
+# Convert the GCC install documentation from texinfo format to HTML.
+#
+# $SOURCEDIR and $DESTDIR, resp., refer to the directory containing
+# the texinfo source and the directory to put the HTML version in.
+#
+# Copyright (C) 2001-2026 Free Software Foundation, Inc.
+# Originally by Gerald Pfeifer <pfeifer@dbai.tuwien.ac.at>, June 2001.
+#
+# This file is part of GCC.
+#
+# GCC is free software; you can redistribute it and/or modify it under
+# the terms of the GNU General Public License as published by the Free
+# Software Foundation; either version 3, or (at your option) any later
+# version.
+#
+# GCC is distributed in the hope that it will be useful, but WITHOUT ANY
+# WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with GCC; see the file COPYING3.  If not see
+# <http://www.gnu.org/licenses/>.
+
+set -e
+
+SOURCEDIR=${SOURCEDIR-.}
+DESTDIR=${DESTDIR-HTML}
+
+MAKEINFO=${MAKEINFO-makeinfo}
+
+if [ ! -d $DESTDIR ]; then
+    mkdir -p $DESTDIR
+fi
+
+# Generate gcc-vers.texi.
+(
+   echo "@set version-GCC $(cat $SOURCEDIR/../BASE-VER)"
+   if [ "$(cat $SOURCEDIR/../DEV-PHASE)" = "experimental" ]; then
+      echo "@set DEVELOPMENT"
+   else
+      echo "@clear DEVELOPMENT"
+   fi
+   echo "@set srcdir $SOURCEDIR/.."
+) > $DESTDIR/gcc-vers.texi
+
+for x in index.html specific.html prerequisites.html download.html \
+         configure.html build.html test.html finalinstall.html \
+         binaries.html gfdl.html
+do
+    define=`echo $x | sed -e 's/\.//g'`
+    echo "define = $define"
+    $MAKEINFO --no-number-sections -I $SOURCEDIR -I $SOURCEDIR/include -I $DESTDIR $SOURCEDIR/install.texi --html --no-split -D$define -o$DESTDIR/temp.html
+    # Use sed to work around PR web/85578.
+    sed -e 's/_002d/-/g' -e 's/_002a/*/g' $DESTDIR/temp.html > $DESTDIR/$x
+    rm $DESTDIR/temp.html
+done
+
+rm $DESTDIR/gcc-vers.texi

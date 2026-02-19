@@ -1,0 +1,165 @@
+#   Copyright (C) 1997-2026 Free Software Foundation, Inc.
+
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+# 
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+# 
+# You should have received a copy of the GNU General Public License
+# along with GCC; see the file COPYING3.  If not see
+# <http://www.gnu.org/licenses/>.
+
+# Prune messages from gcc that aren't useful.
+
+load_lib multiline.exp
+
+# Add options to TEST_ALWAYS_FLAGS so that diagnostics have the expected output
+# format.  Note: You should not normally need to add more options here.  If you
+# have made a change to the default diagnostic output format and are wanting to
+# undo that in the testsuite here, then please update the handling of
+# -fdiagnostics-plain-output in opts-common.c instead.
+
+if ![info exists TEST_ALWAYS_FLAGS] {
+    set TEST_ALWAYS_FLAGS ""
+}
+set TEST_ALWAYS_FLAGS "-fdiagnostics-plain-output $TEST_ALWAYS_FLAGS"
+
+proc prune_gcc_output { text } {
+    global srcdir
+
+    #send_user "Before:$text\n"
+
+    # Handle any freeform regexps.
+    set text [handle-dg-regexps $text]
+
+    # Remove Windows .exe suffix
+    regsub -all "(as|cc1|cc1plus|collect2|f951|ld|lto-wrapper)\.exe?:" $text {\1:} text
+
+    regsub -all "(^|\n)(\[^\n\]*: \[iI\]|I)n ((static member |lambda )?function|member|method|(copy )?constructor|destructor|instantiation|substitution|program|subroutine|block-data)\[^\n\]*" $text "" text
+    regsub -all "(^|\n)\[^\n\]*(: )?At (top level|global scope):\[^\n\]*" $text "" text
+    regsub -all "(^|\n)\[^\n\]*:   (recursively )?required \[^\n\]*" $text "" text
+    regsub -all "(^|\n)\[^\n\]*:   . skipping \[0-9\]* instantiation contexts \[^\n\]*" $text "" text
+    regsub -all "(^|\n)\[^\n\]*:   in .constexpr. expansion \[^\n\]*" $text "" text
+    regsub -all "(^|\n)\[^\n\]*:   in requirements \[^\n\]*" $text "" text
+    regsub -all "(^|\n)    inlined from \[^\n\]*" $text "" text
+    regsub -all "(^|\n)\[^\n\]*: error: ld returned \[^\n\]*" $text "" text
+    regsub -all "(^|\n)\[^\n\]*: re(compiling|linking)\[^\n\]*" $text "" text
+    regsub -all "(^|\n)Please submit.*instructions\[^\n\]*" $text "" text
+    regsub -all "(^|\n)\[0-9\]\[0-9\]* errors\." $text "" text
+    regsub -all "(^|\n)Preprocessed.*bugreport\[^\n\]*" $text "" text
+
+    # Diagnostic inclusion stack
+    regsub -all "(^|\n)(In file)?\[ \]+included from \[^\n\]*" $text "" text
+    regsub -all "(^|\n)\[ \]+from \[^\n\]*" $text "" text
+    regsub -all "(^|\n)(In|of) module( \[^\n \]*,)? imported at \[^\n\]*" $text "" text
+
+    global prune_notes
+    if { $prune_notes } {
+	# Ignore informational notes.
+	regsub -all "(^|\n)\[^\n\]*: note: \[^\n\]*" $text "" text
+    }
+
+    # Ignore harmless -fpic warnings.
+    regsub -all "(^|\n)\[^\n\]*: warning: -f(pic|PIC) ignored for target\[^\n\]*" $text "" text
+    regsub -all "(^|\n)\[^\n\]*: warning: -f(pic|PIC)( and -fpic are| is)? not supported\[^\n\]*" $text "" text
+
+    # Ignore errata warning from IA64 assembler.
+    regsub -all "(^|\n)\[^\n\]*: Additional NOP may be necessary to workaround Itanium processor A/B step errata" $text "" text
+    regsub -all "(^|\n)\[^\n*\]*: Assembler messages:\[^\n\]*" $text "" text
+
+    # Ignore harmless VTA note.
+    regsub -all "(^|\n)\[^\n\]*: note: variable tracking size limit exceeded with -fvar-tracking-assignments, retrying without\[^\n\]*" $text "" text
+
+    # It would be nice to avoid passing anything to gcc that would cause it to
+    # issue these messages (since ignoring them seems like a hack on our part),
+    # but that's too difficult in the general case.  For example, sometimes
+    # you need to use -B to point gcc at crt0.o, but there are some targets
+    # that don't have crt0.o.
+    regsub -all "(^|\n)\[^\n\]*file path prefix \[^\n\]* never used" $text "" text
+    regsub -all "(^|\n)\[^\n\]*linker input file unused since linking not done" $text "" text
+
+    # Ideally the tests would indicate that executable stacks were needed
+    # to the linker.  But the option for that varies and may not even exist
+    # on some targets.  So we're stuck pruning the warning.
+    regsub -all "(^|\n)(\[^\n\]*: warning:\[^\n\]*requires executable stack\[^\n\]*\n?)+" $text "\\1" text
+
+    # Ignore harmless warnings from Xcode 3.2.x.
+    regsub -all "(^|\n)\[^\n\]*ld: warning: can't add line info to anonymous symbol\[^\n\]*" $text "" text
+    regsub -all "(^|\n)\[^\n\]*warning: DWARFDebugInfoEntry::AppendDependants\[^\n\]*AT_\[^\n\]*FORM_ref4\[^\n\]*" $text "" text
+    regsub -all "(^|\n)\[^\n\]*warning:\[^\n\]*TAG_variable:  AT_location\[^\n\]*didn't have valid function low pc\[^\n\]*" $text "" text
+
+    # Ignore harmless warnings from Xcode 4.0.
+    regsub -all "(^|\n)\[^\n\]*ld: warning: could not create compact unwind for\[^\n\]*" $text "" text
+
+    # Ignore dsymutil warning (tool bug is actually linker)
+    regsub -all "(^|\n)\[^\n\]*could not find object file symbol for symbol\[^\n\]*" $text "" text
+
+    # Ignore stabs obsoletion warnings
+    regsub -all "(^|\n)\[^\n\]*\[Ww\]arning: STABS debugging information is obsolete and not supported anymore\[^\n\]*" $text "" text
+
+    # Ignore missing lto jobserver for tests that do more than 1 LTRANS unit
+    regsub -all "(^|\n)\[^\n\]*lto\[^\n\]*: warning: using serial compilation of \[^\n\]*" $text "" text
+    regsub -all "(^|\n)\[^\n\]*lto\[^\n\]*: note: see the \[^\n\]*'-flto' option documentation\[^\n\]* for more information" $text "" text
+
+    # Many tests that use visibility will still pass on platforms that don't support it.
+    regsub -all "(^|\n)\[^\n\]*lto1: warning: visibility attribute not supported in this configuration; ignored\[^\n\]*" $text "" text
+
+    #send_user "After:$text\n"
+
+    return $text
+}
+
+# escape metacharacters in literal string, so it can be used in regex
+
+proc escape_regex_chars { line } {
+    return [string map {"^" "\\^"
+			"$" "\\$"
+			"(" "\\("
+			")" "\\)"
+			"[" "\\["
+			"]" "\\]"
+			"{" "\\{"
+			"}" "\\}"
+			"." "\\."
+			"\\" "\\\\"
+			"?" "\\?"
+			"+" "\\+"
+			"*" "\\*"
+			"|" "\\|"} $line]
+}
+
+proc prune_file_path { text } {
+    global srcdir
+
+    set safedir [escape_regex_chars $srcdir]
+    regsub -all "$safedir\/" $text "" text
+
+    # Truncate absolute file path into relative path.
+    set topdir "[file dirname [file dirname [file dirname $safedir]]]"
+    regsub -all "$topdir\/" $text "" text
+
+    return $text
+}
+
+# Prune internal compiler error messages, including the "Please submit..."
+# footnote.
+
+proc prune_ices { text } {
+  regsub -all "(^|\n)\[^\n\]*: internal compiler error:.*\nSee \[^\n\]*" $text "" text
+  regsub -all "(^|\n|')*Internal compiler error:.*\nSee \[^\n\]*" $text "" text
+  regsub -all "(^|\n)\[^\n\]*: internal compiler error:.*\nYou have broken GCC Rust. This is a feature." $text "" text
+  return $text
+}
+
+# Provide a definition of this if missing (delete after next dejagnu release).
+
+if { [info procs prune_warnings] == "" } then {
+    proc prune_warnings { text } {
+	return $text
+    }
+}

@@ -1,0 +1,77 @@
+#   Copyright (C) 2004-2026 Free Software Foundation, Inc.
+
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+# 
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+# 
+# You should have received a copy of the GNU General Public License
+# along with GCC; see the file COPYING3.  If not see
+# <http://www.gnu.org/licenses/>.
+
+# Define obj-c++ callbacks for dg.exp.
+
+load_lib gcc-dg.exp
+
+proc obj-c++-dg-test { prog do_what extra_tool_flags } {
+    return [gcc-dg-test-1 obj-c++_target_compile $prog $do_what $extra_tool_flags]
+}
+
+
+proc obj-c++-dg-prune { system text } {
+    return [gcc-dg-prune $system $text]
+}
+
+# Modified dg-runtest that can cycle through a list of optimization options
+# as c-torture does.
+proc obj-c++-dg-runtest { testcases flags default-extra-flags } {
+    global runtests
+
+    # Some callers initialize torture testing themselves; don't override those.
+    set existing_torture_init [torture-init-done]
+    if { $existing_torture_init == 0 } {
+	torture-init
+    }
+    # Some callers set torture options themselves; don't override those.
+    set existing_torture_options [torture-options-exist]
+    if { $existing_torture_options == 0 } {
+	global DG_TORTURE_OPTIONS LTO_TORTURE_OPTIONS
+	set-torture-options $DG_TORTURE_OPTIONS [list {}] $LTO_TORTURE_OPTIONS
+    }
+    dump-torture-options
+
+    foreach test $testcases {
+	global torture_with_loops torture_without_loops
+	# If we're only testing specific files and this isn't one of
+	# them, skip it.
+	if ![runtest_file_p $runtests $test] {
+	    continue
+        }
+
+	# Look for a loop within the source code - if we don't find one,
+	# don't pass -funroll[-all]-loops.
+	if [expr [search_for $test "for*("]+[search_for $test "while*("]] {
+	    set option_list $torture_with_loops
+	} else {
+	    set option_list $torture_without_loops
+	}
+
+	set nshort [file tail [file dirname $test]]/[file tail $test]
+
+	foreach flags_t $option_list {
+	    # combine flags so that dg-skip & xfail will see the extras.
+	    set combined_flags "$flags $flags_t ${default-extra-flags}"
+	    verbose "Testing $nshort, $combined_flags" 1
+	    dg-test $test $combined_flags ""
+	}
+    }
+
+    if { $existing_torture_init == 0 } {
+	torture-finish
+    }
+}

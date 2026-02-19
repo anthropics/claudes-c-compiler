@@ -1,0 +1,36 @@
+# libstdc++ "tool-and-target file" for DejaGNU
+
+# Copyright (C) 2001-2026 Free Software Foundation, Inc.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; see the file COPYING3.  If not see
+# <http://www.gnu.org/licenses/>.
+
+
+# This file is loaded only if a target-specific file or OS-specific file
+# is not found first.  It should provide libstdc++_load, which runs a
+# program.  (The default calls the standard remote_load.)  It may also
+# provide libstdc++_compile, but this is not presently used.  It must
+# provide libstdc++_target_compile, which does the same thing and is used.
+
+# Here are the default definitions:
+load_lib "standard.exp"
+
+# target-supports.exp uses this
+proc ${tool}_target_compile { srcfile destfile compile_type options } {
+    v3_target_compile $srcfile $destfile $compile_type $options
+}
+
+# Support for old dejagnu.  Must be loaded here, not in libstdc++.exp, to
+# make sure all existing procs are loaded when their presence is tested.
+load_file $srcdir/../../gcc/testsuite/lib/dejapatches.exp

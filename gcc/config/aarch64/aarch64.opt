@@ -1,0 +1,466 @@
+; Machine description for AArch64 architecture.
+; Copyright (C) 2009-2026 Free Software Foundation, Inc.
+; Contributed by ARM Ltd.
+;
+; This file is part of GCC.
+;
+; GCC is free software; you can redistribute it and/or modify it
+; under the terms of the GNU General Public License as published by
+; the Free Software Foundation; either version 3, or (at your option)
+; any later version.
+;
+; GCC is distributed in the hope that it will be useful, but
+; WITHOUT ANY WARRANTY; without even the implied warranty of
+; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+; General Public License for more details.
+;
+; You should have received a copy of the GNU General Public License
+; along with GCC; see the file COPYING3.  If not see
+; <http://www.gnu.org/licenses/>.
+
+HeaderInclude
+config/aarch64/aarch64-opts.h
+
+HeaderInclude
+config/arm/aarch-common.h
+
+TargetVariable
+enum aarch64_cpu selected_tune = aarch64_no_cpu
+
+TargetVariable
+enum aarch64_arch selected_arch = aarch64_no_arch
+
+TargetVariable
+uint64_t aarch64_asm_isa_flags_0 = 0
+
+TargetVariable
+uint64_t aarch64_asm_isa_flags_1 = 0
+
+TargetVariable
+uint64_t aarch64_isa_flags_0 = 0
+
+TargetVariable
+uint64_t aarch64_isa_flags_1 = 0
+
+TargetVariable
+unsigned aarch_enable_bti = 2
+
+TargetVariable
+unsigned aarch64_enable_gcs = 2
+
+TargetVariable
+enum aarch64_key_type aarch64_ra_sign_key = AARCH64_KEY_A
+
+; The TLS dialect names to use with -mtls-dialect.
+
+Enum
+Name(tls_type) Type(enum aarch64_tls_type)
+The possible TLS dialects:
+
+EnumValue
+Enum(tls_type) String(trad) Value(TLS_TRADITIONAL)
+
+EnumValue
+Enum(tls_type) String(desc) Value(TLS_DESCRIPTORS)
+
+; The code model option names for -mcmodel.
+
+Enum
+Name(cmodel) Type(enum aarch64_code_model)
+The code model option names for -mcmodel:
+
+EnumValue
+Enum(cmodel) String(tiny) Value(AARCH64_CMODEL_TINY)
+
+EnumValue
+Enum(cmodel) String(small) Value(AARCH64_CMODEL_SMALL)
+
+EnumValue
+Enum(cmodel) String(large) Value(AARCH64_CMODEL_LARGE)
+
+mbig-endian
+Target RejectNegative Mask(BIG_END)
+Assume target CPU is configured as big endian.
+
+menable-sysreg-checking
+Target RejectNegative Var(aarch64_enable_sysreg_guarding) Init(0)
+Generates an error message if an attempt is made to access a system register
+which is not available on the target architecture.
+
+mgeneral-regs-only
+Target RejectNegative Mask(GENERAL_REGS_ONLY) Save
+Generate code which uses only the general registers.
+
+mharden-sls=
+Target RejectNegative Joined Var(aarch64_harden_sls_string)
+Generate code to mitigate against straight line speculation.
+
+mfix-cortex-a53-835769
+Target Var(aarch64_fix_a53_err835769) Init(2) Save
+Workaround for ARM Cortex-A53 Erratum number 835769.
+
+mfix-cortex-a53-843419
+Target Var(aarch64_fix_a53_err843419) Init(2) Save
+Workaround for ARM Cortex-A53 Erratum number 843419.
+
+mlittle-endian
+Target RejectNegative InverseMask(BIG_END)
+Assume target CPU is configured as little endian.
+
+mcmodel=
+Target RejectNegative Joined Enum(cmodel) Var(aarch64_cmodel_var) Init(AARCH64_CMODEL_SMALL) Save
+Specify the code model.
+
+Enum
+Name(tp_reg) Type(enum aarch64_tp_reg)
+The register used to access the thread pointer:
+
+EnumValue
+Enum(tp_reg) String(el0) Value(AARCH64_TPIDR_EL0)
+
+EnumValue
+Enum(tp_reg) String(tpidr_el0) Value(AARCH64_TPIDR_EL0)
+
+EnumValue
+Enum(tp_reg) String(el1) Value(AARCH64_TPIDR_EL1)
+
+EnumValue
+Enum(tp_reg) String(tpidr_el1) Value(AARCH64_TPIDR_EL1)
+
+EnumValue
+Enum(tp_reg) String(el2) Value(AARCH64_TPIDR_EL2)
+
+EnumValue
+Enum(tp_reg) String(tpidr_el2) Value(AARCH64_TPIDR_EL2)
+
+EnumValue
+Enum(tp_reg) String(el3) Value(AARCH64_TPIDR_EL3)
+
+EnumValue
+Enum(tp_reg) String(tpidr_el3) Value(AARCH64_TPIDR_EL3)
+
+EnumValue
+Enum(tp_reg) String(tpidrro_el0) Value(AARCH64_TPIDRRO_EL0)
+
+mtp=
+Target RejectNegative Joined Enum(tp_reg) Var(aarch64_tpidr_reg) Init(AARCH64_TPIDR_EL0) Save
+Specify the thread pointer register.
+
+mstrict-align
+Target Mask(STRICT_ALIGN) Save
+Don't assume that unaligned accesses are handled by the system.
+
+momit-leaf-frame-pointer
+Target Var(flag_omit_leaf_frame_pointer) Init(2) Save
+Omit the frame pointer in leaf functions.
+
+mtls-dialect=
+Target RejectNegative Joined Enum(tls_type) Var(aarch64_tls_dialect) Init(TLS_DESCRIPTORS) Save
+Specify TLS dialect.
+
+mtls-size=
+Target RejectNegative Joined Var(aarch64_tls_size) Enum(aarch64_tls_size)
+Specifies bit size of immediate TLS offsets.  Valid values are 12, 24, 32, 48.
+
+Enum
+Name(aarch64_tls_size) Type(int)
+
+EnumValue
+Enum(aarch64_tls_size) String(12) Value(12)
+
+EnumValue
+Enum(aarch64_tls_size) String(24) Value(24)
+
+EnumValue
+Enum(aarch64_tls_size) String(32) Value(32)
+
+EnumValue
+Enum(aarch64_tls_size) String(48) Value(48)
+
+march=
+Target RejectNegative Negative(march=) ToLower Joined Var(aarch64_arch_string)
+Use features of architecture ARCH.
+
+mcpu=
+Target RejectNegative Negative(mcpu=) ToLower Joined Var(aarch64_cpu_string)
+Use features of and optimize for CPU.
+
+mtune=
+Target RejectNegative Negative(mtune=) ToLower Joined Var(aarch64_tune_string)
+Optimize for CPU.
+
+mabi=
+Target RejectNegative Joined Enum(aarch64_abi) Var(aarch64_abi) Init(AARCH64_ABI_DEFAULT)
+Generate code that conforms to the specified ABI.
+
+fdump-tuning-model=
+Target Undocumented RejectNegative Negative(fdump-tuning-model=) Joined Var(fdump_tuning_model)
+-fdump-tuning-model=<filename> Dump current tuning model to a JSON file.
+
+muser-provided-CPU=
+Target Undocumented RejectNegative Negative(muser-provided-CPU=) Joined Var(muser_provided_CPU)
+-muser-provided-CPU=<json-tuning-file> User specific CPU tunings.
+
+moverride=
+Target RejectNegative ToLower Joined Var(aarch64_override_tune_string) Save
+-moverride=<string>	Power users only! Override CPU optimization parameters.
+
+Enum
+Name(aarch64_abi) Type(int)
+Known AArch64 ABIs (for use with the -mabi= option):
+
+EnumValue
+Enum(aarch64_abi) String(ilp32) Value(AARCH64_ABI_ILP32)
+
+EnumValue
+Enum(aarch64_abi) String(lp64) Value(AARCH64_ABI_LP64)
+
+mpc-relative-literal-loads
+Target Save Var(pcrelative_literal_loads) Init(2) Save
+PC relative literal loads.
+
+mbranch-protection=
+Target RejectNegative Joined Var(aarch64_branch_protection_string) Save
+Use branch-protection features.
+
+msign-return-address=
+Target WarnRemoved RejectNegative Joined Enum(aarch_ra_sign_scope_t) Var(aarch_ra_sign_scope) Init(AARCH_FUNCTION_NONE) Save
+Select return address signing scope.
+
+Enum
+Name(aarch_ra_sign_scope_t) Type(enum aarch_function_type)
+Supported AArch64 return address signing scope (for use with -msign-return-address= option):
+
+EnumValue
+Enum(aarch_ra_sign_scope_t) String(none) Value(AARCH_FUNCTION_NONE)
+
+EnumValue
+Enum(aarch_ra_sign_scope_t) String(non-leaf) Value(AARCH_FUNCTION_NON_LEAF)
+
+EnumValue
+Enum(aarch_ra_sign_scope_t) String(all) Value(AARCH_FUNCTION_ALL)
+
+mlow-precision-recip-sqrt
+Target Var(flag_mrecip_low_precision_sqrt) Optimization
+Enable the reciprocal square root approximation.  Enabling this reduces
+precision of reciprocal square root results to about 16 bits for
+single precision and to 32 bits for double precision.
+
+mlow-precision-sqrt
+Target Var(flag_mlow_precision_sqrt) Optimization
+Enable the square root approximation.  Enabling this reduces
+precision of square root results to about 16 bits for
+single precision and to 32 bits for double precision.
+If enabled, it implies -mlow-precision-recip-sqrt.
+
+mlow-precision-div
+Target Var(flag_mlow_precision_div) Optimization
+Enable the division approximation.  Enabling this reduces
+precision of division results to about 16 bits for
+single precision and to 32 bits for double precision.
+
+Enum
+Name(early_ra_scope) Type(enum aarch64_early_ra_scope)
+
+EnumValue
+Enum(early_ra_scope) String(all) Value(AARCH64_EARLY_RA_ALL)
+
+EnumValue
+Enum(early_ra_scope) String(strided) Value(AARCH64_EARLY_RA_STRIDED)
+
+EnumValue
+Enum(early_ra_scope) String(none) Value(AARCH64_EARLY_RA_NONE)
+
+mearly-ra=
+Target RejectNegative Joined Enum(early_ra_scope) Var(aarch64_early_ra) Init(AARCH64_EARLY_RA_NONE) Optimization
+Specify when to enable an early register allocation pass.  The possibilities
+are: all functions, functions that have access to strided multi-register
+instructions, and no functions.
+
+Enum
+Name(sve_vector_bits) Type(enum aarch64_sve_vector_bits_enum)
+The possible SVE vector lengths:
+
+EnumValue
+Enum(sve_vector_bits) String(scalable) Value(SVE_SCALABLE)
+
+EnumValue
+Enum(sve_vector_bits) String(128) Value(SVE_128)
+
+EnumValue
+Enum(sve_vector_bits) String(256) Value(SVE_256)
+
+EnumValue
+Enum(sve_vector_bits) String(512) Value(SVE_512)
+
+EnumValue
+Enum(sve_vector_bits) String(1024) Value(SVE_1024)
+
+EnumValue
+Enum(sve_vector_bits) String(2048) Value(SVE_2048)
+
+msve-vector-bits=
+Target RejectNegative Joined Enum(sve_vector_bits) Var(aarch64_sve_vector_bits) Init(SVE_SCALABLE)
+-msve-vector-bits=<number>	Set the number of bits in an SVE vector register.
+
+mautovec-preference=
+Target RejectNegative Joined Var(autovec_preference) Enum(aarch64_autovec_preference) Init(AARCH64_AUTOVEC_DEFAULT)
+-mautovec-preference=[default|asimd-only|sve-only|prefer-asimd|prefer-sve]
+Force an ISA selection strategy for auto-vectorization.  For best performance it
+is highly recommended to use -mcpu or -mtune instead.  This parameter should
+only be used for code exploration.
+
+mmax-vectorization
+Target Var(flag_aarch64_max_vectorization) Save
+Override the scalar cost model such that vectorization is always profitable.
+
+mverbose-cost-dump
+Target Undocumented Var(flag_aarch64_verbose_cost)
+Enables verbose cost model dumping in the debug dump files.
+
+mtrack-speculation
+Target Var(aarch64_track_speculation)
+Generate code to track when the CPU might be speculating incorrectly.
+
+mearly-ldp-fusion
+Target Var(flag_aarch64_early_ldp_fusion) Optimization Init(1)
+Enable the copy of the AArch64 load/store pair fusion pass that runs before
+register allocation.
+
+mlate-ldp-fusion
+Target Var(flag_aarch64_late_ldp_fusion) Optimization Init(1)
+Enable the copy of the AArch64 load/store pair fusion pass that runs after
+register allocation.
+
+mstack-protector-guard=
+Target RejectNegative Joined Enum(stack_protector_guard) Var(aarch64_stack_protector_guard) Init(SSP_GLOBAL)
+Use given stack-protector guard.
+
+Enum
+Name(stack_protector_guard) Type(enum stack_protector_guard)
+Valid arguments to -mstack-protector-guard=:
+
+EnumValue
+Enum(stack_protector_guard) String(sysreg) Value(SSP_SYSREG)
+
+EnumValue
+Enum(stack_protector_guard) String(global) Value(SSP_GLOBAL)
+
+mstack-protector-guard-reg=
+Target Joined RejectNegative String Var(aarch64_stack_protector_guard_reg_str)
+Use the system register specified on the command line as the stack protector
+guard register. This option is for use with fstack-protector-strong and
+not for use in user-land code.
+
+mstack-protector-guard-offset=
+Target Joined RejectNegative String Var(aarch64_stack_protector_guard_offset_str)
+Use an immediate to offset from the stack protector guard register, sp_el0.
+This option is for use with fstack-protector-strong and not for use in
+user-land code.
+
+TargetVariable
+long aarch64_stack_protector_guard_offset = 0
+
+moutline-atomics
+Target Var(aarch64_flag_outline_atomics) Init(2) Save
+Generate local calls to out-of-line atomic operations.
+
+-param=aarch64-vect-compare-costs=
+Target Joined UInteger Var(aarch64_vect_compare_costs) Init(1) IntegerRange(0, 1) Param
+When vectorizing, consider using multiple different approaches and use
+the cost model to choose the cheapest one.
+
+-param=aarch64-float-recp-precision=
+Target Joined UInteger Var(aarch64_float_recp_precision) Init(1) IntegerRange(1, 5) Param
+The number of Newton iterations for calculating the reciprocal for float type.  The precision of division is proportional to this param when division approximation is enabled.  The default value is 1.
+
+-param=aarch64-double-recp-precision=
+Target Joined UInteger Var(aarch64_double_recp_precision) Init(2) IntegerRange(1, 5) Param
+The number of Newton iterations for calculating the reciprocal for double type.  The precision of division is proportional to this param when division approximation is enabled.  The default value is 2.
+
+-param=aarch64-autovec-preference=
+Target Joined Var(aarch64_autovec_preference) Enum(aarch64_autovec_preference) Init(AARCH64_AUTOVEC_DEFAULT) Param
+An old alias for -mautovec-preference.  If both -mautovec-preference and
+--param=aarch64-autovec-preference are passed, the --param value will be used.
+
+Enum
+Name(aarch64_autovec_preference) Type(enum aarch64_autovec_preference_enum) UnknownError(unknown autovec preference %qs)
+
+EnumValue
+Enum(aarch64_autovec_preference) String(default) Value(AARCH64_AUTOVEC_DEFAULT)
+
+EnumValue
+Enum(aarch64_autovec_preference) String(asimd-only) Value(AARCH64_AUTOVEC_ASIMD_ONLY)
+
+EnumValue
+Enum(aarch64_autovec_preference) String(sve-only) Value(AARCH64_AUTOVEC_SVE_ONLY)
+
+EnumValue
+Enum(aarch64_autovec_preference) String(prefer-asimd) Value(AARCH64_AUTOVEC_PREFER_ASIMD)
+
+EnumValue
+Enum(aarch64_autovec_preference) String(prefer-sve) Value(AARCH64_AUTOVEC_PREFER_SVE)
+
+-param=aarch64-loop-vect-issue-rate-niters=
+Target Joined UInteger Var(aarch64_loop_vect_issue_rate_niters) Init(6) IntegerRange(0, 65536) Param
+
+-param=aarch64-mops-memcpy-size-threshold=
+Target Joined UInteger Var(aarch64_mops_memcpy_size_threshold) Init(256) Param
+Constant memcpy size in bytes above which to start using MOPS sequence.
+
+-param=aarch64-mops-memmove-size-threshold=
+Target Joined UInteger Var(aarch64_mops_memmove_size_threshold) Init(256) Param
+Constant memmove size in bytes above which to start using MOPS sequence.
+
+-param=aarch64-mops-memset-size-threshold=
+Target Joined UInteger Var(aarch64_mops_memset_size_threshold) Init(256) Param
+Constant memset size in bytes from which to start using MOPS sequence.
+
+-param=aarch64-vect-unroll-limit=
+Target Joined UInteger Var(aarch64_vect_unroll_limit) Init(4) Param
+Limit how much the autovectorizer may unroll a loop.
+
+-param=aarch64-ldp-policy=
+Target Joined Var(aarch64_ldp_policy_param) Enum(aarch64_ldp_stp_policy) Init(AARCH64_LDP_STP_POLICY_DEFAULT) Param
+--param=aarch64-ldp-policy=[default|always|never|aligned] Fine-grained policy for load pairs.
+
+-param=aarch64-stp-policy=
+Target Joined Var(aarch64_stp_policy_param) Enum(aarch64_ldp_stp_policy) Init(AARCH64_LDP_STP_POLICY_DEFAULT) Param
+--param=aarch64-stp-policy=[default|always|never|aligned] Fine-grained policy for store pairs.
+
+Enum
+Name(aarch64_ldp_stp_policy) Type(enum aarch64_ldp_stp_policy) UnknownError(unknown LDP/STP policy %qs)
+
+EnumValue
+Enum(aarch64_ldp_stp_policy) String(default) Value(AARCH64_LDP_STP_POLICY_DEFAULT)
+
+EnumValue
+Enum(aarch64_ldp_stp_policy) String(always) Value(AARCH64_LDP_STP_POLICY_ALWAYS)
+
+EnumValue
+Enum(aarch64_ldp_stp_policy) String(never) Value(AARCH64_LDP_STP_POLICY_NEVER)
+
+EnumValue
+Enum(aarch64_ldp_stp_policy) String(aligned) Value(AARCH64_LDP_STP_POLICY_ALIGNED)
+
+-param=aarch64-ldp-alias-check-limit=
+Target Joined UInteger Var(aarch64_ldp_alias_check_limit) Init(8) IntegerRange(0, 65536) Param
+Limit on number of alias checks performed when attempting to form an ldp/stp.
+
+-param=aarch64-ldp-writeback=
+Target Joined UInteger Var(aarch64_ldp_writeback) Init(2) IntegerRange(0,2) Param
+Param to control which writeback opportunities we try to handle in the
+load/store pair fusion pass.  A value of zero disables writeback
+handling.  One means we try to form pairs involving one or more existing
+individual writeback accesses where possible.  A value of two means we
+also try to opportunistically form writeback opportunities by folding in
+trailing destructive updates of the base register used by a pair.
+
+-param=aarch64-tag-memory-loop-threshold=
+Target Joined UInteger Var(aarch64_tag_memory_loop_threshold) Init(10) IntegerRange(0, 65536) Param
+Param to control the treshold in number of granules beyond which an
+explicit loop for tagging a memory block is emitted.
+
+Wexperimental-fmv-target
+Target Var(warn_experimental_fmv) Warning Init(1) Undocumented
+This option is deprecated.

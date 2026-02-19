@@ -1,0 +1,35 @@
+# Copyright (C) 2003-2026 Free Software Foundation, Inc.
+#
+# This file is part of GCC.
+#
+# GCC is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3, or (at your option)
+# any later version.
+#
+# GCC is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with GCC; see the file COPYING3.  If not see
+# <http://www.gnu.org/licenses/>.
+
+# Multilibs for VxWorks.  We want these 8 architecture combinations:
+#
+#    {-mips2,-mips3} x {-EB,-EL} x {-mhard-float,-msoft-float}
+#
+# where the first option in each group is the default.  The -mips2
+# multilibs use o32 and the -mips3 multilibs use o64.
+#
+# We want three multilibs for each architecture combination:
+# default (kernel mode), -mrtp and -mrtp/-fPIC.
+MULTILIB_OPTIONS = mabi=o64 mips3 EL msoft-float mrtp fPIC
+MULTILIB_DIRNAMES = o64 mips3 EL msoft-float mrtp pic
+MULTILIB_MATCHES = EL=mel fPIC=fpic
+MULTILIB_EXCEPTIONS = mips3* mabi=o64 fPIC \
+		      $(addprefix mabi=o64/, EL* msoft-float* mrtp* fPIC*) \
+		      $(addsuffix /fPIC, *mabi=o64 *mips3 *EL *msoft-float)
+
+MULTILIB_EXTRA_OPTS = -G 0 -mno-branch-likely

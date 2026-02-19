@@ -1,0 +1,129 @@
+#!/bin/sh
+# Profile workload for gcc profile feedback (autofdo) using Linux perf.
+# Auto generated. To regenerate for new CPUs run
+# contrib/gen_autofdo_event.py --script --all in gcc source
+
+# usages:
+# gcc-auto-profile program             (profile program and children)
+# gcc-auto-profile -a sleep X          (profile all for X secs, may need root)
+# gcc-auto-profile -p PID sleep X      (profile PID)
+# gcc-auto-profile --kernel -a sleep X (profile kernel)
+# gcc-auto-profile --all -a sleep X    (profile kernel and user space)
+
+# Identify branches taken event for CPU.
+#
+
+FLAGS=u
+
+if [ "$1" = "--kernel" ] ; then
+  FLAGS=k
+  shift
+fi
+if [ "$1" = "--all" ] ; then
+  FLAGS=uk
+  shift
+fi
+
+if grep -q AuthenticAMD /proc/cpuinfo ; then
+  vendor=AMD
+  if ! grep -q " brs" /proc/cpuinfo && ! grep -q amd_lbr_v2 /proc/cpuinfo ; then
+    echo >&2 "AMD CPU with brs (Zen 3) or amd_lbr_v2 (Zen 4+) feature is required"
+    exit 1
+  fi
+elif grep -q Intel /proc/cpuinfo ; then
+  vendor=Intel
+else
+  echo >&2 "Only AMD and Intel CPUs supported"
+  exit 1
+fi
+
+if grep -q hypervisor /proc/cpuinfo ; then
+  echo >&2 "Warning: branch profiling may not be functional in VMs"
+fi
+
+case `test $vendor = Intel && grep -E -q "^cpu family\s*: 6" /proc/cpuinfo &&
+  grep -E "^model\s*:" /proc/cpuinfo | head -n1` in
+model*:\ 46|\
+model*:\ 30|\
+model*:\ 31|\
+model*:\ 26|\
+model*:\ 47|\
+model*:\ 37|\
+model*:\ 44) E="cpu/event=0x88,umask=0x40/$FLAGS" ;;
+model*:\ 55|\
+model*:\ 74|\
+model*:\ 77|\
+model*:\ 76|\
+model*:\ 90|\
+model*:\ 92|\
+model*:\ 95|\
+model*:\ 87|\
+model*:\ 133|\
+model*:\ 122) E="cpu/event=0xC4,umask=0xFE/p$FLAGS" ;;
+model*:\ 28|\
+model*:\ 38|\
+model*:\ 39|\
+model*:\ 54|\
+model*:\ 53) E="cpu/event=0x88,umask=0x41/$FLAGS" ;;
+model*:\ 42|\
+model*:\ 45|\
+model*:\ 58|\
+model*:\ 62|\
+model*:\ 60|\
+model*:\ 69|\
+model*:\ 70|\
+model*:\ 63|\
+model*:\ 61|\
+model*:\ 71|\
+model*:\ 79|\
+model*:\ 86|\
+model*:\ 78|\
+model*:\ 94|\
+model*:\ 142|\
+model*:\ 158|\
+model*:\ 165|\
+model*:\ 166|\
+model*:\ 85|\
+model*:\ 85) E="cpu/event=0xC4,umask=0x20/p$FLAGS" ;;
+model*:\ 125|\
+model*:\ 126|\
+model*:\ 167|\
+model*:\ 140|\
+model*:\ 141|\
+model*:\ 143|\
+model*:\ 207|\
+model*:\ 106|\
+model*:\ 108|\
+model*:\ 173|\
+model*:\ 174) E="cpu/event=0xc4,umask=0x20/$FLAGS" ;;
+model*:\ 134|\
+model*:\ 150|\
+model*:\ 156) E="cpu/event=0xc4,umask=0xfe/p$FLAGS" ;;
+model*:\ 190|\
+model*:\ 175|\
+model*:\ 182) E="cpu/event=0xc4,umask=0xc0/$FLAGS" ;;
+model*:\ 190) E="cpu/event=0xc4,umask=0xfe/$FLAGS" ;;
+*)
+        if perf list br_inst_retired | grep -q br_inst_retired.near_taken ; then
+            E=br_inst_retired.near_taken:p
+        elif perf list ex_ret_brn_tkn | grep -q ex_ret_brn_tkn ; then
+            E=ex_ret_brn_tkn:P$FLAGS
+        elif $vendor = Intel ; then
+echo >&2 "Unknown Intel CPU. Run contrib/gen_autofdo_event.py --all --script to update script."
+	  exit 1
+        else
+echo >&2 "AMD CPU without support for ex_ret_brn_tkn event"
+	  exit 1
+        fi ;;
+esac
+set -x
+if ! perf record -e $E -b "$@" ; then
+  # PEBS may not actually be working even if the processor supports it
+  # (e.g., in a virtual machine). Trying to run without /p.
+  set +x
+  echo >&2 "Retrying without /p."
+  E="$(echo "${E}" | sed -e \'s/\/p/\//\ -e s/:p//)"
+  set -x
+  exec perf record -e $E -b "$@"
+ set +x
+fi

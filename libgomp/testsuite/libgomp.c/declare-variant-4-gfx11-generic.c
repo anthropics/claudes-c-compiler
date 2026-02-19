@@ -1,0 +1,26 @@
+/* { dg-do link { target { offload_target_amdgcn } } } */
+/* { dg-additional-options -Wno-deprecated-openmp } */
+/* { dg-additional-options -foffload=amdgcn-amdhsa } */
+/* { dg-additional-options -foffload=-march=gfx11-generic } */
+/* { dg-additional-options "-foffload=-fdump-tree-optimized" } */
+
+#include "declare-variant-4.h"
+
+/* { dg-final { only_for_offload_target amdgcn-amdhsa scan-offload-tree-dump "= gfx11_generic \\(\\);" "optimized" } } */
+
+
+/* This code will link nicely if the multilib for that GPU architecture
+   has been build for GCC. In that case, scan-offload-tree-dump will
+   PASS and the linking will yield an XPASS message due to following line: */
+
+/* { dg-excess-errors "ld: error: unable to find library -lgomp|gcn mkoffload: fatal error" } */
+
+/* If the multi-lib config is not available (as this is a generic config),
+   scan-offload-tree-dump will PASS - but linking fails with the
+   following error (XFAIL):
+       ld: error: unable to find library -lgomp
+       collect2: error: ld returned 1 exit status
+       gcn mkoffload: fatal error: ...-gnu-accel-amdgcn-amdhsa-gcc returned 1 exit status
+       compilation terminated.
+       lto-wrapper: fatal error: .../amdgcn-amdhsa/mkoffload returned 1 exit status
+       compilation terminated. */

@@ -1,0 +1,378 @@
+<section xmlns="http://docbook.org/ns/docbook" version="5.0"
+	 xml:id="manual.intro.using.debug" xreflabel="Debugging Support">
+<?dbhtml filename="debug.html"?>
+
+<info><title>Debugging Support</title>
+  <keywordset>
+    <keyword>C++</keyword>
+    <keyword>debug</keyword>
+  </keywordset>
+</info>
+
+
+
+<para>
+  There are numerous things that can be done to improve the ease with
+  which C++ binaries are debugged when using the GNU tool chain. Here
+  are some of them.
+</para>
+
+<section xml:id="debug.compiler"><info><title>Using <command>g++</command></title></info>
+
+  <para>
+    Compiler flags determine how debug information is transmitted
+    between compilation and debug or analysis tools.
+  </para>
+
+  <para>
+    The default optimizations and debug flags for a libstdc++ build
+    are <code>-g -O2</code>. However, both debug and optimization
+    flags can be varied to change debugging characteristics. For
+    instance, turning off all optimization via the <code>-g -O0
+    -fno-inline</code> flags will disable inlining and optimizations,
+    and include debugging information, so that stepping through all functions,
+    (including inlined constructors and destructors) is possible. In
+    addition, <code>-fno-eliminate-unused-debug-types</code> can be
+    used when additional debug information, such as nested class info,
+    is desired.
+</para>
+
+<para>
+  Or, the debug format that the compiler and debugger use to
+  communicate information about source constructs can be changed via
+  <code>-gdwarf-2</code> or <code>-gstabs</code> flags: some debugging
+  formats permit more expressive type and scope information to be
+  shown in GDB. Expressiveness can be enhanced by flags like
+  <code>-g3</code>. The default debug information for a particular
+  platform can be identified via the value set by the
+  PREFERRED_DEBUGGING_TYPE macro in the GCC sources.
+</para>
+
+<para>
+  Many other options are available: please see <link xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="https://gcc.gnu.org/onlinedocs/gcc/Debugging-Options.html#Debugging%20Options">"Options
+  for Debugging Your Program"</link> in Using the GNU Compiler
+  Collection (GCC) for a complete list.
+</para>
+</section>
+
+<section xml:id="debug.debug_mode"><info><title>Debug Mode</title></info>
+
+<para>
+  The <link linkend="manual.ext.debug_mode">Debug Mode</link>
+  has compile and run-time checks for many containers.
+</para>
+
+<para>
+  There are also lightweight assertions for checking function preconditions,
+  such as checking for out-of-bounds indices when accessing a
+  <classname>std::vector</classname>. These can be enabled without using
+  the full Debug Mode, by using <option>-D_GLIBCXX_ASSERTIONS</option>
+  (see <xref linkend="manual.intro.using.macros"/>).
+</para>
+
+</section>
+
+<section xml:id="debug.exceptions"><info><title>Tracking uncaught exceptions</title></info>
+
+<para>
+  The <link linkend="support.termination.verbose">verbose
+  termination handler</link> gives information about uncaught
+  exceptions which kill the program.
+</para>
+</section>
+
+<section xml:id="debug.memory"><info><title>Memory Leak Hunting</title></info>
+
+<para>
+  On many targets GCC supports AddressSanitizer, a fast memory error detector,
+  which is enabled by the <option>-fsanitize=address</option> option.
+</para>
+
+<para>
+  The <classname>std::vector</classname> implementation has additional
+  instrumentation to work with AddressSanitizer, but this has to be enabled
+  explicitly by using <option>-D_GLIBCXX_SANITIZE_VECTOR</option>
+  (see <xref linkend="manual.intro.using.macros"/>).
+</para>
+
+<para>
+  There are also various third party memory tracing and debug utilities
+  that can be used to provide detailed memory allocation information
+  about C++ code. An exhaustive list of tools is not going to be
+  attempted, but includes <code>mtrace</code>, <code>valgrind</code>,
+  <code>mudflap</code> (no longer supported since GCC 4.9.0), ElectricFence,
+  and the non-free commercial product <code>purify</code>.
+  In addition, <code>libcwd</code>, jemalloc and TCMalloc have replacements
+  for the global <code>new</code> and <code>delete</code> operators
+  that can track memory allocation and deallocation and provide useful
+  memory statistics.
+</para>
+
+<para>
+  For valgrind, there are some specific items to keep in mind. First
+  of all, use a version of valgrind that will work with current GNU
+  C++ tools: the first that can do this is valgrind 1.0.4, but later
+  versions should work better. Second, using an unoptimized build
+  might avoid confusing valgrind.
+</para>
+
+<para>
+  Third, it may be necessary to force deallocation in other libraries
+  as well, namely the "C" library. On GNU/Linux, this can be accomplished
+  with the appropriate use of the <code>__cxa_atexit</code> or
+  <code>atexit</code> functions.
+</para>
+
+<programlisting>
+   #include &lt;cstdlib&gt;
+
+   extern "C" void __libc_freeres(void);
+
+   void do_something() { }
+
+   int main()
+   {
+     atexit(__libc_freeres);
+     do_something();
+     return 0;
+   }
+</programlisting>
+
+<para>or, using <code>__cxa_atexit</code>:</para>
+
+<programlisting>
+   extern "C" void __libc_freeres(void);
+   extern "C" int __cxa_atexit(void (*func) (void *), void *arg, void *d);
+
+   void do_something() { }
+
+   int main()
+   {
+      extern void* __dso_handle __attribute__ ((__weak__));
+      __cxa_atexit((void (*) (void *)) __libc_freeres, NULL,
+		   &amp;__dso_handle ? __dso_handle : NULL);
+      do_test();
+      return 0;
+   }
+</programlisting>
+
+<para>
+  Suggested valgrind flags, given the suggestions above about setting
+  up the runtime environment, library, and test file, might be:
+</para>
+<programlisting>
+   valgrind -v --num-callers=20 --leak-check=yes --leak-resolution=high --show-reachable=yes a.out
+</programlisting>
+
+<section xml:id="debug.memory.mtalloc">
+<info><title>Non-memory leaks in Pool and MT allocators</title></info>
+
+<para>
+  There are different kinds of allocation schemes that can be used by
+  <code>std::allocator</code>. Prior to GCC 3.4.0 the default was to use
+  a pooling allocator, <classname>pool_allocator</classname>,
+  which is still available as the optional
+  <classname>__pool_alloc</classname> extension.
+  Another optional extension, <classname>__mt_alloc</classname>,
+  is a high-performance pool allocator.
+</para>
+
+<para>
+  In a suspect executable these pooling allocators can give
+  the mistaken impression that memory is being leaked,
+  when in reality the memory "leak" is a pool being used
+  by the library's allocator and is reclaimed after program
+  termination.
+</para>
+
+<para>
+  If you're using memory debugging tools on a program that uses
+  one of these pooling allocators, you can set the environment variable
+  <literal>GLIBCXX_FORCE_NEW</literal> to keep extraneous pool allocation
+  noise from cluttering debug information.
+  For more details, see the
+  <link linkend="manual.ext.allocator.mt">mt allocator</link>
+  documentation and look specifically for <code>GLIBCXX_FORCE_NEW</code>.
+</para>
+
+</section>
+
+</section>
+
+<section xml:id="debug.races"><info><title>Data Race Hunting</title></info>
+<para>
+  All synchronization primitives used in the library internals need to be
+  understood by race detectors so that they do not produce false reports.
+</para>
+
+<para>
+  Two annotation macros are used to explain low-level synchronization
+  to race detectors:
+  <code>_GLIBCXX_SYNCHRONIZATION_HAPPENS_BEFORE()</code> and
+  <code> _GLIBCXX_SYNCHRONIZATION_HAPPENS_AFTER()</code>.
+  By default, these macros are defined empty -- anyone who wants
+  to use a race detector needs to redefine them to call an
+  appropriate API.
+  Since these macros are empty by default when the library is built,
+  redefining them will only affect inline functions and template
+  instantiations which are compiled in user code. This allows annotation
+  of templates such as <code>shared_ptr</code>, but not code which is
+  only instantiated in the library.  Code which is only instantiated in
+  the library needs to be recompiled with the annotation macros defined.
+  That can be done by rebuilding the entire
+  <filename class="libraryfile">libstdc++.so</filename> file but a simpler
+  alternative exists for ELF platforms such as GNU/Linux, because ELF
+  symbol interposition allows symbols defined in the shared library to be
+  overridden by symbols with the same name that appear earlier in the
+  runtime search path. This means you only need to recompile the functions
+  that are affected by the annotation macros, which can be done by
+  recompiling individual files.
+  Annotating <code>std::string</code> and <code>std::wstring</code>
+  reference counting can be done by disabling extern templates (by defining
+  <code>_GLIBCXX_EXTERN_TEMPLATE=-1</code>) or by rebuilding the
+  <filename>src/string-inst.cc</filename> file.
+  Annotating the remaining atomic operations (at the time of writing these
+  are in <code>ios_base::Init::~Init</code>, <code>locale::_Impl</code>,
+  <code>locale::facet</code> and <code>thread::_M_start_thread</code>)
+  requires rebuilding the relevant source files.
+</para>
+
+<para>
+  The approach described above is known to work with the following race
+  detection tools:
+  <link xmlns:xlink="http://www.w3.org/1999/xlink"
+  xlink:href="https://valgrind.org/docs/manual/drd-manual.html">
+  DRD</link>,
+  <link xmlns:xlink="http://www.w3.org/1999/xlink"
+  xlink:href="https://valgrind.org/docs/manual/hg-manual.html">
+  Helgrind</link>, and
+  <link xmlns:xlink="http://www.w3.org/1999/xlink"
+  xlink:href="https://github.com/google/sanitizers">
+  ThreadSanitizer</link> (this refers to ThreadSanitizer v1, not the
+  new "tsan" feature built-in to GCC itself).
+</para>
+
+<para>
+  With DRD, Helgrind and ThreadSanitizer you will need to define
+  the macros like this:
+<programlisting>
+  #define _GLIBCXX_SYNCHRONIZATION_HAPPENS_BEFORE(A) ANNOTATE_HAPPENS_BEFORE(A)
+  #define _GLIBCXX_SYNCHRONIZATION_HAPPENS_AFTER(A)  ANNOTATE_HAPPENS_AFTER(A)
+</programlisting>
+  Refer to the documentation of each particular tool for details.
+</para>
+
+</section>
+
+<section xml:id="debug.gdb"><info><title>Using <command>gdb</command></title></info>
+
+  <para>
+  </para>
+
+<para>
+  Many options are available for GDB itself: please see <link xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="https://sourceware.org/gdb/current/onlinedocs/gdb">
+  "GDB features for C++" </link> in the GDB documentation. Also
+  recommended: the other parts of this manual.
+</para>
+
+<para>
+  These settings can either be switched on in at the GDB command line,
+  or put into a <filename>.gdbinit</filename> file to establish default
+  debugging characteristics, like so:
+</para>
+
+<programlisting>
+   set print pretty on
+   set print object on
+   set print static-members on
+   set print vtbl on
+   set print demangle on
+   set demangle-style gnu-v3
+</programlisting>
+
+<para>
+  Starting with version 7.0, GDB includes support for writing
+  pretty-printers in Python.  Pretty printers for containers and other
+  classes are distributed with GCC from version 4.5.0 and should be installed
+  alongside the libstdc++ shared library files and found automatically by
+  GDB.
+</para>
+
+<para>
+  Depending where libstdc++ is installed, GDB might refuse to auto-load
+  the python printers and print a warning instead.
+  If this happens the python printers can be enabled by following the
+  instructions GDB gives for setting your <code>auto-load safe-path</code>
+  in your <filename>.gdbinit</filename> configuration file.
+</para>
+
+<para>
+  Once loaded, standard library classes that the printers support
+  should print in a more human-readable format.  To print the classes
+  in the old style, use the <userinput>/r</userinput> (raw) switch in the
+  print command (i.e., <userinput>print /r foo</userinput>).  This will
+  print the classes as if the Python pretty-printers were not loaded.
+</para>
+
+<para>
+  For additional information on STL support and GDB please visit:
+  <link xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="https://sourceware.org/gdb/wiki/STLSupport"> "GDB Support
+  for STL" </link> in the GDB wiki.  Additionally, in-depth
+  documentation and discussion of the pretty printing feature can be
+  found in "Pretty Printing" node in the GDB manual.  You can find
+  on-line versions of the GDB user manual in GDB's homepage, at
+  <link xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="https://sourceware.org/gdb/"> "GDB: The GNU Project
+  Debugger" </link>.
+</para>
+
+</section>
+
+<section xml:id="debug.req"><info><title>Debug Versions of Library Binary Files</title></info>
+
+<para>
+  As described above, libstdc++ is built with debug symbols enabled by default,
+  but because it's also built with optimizations the code can be hard to
+  follow when stepping into the library in a debugger.
+</para>
+
+<para>
+  If you would like to debug <filename>libstdc++.so</filename> itself,
+  there are two ways to build an unoptimized libstdc++ with debug flags.
+  The first is to create a separate debug build by running make from the
+  top-level of a tree freshly-configured with
+</para>
+<programlisting>
+     --enable-libstdcxx-debug
+</programlisting>
+<para>and perhaps</para>
+<programlisting>
+     --enable-libstdcxx-debug-flags='...'
+</programlisting>
+<para>
+  Both the normal build and the debug build will persist, without
+  having to specify <code>CXXFLAGS</code>, and the debug library will
+  be installed in a separate directory tree, in <code>(prefix)/lib/debug</code>.
+  For more information, look at the
+  <link linkend="manual.intro.setup.configure">configuration</link> section.
+</para>
+
+<para>
+  A second approach is to use the configuration flags
+</para>
+<programlisting>
+     make CXXFLAGS='-g3 -fno-inline -O0' all
+</programlisting>
+
+</section>
+
+
+<section xml:id="debug.compile_time_checks"><info><title>Compile Time Checking</title></info>
+
+  <para> The <link linkend="manual.ext.compile_checks">Compile-Time
+  Checks</link> extension has compile-time checks for many algorithms.
+  These checks were designed for C++98 and have not been updated to work
+  with C++11 and later standards. They might be removed at a future date.
+  </para>
+</section>
+
+</section>

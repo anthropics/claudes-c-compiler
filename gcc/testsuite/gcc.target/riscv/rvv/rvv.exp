@@ -1,0 +1,165 @@
+# Copyright (C) 2022-2026 Free Software Foundation, Inc.
+
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with GCC; see the file COPYING3.  If not see
+# <http://www.gnu.org/licenses/>.
+
+# GCC testsuite that uses the `dg.exp' driver.
+
+# Exit immediately if this isn't a RISC-V target.
+if ![istarget riscv*-*-*] then {
+  return
+}
+
+# Load support procs.
+load_lib gcc-dg.exp
+
+# If a testcase doesn't have special options, use these.
+global DEFAULT_CFLAGS
+if ![info exists DEFAULT_CFLAGS] then {
+    set DEFAULT_CFLAGS " -ansi -pedantic-errors"
+}
+
+# Initialize `dg'.
+dg-init
+
+# Main loop.
+set CFLAGS "$DEFAULT_CFLAGS -O3"
+dg-runtest [lsort [glob -nocomplain $srcdir/$subdir/*.\[cS\]]] \
+	"" $CFLAGS
+dg-runtest [lsort [glob -nocomplain $srcdir/$subdir/base/*.\[cS\]]] \
+	"" $CFLAGS
+dg-runtest [lsort [glob -nocomplain $srcdir/$subdir/xsfvector/*.\[cS\]]] \
+	"" $CFLAGS
+dg-runtest [lsort [glob -nocomplain $srcdir/$subdir/xtheadvector/*.\[cS\]]] \
+	"" $CFLAGS
+dg-runtest [lsort [glob -nocomplain $srcdir/$subdir/xandesvector/*.\[cS\]]] \
+	"" $CFLAGS
+gcc-dg-runtest [lsort [glob -nocomplain $srcdir/$subdir/vsetvl/*.\[cS\]]] \
+	"" $CFLAGS
+dg-runtest [lsort [glob -nocomplain $srcdir/$subdir/autovec/*.\[cS\]]] \
+	"-O3 -ftree-vectorize" $CFLAGS
+dg-runtest [lsort [glob -nocomplain $srcdir/$subdir/autovec/vls/*.\[cS\]]] \
+	"-O3 -ftree-vectorize -mrvv-vector-bits=scalable" $CFLAGS
+dg-runtest [lsort [glob -nocomplain $srcdir/$subdir/autovec/struct/*.\[cS\]]] \
+	"" "-O3 -ftree-vectorize"
+
+set AUTOVEC_TEST_OPTS [list \
+  {-ftree-vectorize -O3 -mrvv-max-lmul=m1} \
+  {-ftree-vectorize -O3 -mrvv-max-lmul=m2} \
+  {-ftree-vectorize -O3 -mrvv-max-lmul=m4} \
+  {-ftree-vectorize -O3 -mrvv-max-lmul=m8} \
+  {-ftree-vectorize -O3 -mrvv-max-lmul=dynamic} \
+  {-ftree-vectorize -O2 -mrvv-max-lmul=m1} \
+  {-ftree-vectorize -O2 -mrvv-max-lmul=m2} \
+  {-ftree-vectorize -O2 -mrvv-max-lmul=m4} \
+  {-ftree-vectorize -O2 -mrvv-max-lmul=m8} \
+  {-ftree-vectorize -O2 -mrvv-max-lmul=dynamic} ]
+foreach op $AUTOVEC_TEST_OPTS {
+  dg-runtest [lsort [glob -nocomplain $srcdir/$subdir/autovec/partial/*.\[cS\]]] \
+    "$op" ""
+  dg-runtest [lsort [glob -nocomplain $srcdir/$subdir/autovec/binop/*.\[cS\]]] \
+    "$op" ""
+  dg-runtest [lsort [glob -nocomplain $srcdir/$subdir/autovec/cmp/*.\[cS\]]] \
+    "$op" ""
+  dg-runtest [lsort [glob -nocomplain $srcdir/$subdir/autovec/conversions/*.\[cS\]]] \
+    "$op" ""
+  dg-runtest [lsort [glob -nocomplain $srcdir/$subdir/autovec/unop/*.\[cS\]]] \
+    "$op" ""
+  dg-runtest [lsort [glob -nocomplain $srcdir/$subdir/autovec/ternop/*.\[cS\]]] \
+    "$op" ""
+  dg-runtest [lsort [glob -nocomplain $srcdir/$subdir/autovec/reduc/*.\[cS\]]] \
+    "$op" ""
+  dg-runtest [lsort [glob -nocomplain $srcdir/$subdir/autovec/cond/*.\[cS\]]] \
+    "$op" ""
+  dg-runtest [lsort [glob -nocomplain $srcdir/$subdir/autovec/builtin/*.\[cS\]]] \
+    "$op" ""
+}
+
+# widening operation only test on LMUL < 8
+set AUTOVEC_TEST_OPTS [list \
+  {-ftree-vectorize -O3 -mrvv-max-lmul=m1} \
+  {-ftree-vectorize -O3 -mrvv-max-lmul=m2} \
+  {-ftree-vectorize -O3 -mrvv-max-lmul=m4} \
+  {-ftree-vectorize -O2 -mrvv-max-lmul=m1} \
+  {-ftree-vectorize -O2 -mrvv-max-lmul=m2} \
+  {-ftree-vectorize -O2 -mrvv-max-lmul=m4} ]
+foreach op $AUTOVEC_TEST_OPTS {
+  dg-runtest [lsort [glob -nocomplain $srcdir/$subdir/autovec/widen/*.\[cS\]]] \
+    "$op" ""
+}
+
+# VLS-VLMAX tests
+dg-runtest [lsort [glob -nocomplain $srcdir/$subdir/autovec/vls-vlmax/*.\[cS\]]] \
+	"-std=c99 -O3 -ftree-vectorize -mrvv-vector-bits=zvl" $CFLAGS
+
+# gather-scatter tests
+set AUTOVEC_TEST_OPTS [list \
+  {-ftree-vectorize -O3 -mrvv-vector-bits=zvl -mrvv-max-lmul=m1 -fno-vect-cost-model -ffast-math} \
+  {-ftree-vectorize -O3 -mrvv-vector-bits=zvl -mrvv-max-lmul=m2 -fno-vect-cost-model -ffast-math} \
+  {-ftree-vectorize -O3 -mrvv-vector-bits=zvl -mrvv-max-lmul=m4 -fno-vect-cost-model -ffast-math} \
+  {-ftree-vectorize -O3 -mrvv-vector-bits=zvl -mrvv-max-lmul=m8 -fno-vect-cost-model -ffast-math} \
+  {-ftree-vectorize -O3 -mrvv-vector-bits=zvl -mrvv-max-lmul=dynamic -ffast-math} \
+  {-ftree-vectorize -O2 -mrvv-vector-bits=zvl -mrvv-max-lmul=m1 -fno-vect-cost-model -ffast-math} \
+  {-ftree-vectorize -O2 -mrvv-vector-bits=zvl -mrvv-max-lmul=m2 -fno-vect-cost-model -ffast-math} \
+  {-ftree-vectorize -O2 -mrvv-vector-bits=zvl -mrvv-max-lmul=m4 -fno-vect-cost-model -ffast-math} \
+  {-ftree-vectorize -O2 -mrvv-vector-bits=zvl -mrvv-max-lmul=m8 -fno-vect-cost-model -ffast-math} \
+  {-ftree-vectorize -O2 -mrvv-vector-bits=zvl -mrvv-max-lmul=dynamic -ffast-math} \
+  {-ftree-vectorize -O3 -mrvv-vector-bits=scalable -mrvv-max-lmul=m1 -fno-vect-cost-model -ffast-math} \
+  {-ftree-vectorize -O3 -mrvv-vector-bits=scalable -mrvv-max-lmul=m2 -fno-vect-cost-model -ffast-math} \
+  {-ftree-vectorize -O3 -mrvv-vector-bits=scalable -mrvv-max-lmul=m4 -fno-vect-cost-model -ffast-math} \
+  {-ftree-vectorize -O3 -mrvv-vector-bits=scalable -mrvv-max-lmul=m8 -fno-vect-cost-model -ffast-math} \
+  {-ftree-vectorize -O3 -mrvv-vector-bits=scalable -mrvv-max-lmul=dynamic -ffast-math} \
+  {-ftree-vectorize -O2 -mrvv-vector-bits=scalable -mrvv-max-lmul=m1 -fno-vect-cost-model -ffast-math} \
+  {-ftree-vectorize -O2 -mrvv-vector-bits=scalable -mrvv-max-lmul=m2 -fno-vect-cost-model -ffast-math} \
+  {-ftree-vectorize -O2 -mrvv-vector-bits=scalable -mrvv-max-lmul=m4 -fno-vect-cost-model -ffast-math} \
+  {-ftree-vectorize -O2 -mrvv-vector-bits=scalable -mrvv-max-lmul=m8 -fno-vect-cost-model -ffast-math} \
+  {-ftree-vectorize -O2 -mrvv-vector-bits=scalable -mrvv-max-lmul=dynamic -ffast-math} ]
+foreach op $AUTOVEC_TEST_OPTS {
+  dg-runtest [lsort [glob -nocomplain $srcdir/$subdir/autovec/gather-scatter/*.\[cS\]]] \
+    "$op" ""
+  dg-runtest [lsort [glob -nocomplain $srcdir/$subdir/autovec/strided/*.\[cS\]]] \
+    "$op" ""
+  dg-runtest [lsort [glob -nocomplain $srcdir/$subdir/autovec/sat/*.\[cS\]]] \
+    "$op" ""
+}
+
+# vx_vf tests
+set AUTOVEC_TEST_OPTS [list \
+  {-ftree-vectorize -O3 -mrvv-vector-bits=zvl -mrvv-max-lmul=m1 -ffast-math} \
+  {-ftree-vectorize -O3 -mrvv-vector-bits=zvl -mrvv-max-lmul=m2 -ffast-math} \
+  {-ftree-vectorize -O3 -mrvv-vector-bits=zvl -mrvv-max-lmul=m4 -ffast-math} \
+  {-ftree-vectorize -O3 -mrvv-vector-bits=zvl -mrvv-max-lmul=m8 -ffast-math} \
+  {-ftree-vectorize -O3 -mrvv-vector-bits=zvl -mrvv-max-lmul=dynamic -ffast-math} \
+  {-ftree-vectorize -O3 -mrvv-vector-bits=scalable -mrvv-max-lmul=m1 -ffast-math} \
+  {-ftree-vectorize -O3 -mrvv-vector-bits=scalable -mrvv-max-lmul=m2 -ffast-math} \
+  {-ftree-vectorize -O3 -mrvv-vector-bits=scalable -mrvv-max-lmul=m4 -ffast-math} \
+  {-ftree-vectorize -O3 -mrvv-vector-bits=scalable -mrvv-max-lmul=m8 -ffast-math} \
+  {-ftree-vectorize -O3 -mrvv-vector-bits=scalable -mrvv-max-lmul=dynamic -ffast-math} ]
+foreach op $AUTOVEC_TEST_OPTS {
+  dg-runtest [lsort [glob -nocomplain $srcdir/$subdir/autovec/vx_vf/*.\[cS\]]] \
+    "$op" ""
+}
+
+set POLICY [list {policy} {non-policy} ]
+set OVERLOAD [list {overloaded} {non-overloaded} ]
+foreach po $POLICY {
+  foreach ov $OVERLOAD {
+    # For Andes Vector feature tests
+    dg-runtest [lsort [glob -nocomplain $srcdir/$subdir/xandesvector/$po/$ov/*.\[cS\]]] \
+      "" $CFLAGS
+  }
+}
+
+# All done.
+dg-finish

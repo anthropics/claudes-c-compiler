@@ -1,0 +1,387 @@
+2026-01-08  Olivier Hainque  <hainque@adacore.com>
+	    Alexandre Oliva  <oliva@adacore.com>
+
+	* configure.ac (default_gnattools_target): Use gnattools-cross
+	when not bootstrapping x86_64 configurations defaulting to
+	-m32.
+	* configure: Rebuild.
+
+2025-06-22  Nicolas Boulenguez  <nicolas@debian.org>
+
+	PR ada/120106
+	* configure.ac: Remove ACX_NONCANONICAL_HOST and add ACX_PROG_GNAT.
+	* configure: Regenerate.
+	* Makefile.in: Do not substitute host_noncanonical but substitute
+	GNATMAKE and GNATBIND.
+	Set GNAT{MAKE,BIND,LINK_LS}_FOR_HOST from GNAT{MAKE,BIND} instead
+	of using hardcoded commands.
+
+2025-04-01  Eric Botcazou  <ebotcazou@adacore.com>
+
+	PR ada/119440
+	PR ada/119571
+	* Makefile.in (TOOLS_FLAGS_TO_PASS_CROSS): Pass $(PICFLAG) under
+	CFLAGS and $(LD_PICFLAG) under LDFLAGS.
+
+2025-03-25  Eric Botcazou  <ebotcazou@adacore.com>
+
+	PR ada/119440
+	* configure.ac (host-pie): New switch.
+	(host-bind-now): Likewise.
+	Substitute PICFLAG and LD_PICFLAG.
+	* configure: Regenerate.
+	* Makefile.in (PICFLAG): New substituted variable.
+	(LD_PICFLAG): Likewise.
+	(TOOLS_FLAGS_TO_PASS): Pass $(PICFLAG) under CFLAGS & $(LD_PICFLAG)
+	under LDFLAGS.  Do not pass -I- under ADA_INCLUDES.
+	(TOOLS_FLAGS_TO_PASS_RE): Likewise.
+
+2024-07-07  Maciej W. Rozycki  <macro@orcam.me.uk>
+
+	* Makefile.in (gnattools-cross): Also build 'gnattools-cross-mv'
+	in GCC_DIR.
+
+2023-04-25  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* configure.ac (TOOLS_TARGET_PAIRS): Remove obsolete settings.
+	(EXTRA_GNATTOOLS): Likewise.
+	* configure: Regenerate.
+
+2022-08-31  Martin Liska  <mliska@suse.cz>
+
+	* configure.ac: Remove deprecated ports.
+	* configure: Regenerate.
+
+2021-10-22  Eric Gallager  <egallager@gcc.gnu.org>
+
+	PR other/102663
+	* Makefile.in: Add dummy install-dvi target.
+
+2021-05-07  Bob Duff  <duff@adacore.com>
+
+	* Makefile.in (GENERATED_FILES_FOR_TOOLS): New variable.
+	($(GCC_DIR)/stamp-tools): Walk it for the first copy operation.
+
+2018-11-19  Alexandre Oliva <oliva@adacore.com>
+
+	PR ada/81878
+	* configure.ac (default_gnattools_target): Do not mistake
+	just-built host tools as native in cross-back toolchains.
+	* configure: Rebuilt.
+
+2018-11-06  Eric Botcazou  <ebotcazou@adacore.com>
+
+	PR ada/81878
+	Revert
+	2018-10-29  Tamar Christina  <tamar.christina@arm.com>
+
+	PR ada/81878
+	* Makefile.in (TOOLS_FLAGS_TO_PASS_NATIVE): Add -B ../../.
+
+	2017-08-17  Richard Biener  <rguenther@suse.de>
+
+	PR ada/81878
+	* Makefile.in (CXX_LFLAGS): Remove.
+	(TOOLS_FLAGS_TO_PASS_NATIVE): Pass $(CXX) as CXX.
+	(TOOLS_FLAGS_TO_PASS_RE): Likewise.
+
+2018-10-31  Joseph Myers  <joseph@codesourcery.com>
+
+	PR bootstrap/82856
+	* configure.ac: Remove AC_PREREQ.
+	* configure: Regenerate.
+
+2018-10-29  Tamar Christina  <tamar.christina@arm.com>
+
+	PR ada/81878
+	* Makefile.in (TOOLS_FLAGS_TO_PASS_NATIVE): Add -B ../../.
+
+2017-08-17  Richard Biener  <rguenther@suse.de>
+
+	PR ada/81878
+	* Makefile.in (CXX_LFLAGS): Remove.
+	(TOOLS_FLAGS_TO_PASS_NATIVE): Pass $(CXX) as CXX.
+	(TOOLS_FLAGS_TO_PASS_RE): Likewise.
+
+2016-05-16  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* configure.ac: Add ACX_NONCANONICAL_HOST.
+	* configure: Regenerate.
+	* Makefile.in: Replace host_alias with host_noncanonical.
+	(gnattools-cross): Do not rename the tools.
+
+2016-04-04  Segher Boessenkool  <segher@kernel.crashing.org>
+
+	PR bootstrap/70173
+	* Makefile.in (distclean): Also delete config.cache .
+
+2015-12-06  Eric Botcazou  <ebotcazou@adacore.com>
+
+	PR ada/50048
+	* Makefile.in (ftop_srcdir): New variable.
+	(INCLUDES_FOR_SUBDIR): Use -iquote and $(ftop_srcdir).
+
+2015-06-08  John Marino  <gnugcc@marino.st>
+
+	* configure.ac (*-*-dragonfly*): New configuration.
+	* configure: Regenerate.
+
+2014-02-23  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* Makefile.in (TOOLS_FLAGS_TO_PASS_CROSS): Robustify.
+
+2014-01-27  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* configure.ac (*-*-lynxos*): Delete.
+	* configure: Regenerate.
+
+2013-12-12  Eric Botcazou  <ebotcazou@adacore.com>
+	    Iain Sandoe  <iain@codesourcery.com>
+
+	PR ada/55946
+	* Makefile.in (host): Define.
+	(host_alias): Likewise.
+	(TOOLS_FLAGS_TO_PASS_RE): Add LDFLAGS.
+	(GNATMAKE_FOR_HOST): Define.
+	(GNATLINK_FOR_HOST): Likewise.
+	(GNATBIND_FOR_HOST): Likewise.
+	(GNATLS_FOR_HOST): Likewise.
+	(RTS_DIR): Move around and use GNATLS_FOR_HOST.
+	(TOOLS_FLAGS_TO_PASS_CROSS): Use the other *_HOST variables.
+
+2013-12-04  Eric Botcazou  <ebotcazou@adacore.com>
+
+	PR ada/59382
+	* configure.ac (target parameterization): Rewrite.
+	* configure: Regenerate.
+
+2013-09-01  Eric Botcazou  <ebotcazou@adacore.com>
+	    Iain Sandoe  <iain@codesourcery.com>
+
+	PR ada/58239
+	* Makefile.in (CXX_LFLAGS): New.
+	(TOOLS_FLAGS_TO_PASS_NATIVE): Pass CXX and CXX_LFLAGS.
+	(TOOLS_FLAGS_TO_PASS_RE): Likewise.
+	(TOOLS_FLAGS_TO_PASS_CROSS): Pass CXX.
+
+2012-03-14  Rainer Orth  <ro@CeBiTec.Uni-Bielefeld.DE>
+
+	* configure.ac (mips-sgi-irix*): Remove.
+	* configure: Regenerate.
+
+2011-10-12  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* Makefile.in (LOOSE_WARN): Delete.
+	(GCC_WARN_CFLAGS): Set to -W -Wall.
+	(TOOLS_FLAGS_TO_PASS_1): Delete.
+	(TOOLS_FLAGS_TO_PASS_1re): Rename into...
+	(TOOLS_FLAGS_TO_PASS_RE): ...this.
+	(gnattools-native): Use TOOLS_FLAGS_TO_PASS_NATIVE.
+	(regnattools): Use TOOLS_FLAGS_TO_PASS_RE.
+
+2011-07-07  Rainer Orth  <ro@CeBiTec.Uni-Bielefeld.DE>
+
+	PR target/39150
+	* configure.ac (*86-*-solaris2*): Also accept
+	x86_64-*-solaris2.1[0-9]*.
+	* configure: Regenerate.
+
+2010-11-20  Ralf Wildenhues  <Ralf.Wildenhues@gmx.de>
+
+	PR other/46202
+	* Makefile.in (install-strip): New phony target.
+	(check, installcheck, info, dvi, pdf, html, install)
+	(install-info, install-pdf, install-html, mostlyclean)
+	(clean, distclean, maintainer-clean): Mark phony.
+
+2010-01-09  Simon Wright  <simon@pushface.org>
+
+	PR ada/42659
+	* configure.ac (powerpc|*86-*-darwin*): Extend to *-*-darwin*.
+	* configure: Regenerate.
+
+2009-08-24  Ralf Wildenhues  <Ralf.Wildenhues@gmx.de>
+
+	* configure.ac (AC_PREREQ): Bump to 2.64.
+
+2009-08-22  Ralf Wildenhues  <Ralf.Wildenhues@gmx.de>
+
+	* configure: Regenerate.
+
+2009-07-30  Ralf Wildenhues  <Ralf.Wildenhues@gmx.de>
+
+	* Makefile.in (AUTOCONF, configure_deps): New variables.
+	($(srcdir)/configure): Use them.
+
+2009-05-18  Bechir Zalila  <bechir.zalila@gmail.com>
+
+	PR ada/40166
+	* Makefile.in (TOOLS_TARGET_PAIRS): Use the correct path to the
+	target specific sources.
+
+2009-04-10  Arnaud Charlet  <charlet@adacore.com>
+
+	* Makefile.in (stamp-tools): Add handling of snames.ad[sb].
+
+2009-04-09  Jakub Jelinek  <jakub@redhat.com>
+
+	* Makefile.in: Change copyright header to refer to version
+	3 of the GNU General Public License and to point readers at the
+	COPYING3 file and the FSF's license web page.
+	* configure.ac: Likewise.
+
+2009-02-26  Andreas Schwab  <schwab@suse.de>
+
+	PR ada/39172
+	* Makefile.in (fsrcdir): Point to gcc directory, not gcc/ada.
+	(INCLUDES_FOR_SUBDIR): Adjust.
+	(ADA_INCLUDES_FOR_SUBDIR): Adjust.
+
+2008-08-01  Paolo Bonzini  <bonzini@gnu.org>
+
+	* configure.ac (warn_cflags): Substitute.
+	* configure: Regenerate.
+	* Makefile.in (libdir, exeext, WARN_CFLAGS): Substitute.
+	(GCC_WARN_CFLAGS): Remove NOCOMMON_FLAG.
+	(ADA_INCLUDE_DIR, ADA_RTL_OBJ_DIR): Remove as they were unused.
+	(libsubdir): Remove.
+	(libada-mk): Do not include.  Include libgcc.mvars instead.
+	(xmake_file): Remove, do not include.
+
+2008-07-30  Paolo Bonzini  <bonzini@gnu.org>
+
+	* configure.ac (x_ada_cflags): Remove.
+	(ADA_CFLAGS): Substitute.
+	* configure: Regenerate.
+	* Makefile.in (ADA_CFLAGS): Substitute.
+	(T_ADA_CFLAGS, X_ADA_CFLAGS, ALL_ADA_CFLAGS): Remove.
+	(TOOLS_FLAGS_TO_PASS_1, TOOLS_FLAGS_TO_PASS_1re,
+	TOOLS_FLAGS_TO_PASS_NATIVE, TOOLS_FLAGS_TO_PASS_CROSS):
+	Pass ADA_CFLAGS.
+
+2008-07-30  Laurent Guerby  <laurent@guerby.net>
+
+	PR ada/5911
+	* gnattools/Makefile.in: Replace stamp-gnatlib by
+	stamp-gnatlib-rts.
+
+2008-06-26  Chris Proctor  <chrisp_42@bigpond.com>
+
+	* configure.ac, configure: Fix target specific pairs.
+
+2008-06-17  Ralf Wildenhues  <Ralf.Wildenhues@gmx.de>
+
+	* configure.ac: move sinclude of acx.m4 before AC_INIT,
+	also sinclude override.m4.
+	* Makefile.in ($(srcdir)/configure): Update dependencies.
+	* configure: Regenerate.
+
+2008-06-07  Joseph Myers  <joseph@codesourcery.com>
+
+	* configure.ac (xscale*-wrs-vx*, xscale*-wrs-coff): Remove.
+	* configure: Regenerate.
+
+2008-05-20  Arnaud Charlet  <charlet@adacore.com>
+
+	* Makefile.in (GNATTOOLS2_FILES): Replaced by common-tools target
+	in gcc/ada/Makefile.in
+
+2008-05-13  Arnaud Charlet  <charlet@adacore.com>
+
+	PR ada/31808
+	* Makefile.in (gnattools-cross): Do not build vxaddr2line
+
+2008-04-05  Arnaud Charlet  <charlet@adacore.com>
+
+	* Makefile.in: Remove handling of gnatbl.
+
+2007-12-05  Bechir Zalila  <bechir.zalila@gmail.com>
+
+	PR ada/34284
+	* configure.ac: Added a missing switch case for *86-*-darwin*
+	when defining the value of TOOLS_TARGET_PAIRS.
+
+	* configure: Regenerated.
+
+2007-06-06  Arnaud Charlet  <charlet@adacore.com>
+
+	* configure.ac: Update TOOLS_TARGET_PAIRS configuration to match
+	gcc/ada/Makefile.in.
+
+	* configure: Regenerated.
+
+2007-04-30  Arnaud Charlet  <charlet@adacore.com>
+
+	PR ada/28953
+	* Makefile.in: No longer build gprmake
+
+2007-03-01  Brooks Moses  <brooks.moses@codesourcery.com>
+
+	* Makefile.in: Add dummy install-pdf target.
+
+2007-02-11  Andreas Schwab  <schwab@suse.de>
+
+	* configure.ac: Update TOOLS_TARGET_PAIRS configuration to match
+	gcc/ada/Makefile.in.
+	* configure: Regenerated.
+
+2007-01-23  Richard Guenther  <rguenther@suse.de>
+
+	PR bootstrap/30541
+	* Makefile.in (STAGE_PREFIX): Do not define.
+
+2006-10-10  Brooks Moses  <bmoses@stanford.edu>
+
+	* Makefile.in: Added empty "pdf" target.
+
+2006-06-03  Carlos O'Donell  <carlos@codesourcery.com>
+
+	* Makefile.in: Add html and install-html targets.
+
+2005-03-09  Arnaud Charlet  <charlet@adacore.com>
+
+	* Makefile.in: Fix incorrect use of ' in shell command
+
+2005-02-02  Nathanael Nerode  <neroden@gcc.gnu.org>
+
+	* Makefile.in: Remove use of cc_set_by_configure; just use
+	plain old CC from the top level in this case.
+
+2005-01-30  Nathanael Nerode  <neroden@gcc.gnu.org>
+	Merge from mainline at tag libada-gnattools-merge-20050129:
+	* configure.ac: Changes propagated from gcc/ada/Makefile.in.
+	* Makefile.in: Changes relocated from gcc/ada/Makefile.in.
+
+2004-12-13  Nathanael Nerode  <neroden@gcc.gnu.org>
+
+	* Makefile.in: Reinstate stamp-gnatlib check.
+
+2004-12-02  Nathanael Nerode  <neroden@gcc.gnu.org>
+
+	* Makefile.in: Inline gnattools{1,1-re,2,3,4} targets from
+	gcc/ada/configure.ac into gnattools-native and gnattools-cross
+	targets, collecting flags as appropriate from here,
+	gcc/ada/Makefile.in, gcc/ada/configure.ac, etc.  Attempt to retain
+	identical behavior.
+	* configure.ac: Add necessary configure bits from
+	gcc/ada/configure.ac.
+	* configure: Regenerate.
+
+2004-08-16  Nathanael Nerode  <neroden@gcc.gnu.org>
+
+	* configure.ac: Replace AC_CANONICAL_SYSTEM with _BUILD, _HOST,
+	_TARGET.  Replace _GCC_TOPLEV_NONCANONICAL_TARGET with
+	ACX_NONCANONICAL_TARGET, and replace now-redundant AC_SUBST.
+	* configure: Regenerate.
+
+2004-07-18  Nathanael Nerode  <neroden@gcc.gnu.org>
+
+	* Makefile.in, configure.ac: Remove libada-specific targets and
+	variables.
+	* configure: Regenerate.
+	* New directory, cloned from libada.
+
+Copyright 2004-2026 Free Software Foundation, Inc.
+
+This ChangeLog is free software; the Free Software Foundation gives
+unlimited permission to copy, distribute, and modify it.

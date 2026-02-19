@@ -1,0 +1,52 @@
+/* Copyright (C) 2011-2026 Free Software Foundation, Inc.
+   Contributed by ARM Ltd.
+
+   This file is part of GCC.
+
+   GCC is free software; you can redistribute it and/or modify it
+   under the terms of the GNU General Public License as published
+   by the Free Software Foundation; either version 3, or (at your
+   option) any later version.
+
+   GCC is distributed in the hope that it will be useful, but WITHOUT
+   ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+   or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+   License for more details.
+
+   You should have received a copy of the GNU General Public License
+   along with GCC; see the file COPYING3.  If not see
+   <http://www.gnu.org/licenses/>.  */
+
+/* Before using #include to read this file, define a macro:
+
+      AARCH64_ARCH(NAME, CORE, ARCH_IDENT, ARCH_REV, FLAGS)
+
+   The NAME is the name of the architecture, represented as a string
+   constant.  The CORE is the identifier for a core representative of
+   this architecture.  ARCH_IDENT is the architecture identifier.  It must be
+   unique and be syntactically valid to appear as part of an enum identifier.
+   ARCH_REV is an integer specifying the architecture major revision.
+   FLAGS are the flags implied by the architecture.
+   Due to the assumptions about the positions of these fields in config.gcc,
+   NAME should be kept as the first argument.  */
+
+AARCH64_ARCH("armv8-a",       generic_armv8_a,   V8A,       8,  (SIMD))
+AARCH64_ARCH("armv8.1-a",     generic_armv8_a,   V8_1A,     8,  (V8A, LSE, CRC, RDMA))
+AARCH64_ARCH("armv8.2-a",     generic_armv8_a,   V8_2A,     8,  (V8_1A))
+AARCH64_ARCH("armv8.3-a",     generic_armv8_a,   V8_3A,     8,  (V8_2A, PAUTH, RCPC, FCMA, JSCVT))
+AARCH64_ARCH("armv8.4-a",     generic_armv8_a,   V8_4A,     8,  (V8_3A, F16FML, DOTPROD, FLAGM, RCPC2))
+AARCH64_ARCH("armv8.5-a",     generic_armv8_a,   V8_5A,     8,  (V8_4A, SB, SSBS, PREDRES, FRINTTS, FLAGM2))
+AARCH64_ARCH("armv8.6-a",     generic_armv8_a,   V8_6A,     8,  (V8_5A, I8MM, BF16))
+AARCH64_ARCH("armv8.7-a",     generic_armv8_a,   V8_7A,     8,  (V8_6A, WFXT, XS))
+AARCH64_ARCH("armv8.8-a",     generic_armv8_a,   V8_8A,     8,  (V8_7A, MOPS))
+AARCH64_ARCH("armv8.9-a",     generic_armv8_a,   V8_9A,     8,  (V8_8A, CSSC))
+AARCH64_ARCH("armv8-r",       generic_armv8_a,   V8R  ,     8,  (V8_4A))
+AARCH64_ARCH("armv9-a",       generic_armv9_a,   V9A  ,     9,  (V8_5A, SVE2))
+AARCH64_ARCH("armv9.1-a",     generic_armv9_a,   V9_1A,     9,  (V8_6A, V9A))
+AARCH64_ARCH("armv9.2-a",     generic_armv9_a,   V9_2A,     9,  (V8_7A, V9_1A))
+AARCH64_ARCH("armv9.3-a",     generic_armv9_a,   V9_3A,     9,  (V8_8A, V9_2A))
+AARCH64_ARCH("armv9.4-a",     generic_armv9_a,   V9_4A,     9,  (V8_9A, V9_3A, SVE2p1))
+AARCH64_ARCH("armv9.5-a",     generic_armv9_a,   V9_5A,     9,  (V9_4A, CPA, FAMINMAX, LUT))
+AARCH64_ARCH("armv9.6-a",     generic_armv9_a,   V9_6A,     9,  (V9_5A, CMPBR, LSUI, OCCMO))
+
+#undef AARCH64_ARCH

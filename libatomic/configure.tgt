@@ -1,0 +1,231 @@
+# -*- shell-script -*-
+#  Copyright (C) 2012-2026 Free Software Foundation, Inc.
+#  Contributed by Richard Henderson <rth@redhat.com>.
+#
+#  This file is part of the GNU Atomic Library (libatomic).
+#
+#  Libatomic is free software; you can redistribute it and/or modify it
+#  under the terms of the GNU General Public License as published by
+#  the Free Software Foundation; either version 3 of the License, or
+#  (at your option) any later version.
+#
+#  Libatomic is distributed in the hope that it will be useful, but WITHOUT ANY
+#  WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+#  FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
+#  more details.
+#
+#  Under Section 7 of GPL version 3, you are granted additional
+#  permissions described in the GCC Runtime Library Exception, version
+#  3.1, as published by the Free Software Foundation.
+#
+#  You should have received a copy of the GNU General Public License and
+#  a copy of the GCC Runtime Library Exception along with this program;
+#  see the files COPYING3 and COPYING.RUNTIME respectively.  If not, see
+#  <http://www.gnu.org/licenses/>.
+
+# Map the target cpu to an ARCH sub-directory.  At the same time,
+# work out any special compilation flags as necessary.
+
+# Give operating systems the opportunity to discard XCFLAGS modifications based
+# on ${target_cpu}.  For example to allow proper use of multilibs.
+configure_tgt_pre_target_cpu_XCFLAGS="${XCFLAGS}"
+
+case "${target_cpu}" in
+  alpha*)
+	# fenv.c needs this option to generate inexact exceptions.
+	XCFLAGS="${XCFLAGS} -mfp-trap-mode=sui"
+	ARCH=alpha
+	;;
+  hppa*)		ARCH=pa ;;
+  rs6000 | powerpc*)	ARCH=powerpc ;;
+  riscv*)		ARCH=riscv ;;
+  sh*)			ARCH=sh ;;
+
+  aarch64*)
+	ARCH=aarch64
+	case "${target}" in
+	    aarch64*-*-linux* | aarch64-*-mingw*)
+		if test -n "$enable_aarch64_lse"; then
+		    try_ifunc=yes
+		fi
+		;;
+	esac
+	XCFLAGS="${XCFLAGS} -mno-outline-atomics"
+	;;
+  arm*)
+	ARCH=arm
+	case "${target}" in
+            arm*-*-freebsd* | arm*-*-netbsd*)
+                ;;
+            *)
+                # ??? Detect when -march=armv7 is already enabled.
+                try_ifunc=yes
+                ;;
+        esac
+        ;;
+  sparc)
+	case " ${CC} ${CFLAGS} " in
+	  *" -m64 "*)
+	    ;;
+	  *)
+	    if test -z "$with_cpu"; then
+	      XCFLAGS="${XCFLAGS} -mcpu=v9"
+	    fi
+	esac
+	ARCH=sparc
+	;;
+  sparc64|sparcv9)
+	case " ${CC} ${CFLAGS} " in
+	  *" -m32 "*)
+	    XCFLAGS="${XCFLAGS} -mcpu=v9"
+	    ;;
+	esac
+	ARCH=sparc
+	;;
+
+  i[3456]86 | x86_64)
+	cat > conftestx.c <<EOF
+#ifndef __GCC_HAVE_SYNC_COMPARE_AND_SWAP_4
+#error need -march=i486
+#endif
+EOF
+	if ${CC} ${CFLAGS} -E conftestx.c > /dev/null 2>&1; then
+	  :
+	else
+	  if test "${target_cpu}" = x86_64; then
+	    XCFLAGS="${XCFLAGS} -march=i486 -mtune=generic"
+	  else
+	    XCFLAGS="${XCFLAGS} -march=i486 -mtune=${target_cpu}"
+	  fi
+	  XCFLAGS="${XCFLAGS} -fomit-frame-pointer"
+	fi
+	cat > conftestx.c <<EOF
+#ifdef __x86_64__
+#error ifunc is always wanted for 16B atomic load
+#else
+#ifndef __GCC_HAVE_SYNC_COMPARE_AND_SWAP_8
+#error need -march=i686
+#endif
+#endif
+EOF
+	if ${CC} ${CFLAGS} -E conftestx.c > /dev/null 2>&1; then
+	  try_ifunc=no
+	else
+	  try_ifunc=yes
+	fi
+	rm -f conftestx.c
+	ARCH=x86
+	;;
+
+  loongarch*)
+	cat > conftestx.c <<EOF
+#ifndef __GCC_HAVE_SYNC_COMPARE_AND_SWAP_16
+#error lock-free 16-byte atomics is not supported by compiler configuration
+#endif
+EOF
+	if ${CC} ${CFLAGS} -mlsx -mscq -E conftestx.c > /dev/null 2>&1; then
+	  cat > conftesty.c <<EOF
+#if defined (__loongarch_sx) && defined (__loongarch_scq)
+#error LSX and SCQ assumed available on target CPU so they are always used
+#endif
+EOF
+	  if ${CC} ${CFLAGS} -E conftesty.c > /dev/null 2>&1; then
+	    try_ifunc=yes
+	  else
+	    try_ifunc=no
+	  fi
+	else
+	  try_ifunc=no
+	fi
+	rm -f conftestx.c conftesty.c
+	ARCH=loongarch
+	;;
+
+  *)			ARCH="${target_cpu}" ;;
+esac
+
+# The cpu configury is always most relevant.
+if test -d ${srcdir}/config/$ARCH ; then
+  config_path="$ARCH"
+fi
+
+tmake_file=
+# Other system configury
+case "${target}" in
+  aarch64*-*-linux*)
+	# OS support for atomic primitives.
+	config_path="${config_path} linux/aarch64 posix"
+	;;
+
+  arm*-*-linux* | arm*-*-uclinux*)
+	# OS support for atomic primitives.
+	config_path="${config_path} linux/arm posix"
+	;;
+
+  s390*-*-linux*)
+	# OS support for atomic primitives.
+	config_path="${config_path} s390 posix"
+	;;
+
+  powerpc*-*-aix*)
+	config_path="${config_path} posix"
+	tmake_file="t-aix"
+	;;
+
+  *-*-linux* | *-*-gnu* | *-*-k*bsd*-gnu \
+  | *-*-netbsd* | *-*-freebsd* | *-*-openbsd* | *-*-dragonfly* \
+  | *-*-solaris2* | *-*-sysv4* | *-*-irix6* | *-*-osf* | *-*-hpux11* \
+  | *-*-darwin* | *-*-aix* | *-*-cygwin*)
+	# POSIX system.  The OS is supported.
+	config_path="${config_path} posix"
+	;;
+
+  *-*-mingw*)
+	# OS support for atomic primitives.
+        case ${target_thread_file} in
+          win32 | mcf | single)
+            config_path="${config_path} mingw"
+            ;;
+          posix)
+            config_path="${config_path} posix"
+            ;;
+        esac
+	;;
+
+  *-*-rtems*)
+	XCFLAGS="${configure_tgt_pre_target_cpu_XCFLAGS}"
+	config_path="rtems"
+	;;
+
+  *-*-elf*)
+	# ??? No target OS.  We could be targeting bare-metal kernel-mode,
+	# or user-mode for some custom OS.  If the target supports TAS,
+	# we can build our own spinlocks, given there are no signals.
+	# If the target supports disabling interrupts, we can work in
+	# kernel-mode, given the system is not multi-processor.
+	UNSUPPORTED=1
+	;;
+
+  nvptx*-*-*)
+	;;
+
+  *-*-vxworks*)
+        partial_libatomic=vxworks
+	;;
+
+  *)
+	# Who are you?
+	UNSUPPORTED=1
+	;;
+esac
+
+# glibc will pass hwcap to ifunc resolver functions as an argument.
+# The type may be different on different architectures.
+case "${target}" in
+  aarch64*-*-*)
+	IFUNC_RESOLVER_ARGS="uint64_t hwcap, const __ifunc_arg_t *features"
+	;;
+  *)
+	IFUNC_RESOLVER_ARGS="void"
+	;;
+esac

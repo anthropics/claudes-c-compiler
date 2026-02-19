@@ -1,0 +1,2863 @@
+/* config.in.  Generated from configure.ac by autoheader.  */
+
+/* Define if this compiler should be built as the offload target compiler. */
+#ifndef USED_FOR_TARGET
+#undef ACCEL_COMPILER
+#endif
+
+
+/* Define if building universal (internal helper macro) */
+#ifndef USED_FOR_TARGET
+#undef AC_APPLE_UNIVERSAL_BUILD
+#endif
+
+
+/* Define to the assembler option to enable compressed debug sections. */
+#ifndef USED_FOR_TARGET
+#undef AS_COMPRESS_DEBUG_OPTION
+#endif
+
+
+/* Define to the assembler option to disable compressed debug sections. */
+#ifndef USED_FOR_TARGET
+#undef AS_NO_COMPRESS_DEBUG_OPTION
+#endif
+
+
+/* Define to the root for URLs about GCC changes. */
+#ifndef USED_FOR_TARGET
+#undef CHANGES_ROOT_URL
+#endif
+
+
+/* Define as the number of bits in a byte, if `limits.h' doesn't. */
+#ifndef USED_FOR_TARGET
+#undef CHAR_BIT
+#endif
+
+
+/* Define to 0/1 if you want more run-time sanity checks. This one gets a grab
+   bag of miscellaneous but relatively cheap checks. */
+#ifndef USED_FOR_TARGET
+#undef CHECKING_P
+#endif
+
+
+/* Define 0/1 to force the choice for exception handling model. */
+#ifndef USED_FOR_TARGET
+#undef CONFIG_SJLJ_EXCEPTIONS
+#endif
+
+
+/* Specify a runpath directory, additional to those provided by the compiler
+   */
+#ifndef USED_FOR_TARGET
+#undef DARWIN_ADD_RPATH
+#endif
+
+
+/* Should add an extra runpath directory */
+#ifndef USED_FOR_TARGET
+#undef DARWIN_DO_EXTRA_RPATH
+#endif
+
+
+/* Define to enable the use of a default assembler. */
+#ifndef USED_FOR_TARGET
+#undef DEFAULT_ASSEMBLER
+#endif
+
+
+/* Define to enable the use of a default debug linker. */
+#ifndef USED_FOR_TARGET
+#undef DEFAULT_DSYMUTIL
+#endif
+
+
+/* Define to enable the use of a default linker. */
+#ifndef USED_FOR_TARGET
+#undef DEFAULT_LINKER
+#endif
+
+
+/* Define to larger than zero set the default stack clash protector size. */
+#ifndef USED_FOR_TARGET
+#undef DEFAULT_STK_CLASH_GUARD_SIZE
+#endif
+
+
+/* Define if you want to use __cxa_atexit, rather than atexit, to register C++
+   destructors for local statics and global objects. This is essential for
+   fully standards-compliant handling of destructors, but requires
+   __cxa_atexit in libc. */
+#ifndef USED_FOR_TARGET
+#undef DEFAULT_USE_CXA_ATEXIT
+#endif
+
+
+/* Define to enable the use of a default windres. */
+#ifndef USED_FOR_TARGET
+#undef DEFAULT_WINDRES
+#endif
+
+
+/* The default for -fdiagnostics-color option */
+#ifndef USED_FOR_TARGET
+#undef DIAGNOSTICS_COLOR_DEFAULT
+#endif
+
+
+/* The default for -fdiagnostics-urls option */
+#ifndef USED_FOR_TARGET
+#undef DIAGNOSTICS_URLS_DEFAULT
+#endif
+
+
+/* Define to the root for documentation URLs. */
+#ifndef USED_FOR_TARGET
+#undef DOCUMENTATION_ROOT_URL
+#endif
+
+
+/* Define to the dsymutil version. */
+#ifndef USED_FOR_TARGET
+#undef DSYMUTIL_VERSION
+#endif
+
+
+/* Define 0/1 if static analyzer feature is enabled. */
+#ifndef USED_FOR_TARGET
+#undef ENABLE_ANALYZER
+#endif
+
+
+/* Define if you want assertions enabled. This is a cheap check. */
+#ifndef USED_FOR_TARGET
+#undef ENABLE_ASSERT_CHECKING
+#endif
+
+
+/* Define to 1 to specify that we are using the BID decimal floating point
+   format instead of DPD */
+#ifndef USED_FOR_TARGET
+#undef ENABLE_DECIMAL_BID_FORMAT
+#endif
+
+
+/* Define to 1 to enable decimal float extension to C. */
+#ifndef USED_FOR_TARGET
+#undef ENABLE_DECIMAL_FLOAT
+#endif
+
+
+/* Define if your target supports default PIE and it is enabled. */
+#ifndef USED_FOR_TARGET
+#undef ENABLE_DEFAULT_PIE
+#endif
+
+
+/* Define if your target supports default stack protector and it is enabled.
+   */
+#ifndef USED_FOR_TARGET
+#undef ENABLE_DEFAULT_SSP
+#endif
+
+
+/* Define if you want more run-time sanity checks for dataflow. */
+#ifndef USED_FOR_TARGET
+#undef ENABLE_DF_CHECKING
+#endif
+
+
+/* Define to 0/1 if you want extra run-time checking that might affect code
+   generation. */
+#ifndef USED_FOR_TARGET
+#undef ENABLE_EXTRA_CHECKING
+#endif
+
+
+/* Define to 1 to enable fixed-point arithmetic extension to C. */
+#ifndef USED_FOR_TARGET
+#undef ENABLE_FIXED_POINT
+#endif
+
+
+/* Define if you want fold checked that it never destructs its argument. This
+   is quite expensive. */
+#ifndef USED_FOR_TARGET
+#undef ENABLE_FOLD_CHECKING
+#endif
+
+
+/* Define if you want the garbage collector to operate in maximally paranoid
+   mode, validating the entire heap and collecting garbage at every
+   opportunity. This is extremely expensive. */
+#ifndef USED_FOR_TARGET
+#undef ENABLE_GC_ALWAYS_COLLECT
+#endif
+
+
+/* Define if you want the garbage collector to do object poisoning and other
+   memory allocation checks. This is quite expensive. */
+#ifndef USED_FOR_TARGET
+#undef ENABLE_GC_CHECKING
+#endif
+
+
+/* Define if you want operations on GIMPLE (the basic data structure of the
+   high-level optimizers) to be checked for dynamic type safety at runtime.
+   This is moderately expensive. */
+#ifndef USED_FOR_TARGET
+#undef ENABLE_GIMPLE_CHECKING
+#endif
+
+
+/* Define if gcc should always pass --build-id to linker. */
+#ifndef USED_FOR_TARGET
+#undef ENABLE_LD_BUILDID
+#endif
+
+
+/* Define to 1 to enable libquadmath support */
+#ifndef USED_FOR_TARGET
+#undef ENABLE_LIBQUADMATH_SUPPORT
+#endif
+
+
+/* Define to enable LTO support. */
+#ifndef USED_FOR_TARGET
+#undef ENABLE_LTO
+#endif
+
+
+/* If --with-multiarch option is used */
+#ifndef USED_FOR_TARGET
+#undef ENABLE_MULTIARCH
+#endif
+
+
+/* Define to 1 if translation of program messages to the user's native
+   language is requested. */
+#ifndef USED_FOR_TARGET
+#undef ENABLE_NLS
+#endif
+
+
+/* Define this to enable support for offloading. */
+#ifndef USED_FOR_TARGET
+#undef ENABLE_OFFLOADING
+#endif
+
+
+/* Define to enable plugin support. */
+#ifndef USED_FOR_TARGET
+#undef ENABLE_PLUGIN
+#endif
+
+
+/* Define if you want all operations on RTL (the basic data structure of the
+   optimizer and back end) to be checked for dynamic type safety at runtime.
+   This is quite expensive. */
+#ifndef USED_FOR_TARGET
+#undef ENABLE_RTL_CHECKING
+#endif
+
+
+/* Define if you want RTL flag accesses to be checked against the RTL codes
+   that are supported for each access macro. This is relatively cheap. */
+#ifndef USED_FOR_TARGET
+#undef ENABLE_RTL_FLAG_CHECKING
+#endif
+
+
+/* Define if you want runtime assertions enabled. This is a cheap check. */
+#undef ENABLE_RUNTIME_CHECKING
+
+/* Define to enable evaluating float expressions with double precision in
+   standards-compatible mode on s390 targets. */
+#undef ENABLE_S390_EXCESS_FLOAT_PRECISION
+
+/* Define if the -stdlib= option should be enabled. */
+#ifndef USED_FOR_TARGET
+#undef ENABLE_STDLIB_OPTION
+#endif
+
+
+/* Define if you want all operations on trees (the basic data structure of the
+   front ends) to be checked for dynamic type safety at runtime. This is
+   moderately expensive. */
+#ifndef USED_FOR_TARGET
+#undef ENABLE_TREE_CHECKING
+#endif
+
+
+/* Define if you want all gimple types to be verified after gimplifiation.
+   This is cheap. */
+#ifndef USED_FOR_TARGET
+#undef ENABLE_TYPES_CHECKING
+#endif
+
+
+/* Define to get calls to the valgrind runtime enabled. */
+#ifndef USED_FOR_TARGET
+#undef ENABLE_VALGRIND_ANNOTATIONS
+#endif
+
+
+/* Define if you want to run subprograms and generated programs through
+   valgrind (a memory checker). This is extremely expensive. */
+#ifndef USED_FOR_TARGET
+#undef ENABLE_VALGRIND_CHECKING
+#endif
+
+
+/* Define 0/1 if vtable verification feature is enabled. */
+#ifndef USED_FOR_TARGET
+#undef ENABLE_VTABLE_VERIFY
+#endif
+
+
+/* Define to 1 if installation paths should be looked up in the Windows
+   Registry. Ignored on non-Windows hosts. */
+#ifndef USED_FOR_TARGET
+#undef ENABLE_WIN32_REGISTRY
+#endif
+
+
+/* Define to enable -mfentry by default on x86-64. */
+#ifndef USED_FOR_TARGET
+#undef ENABLE_X86_64_MFENTRY
+#endif
+
+
+/* Define to the name of a file containing a list of extra machine modes for
+   this architecture. */
+#ifndef USED_FOR_TARGET
+#undef EXTRA_MODES_FILE
+#endif
+
+
+/* Define to enable detailed memory allocation stats gathering. */
+#ifndef USED_FOR_TARGET
+#undef GATHER_STATISTICS
+#endif
+
+
+/* Define to 1 if `TIOCGWINSZ' requires <sys/ioctl.h>. */
+#ifndef USED_FOR_TARGET
+#undef GWINSZ_IN_SYS_IOCTL
+#endif
+
+
+/* mcontext_t fields start with __ */
+#ifndef USED_FOR_TARGET
+#undef HAS_MCONTEXT_T_UNDERSCORES
+#endif
+
+
+/* Define if you have a working <afunix.h> header file. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_AFUNIX_H
+#endif
+
+
+/* Define if AF_INET6 supported. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_AF_INET6
+#endif
+
+
+/* Define if AF_UNIX supported. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_AF_UNIX
+#endif
+
+
+/* Define if your assembler supports LSX and SCQ for 16B atomic. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_AS_16B_ATOMIC
+#endif
+
+
+/* Define if your assembler supports AEABI build attributes. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_AS_AEABI_BUILD_ATTRIBUTES
+#endif
+
+
+/* Define if your assembler supports architecture modifiers. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_AS_ARCHITECTURE_MODIFIERS
+#endif
+
+
+/* Define if your avr assembler supports -mgcc-isr option. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_AS_AVR_MGCCISR_OPTION
+#endif
+
+
+/* Define if your avr assembler supports --mlink-relax option. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_AS_AVR_MLINK_RELAX_OPTION
+#endif
+
+
+/* Define if your avr assembler supports -mrmw option. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_AS_AVR_MRMW_OPTION
+#endif
+
+
+/* Define to the level of your assembler's compressed debug section support.
+   */
+#ifndef USED_FOR_TARGET
+#undef HAVE_AS_COMPRESS_DEBUG
+#endif
+
+
+/* Define if your assembler supports conditional branch relaxation. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_AS_COND_BRANCH_RELAXATION
+#endif
+
+
+/* Define if your assembler supports the --debug-prefix-map option. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_AS_DEBUG_PREFIX_MAP
+#endif
+
+
+/* Define if your assembler supports .module. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_AS_DOT_MODULE
+#endif
+
+
+/* Define if your assembler supports DSPR1 mult. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_AS_DSPR1_MULT
+#endif
+
+
+/* Define if your assembler supports .dtprelword. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_AS_DTPRELWORD
+#endif
+
+
+/* Define if your assembler supports dwarf2 .file/.loc directives, and
+   preserves file table indices exactly as given. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_AS_DWARF2_DEBUG_LINE
+#endif
+
+
+/* Define if your assembler supports views in dwarf2 .loc directives. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_AS_DWARF2_DEBUG_VIEW
+#endif
+
+
+/* Define if your assembler supports eh_frame pcrel encoding. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_AS_EH_FRAME_PCREL_ENCODING_SUPPORT
+#endif
+
+
+/* Define if your assembler supports the R_PPC64_ENTRY relocation. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_AS_ENTRY_MARKERS
+#endif
+
+
+/* Define if your assembler supports explicit relocation. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_AS_EXPLICIT_RELOCS
+#endif
+
+
+/* Define if your assembler supports the --gdwarf2 option. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_AS_GDWARF2_DEBUG_FLAG
+#endif
+
+
+/* Define if your assembler supports the --gdwarf-5 option. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_AS_GDWARF_5_DEBUG_FLAG
+#endif
+
+
+/* Define if your assembler supports .gnu_attribute. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_AS_GNU_ATTRIBUTE
+#endif
+
+
+/* Define true if the assembler supports '.long foo@GOTOFF'. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_AS_GOTOFF_IN_DATA
+#endif
+
+
+/* Define if your assembler supports the Sun syntax for cmov. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_AS_IX86_CMOV_SUN_SYNTAX
+#endif
+
+
+/* Define if your assembler supports the subtraction of symbols in different
+   sections. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_AS_IX86_DIFF_SECT_DELTA
+#endif
+
+
+/* Define if your assembler supports the ffreep mnemonic. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_AS_IX86_FFREEP
+#endif
+
+
+/* Define if your assembler uses fildq and fistq mnemonics. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_AS_IX86_FILDQ
+#endif
+
+
+/* Define if your assembler uses filds and fists mnemonics. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_AS_IX86_FILDS
+#endif
+
+
+/* Define 0/1 if your assembler and linker support @GOT. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_AS_IX86_GOT32X
+#endif
+
+
+/* Define if your assembler supports HLE prefixes. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_AS_IX86_HLE
+#endif
+
+
+/* Define if your assembler supports interunit movq mnemonic. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_AS_IX86_INTERUNIT_MOVQ
+#endif
+
+
+/* Define if your assembler supports the .quad directive. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_AS_IX86_QUAD
+#endif
+
+
+/* Define if the assembler supports 'rep <insn>, lock <insn>'. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_AS_IX86_REP_LOCK_PREFIX
+#endif
+
+
+/* Define if your assembler supports the sahf mnemonic in 64bit mode. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_AS_IX86_SAHF
+#endif
+
+
+/* Define if your assembler supports the swap suffix. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_AS_IX86_SWAP
+#endif
+
+
+/* Define if your assembler and linker support @tlsgdplt. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_AS_IX86_TLSGDPLT
+#endif
+
+
+/* Define to 1 if your assembler and linker support @tlsldm. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_AS_IX86_TLSLDM
+#endif
+
+
+/* Define to 1 if your assembler and linker support @tlsldmplt. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_AS_IX86_TLSLDMPLT
+#endif
+
+
+/* Define 0/1 if your assembler and linker support calling ___tls_get_addr via
+   GOT. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_AS_IX86_TLS_GET_ADDR_GOT
+#endif
+
+
+/* Define if your assembler supports the 'ud2' mnemonic. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_AS_IX86_UD2
+#endif
+
+
+/* Define if your assembler supports the lituse_jsrdirect relocation. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_AS_JSRDIRECT_RELOCS
+#endif
+
+
+/* Define if your assembler supports .sleb128 and .uleb128. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_AS_LEB128
+#endif
+
+
+/* Define if your assembler supports LEON instructions. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_AS_LEON
+#endif
+
+
+/* Define if the assembler won't complain about a line such as # 0 "" 2. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_AS_LINE_ZERO
+#endif
+
+
+/* Define if your assembler supports ltoffx and ldxmov relocations. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_AS_LTOFFX_LDXMOV_RELOCS
+#endif
+
+
+/* Define if your assembler supports the -mabi option. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_AS_MABI_OPTION
+#endif
+
+
+/* Define if your assembler supports .machine and .machinemode. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_AS_MACHINE_MACHINEMODE
+#endif
+
+
+/* Define if your macOS assembler supports .build_version directives */
+#ifndef USED_FOR_TARGET
+#undef HAVE_AS_MACOS_BUILD_VERSION
+#endif
+
+
+/* Define if the assembler understands -march=rv*_b. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_AS_MARCH_B
+#endif
+
+
+/* Define if the assembler understands -march=rv*_zaamo_zalrsc. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_AS_MARCH_ZAAMO_ZALRSC
+#endif
+
+
+/* Define if the assembler understands -march=rv*_zifencei. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_AS_MARCH_ZIFENCEI
+#endif
+
+
+/* Define if your assembler supports mfcr field. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_AS_MFCRF
+#endif
+
+
+/* Define if the assembler understands -misa-spec=. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_AS_MISA_SPEC
+#endif
+
+
+/* Define if your macOS assembler supports -mllvm -x86-pad-for-align=false. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_AS_MLLVM_X86_PAD_FOR_ALIGN
+#endif
+
+
+/* Define if your macOS assembler supports the -mmacos-version-min option. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_AS_MMACOSX_VERSION_MIN_OPTION
+#endif
+
+
+/* Define if your assembler supports -mrelax option. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_AS_MRELAX_OPTION
+#endif
+
+
+/* Define if your assembler supports .mspabi_attribute. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_AS_MSPABI_ATTRIBUTE
+#endif
+
+
+/* Define if the assembler understands -mnan=. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_AS_NAN
+#endif
+
+
+/* Define if your assembler supports the -no-mul-bug-abort option. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_AS_NO_MUL_BUG_ABORT_OPTION
+#endif
+
+
+/* Define if the assembler understands -mno-shared. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_AS_NO_SHARED
+#endif
+
+
+/* Define if your assembler supports offsetable %lo(). */
+#ifndef USED_FOR_TARGET
+#undef HAVE_AS_OFFSETABLE_LO10
+#endif
+
+
+/* Define if your assembler supports R_PPC*_PLTSEQ relocations. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_AS_PLTSEQ
+#endif
+
+
+/* Define if your assembler supports htm insns on power10. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_AS_POWER10_HTM
+#endif
+
+
+/* Define if your assembler supports .ref */
+#ifndef USED_FOR_TARGET
+#undef HAVE_AS_REF
+#endif
+
+
+/* Define if your assembler supports R_PPC_REL16 relocs. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_AS_REL16
+#endif
+
+
+/* Define if your assembler supports -relax option. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_AS_RELAX_OPTION
+#endif
+
+
+/* Define if your assembler supports .attribute. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_AS_RISCV_ATTRIBUTE
+#endif
+
+
+/* Define 0/1 if your assembler and linker support R_X86_64_CODE_6_GOTTPOFF.
+   */
+#ifndef USED_FOR_TARGET
+#undef HAVE_AS_R_X86_64_CODE_6_GOTTPOFF
+#endif
+
+
+/* Define if your assembler supports relocs needed by -fpic. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_AS_SMALL_PIC_RELOCS
+#endif
+
+
+/* Define if your assembler supports call36 relocation. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_AS_SUPPORT_CALL36
+#endif
+
+
+/* Define if your assembler and linker support thread-local storage. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_AS_TLS
+#endif
+
+
+/* Define if your assembler supports tls le relocation. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_AS_TLS_LE_RELAXATION
+#endif
+
+
+/* Define if your assembler supports vl/vst/vlm/vstm with an optional
+   alignment hint argument. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_AS_VECTOR_LOADSTORE_ALIGNMENT_HINTS
+#endif
+
+
+/* Define if your assembler supports vl/vst/vlm/vstm with an optional
+   alignment hint argument on z13. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_AS_VECTOR_LOADSTORE_ALIGNMENT_HINTS_ON_Z13
+#endif
+
+
+/* Define if your assembler supports VSX instructions. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_AS_VSX
+#endif
+
+
+/* Define if your assembler supports --gdwarf-4/--gdwarf-5 even with compiler
+   generated .debug_line. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_AS_WORKING_DWARF_N_FLAG
+#endif
+
+
+/* Define to 1 if you have the `atoq' function. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_ATOQ
+#endif
+
+
+/* Define to 1 if the host/build supports __attribute__((alias(...))). */
+#ifndef USED_FOR_TARGET
+#undef HAVE_ATTRIBUTE_ALIAS
+#endif
+
+
+/* Define to 1 if you have the Mac OS X function
+   CFLocaleCopyPreferredLanguages in the CoreFoundation framework. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_CFLOCALECOPYPREFERREDLANGUAGES
+#endif
+
+
+/* Define to 1 if you have the Mac OS X function CFPreferencesCopyAppValue in
+   the CoreFoundation framework. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_CFPREFERENCESCOPYAPPVALUE
+#endif
+
+
+/* Define to 1 if you have the `clearerr_unlocked' function. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_CLEARERR_UNLOCKED
+#endif
+
+
+/* Define to 1 if you have the `clock' function. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_CLOCK
+#endif
+
+
+/* Define to 1 if you have the `clock_gettime' function. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_CLOCK_GETTIME
+#endif
+
+
+/* Define if <time.h> defines clock_t. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_CLOCK_T
+#endif
+
+
+/* Define 0/1 if your assembler and linker support COMDAT groups. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_COMDAT_GROUP
+#endif
+
+
+/* Define if the GNU dcgettext() function is already present or preinstalled.
+   */
+#ifndef USED_FOR_TARGET
+#undef HAVE_DCGETTEXT
+#endif
+
+
+/* Define to 1 if we found a declaration for 'abort', otherwise define to 0.
+   */
+#ifndef USED_FOR_TARGET
+#undef HAVE_DECL_ABORT
+#endif
+
+
+/* Define to 1 if we found a declaration for 'asprintf', otherwise define to
+   0. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_DECL_ASPRINTF
+#endif
+
+
+/* Define to 1 if we found a declaration for 'atof', otherwise define to 0. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_DECL_ATOF
+#endif
+
+
+/* Define to 1 if we found a declaration for 'atol', otherwise define to 0. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_DECL_ATOL
+#endif
+
+
+/* Define to 1 if we found a declaration for 'atoll', otherwise define to 0.
+   */
+#ifndef USED_FOR_TARGET
+#undef HAVE_DECL_ATOLL
+#endif
+
+
+/* Define to 1 if you have the declaration of `basename(char*)', and to 0 if
+   you don't. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_DECL_BASENAME
+#endif
+
+
+/* Define to 1 if we found a declaration for 'calloc', otherwise define to 0.
+   */
+#ifndef USED_FOR_TARGET
+#undef HAVE_DECL_CALLOC
+#endif
+
+
+/* Define to 1 if we found a declaration for 'clearerr_unlocked', otherwise
+   define to 0. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_DECL_CLEARERR_UNLOCKED
+#endif
+
+
+/* Define to 1 if we found a declaration for 'clock', otherwise define to 0.
+   */
+#ifndef USED_FOR_TARGET
+#undef HAVE_DECL_CLOCK
+#endif
+
+
+/* Define to 1 if we found a declaration for 'errno', otherwise define to 0.
+   */
+#ifndef USED_FOR_TARGET
+#undef HAVE_DECL_ERRNO
+#endif
+
+
+/* Define to 1 if we found a declaration for 'feof_unlocked', otherwise define
+   to 0. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_DECL_FEOF_UNLOCKED
+#endif
+
+
+/* Define to 1 if we found a declaration for 'ferror_unlocked', otherwise
+   define to 0. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_DECL_FERROR_UNLOCKED
+#endif
+
+
+/* Define to 1 if we found a declaration for 'fflush_unlocked', otherwise
+   define to 0. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_DECL_FFLUSH_UNLOCKED
+#endif
+
+
+/* Define to 1 if we found a declaration for 'ffs', otherwise define to 0. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_DECL_FFS
+#endif
+
+
+/* Define to 1 if we found a declaration for 'fgetc_unlocked', otherwise
+   define to 0. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_DECL_FGETC_UNLOCKED
+#endif
+
+
+/* Define to 1 if we found a declaration for 'fgets_unlocked', otherwise
+   define to 0. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_DECL_FGETS_UNLOCKED
+#endif
+
+
+/* Define to 1 if we found a declaration for 'fileno_unlocked', otherwise
+   define to 0. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_DECL_FILENO_UNLOCKED
+#endif
+
+
+/* Define to 1 if we found a declaration for 'fmemopen', otherwise define to
+   0. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_DECL_FMEMOPEN
+#endif
+
+
+/* Define to 1 if we found a declaration for 'fprintf_unlocked', otherwise
+   define to 0. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_DECL_FPRINTF_UNLOCKED
+#endif
+
+
+/* Define to 1 if we found a declaration for 'fputc_unlocked', otherwise
+   define to 0. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_DECL_FPUTC_UNLOCKED
+#endif
+
+
+/* Define to 1 if we found a declaration for 'fputs_unlocked', otherwise
+   define to 0. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_DECL_FPUTS_UNLOCKED
+#endif
+
+
+/* Define to 1 if we found a declaration for 'fread_unlocked', otherwise
+   define to 0. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_DECL_FREAD_UNLOCKED
+#endif
+
+
+/* Define to 1 if we found a declaration for 'free', otherwise define to 0. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_DECL_FREE
+#endif
+
+
+/* Define to 1 if we found a declaration for 'fwrite_unlocked', otherwise
+   define to 0. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_DECL_FWRITE_UNLOCKED
+#endif
+
+
+/* Define to 1 if we found a declaration for 'getchar_unlocked', otherwise
+   define to 0. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_DECL_GETCHAR_UNLOCKED
+#endif
+
+
+/* Define to 1 if we found a declaration for 'getcwd', otherwise define to 0.
+   */
+#ifndef USED_FOR_TARGET
+#undef HAVE_DECL_GETCWD
+#endif
+
+
+/* Define to 1 if we found a declaration for 'getc_unlocked', otherwise define
+   to 0. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_DECL_GETC_UNLOCKED
+#endif
+
+
+/* Define to 1 if we found a declaration for 'getenv', otherwise define to 0.
+   */
+#ifndef USED_FOR_TARGET
+#undef HAVE_DECL_GETENV
+#endif
+
+
+/* Define to 1 if we found a declaration for 'getopt', otherwise define to 0.
+   */
+#ifndef USED_FOR_TARGET
+#undef HAVE_DECL_GETOPT
+#endif
+
+
+/* Define to 1 if we found a declaration for 'getpagesize', otherwise define
+   to 0. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_DECL_GETPAGESIZE
+#endif
+
+
+/* Define to 1 if we found a declaration for 'getrlimit', otherwise define to
+   0. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_DECL_GETRLIMIT
+#endif
+
+
+/* Define to 1 if we found a declaration for 'getrusage', otherwise define to
+   0. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_DECL_GETRUSAGE
+#endif
+
+
+/* Define to 1 if we found a declaration for 'getwd', otherwise define to 0.
+   */
+#ifndef USED_FOR_TARGET
+#undef HAVE_DECL_GETWD
+#endif
+
+
+/* Define to 1 if we found a declaration for 'ldgetname', otherwise define to
+   0. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_DECL_LDGETNAME
+#endif
+
+
+/* Define to 1 if we found a declaration for 'madvise', otherwise define to 0.
+   */
+#ifndef USED_FOR_TARGET
+#undef HAVE_DECL_MADVISE
+#endif
+
+
+/* Define to 1 if we found a declaration for 'mallinfo', otherwise define to
+   0. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_DECL_MALLINFO
+#endif
+
+
+/* Define to 1 if we found a declaration for 'mallinfo2', otherwise define to
+   0. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_DECL_MALLINFO2
+#endif
+
+
+/* Define to 1 if we found a declaration for 'malloc', otherwise define to 0.
+   */
+#ifndef USED_FOR_TARGET
+#undef HAVE_DECL_MALLOC
+#endif
+
+
+/* Define to 1 if we found a declaration for 'mkstemps', otherwise define to
+   0. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_DECL_MKSTEMPS
+#endif
+
+
+/* Define to 1 if we found a declaration for 'putchar_unlocked', otherwise
+   define to 0. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_DECL_PUTCHAR_UNLOCKED
+#endif
+
+
+/* Define to 1 if we found a declaration for 'putc_unlocked', otherwise define
+   to 0. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_DECL_PUTC_UNLOCKED
+#endif
+
+
+/* Define to 1 if we found a declaration for 'realloc', otherwise define to 0.
+   */
+#ifndef USED_FOR_TARGET
+#undef HAVE_DECL_REALLOC
+#endif
+
+
+/* Define to 1 if we found a declaration for 'sbrk', otherwise define to 0. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_DECL_SBRK
+#endif
+
+
+/* Define to 1 if we found a declaration for 'setenv', otherwise define to 0.
+   */
+#ifndef USED_FOR_TARGET
+#undef HAVE_DECL_SETENV
+#endif
+
+
+/* Define to 1 if we found a declaration for 'setrlimit', otherwise define to
+   0. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_DECL_SETRLIMIT
+#endif
+
+
+/* Define to 1 if we found a declaration for 'sigaltstack', otherwise define
+   to 0. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_DECL_SIGALTSTACK
+#endif
+
+
+/* Define to 1 if we found a declaration for 'snprintf', otherwise define to
+   0. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_DECL_SNPRINTF
+#endif
+
+
+/* Define to 1 if we found a declaration for 'stpcpy', otherwise define to 0.
+   */
+#ifndef USED_FOR_TARGET
+#undef HAVE_DECL_STPCPY
+#endif
+
+
+/* Define to 1 if we found a declaration for 'strnlen', otherwise define to 0.
+   */
+#ifndef USED_FOR_TARGET
+#undef HAVE_DECL_STRNLEN
+#endif
+
+
+/* Define to 1 if we found a declaration for 'strsignal', otherwise define to
+   0. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_DECL_STRSIGNAL
+#endif
+
+
+/* Define to 1 if you have the declaration of `strstr(const char*,const
+   char*)', and to 0 if you don't. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_DECL_STRSTR
+#endif
+
+
+/* Define to 1 if we found a declaration for 'strtol', otherwise define to 0.
+   */
+#ifndef USED_FOR_TARGET
+#undef HAVE_DECL_STRTOL
+#endif
+
+
+/* Define to 1 if we found a declaration for 'strtoll', otherwise define to 0.
+   */
+#ifndef USED_FOR_TARGET
+#undef HAVE_DECL_STRTOLL
+#endif
+
+
+/* Define to 1 if we found a declaration for 'strtoul', otherwise define to 0.
+   */
+#ifndef USED_FOR_TARGET
+#undef HAVE_DECL_STRTOUL
+#endif
+
+
+/* Define to 1 if we found a declaration for 'strtoull', otherwise define to
+   0. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_DECL_STRTOULL
+#endif
+
+
+/* Define to 1 if we found a declaration for 'strverscmp', otherwise define to
+   0. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_DECL_STRVERSCMP
+#endif
+
+
+/* Define to 1 if we found a declaration for 'times', otherwise define to 0.
+   */
+#ifndef USED_FOR_TARGET
+#undef HAVE_DECL_TIMES
+#endif
+
+
+/* Define to 1 if we found a declaration for 'unsetenv', otherwise define to
+   0. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_DECL_UNSETENV
+#endif
+
+
+/* Define to 1 if we found a declaration for 'vasprintf', otherwise define to
+   0. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_DECL_VASPRINTF
+#endif
+
+
+/* Define to 1 if we found a declaration for 'vsnprintf', otherwise define to
+   0. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_DECL_VSNPRINTF
+#endif
+
+
+/* Define to 1 if you have the <direct.h> header file. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_DIRECT_H
+#endif
+
+
+/* Define to 1 if you have the <dlfcn.h> header file. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_DLFCN_H
+#endif
+
+
+/* Define to 1 if you have the <ext/hash_map> header file. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_EXT_HASH_MAP
+#endif
+
+
+/* Define to 1 if you have the <fcntl.h> header file. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_FCNTL_H
+#endif
+
+
+/* Define to 1 if you have the `feof_unlocked' function. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_FEOF_UNLOCKED
+#endif
+
+
+/* Define to 1 if you have the `ferror_unlocked' function. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_FERROR_UNLOCKED
+#endif
+
+
+/* Define to 1 if you have the `fflush_unlocked' function. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_FFLUSH_UNLOCKED
+#endif
+
+
+/* Define to 1 if you have the `fgetc_unlocked' function. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_FGETC_UNLOCKED
+#endif
+
+
+/* Define to 1 if you have the `fgets_unlocked' function. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_FGETS_UNLOCKED
+#endif
+
+
+/* Define 0/1 if -fhardened is supported */
+#ifndef USED_FOR_TARGET
+#undef HAVE_FHARDENED_SUPPORT
+#endif
+
+
+/* Define to 1 if you have the `fileno_unlocked' function. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_FILENO_UNLOCKED
+#endif
+
+
+/* Define to 1 if you have the `fork' function. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_FORK
+#endif
+
+
+/* Define to 1 if you have the `fprintf_unlocked' function. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_FPRINTF_UNLOCKED
+#endif
+
+
+/* Define to 1 if you have the `fputc_unlocked' function. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_FPUTC_UNLOCKED
+#endif
+
+
+/* Define to 1 if you have the `fputs_unlocked' function. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_FPUTS_UNLOCKED
+#endif
+
+
+/* Define to 1 if you have the `fread_unlocked' function. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_FREAD_UNLOCKED
+#endif
+
+
+/* Define to 1 if you have the `fstatat' function. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_FSTATAT
+#endif
+
+
+/* Define to 1 if you have the <ftw.h> header file. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_FTW_H
+#endif
+
+
+/* Define to 1 if you have the `fwrite_unlocked' function. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_FWRITE_UNLOCKED
+#endif
+
+
+/* Define if your assembler supports specifying the alignment of objects
+   allocated using the GAS .comm command. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_GAS_ALIGNED_COMM
+#endif
+
+
+/* Define if your Arm assembler permits context-specific feature extensions.
+   */
+#ifndef USED_FOR_TARGET
+#undef HAVE_GAS_ARM_EXTENDED_ARCH
+#endif
+
+
+/* Define if your assembler supports .balign and .p2align. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_GAS_BALIGN_AND_P2ALIGN
+#endif
+
+
+/* Define if your assembler supports .base64. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_GAS_BASE64
+#endif
+
+
+/* Define 0/1 if your assembler supports CFI directives. */
+#undef HAVE_GAS_CFI_DIRECTIVE
+
+/* Define 0/1 if your assembler supports .cfi_personality. */
+#undef HAVE_GAS_CFI_PERSONALITY_DIRECTIVE
+
+/* Define 0/1 if your assembler supports .cfi_sections. */
+#undef HAVE_GAS_CFI_SECTIONS_DIRECTIVE
+
+/* Define if your assembler supports .cv_ucomp. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_GAS_CV_UCOMP
+#endif
+
+
+/* Define if your assembler supports the .loc discriminator sub-directive. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_GAS_DISCRIMINATOR
+#endif
+
+
+/* Define if your assembler supports @gnu_unique_object. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_GAS_GNU_UNIQUE_OBJECT
+#endif
+
+
+/* Define if your assembler and linker support .hidden. */
+#undef HAVE_GAS_HIDDEN
+
+/* Define if your assembler supports .lcomm with an alignment field. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_GAS_LCOMM_WITH_ALIGNMENT
+#endif
+
+
+/* Define if your assembler supports .literal16. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_GAS_LITERAL16
+#endif
+
+
+/* Define if your assembler supports the .loc is_stmt sub-directive. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_GAS_LOC_STMT
+#endif
+
+
+/* Define if your assembler supports specifying the maximum number of bytes to
+   skip when using the GAS .p2align command. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_GAS_MAX_SKIP_P2ALIGN
+#endif
+
+
+/* Define if your assembler supports the .set micromips directive */
+#ifndef USED_FOR_TARGET
+#undef HAVE_GAS_MICROMIPS
+#endif
+
+
+/* Define if your assembler supports .nsubspa comdat option. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_GAS_NSUBSPA_COMDAT
+#endif
+
+
+/* Define if your assembler and linker support 32-bit section relative relocs
+   via '.secrel32 label'. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_GAS_PE_SECREL32_RELOC
+#endif
+
+
+/* Define if your assembler supports specifying the exclude section flag. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_GAS_SECTION_EXCLUDE
+#endif
+
+
+/* Define 0/1 if your assembler supports 'o' flag in .section directive. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_GAS_SECTION_LINK_ORDER
+#endif
+
+
+/* Define 0/1 if your assembler supports marking sections with SHF_GNU_RETAIN
+   flag. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_GAS_SHF_GNU_RETAIN
+#endif
+
+
+/* Define 0/1 if your assembler supports marking sections with SHF_MERGE flag.
+   */
+#ifndef USED_FOR_TARGET
+#undef HAVE_GAS_SHF_MERGE
+#endif
+
+
+/* Define if your assembler supports .subsection and .subsection -1 starts
+   emitting at the beginning of your section. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_GAS_SUBSECTION_ORDERING
+#endif
+
+
+/* Define if your assembler supports .weak. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_GAS_WEAK
+#endif
+
+
+/* Define if your assembler supports .weakref. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_GAS_WEAKREF
+#endif
+
+
+/* Define to 1 if you have the `getauxval' function. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_GETAUXVAL
+#endif
+
+
+/* Define to 1 if you have the `getchar_unlocked' function. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_GETCHAR_UNLOCKED
+#endif
+
+
+/* Define to 1 if you have the `getc_unlocked' function. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_GETC_UNLOCKED
+#endif
+
+
+/* Define to 1 if you have the `getrlimit' function. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_GETRLIMIT
+#endif
+
+
+/* Define to 1 if you have the `getrusage' function. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_GETRUSAGE
+#endif
+
+
+/* Define if the GNU gettext() function is already present or preinstalled. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_GETTEXT
+#endif
+
+
+/* Define to 1 if you have the `gettimeofday' function. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_GETTIMEOFDAY
+#endif
+
+
+/* Define to 1 if you have the `get_current_dir_name' function. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_GET_CURRENT_DIR_NAME
+#endif
+
+
+/* Define to 1 if using GNU as. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_GNU_AS
+#endif
+
+
+/* Define if your system supports gnu indirect functions. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_GNU_INDIRECT_FUNCTION
+#endif
+
+
+/* Define to 1 if using GNU ld. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_GNU_LD
+#endif
+
+
+/* Define if the gold linker supports split stack and is available as a
+   non-default */
+#ifndef USED_FOR_TARGET
+#undef HAVE_GOLD_NON_DEFAULT_SPLIT_STACK
+#endif
+
+
+/* Define if you have the iconv() function and it works. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_ICONV
+#endif
+
+
+/* Define to 1 if you have the <iconv.h> header file. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_ICONV_H
+#endif
+
+
+/* Define 0/1 if .init_array/.fini_array sections are available and working.
+   */
+#ifndef USED_FOR_TARGET
+#undef HAVE_INITFINI_ARRAY_SUPPORT
+#endif
+
+
+/* Define to 1 if the system has the type `intmax_t'. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_INTMAX_T
+#endif
+
+
+/* Define to 1 if the system has the type `intptr_t'. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_INTPTR_T
+#endif
+
+
+/* Define if you have a working <inttypes.h> header file. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_INTTYPES_H
+#endif
+
+
+/* Define to 1 if you have the `kill' function. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_KILL
+#endif
+
+
+/* Define if you have <langinfo.h> and nl_langinfo(CODESET). */
+#ifndef USED_FOR_TARGET
+#undef HAVE_LANGINFO_CODESET
+#endif
+
+
+/* Define to 1 if you have the <langinfo.h> header file. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_LANGINFO_H
+#endif
+
+
+/* Define if your <locale.h> file defines LC_MESSAGES. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_LC_MESSAGES
+#endif
+
+
+/* Define to 1 if you have the <ldfcn.h> header file. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_LDFCN_H
+#endif
+
+
+/* Define if your linker supports --as-needed/--no-as-needed or equivalent
+   options. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_LD_AS_NEEDED
+#endif
+
+
+/* Define if your linker supports emulation avrxmega2_flmap. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_LD_AVR_AVRXMEGA2_FLMAP
+#endif
+
+
+/* Define if your default avr linker script for avrxmega3 leaves .rodata in
+   flash. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_LD_AVR_AVRXMEGA3_RODATA_IN_FLASH
+#endif
+
+
+/* Define if your linker supports emulation avrxmega4_flmap. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_LD_AVR_AVRXMEGA4_FLMAP
+#endif
+
+
+/* Define if your linker supports -z bndplt */
+#ifndef USED_FOR_TARGET
+#undef HAVE_LD_BNDPLT_SUPPORT
+#endif
+
+
+/* Define if the PE linker has broken DWARF 5 support. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_LD_BROKEN_PE_DWARF5
+#endif
+
+
+/* Define if your linker supports --build-id. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_LD_BUILDID
+#endif
+
+
+/* Define if the linker supports clearing hardware capabilities via mapfile.
+   */
+#ifndef USED_FOR_TARGET
+#undef HAVE_LD_CLEARCAP
+#endif
+
+
+/* Define to the level of your linker's compressed debug section support. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_LD_COMPRESS_DEBUG
+#endif
+
+
+/* Define if your linker supports -z ctf. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_LD_CTF
+#endif
+
+
+/* Define if your linker supports --demangle option. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_LD_DEMANGLE
+#endif
+
+
+/* Define if your linker supports .eh_frame_hdr. */
+#undef HAVE_LD_EH_FRAME_HDR
+
+/* Define if your linker supports garbage collection of sections in presence
+   of EH frames. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_LD_EH_GC_SECTIONS
+#endif
+
+
+/* Define if your linker has buggy garbage collection of sections support when
+   .text.startup.foo like sections are used. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_LD_EH_GC_SECTIONS_BUG
+#endif
+
+
+/* Define if your PowerPC64 linker supports a large TOC. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_LD_LARGE_TOC
+#endif
+
+
+/* Define 0/1 if your linker supports -z now */
+#ifndef USED_FOR_TARGET
+#undef HAVE_LD_NOW_SUPPORT
+#endif
+
+
+/* Define if your PowerPC64 linker only needs function descriptor syms. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_LD_NO_DOT_SYMS
+#endif
+
+
+/* Define if your linker can relax absolute .eh_frame personality pointers
+   into PC-relative form. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_LD_PERSONALITY_RELAXATION
+#endif
+
+
+/* Define if the PE linker supports --disable-dynamicbase option. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_LD_PE_DISABLE_DYNAMICBASE
+#endif
+
+
+/* Define if your linker supports PIE option. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_LD_PIE
+#endif
+
+
+/* Define 0/1 if your linker supports -pie option with copy reloc. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_LD_PIE_COPYRELOC
+#endif
+
+
+/* Define if your PowerPC linker has .gnu.attributes long double support. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_LD_PPC_GNU_ATTR_LONG_DOUBLE
+#endif
+
+
+/* Define if your linker supports --push-state/--pop-state */
+#ifndef USED_FOR_TARGET
+#undef HAVE_LD_PUSHPOPSTATE_SUPPORT
+#endif
+
+
+/* Define 0/1 if your linker supports -z relro */
+#ifndef USED_FOR_TARGET
+#undef HAVE_LD_RELRO_SUPPORT
+#endif
+
+
+/* Define if your linker links a mix of read-only and read-write sections into
+   a read-write section. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_LD_RO_RW_SECTION_MIXING
+#endif
+
+
+/* Define if your linker supports -Bstatic/-Bdynamic or equivalent options. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_LD_STATIC_DYNAMIC
+#endif
+
+
+/* Define if your linker supports --sysroot. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_LD_SYSROOT
+#endif
+
+
+/* Define to 1 if you have the <libgen.h> header file. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_LIBGEN_H
+#endif
+
+
+/* Define to 1 if you have the <limits.h> header file. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_LIMITS_H
+#endif
+
+
+/* Define to 1 if you have the <locale.h> header file. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_LOCALE_H
+#endif
+
+
+/* Define to 1 if the system has the type `long long'. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_LONG_LONG
+#endif
+
+
+/* Define to 1 if the system has the type `long long int'. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_LONG_LONG_INT
+#endif
+
+
+/* Define to the level of your linker's plugin support. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_LTO_PLUGIN
+#endif
+
+
+/* Define to 1 if you have the `madvise' function. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_MADVISE
+#endif
+
+
+/* Define to 1 if you have the `mallinfo' function. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_MALLINFO
+#endif
+
+
+/* Define to 1 if you have the `mallinfo2' function. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_MALLINFO2
+#endif
+
+
+/* Define to 1 if you have the <malloc.h> header file. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_MALLOC_H
+#endif
+
+
+/* Define to 1 if you have the `mbstowcs' function. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_MBSTOWCS
+#endif
+
+
+/* Define to 1 if you have the <memory.h> header file. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_MEMORY_H
+#endif
+
+
+/* Define to 1 if you have the `memrchr' function. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_MEMRCHR
+#endif
+
+
+/* Define to 1 if you have the `mmap' function. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_MMAP
+#endif
+
+
+/* Define if mmap with MAP_ANON(YMOUS) works. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_MMAP_ANON
+#endif
+
+
+/* Define if mmap of /dev/zero works. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_MMAP_DEV_ZERO
+#endif
+
+
+/* Define if read-only mmap of a plain file works. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_MMAP_FILE
+#endif
+
+
+/* Define to 1 if you have the `msync' function. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_MSYNC
+#endif
+
+
+/* Define to 1 if you have the `munmap' function. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_MUNMAP
+#endif
+
+
+/* Define if GCC has been configured with --enable-newlib-nano-formatted-io.
+   */
+#ifndef USED_FOR_TARGET
+#undef HAVE_NEWLIB_NANO_FORMATTED_IO
+#endif
+
+
+/* Define to 1 if you have the `nl_langinfo' function. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_NL_LANGINFO
+#endif
+
+
+/* Define to 1 if you have the `popen' function. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_POPEN
+#endif
+
+
+/* Define to 1 if you have the `posix_fallocate' function. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_POSIX_FALLOCATE
+#endif
+
+
+/* Define to 1 if you have the `putchar_unlocked' function. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_PUTCHAR_UNLOCKED
+#endif
+
+
+/* Define to 1 if you have the `putc_unlocked' function. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_PUTC_UNLOCKED
+#endif
+
+
+/* Define to 1 if you have the `setlocale' function. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_SETLOCALE
+#endif
+
+
+/* Define to 1 if you have the `setrlimit' function. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_SETRLIMIT
+#endif
+
+
+/* Define if <sys/signal.h> defines sighandler_t */
+#ifndef USED_FOR_TARGET
+#undef HAVE_SIGHANDLER_T
+#endif
+
+
+/* Define to 1 if you have the <stddef.h> header file. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_STDDEF_H
+#endif
+
+
+/* Define to 1 if you have the <stdint.h> header file. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_STDINT_H
+#endif
+
+
+/* Define to 1 if you have the <stdlib.h> header file. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_STDLIB_H
+#endif
+
+
+/* Define to 1 if you have the <strings.h> header file. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_STRINGS_H
+#endif
+
+
+/* Define to 1 if you have the <string.h> header file. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_STRING_H
+#endif
+
+
+/* Define to 1 if you have the `strsignal' function. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_STRSIGNAL
+#endif
+
+
+/* Define if <sys/times.h> defines struct tms. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_STRUCT_TMS
+#endif
+
+
+/* Define if <utility> defines std::swap. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_SWAP_IN_UTILITY
+#endif
+
+
+/* Define to 1 if you have the `sysconf' function. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_SYSCONF
+#endif
+
+
+/* Define to 1 if you have the <sys/auxv.h> header file. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_SYS_AUXV_H
+#endif
+
+
+/* Define to 1 if you have the <sys/file.h> header file. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_SYS_FILE_H
+#endif
+
+
+/* Define to 1 if you have the <sys/locking.h> header file. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_SYS_LOCKING_H
+#endif
+
+
+/* Define to 1 if you have the <sys/mman.h> header file. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_SYS_MMAN_H
+#endif
+
+
+/* Define to 1 if you have the <sys/param.h> header file. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_SYS_PARAM_H
+#endif
+
+
+/* Define to 1 if you have the <sys/resource.h> header file. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_SYS_RESOURCE_H
+#endif
+
+
+/* Define if your target C library provides sys/sdt.h */
+#undef HAVE_SYS_SDT_H
+
+/* Define to 1 if you have the <sys/stat.h> header file. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_SYS_STAT_H
+#endif
+
+
+/* Define to 1 if you have the <sys/times.h> header file. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_SYS_TIMES_H
+#endif
+
+
+/* Define to 1 if you have the <sys/time.h> header file. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_SYS_TIME_H
+#endif
+
+
+/* Define to 1 if you have the <sys/types.h> header file. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_SYS_TYPES_H
+#endif
+
+
+/* Define to 1 if you have <sys/wait.h> that is POSIX.1 compatible. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_SYS_WAIT_H
+#endif
+
+
+/* Define to 1 if you have the `times' function. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_TIMES
+#endif
+
+
+/* Define to 1 if you have the <time.h> header file. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_TIME_H
+#endif
+
+
+/* Define to 1 if you have the <tr1/unordered_map> header file. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_TR1_UNORDERED_MAP
+#endif
+
+
+/* Define to 1 if the system has the type `uintmax_t'. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_UINTMAX_T
+#endif
+
+
+/* Define to 1 if the system has the type `uintptr_t'. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_UINTPTR_T
+#endif
+
+
+/* Define to 1 if you have the <unistd.h> header file. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_UNISTD_H
+#endif
+
+
+/* Define to 1 if you have the <unordered_map> header file. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_UNORDERED_MAP
+#endif
+
+
+/* Define to 1 if the system has the type `unsigned long long int'. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_UNSIGNED_LONG_LONG_INT
+#endif
+
+
+/* Define to 1 if you have the `vfork' function. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_VFORK
+#endif
+
+
+/* Define to 1 if you have the <vfork.h> header file. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_VFORK_H
+#endif
+
+
+/* Define to 1 if you have the <wchar.h> header file. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_WCHAR_H
+#endif
+
+
+/* Define to 1 if you have the `wcswidth' function. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_WCSWIDTH
+#endif
+
+
+/* Define to 1 if `fork' works. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_WORKING_FORK
+#endif
+
+
+/* Define this macro if mbstowcs does not crash when its first argument is
+   NULL. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_WORKING_MBSTOWCS
+#endif
+
+
+/* Define to 1 if `vfork' works. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_WORKING_VFORK
+#endif
+
+
+/* Define if your assembler supports AIX debug frame section label reference.
+   */
+#ifndef USED_FOR_TARGET
+#undef HAVE_XCOFF_DWARF_EXTRAS
+#endif
+
+
+/* Define if you have a working <zstd.h> header file. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_ZSTD_H
+#endif
+
+
+/* Define if isl is in use. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_isl
+#endif
+
+
+/* Define if F_SETLKW supported by fcntl. */
+#ifndef USED_FOR_TARGET
+#undef HOST_HAS_F_SETLKW
+#endif
+
+
+/* Define if _LK_LOC supported by _locking. */
+#ifndef USED_FOR_TARGET
+#undef HOST_HAS_LK_LOCK
+#endif
+
+
+/* Define if O_CLOEXEC supported by fcntl. */
+#ifndef USED_FOR_TARGET
+#undef HOST_HAS_O_CLOEXEC
+#endif
+
+
+/* Define if O_NONBLOCK supported by fcntl. */
+#ifndef USED_FOR_TARGET
+#undef HOST_HAS_O_NONBLOCK
+#endif
+
+
+/* Define if personality and ADDR_NO_RANDOMIZE are declared in
+   sys/personality.h. */
+#ifndef USED_FOR_TARGET
+#undef HOST_HAS_PERSONALITY_ADDR_NO_RANDOMIZE
+#endif
+
+
+/* Define which stat syscall is able to handle 64bit indodes. */
+#ifndef USED_FOR_TARGET
+#undef HOST_STAT_FOR_64BIT_INODES
+#endif
+
+
+/* Define as const if the declaration of iconv() needs const. */
+#ifndef USED_FOR_TARGET
+#undef ICONV_CONST
+#endif
+
+
+/* Define if int64_t uses long as underlying type. */
+#ifndef USED_FOR_TARGET
+#undef INT64_T_IS_LONG
+#endif
+
+
+/* Define to 1 if ld64 supports '-demangle'. */
+#ifndef USED_FOR_TARGET
+#undef LD64_HAS_DEMANGLE
+#endif
+
+
+/* Define to 1 if ld64 supports '-export_dynamic'. */
+#ifndef USED_FOR_TARGET
+#undef LD64_HAS_EXPORT_DYNAMIC
+#endif
+
+
+/* Define to 1 if ld64 supports '-macos_version_min'. */
+#ifndef USED_FOR_TARGET
+#undef LD64_HAS_MACOS_VERSION_MIN
+#endif
+
+
+/* Define to 1 if ld64 supports '-no_deduplicate'. */
+#ifndef USED_FOR_TARGET
+#undef LD64_HAS_NO_DEDUPLICATE
+#endif
+
+
+/* Define to 1 if ld64 supports '-platform_version'. */
+#ifndef USED_FOR_TARGET
+#undef LD64_HAS_PLATFORM_VERSION
+#endif
+
+
+/* Define to ld64 version. */
+#ifndef USED_FOR_TARGET
+#undef LD64_VERSION
+#endif
+
+
+/* Define to the linker option to ignore unused dependencies. */
+#ifndef USED_FOR_TARGET
+#undef LD_AS_NEEDED_OPTION
+#endif
+
+
+/* Define to the linker option to enable compressed debug sections. */
+#ifndef USED_FOR_TARGET
+#undef LD_COMPRESS_DEBUG_OPTION
+#endif
+
+
+/* Define to the linker option to enable use of shared objects. */
+#ifndef USED_FOR_TARGET
+#undef LD_DYNAMIC_OPTION
+#endif
+
+
+/* Define to the linker option to keep unused dependencies. */
+#ifndef USED_FOR_TARGET
+#undef LD_NO_AS_NEEDED_OPTION
+#endif
+
+
+/* Define to the linker option to disable use of shared objects. */
+#ifndef USED_FOR_TARGET
+#undef LD_STATIC_OPTION
+#endif
+
+
+/* The linker hash style */
+#ifndef USED_FOR_TARGET
+#undef LINKER_HASH_STYLE
+#endif
+
+
+/* Define to the name of the LTO plugin DSO that must be passed to the
+   linker's -plugin=LIB option. */
+#ifndef USED_FOR_TARGET
+#undef LTOPLUGINSONAME
+#endif
+
+
+/* Define to the sub-directory in which libtool stores uninstalled libraries.
+   */
+#ifndef USED_FOR_TARGET
+#undef LT_OBJDIR
+#endif
+
+
+/* Define if we should link mingw executables with --large-address-aware */
+#ifndef USED_FOR_TARGET
+#undef MINGW_DEFAULT_LARGE_ADDR_AWARE
+#endif
+
+
+/* Value to set mingw's _dowildcard to. */
+#ifndef USED_FOR_TARGET
+#undef MINGW_DOWILDCARD
+#endif
+
+
+/* Define if assembler supports %reloc. */
+#ifndef USED_FOR_TARGET
+#undef MIPS_EXPLICIT_RELOCS
+#endif
+
+
+/* Define if host mkdir takes a single argument. */
+#ifndef USED_FOR_TARGET
+#undef MKDIR_TAKES_ONE_ARG
+#endif
+
+
+/* Define to 1 to if -foffload is defaulted */
+#ifndef USED_FOR_TARGET
+#undef OFFLOAD_DEFAULTED
+#endif
+
+
+/* Define to offload targets, separated by commas. */
+#ifndef USED_FOR_TARGET
+#undef OFFLOAD_TARGETS
+#endif
+
+
+/* Define to the address where bug reports for this package should be sent. */
+#ifndef USED_FOR_TARGET
+#undef PACKAGE_BUGREPORT
+#endif
+
+
+/* Define to the full name of this package. */
+#ifndef USED_FOR_TARGET
+#undef PACKAGE_NAME
+#endif
+
+
+/* Define to the full name and version of this package. */
+#ifndef USED_FOR_TARGET
+#undef PACKAGE_STRING
+#endif
+
+
+/* Define to the one symbol short name of this package. */
+#ifndef USED_FOR_TARGET
+#undef PACKAGE_TARNAME
+#endif
+
+
+/* Define to the home page for this package. */
+#ifndef USED_FOR_TARGET
+#undef PACKAGE_URL
+#endif
+
+
+/* Define to the version of this package. */
+#ifndef USED_FOR_TARGET
+#undef PACKAGE_VERSION
+#endif
+
+
+/* Specify plugin linker */
+#ifndef USED_FOR_TARGET
+#undef PLUGIN_LD_SUFFIX
+#endif
+
+
+/* Define to .TOC. alignment forced by your linker. */
+#ifndef USED_FOR_TARGET
+#undef POWERPC64_TOC_POINTER_ALIGNMENT
+#endif
+
+
+/* Define to PREFIX/include if cpp should also search that directory. */
+#ifndef USED_FOR_TARGET
+#undef PREFIX_INCLUDE_DIR
+#endif
+
+
+/* The size of `dev_t', as computed by sizeof. */
+#ifndef USED_FOR_TARGET
+#undef SIZEOF_DEV_T
+#endif
+
+
+/* The size of `ino_t', as computed by sizeof. */
+#ifndef USED_FOR_TARGET
+#undef SIZEOF_INO_T
+#endif
+
+
+/* The size of `int', as computed by sizeof. */
+#ifndef USED_FOR_TARGET
+#undef SIZEOF_INT
+#endif
+
+
+/* The size of `long', as computed by sizeof. */
+#ifndef USED_FOR_TARGET
+#undef SIZEOF_LONG
+#endif
+
+
+/* The size of `long long', as computed by sizeof. */
+#ifndef USED_FOR_TARGET
+#undef SIZEOF_LONG_LONG
+#endif
+
+
+/* The size of `short', as computed by sizeof. */
+#ifndef USED_FOR_TARGET
+#undef SIZEOF_SHORT
+#endif
+
+
+/* The size of `void *', as computed by sizeof. */
+#ifndef USED_FOR_TARGET
+#undef SIZEOF_VOID_P
+#endif
+
+
+/* Define to 1 if you have the ANSI C header files. */
+#ifndef USED_FOR_TARGET
+#undef STDC_HEADERS
+#endif
+
+
+/* Define if you can safely include both <string.h> and <strings.h>. */
+#ifndef USED_FOR_TARGET
+#undef STRING_WITH_STRINGS
+#endif
+
+
+/* Define if TFmode long double should be the default */
+#ifndef USED_FOR_TARGET
+#undef TARGET_DEFAULT_LONG_DOUBLE_128
+#endif
+
+
+/* Define if your target C library provides the `dl_iterate_phdr' function. */
+#undef TARGET_DL_ITERATE_PHDR
+
+/* GNU C Library major version number used on the target, or 0. */
+#ifndef USED_FOR_TARGET
+#undef TARGET_GLIBC_MAJOR
+#endif
+
+
+/* GNU C Library minor version number used on the target, or 0. */
+#ifndef USED_FOR_TARGET
+#undef TARGET_GLIBC_MINOR
+#endif
+
+
+/* Define if your target C Library properly handles PT_GNU_STACK */
+#ifndef USED_FOR_TARGET
+#undef TARGET_LIBC_GNUSTACK
+#endif
+
+
+/* Define if your target C Library provides the AT_HWCAP value in the TCB */
+#ifndef USED_FOR_TARGET
+#undef TARGET_LIBC_PROVIDES_HWCAP_IN_TCB
+#endif
+
+
+/* Define if your target C library provides stack protector support */
+#ifndef USED_FOR_TARGET
+#undef TARGET_LIBC_PROVIDES_SSP
+#endif
+
+
+/* Define if libatomic is built for the target. */
+#ifndef USED_FOR_TARGET
+#undef TARGET_PROVIDES_LIBATOMIC
+#endif
+
+
+/* Define to 1 if you can safely include both <sys/time.h> and <time.h>. */
+#ifndef USED_FOR_TARGET
+#undef TIME_WITH_SYS_TIME
+#endif
+
+
+/* Define to the flag used to mark TLS sections if the default (`T') doesn't
+   work. */
+#ifndef USED_FOR_TARGET
+#undef TLS_SECTION_ASM_FLAG
+#endif
+
+
+/* Define if your assembler mis-optimizes .eh_frame data. */
+#ifndef USED_FOR_TARGET
+#undef USE_AS_TRADITIONAL_FORMAT
+#endif
+
+
+/* Define if you want to generate code by default that assumes that the Cygwin
+   DLL exports wrappers to support libstdc++ function replacement. */
+#ifndef USED_FOR_TARGET
+#undef USE_CYGWIN_LIBSTDCXX_WRAPPERS
+#endif
+
+
+/* Define if your linker supports AS_NEEDED in linker scripts. */
+#ifndef USED_FOR_TARGET
+#undef USE_LD_AS_NEEDED_LDSCRIPT
+#endif
+
+
+/* Define to 1 if the 'long long' type is wider than 'long' but still
+   efficiently supported by the host hardware. */
+#ifndef USED_FOR_TARGET
+#undef USE_LONG_LONG_FOR_WIDEST_FAST_INT
+#endif
+
+
+/* Define if we should use leading underscore on 64 bit mingw targets */
+#ifndef USED_FOR_TARGET
+#undef USE_MINGW64_LEADING_UNDERSCORES
+#endif
+
+
+/* Enable extensions on AIX 3, Interix.  */
+#ifndef _ALL_SOURCE
+# undef _ALL_SOURCE
+#endif
+/* Enable GNU extensions on systems that have them.  */
+#ifndef _GNU_SOURCE
+# undef _GNU_SOURCE
+#endif
+/* Enable threading extensions on Solaris.  */
+#ifndef _POSIX_PTHREAD_SEMANTICS
+# undef _POSIX_PTHREAD_SEMANTICS
+#endif
+/* Enable extensions on HP NonStop.  */
+#ifndef _TANDEM_SOURCE
+# undef _TANDEM_SOURCE
+#endif
+/* Enable general extensions on Solaris.  */
+#ifndef __EXTENSIONS__
+# undef __EXTENSIONS__
+#endif
+
+
+/* Define to be the last component of the Windows registry key under which to
+   look for installation paths. The full key used will be
+   HKEY_LOCAL_MACHINE/SOFTWARE/Free Software Foundation/{WIN32_REGISTRY_KEY}.
+   The default is the GCC version number. */
+#ifndef USED_FOR_TARGET
+#undef WIN32_REGISTRY_KEY
+#endif
+
+
+/* Define WORDS_BIGENDIAN to 1 if your processor stores words with the most
+   significant byte first (like Motorola and SPARC, unlike Intel). */
+#if defined AC_APPLE_UNIVERSAL_BUILD
+# if defined __BIG_ENDIAN__
+#  define WORDS_BIGENDIAN 1
+# endif
+#else
+# ifndef WORDS_BIGENDIAN
+#  undef WORDS_BIGENDIAN
+# endif
+#endif
+
+/* Enable large inode numbers on Mac OS X 10.5.  */
+#ifndef _DARWIN_USE_64_BIT_INODE
+# define _DARWIN_USE_64_BIT_INODE 1
+#endif
+
+/* Number of bits in a file offset, on hosts where this is settable. */
+#ifndef USED_FOR_TARGET
+#undef _FILE_OFFSET_BITS
+#endif
+
+
+/* Define for large files, on AIX-style hosts. */
+#ifndef USED_FOR_TARGET
+#undef _LARGE_FILES
+#endif
+
+
+/* Define to 1 if on MINIX. */
+#ifndef USED_FOR_TARGET
+#undef _MINIX
+#endif
+
+
+/* Define to 2 if the system does not provide POSIX.1 features except with
+   this defined. */
+#ifndef USED_FOR_TARGET
+#undef _POSIX_1_SOURCE
+#endif
+
+
+/* Define to 1 if you need to in order for `stat' and other things to work. */
+#ifndef USED_FOR_TARGET
+#undef _POSIX_SOURCE
+#endif
+
+
+/* Define for Solaris 2.5.1 so the uint32_t typedef from <sys/synch.h>,
+   <pthread.h>, or <semaphore.h> is not used. If the typedef were allowed, the
+   #define below would cause a syntax error. */
+#ifndef USED_FOR_TARGET
+#undef _UINT32_T
+#endif
+
+
+/* Define for Solaris 2.5.1 so the uint64_t typedef from <sys/synch.h>,
+   <pthread.h>, or <semaphore.h> is not used. If the typedef were allowed, the
+   #define below would cause a syntax error. */
+#ifndef USED_FOR_TARGET
+#undef _UINT64_T
+#endif
+
+
+/* Define for Solaris 2.5.1 so the uint8_t typedef from <sys/synch.h>,
+   <pthread.h>, or <semaphore.h> is not used. If the typedef were allowed, the
+   #define below would cause a syntax error. */
+#ifndef USED_FOR_TARGET
+#undef _UINT8_T
+#endif
+
+
+/* Define to `char *' if <sys/types.h> does not define. */
+#ifndef USED_FOR_TARGET
+#undef caddr_t
+#endif
+
+
+/* Define to `__inline__' or `__inline' if that's what the C compiler
+   calls it, or to nothing if 'inline' is not supported under any name.  */
+#ifndef __cplusplus
+#undef inline
+#endif
+
+/* Define to the type of a signed integer type of width exactly 16 bits if
+   such a type exists and the standard includes do not define it. */
+#ifndef USED_FOR_TARGET
+#undef int16_t
+#endif
+
+
+/* Define to the type of a signed integer type of width exactly 32 bits if
+   such a type exists and the standard includes do not define it. */
+#ifndef USED_FOR_TARGET
+#undef int32_t
+#endif
+
+
+/* Define to the type of a signed integer type of width exactly 64 bits if
+   such a type exists and the standard includes do not define it. */
+#ifndef USED_FOR_TARGET
+#undef int64_t
+#endif
+
+
+/* Define to the type of a signed integer type of width exactly 8 bits if such
+   a type exists and the standard includes do not define it. */
+#ifndef USED_FOR_TARGET
+#undef int8_t
+#endif
+
+
+/* Define to the widest signed integer type if <stdint.h> and <inttypes.h> do
+   not define. */
+#ifndef USED_FOR_TARGET
+#undef intmax_t
+#endif
+
+
+/* Define to the type of a signed integer type wide enough to hold a pointer,
+   if such a type exists, and if the system does not define it. */
+#ifndef USED_FOR_TARGET
+#undef intptr_t
+#endif
+
+
+/* Define to `int' if <sys/types.h> does not define. */
+#ifndef USED_FOR_TARGET
+#undef pid_t
+#endif
+
+
+/* Define to `long' if <sys/resource.h> doesn't define. */
+#ifndef USED_FOR_TARGET
+#undef rlim_t
+#endif
+
+
+/* Define to `int' if <sys/types.h> does not define. */
+#ifndef USED_FOR_TARGET
+#undef ssize_t
+#endif
+
+
+/* Define to the type of an unsigned integer type of width exactly 16 bits if
+   such a type exists and the standard includes do not define it. */
+#ifndef USED_FOR_TARGET
+#undef uint16_t
+#endif
+
+
+/* Define to the type of an unsigned integer type of width exactly 32 bits if
+   such a type exists and the standard includes do not define it. */
+#ifndef USED_FOR_TARGET
+#undef uint32_t
+#endif
+
+
+/* Define to the type of an unsigned integer type of width exactly 64 bits if
+   such a type exists and the standard includes do not define it. */
+#ifndef USED_FOR_TARGET
+#undef uint64_t
+#endif
+
+
+/* Define to the type of an unsigned integer type of width exactly 8 bits if
+   such a type exists and the standard includes do not define it. */
+#ifndef USED_FOR_TARGET
+#undef uint8_t
+#endif
+
+
+/* Define to the widest unsigned integer type if <stdint.h> and <inttypes.h>
+   do not define. */
+#ifndef USED_FOR_TARGET
+#undef uintmax_t
+#endif
+
+
+/* Define to the type of an unsigned integer type wide enough to hold a
+   pointer, if such a type exists, and if the system does not define it. */
+#ifndef USED_FOR_TARGET
+#undef uintptr_t
+#endif
+
+
+/* Define as `fork' if `vfork' does not work. */
+#ifndef USED_FOR_TARGET
+#undef vfork
+#endif
+

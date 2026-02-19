@@ -1,0 +1,383 @@
+## Linker script for GNU namespace versioning.
+##
+## Copyright (C) 2002-2026 Free Software Foundation, Inc.
+##
+## This file is part of the libstdc++ version 3 distribution.
+##
+## This file is part of the GNU ISO C++ Library.  This library is free
+## software; you can redistribute it and/or modify it under the
+## terms of the GNU General Public License as published by the
+## Free Software Foundation; either version 3, or (at your option)
+## any later version.
+##
+## This library is distributed in the hope that it will be useful,
+## but WITHOUT ANY WARRANTY; without even the implied warranty of
+## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+## GNU General Public License for more details.
+##
+## You should have received a copy of the GNU General Public License along
+## with this library; see the file COPYING3.  If not see
+## <http://www.gnu.org/licenses/>.
+
+GLIBCXX_8.0 {
+
+  global:
+
+    # Names inside the 'extern' block are demangled names.
+    extern "C++"
+    {
+      std::*;
+      std::__8::*;
+    };
+
+    # operator new(size_t)
+    _Znw[jmy];
+    # operator new(size_t, std::nothrow_t const&)
+    _Znw[jmy]RKSt9nothrow_t;
+
+    # operator delete(void*)
+    _ZdlPv;
+    # operator delete(void*, std::nothrow_t const&)
+    _ZdlPvRKSt9nothrow_t;
+
+    # operator new[](size_t)
+    _Zna[jmy];
+    # operator new[](size_t, std::nothrow_t const&)
+    _Zna[jmy]RKSt9nothrow_t;
+
+    # operator delete[](void*)
+    _ZdaPv;
+    # operator delete[](void*, std::nothrow_t const&)
+    _ZdaPvRKSt9nothrow_t;
+
+    # function-scope static objects requires a guard variable.
+    _ZGVNSt*;
+
+    # VTT structure
+    _ZTTNSt*;
+
+    # vtable
+    _ZTVSt*;
+    _ZTVNSt*;
+    _ZTVN9__gnu_cxx3__818stdio_sync_filebufI[cw]NSt3__811char_traitsI[cw]EEEE;
+
+    # thunk
+    _ZTv0_n12_NS*;
+    _ZTv0_n24_NS*;
+
+    # typeinfo structure
+    _ZTISt*;
+    _ZTINSt*;
+
+    # typeinfo name
+    _ZTSSt*;
+    _ZTSNSt*;
+
+    # locale
+    _ZNSt3__89has_facetINS_*;
+
+    # thread/mutex/condition_variable/future
+    __once_proxy;
+
+    # targets using emutls
+    __emutls_v._ZSt3__811__once_call;
+    __emutls_v._ZSt3__815__once_callable;
+
+    # std::__convert_to_v
+    _ZNSt3__814__convert_to_v*;
+
+    # std::__copy_streambufs
+    _ZNSt3__817__copy_streambufsI*;
+    _ZNSt3__821__copy_streambufs_eofI*;
+
+    # std::__istream_extract(wistream&, wchar_t*, streamsize)
+    _ZNSt3__817__istream_extractIwNS_11char_traitsIwEEEEvRNS_13basic_istreamIT_T0_EEPS4_[ilx];
+
+    # __gnu_cxx::__atomic_add
+    # __gnu_cxx::__exchange_and_add
+    _ZN9__gnu_cxx3__812__atomic_addEPV[il][il];
+    _ZN9__gnu_cxx3__818__exchange_and_addEPV[li][il];
+
+    # __gnu_cxx::__pool
+    _ZN9__gnu_cxx3__86__poolILb[01]EE13_M_initializeEv;
+    _ZN9__gnu_cxx3__86__poolILb[01]EE16_M_reserve_blockE[jmy][jmy];
+    _ZN9__gnu_cxx3__86__poolILb[01]EE16_M_reclaim_blockEPc[jmy];
+    _ZN9__gnu_cxx3__86__poolILb[01]EE10_M_destroyEv;
+    _ZN9__gnu_cxx3__86__poolILb1EE16_M_get_thread_idEv;
+
+    _ZN9__gnu_cxx3__817__pool_alloc_base9_M_refillE[jmy];
+    _ZN9__gnu_cxx3__817__pool_alloc_base16_M_get_free_listE[jmy];
+    _ZN9__gnu_cxx3__817__pool_alloc_base12_M_get_mutexEv;
+
+    _ZN9__gnu_cxx3__89free_list6_M_getE[jmy];
+    _ZN9__gnu_cxx3__89free_list8_M_clearEv;
+
+    # __gnu_cxx::stdio_sync_filebuf
+    _ZTVN9__gnu_cxx3__818stdio_sync_filebufI[cw]St3__811char_traitsI[cw]EEE;
+    _ZN9__gnu_cxx3__818stdio_sync_filebufI[cw]NSt3__811char_traitsI[cw]EEE[5-9]*;
+
+    # debug mode
+    _ZNK11__gnu_debug19_Safe_sequence_base12_M_get_mutexEv;
+    _ZNK11__gnu_debug19_Safe_sequence_base13_M_detach_allEv;
+    _ZNK11__gnu_debug19_Safe_sequence_base18_M_detach_singularEv;
+    _ZNK11__gnu_debug19_Safe_sequence_base22_M_revalidate_singularEv;
+    _ZNK11__gnu_debug19_Safe_sequence_base7_M_swapERKS0_;
+
+    _ZN11__gnu_debug19_Safe_iterator_base9_M_attach*;
+    _ZN11__gnu_debug19_Safe_iterator_base16_M_attach_single*;
+    _ZN11__gnu_debug19_Safe_iterator_base9_M_detachEv;
+    _ZN11__gnu_debug19_Safe_iterator_base16_M_detach_singleEv;
+    _ZN11__gnu_debug19_Safe_iterator_base12_M_get_mutexEv;
+    _ZNK11__gnu_debug19_Safe_iterator_base11_M_singularEv;
+    _ZNK11__gnu_debug19_Safe_iterator_base14_M_can_compareERKS0_;
+
+    _ZNK11__gnu_debug16_Error_formatter10_M_message*;
+    _ZNK11__gnu_debug16_Error_formatter8_M_error*;
+
+    # __gnu_debug::_Safe_unordered_container_base
+    # __gnu_debug::_Safe_local_iterator_base
+    _ZNK11__gnu_debug30_Safe_unordered_container_base7_M_swapERKS0_;
+    _ZNK11__gnu_debug30_Safe_unordered_container_base13_M_detach_allEv;
+    _ZN11__gnu_debug25_Safe_local_iterator_base9_M_attachEPKNS_30_Safe_unordered_container_baseEb;
+    _ZN11__gnu_debug25_Safe_local_iterator_base9_M_detachEv;
+    _ZN11__gnu_debug25_Safe_local_iterator_base16_M_attach_singleEPKNS_30_Safe_unordered_container_baseEb;
+
+    # parallel mode
+    _ZN14__gnu_parallel9_Settings3getEv;
+    _ZN14__gnu_parallel9_Settings3setERS0_;
+
+    # to_chars/from_chars _Float128
+    _ZNSt3__88to_charsEPcS0_DF128_;
+    _ZNSt3__88to_charsEPcS0_DF128_NS_12chars_formatE;
+    _ZNSt3__88to_charsEPcS0_DF128_NS_12chars_formatEi;
+    _ZNSt3__810from_charsEPKcS1_RDF128_NS_12chars_formatE;
+
+  local:
+    *;
+};
+
+
+# Symbols in the support library (libsupc++) have their own tag.
+CXXABI_2.0 {
+
+  global:
+    __cxa_allocate_exception;
+    __cxa_allocate_dependent_exception;
+    __cxa_bad_cast;
+    __cxa_bad_typeid;
+    __cxa_begin_catch;
+    __cxa_begin_cleanup;
+    __cxa_call_unexpected;
+    __cxa_call_terminate;
+    __cxa_current_exception_type;
+    __cxa_deleted_virtual;
+    __cxa_demangle;
+    __cxa_end_catch;
+    __cxa_end_cleanup;
+    __cxa_free_exception;
+    __cxa_free_dependent_exception;
+    __cxa_get_exception_ptr;
+    __cxa_init_primary_exception;
+    __cxa_get_globals;
+    __cxa_get_globals_fast;
+    __cxa_guard_abort;
+    __cxa_guard_acquire;
+    __cxa_guard_release;
+    __cxa_pure_virtual;
+    __cxa_rethrow;
+    __cxa_thread_atexit;
+    __cxa_throw;
+    __cxa_type_match;
+    __cxa_vec_cctor;
+    __cxa_vec_cleanup;
+    __cxa_vec_ctor;
+    __cxa_vec_delete2;
+    __cxa_vec_delete3;
+    __cxa_vec_delete;
+    __cxa_vec_dtor;
+    __cxa_vec_new2;
+    __cxa_vec_new3;
+    __cxa_vec_new;
+    __gxx_personality_v0;
+    __gxx_personality_sj0;
+    __dynamic_cast;
+
+    # std::exception_ptr
+    _ZNSt15__exception_ptr13exception_ptrC1Ev;
+    _ZNSt15__exception_ptr13exception_ptrC2Ev;
+    _ZNSt15__exception_ptr13exception_ptrC1EPv;
+    _ZNSt15__exception_ptr13exception_ptrC1ERKS0_;
+    _ZNSt15__exception_ptr13exception_ptrC2ERKS0_;
+    _ZNSt15__exception_ptr13exception_ptrC1EMS0_FvvE;
+    _ZNSt15__exception_ptr13exception_ptrC2EMS0_FvvE;
+    _ZNSt15__exception_ptr13exception_ptrD1Ev;
+    _ZNSt15__exception_ptr13exception_ptrD2Ev;
+    _ZNSt15__exception_ptr13exception_ptraSERKS0_;
+    _ZNKSt15__exception_ptr13exception_ptrcvMS0_FvvEEv;
+    _ZNKSt15__exception_ptr13exception_ptrntEv;
+    _ZNKSt15__exception_ptr13exception_ptr20__cxa_exception_typeEv;
+    _ZNSt15__exception_ptr13exception_ptr4swapERS0_;
+    _ZNSt15__exception_ptreqERKNS_13exception_ptrES2_;
+    _ZNSt15__exception_ptrneERKNS_13exception_ptrES2_;
+
+    _ZSt17current_exceptionv;
+    _ZSt17rethrow_exceptionNSt15__exception_ptr13exception_ptrE;
+
+    # std::nested_exception
+    _ZNSt16nested_exceptionD*;
+    _ZTISt16nested_exception;
+    _ZTVSt16nested_exception;
+
+    # std::bad_function_call.
+    _ZNSt17bad_function_callD*;
+    _ZTISt17bad_function_call;
+    _ZTSSt17bad_function_call;
+    _ZTVSt17bad_function_call;
+
+    __cxa_throw_bad_array_new_length;
+    _Z*St20bad_array_new_length*;
+
+    __cxa_throw_bad_array_length;
+    _Z*St16bad_array_length*;
+
+    # Default function.
+    _ZSt11_Hash_bytesPKv*;
+
+    # FNV hash.
+    _ZSt15_Fnv_hash_bytesPKv*;
+
+    # __gnu_cxx::_verbose_terminate_handler()
+    _ZN9__gnu_cxx3__827__verbose_terminate_handlerEv;
+
+    # *_type_info classes, ctor and dtor
+    _ZN10__cxxabiv117__array_type_info*;
+    _ZN10__cxxabiv117__class_type_info*;
+    _ZN10__cxxabiv116__enum_type_info*;
+    _ZN10__cxxabiv120__function_type_info*;
+    _ZN10__cxxabiv123__fundamental_type_info*;
+    _ZN10__cxxabiv117__pbase_type_info*;
+    _ZN10__cxxabiv129__pointer_to_member_type_info*;
+    _ZN10__cxxabiv119__pointer_type_info*;
+    _ZN10__cxxabiv120__si_class_type_info*;
+    _ZN10__cxxabiv121__vmi_class_type_info*;
+
+    # *_type_info classes, member functions
+    _ZNK10__cxxabiv117__class_type_info*;
+    _ZNK10__cxxabiv120__function_type_info*;
+    _ZNK10__cxxabiv117__pbase_type_info*;
+    _ZNK10__cxxabiv129__pointer_to_member_type_info*;
+    _ZNK10__cxxabiv119__pointer_type_info*;
+    _ZNK10__cxxabiv120__si_class_type_info*;
+    _ZNK10__cxxabiv121__vmi_class_type_info*;
+
+    # typeinfo structure
+    _ZTI[a-z];
+    _ZTIP[a-z];
+    _ZTIPK[a-z];
+    _ZTIN10__cxxabiv117__array_type_infoE;
+    _ZTIN10__cxxabiv117__class_type_infoE;
+    _ZTIN10__cxxabiv116__enum_type_infoE;
+    _ZTIN10__cxxabiv120__function_type_infoE;
+    _ZTIN10__cxxabiv123__fundamental_type_infoE;
+    _ZTIN10__cxxabiv117__pbase_type_infoE;
+    _ZTIN10__cxxabiv129__pointer_to_member_type_infoE;
+    _ZTIN10__cxxabiv119__pointer_type_infoE;
+    _ZTIN10__cxxabiv120__si_class_type_infoE;
+    _ZTIN10__cxxabiv121__vmi_class_type_infoE;
+    _ZTIN10__cxxabiv115__forced_unwindE;
+    _ZTIN10__cxxabiv119__foreign_exceptionE;
+    _ZTIN10__cxxabiv115__forced_unwindE;
+    _ZTIN10__cxxabiv119__foreign_exceptionE;
+
+    # typeinfo name
+    _ZTS[a-z];
+    _ZTSP[a-z];
+    _ZTSPK[a-z];
+    _ZTSN10__cxxabiv117__array_type_infoE;
+    _ZTSN10__cxxabiv117__class_type_infoE;
+    _ZTSN10__cxxabiv116__enum_type_infoE;
+    _ZTSN10__cxxabiv120__function_type_infoE;
+    _ZTSN10__cxxabiv123__fundamental_type_infoE;
+    _ZTSN10__cxxabiv117__pbase_type_infoE;
+    _ZTSN10__cxxabiv129__pointer_to_member_type_infoE;
+    _ZTSN10__cxxabiv119__pointer_type_infoE;
+    _ZTSN10__cxxabiv120__si_class_type_infoE;
+    _ZTSN10__cxxabiv121__vmi_class_type_infoE;
+
+    # typeinfo for char8_t
+    _ZTIDu;
+    _ZTIPDu;
+    _ZTIPKDu;
+
+    # typeinfo for char16_t and char32_t
+    _ZTIDs;
+    _ZTIPDs;
+    _ZTIPKDs;
+    _ZTIDi;
+    _ZTIPDi;
+    _ZTIPKDi;
+
+    # typeinfo for decimal floating point types
+    _ZTID[fde];
+    _ZTIPD[fde];
+    _ZTIPKD[fde];
+
+    # typeinfo for _Float{16,32,64,128,32x,64x,128x} and
+    # __bf16
+    _ZTIDF[0-9]*[_bx];
+    _ZTIPDF[0-9]*[_bx];
+    _ZTIPKDF[0-9]*[_bx];
+    _ZTIu6__bf16;
+    _ZTIPu6__bf16;
+    _ZTIPKu6__bf16;
+
+    # typeinfo for decltype(nullptr)
+    _ZTIDn;
+    _ZTIPDn;
+    _ZTIPKDn;
+
+    # typeinfo for __int128 and unsigned __int128
+    _ZTI[no];
+    _ZTIP[no];
+    _ZTIPK[no];
+
+    # virtual table
+    _ZTVN10__cxxabiv117__array_type_infoE;
+    _ZTVN10__cxxabiv117__class_type_infoE;
+    _ZTVN10__cxxabiv116__enum_type_infoE;
+    _ZTVN10__cxxabiv120__function_type_infoE;
+    _ZTVN10__cxxabiv123__fundamental_type_infoE;
+    _ZTVN10__cxxabiv117__pbase_type_infoE;
+    _ZTVN10__cxxabiv129__pointer_to_member_type_infoE;
+    _ZTVN10__cxxabiv119__pointer_type_infoE;
+    _ZTVN10__cxxabiv120__si_class_type_infoE;
+    _ZTVN10__cxxabiv121__vmi_class_type_infoE;
+
+    # operator delete(void*, std::size_t)
+    _ZdlPv[jmy];
+    # operator delete[](void*, std::size_t)
+    _ZdaPv[jmy];
+
+    # __gnu_cxx::__freeres()
+    _ZN9__gnu_cxx9__freeresEv;
+
+    # C++17 aligned new/delete
+    _Znw[jmy]St11align_val_t;
+    _Znw[jmy]St11align_val_tRKSt9nothrow_t;
+    _Zna[jmy]St11align_val_t;
+    _Zna[jmy]St11align_val_tRKSt9nothrow_t;
+    _ZdlPvSt11align_val_t;
+    _ZdlPvSt11align_val_tRKSt9nothrow_t;
+    _ZdlPv[jmy]St11align_val_t;
+    _ZdaPvSt11align_val_t;
+    _ZdaPvSt11align_val_tRKSt9nothrow_t;
+    _ZdaPv[jmy]St11align_val_t;
+};
+
+# Symbols in the support library (libsupc++) supporting trans-mem.
+CXXABI_TM_1 {
+
+  global:
+    __cxa_tm_cleanup;
+
+};

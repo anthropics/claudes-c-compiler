@@ -1,0 +1,9 @@
+{ dg-options "-O0" }
+
+module Foo = def pub int foo = 10; { dg-final { scan-assembler "FOO_foo" } }
+                 int bar = 20;     { dg-final { scan-assembler "FOO_bar" } }
+                 skip
+             fed
+
+{ dg-final { scan-assembler "FOO__prelude" } }
+{ dg-final { scan-assembler "FOO__postlude" } }

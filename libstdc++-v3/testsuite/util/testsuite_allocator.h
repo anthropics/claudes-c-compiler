@@ -1,0 +1,979 @@
+// -*- C++ -*-
+// Testing allocator for the C++ library testsuite.
+//
+// Copyright (C) 2002-2026 Free Software Foundation, Inc.
+//
+// This file is part of the GNU ISO C++ Library.  This library is free
+// software; you can redistribute it and/or modify it under the
+// terms of the GNU General Public License as published by the
+// Free Software Foundation; either version 3, or (at your option)
+// any later version.
+//
+// This library is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License along
+// with this library; see the file COPYING3.  If not see
+// <http://www.gnu.org/licenses/>.
+//
+
+// This file provides an test instrumentation allocator that can be
+// used to verify allocation functionality of standard library
+// containers.  2002.11.25 smw
+
+#ifndef _GLIBCXX_TESTSUITE_ALLOCATOR_H
+#define _GLIBCXX_TESTSUITE_ALLOCATOR_H
+
+#if __cplusplus >= 201703L
+# include <memory_resource>
+# include <new>
+#endif
+#include <bits/move.h>
+#include <ext/pointer.h>
+#include <ext/alloc_traits.h>
+#include <testsuite_hooks.h>
+
+#if __cplusplus >= 201103L
+# include <unordered_map>
+namespace unord = std;
+#else
+# include <tr1/unordered_map>
+namespace unord = std::tr1;
+#endif
+
+namespace __gnu_test
+{
+  // A common API for calling max_size() on an allocator in any -std mode.
+  template<typename A>
+    typename A::size_type
+    max_size(const A& a)
+    {
+#if __cplusplus >= 201103L
+      return std::allocator_traits<A>::max_size(a);
+#else
+      return a.max_size();
+#endif
+    }
+
+  class tracker_allocator_counter
+  {
+  public:
+    typedef std::size_t    size_type;
+
+    static void
+    allocate(size_type blocksize)
+    { allocationCount_ += blocksize; }
+
+    static void
+    construct() { ++constructCount_; }
+
+    static void
+    destroy() { ++destructCount_; }
+
+    static void
+    deallocate(size_type blocksize)
+    { deallocationCount_ += blocksize; }
+
+    static size_type
+    get_allocation_count() { return allocationCount_; }
+
+    static size_type
+    get_deallocation_count() { return deallocationCount_; }
+
+    static int
+    get_construct_count() { return constructCount_; }
+
+    static int
+    get_destruct_count() { return destructCount_; }
+
+    static void
+    reset()
+    {
+      allocationCount_ = 0;
+      deallocationCount_ = 0;
+      constructCount_ = 0;
+      destructCount_ = 0;
+    }
+
+ private:
+    static size_type  allocationCount_;
+    static size_type  deallocationCount_;
+    static int        constructCount_;
+    static int        destructCount_;
+  };
+
+  // Helper to detect inconsistency between type used to instantiate an
+  // allocator and the underlying allocator value_type.
+  template<typename T, typename Alloc,
+	   typename = typename Alloc::value_type>
+    struct check_consistent_alloc_value_type;
+
+  template<typename T, typename Alloc>
+    struct check_consistent_alloc_value_type<T, Alloc, T>
+    { typedef T value_type; };
+
+  // An allocator facade that intercepts allocate/deallocate/construct/destroy
+  // calls and track them through the tracker_allocator_counter class. This
+  // class is templated on the target object type, but tracker isn't.
+  template<typename T, typename Alloc = std::allocator<T> >
+    class tracker_allocator : public Alloc
+    {
+    private:
+      typedef tracker_allocator_counter counter_type;
+
+      typedef __gnu_cxx::__alloc_traits<Alloc> AllocTraits;
+
+    public:
+      typedef typename
+      check_consistent_alloc_value_type<T, Alloc>::value_type value_type;
+      typedef typename AllocTraits::pointer pointer;
+      typedef typename AllocTraits::size_type size_type;
+
+      template<class U>
+	struct rebind
+	{
+	  typedef tracker_allocator<U,
+		typename AllocTraits::template rebind<U>::other> other;
+	};
+
+#if __cplusplus >= 201103L
+      tracker_allocator() = default;
+      tracker_allocator(const tracker_allocator&) = default;
+      tracker_allocator(tracker_allocator&&) = default;
+      tracker_allocator& operator=(const tracker_allocator&) = default;
+      tracker_allocator& operator=(tracker_allocator&&) = default;
+
+      // Perfect forwarding constructor.
+      template<typename... _Args>
+	tracker_allocator(_Args&&... __args)
+	  : Alloc(std::forward<_Args>(__args)...)
+	{ }
+#else
+      tracker_allocator()
+      { }
+
+      tracker_allocator(const tracker_allocator& a) : Alloc(a)
+      { }
+
+      ~tracker_allocator()
+      { }
+#endif
+
+      template<class U>
+	tracker_allocator(const tracker_allocator<U,
+	  typename AllocTraits::template rebind<U>::other>& alloc)
+	    _GLIBCXX_USE_NOEXCEPT
+	  : Alloc(alloc)
+	{ }
+
+      pointer
+      allocate(size_type n, const void* = 0)
+      {
+	pointer p = AllocTraits::allocate(*this, n);
+	counter_type::allocate(n * sizeof(T));
+	return p;
+      }
+
+#if __cplusplus >= 201103L
+      template<typename U, typename... Args>
+	void
+	construct(U* p, Args&&... args)
+	{
+	  AllocTraits::construct(*this, p, std::forward<Args>(args)...);
+	  counter_type::construct();
+	}
+
+      template<typename U>
+	void
+	destroy(U* p)
+	{
+	  AllocTraits::destroy(*this, p);
+	  counter_type::destroy();
+	}
+#else
+      void
+      construct(pointer p, const T& value)
+      {
+	AllocTraits::construct(*this, p, value);
+	counter_type::construct();
+      }
+
+      void
+      destroy(pointer p)
+      {
+	AllocTraits::destroy(*this, p);
+	counter_type::destroy();
+      }
+#endif
+
+      void
+      deallocate(pointer p, size_type num)
+      {
+	counter_type::deallocate(num * sizeof(T));
+	AllocTraits::deallocate(*this, p, num);
+      }
+
+      // Implement swap for underlying allocators that might need it.
+      friend void
+      swap(tracker_allocator& a, tracker_allocator& b)
+      {
+	using std::swap;
+
+	Alloc& aa = a;
+	Alloc& ab = b;
+	swap(aa, ab);
+      }
+    };
+
+  template<class T1, class Alloc1, class T2, class Alloc2>
+    bool
+    operator==(const tracker_allocator<T1, Alloc1>& lhs,
+	       const tracker_allocator<T2, Alloc2>& rhs) throw()
+    {
+      const Alloc1& alloc1 = lhs;
+      const Alloc2& alloc2 = rhs;
+      return alloc1 == alloc2;
+    }
+
+  template<class T1, class Alloc1, class T2, class Alloc2>
+    bool
+    operator!=(const tracker_allocator<T1, Alloc1>& lhs,
+	       const tracker_allocator<T2, Alloc2>& rhs) throw()
+    { return !(lhs == rhs); }
+
+  bool
+  check_construct_destroy(const char* tag, int expected_c, int expected_d);
+
+  template<typename Alloc>
+    bool
+    check_deallocate_null()
+    {
+      // Let's not core here...
+      Alloc a;
+      a.deallocate(0, 1);
+      a.deallocate(0, 10);
+      return true;
+    }
+
+#if __cpp_exceptions
+  template<typename Alloc>
+    bool
+    check_allocate_max_size()
+    {
+      Alloc a;
+      try
+	{
+	  (void) a.allocate(__gnu_test::max_size(a) + 1);
+	}
+      catch(std::bad_alloc&)
+	{
+	  return true;
+	}
+      catch(...)
+	{
+	  throw;
+	}
+      throw;
+    }
+#endif
+
+  // A simple allocator which can be constructed endowed of a given
+  // "personality" (an integer), queried in operator== to simulate the
+  // behavior of realworld "unequal" allocators (i.e., not exploiting
+  // the provision in 20.1.5/4, first bullet).  A global unordered_map,
+  // filled at allocation time with (pointer, personality) pairs, is
+  // then consulted to enforce the requirements in Table 32 about
+  // deallocation vs allocator equality.  Note that this allocator is
+  // swappable, not copy assignable, consistently with Option 3 of DR 431
+  // (see N1599).
+  struct uneq_allocator_base
+  {
+    typedef unord::unordered_map<void*, int>   map_type;
+
+    // Avoid static initialization troubles and/or bad interactions
+    // with tests linking testsuite_allocator.o and playing globally
+    // with operator new/delete.
+    static map_type&
+    get_map()
+    {
+      static map_type alloc_map;
+      return alloc_map;
+    }
+  };
+
+  template<typename Tp, typename Alloc = std::allocator<Tp> >
+    class uneq_allocator
+    : private uneq_allocator_base,
+      public Alloc
+    {
+      typedef __gnu_cxx::__alloc_traits<Alloc> AllocTraits;
+
+    public:
+      typedef typename check_consistent_alloc_value_type<Tp, Alloc>::value_type
+	value_type;
+      typedef typename AllocTraits::size_type	size_type;
+      typedef typename AllocTraits::pointer	pointer;
+
+#if __cplusplus >= 201103L
+      typedef std::true_type			propagate_on_container_swap;
+      typedef std::false_type			is_always_equal;
+#endif
+
+      template<typename Tp1>
+	struct rebind
+	{
+	  typedef uneq_allocator<Tp1,
+		typename AllocTraits::template rebind<Tp1>::other> other;
+	};
+
+      _GLIBCXX_CONSTEXPR
+      uneq_allocator() _GLIBCXX_USE_NOEXCEPT
+      : personality(0) { }
+
+      _GLIBCXX_CONSTEXPR explicit
+      uneq_allocator(int person) _GLIBCXX_USE_NOEXCEPT
+      : personality(person) { }
+
+#if __cplusplus >= 201103L
+      uneq_allocator(const uneq_allocator&) = default;
+      uneq_allocator(uneq_allocator&&) = default;
+#endif
+
+      template<typename Tp1>
+	_GLIBCXX_CONSTEXPR
+	uneq_allocator(const uneq_allocator<Tp1,
+		       typename AllocTraits::template rebind<Tp1>::other>& b)
+	_GLIBCXX_USE_NOEXCEPT
+	: personality(b.get_personality()) { }
+
+      _GLIBCXX_CONSTEXPR int get_personality() const { return personality; }
+
+      _GLIBCXX20_CONSTEXPR
+      pointer
+      allocate(size_type n, const void* = 0)
+      {
+	pointer p = AllocTraits::allocate(*this, n);
+
+	if (std::__is_constant_evaluated())
+	  return p;
+
+	try
+	  {
+	    get_map().insert(map_type::value_type(reinterpret_cast<void*>(p),
+						  personality));
+	  }
+	catch(...)
+	  {
+	    AllocTraits::deallocate(*this, p, n);
+	    __throw_exception_again;
+	  }
+
+	return p;
+      }
+
+      _GLIBCXX14_CONSTEXPR
+      void
+      deallocate(pointer p, size_type n)
+      {
+	VERIFY( p );
+
+	if (!std::__is_constant_evaluated())
+	  {
+	    map_type::iterator it = get_map().find(reinterpret_cast<void*>(p));
+	    VERIFY( it != get_map().end() );
+
+	    // Enforce requirements in Table 32 about deallocation vs
+	    // allocator equality.
+	    VERIFY( it->second == personality );
+
+	    get_map().erase(it);
+	  }
+
+	AllocTraits::deallocate(*this, p, n);
+      }
+
+#if __cplusplus >= 201103L
+      // Not copy assignable...
+      uneq_allocator&
+      operator=(const uneq_allocator&) = delete;
+
+      // ... but still moveable if base allocator is.
+      uneq_allocator&
+      operator=(uneq_allocator&&) = default;
+#else
+    private:
+      // Not assignable...
+      uneq_allocator&
+      operator=(const uneq_allocator&);
+#endif
+
+    private:
+      // ... yet swappable!
+      friend _GLIBCXX_CONSTEXPR void
+      swap(uneq_allocator& a, uneq_allocator& b)
+      {
+	std::swap(a.personality, b.personality);
+	using std::swap;
+	swap(static_cast<Alloc&>(a), static_cast<Alloc&>(b));
+      }
+
+      template<typename Tp1>
+	friend _GLIBCXX_CONSTEXPR bool
+	operator==(const uneq_allocator& a,
+		   const uneq_allocator<Tp1,
+		   typename AllocTraits::template rebind<Tp1>::other>& b)
+	{ return a.personality == b.get_personality(); }
+
+      template<typename Tp1>
+	friend _GLIBCXX_CONSTEXPR bool
+	operator!=(const uneq_allocator& a,
+		   const uneq_allocator<Tp1,
+		   typename AllocTraits::template rebind<Tp1>::other>& b)
+	{ return !(a == b); }
+
+      int personality;
+    };
+
+#if __cplusplus >= 201103L
+  // An uneq_allocator which can be used to test allocator propagation.
+  template<typename Tp, bool Propagate, typename Alloc = std::allocator<Tp>>
+    class propagating_allocator : public uneq_allocator<Tp, Alloc>
+    {
+      typedef __gnu_cxx::__alloc_traits<Alloc> AllocTraits;
+
+      typedef uneq_allocator<Tp, Alloc> base_alloc;
+      _GLIBCXX14_CONSTEXPR void
+      swap_base(base_alloc& b)
+      {
+	using std::swap;
+	swap(b, static_cast<base_alloc&>(*this));
+      }
+
+      typedef std::integral_constant<bool, Propagate> trait_type;
+
+    public:
+      // default allocator_traits::rebind_alloc would select
+      // uneq_allocator::rebind so we must define rebind here
+      template<typename Up>
+	struct rebind
+	{
+	  typedef propagating_allocator<Up, Propagate,
+		typename AllocTraits::template rebind<Up>::other> other;
+	};
+
+      constexpr
+      propagating_allocator(int i) noexcept
+      : base_alloc(i)
+      { }
+
+      template<typename Up>
+	constexpr
+	propagating_allocator(const propagating_allocator<Up, Propagate,
+			      typename AllocTraits::template rebind<Up>::other>& a)
+	noexcept
+	: base_alloc(a)
+	{ }
+
+      propagating_allocator() noexcept = default;
+
+      propagating_allocator(const propagating_allocator&) noexcept = default;
+
+      _GLIBCXX14_CONSTEXPR
+      propagating_allocator&
+      operator=(const propagating_allocator& a) noexcept
+      {
+	static_assert(Propagate, "assigning propagating_allocator<T, true>");
+	propagating_allocator(a).swap_base(*this);
+	return *this;
+      }
+
+      template<bool P2>
+	_GLIBCXX14_CONSTEXPR
+	propagating_allocator&
+	operator=(const propagating_allocator<Tp, P2, Alloc>& a) noexcept
+  	{
+	  static_assert(P2, "assigning propagating_allocator<T, true>");
+	  propagating_allocator(a).swap_base(*this);
+	  return *this;
+  	}
+
+      // postcondition: LWG2593 a.get_personality() un-changed.
+      constexpr
+      propagating_allocator(propagating_allocator&& a) noexcept
+      : base_alloc(static_cast<base_alloc&&>(a))
+      { }
+
+      // postcondition: LWG2593 a.get_personality() un-changed
+      _GLIBCXX14_CONSTEXPR
+      propagating_allocator&
+      operator=(propagating_allocator&& a) noexcept
+      {
+	propagating_allocator(std::move(a)).swap_base(*this);
+	return *this;
+      }
+
+      typedef trait_type propagate_on_container_copy_assignment;
+      typedef trait_type propagate_on_container_move_assignment;
+      typedef trait_type propagate_on_container_swap;
+
+      constexpr propagating_allocator
+      select_on_container_copy_construction() const
+      { return Propagate ? *this : propagating_allocator(); }
+    };
+
+  // Class template supporting the minimal interface that satisfies the
+  // Allocator requirements, from example in [allocator.requirements]
+  template <class Tp>
+    struct SimpleAllocator
+    {
+      typedef Tp value_type;
+
+      constexpr SimpleAllocator() noexcept { }
+
+      template <class T>
+	constexpr
+        SimpleAllocator(const SimpleAllocator<T>&) { }
+
+      _GLIBCXX20_CONSTEXPR
+      Tp *allocate(std::size_t n)
+      { return std::allocator<Tp>().allocate(n); }
+
+      _GLIBCXX20_CONSTEXPR
+      void deallocate(Tp *p, std::size_t n)
+      { std::allocator<Tp>().deallocate(p, n); }
+    };
+
+  template <class T, class U>
+    constexpr
+    bool operator==(const SimpleAllocator<T>&, const SimpleAllocator<U>&)
+    { return true; }
+  template <class T, class U>
+    constexpr
+    bool operator!=(const SimpleAllocator<T>&, const SimpleAllocator<U>&)
+    { return false; }
+
+  template<typename T>
+    struct default_init_allocator
+    {
+      using value_type = T;
+
+      default_init_allocator() = default;
+
+      template<typename U>
+	constexpr
+        default_init_allocator(const default_init_allocator<U>& a)
+	  : state(a.state)
+        { }
+
+      _GLIBCXX14_CONSTEXPR T*
+      allocate(std::size_t n)
+      { return std::allocator<T>().allocate(n); }
+
+      _GLIBCXX14_CONSTEXPR void
+      deallocate(T* p, std::size_t n)
+      { std::allocator<T>().deallocate(p, n); }
+
+      int state;
+    };
+
+  template<typename T, typename U>
+    constexpr bool
+    operator==(const default_init_allocator<T>& t,
+	       const default_init_allocator<U>& u)
+    { return t.state == u.state; }
+
+  template<typename T, typename U>
+    constexpr bool
+    operator!=(const default_init_allocator<T>& t,
+	       const default_init_allocator<U>& u)
+    { return !(t == u); }
+#endif // C++11
+
+  template<typename Tp>
+    struct ExplicitConsAlloc : std::allocator<Tp>
+    {
+      ExplicitConsAlloc() { }
+
+      template<typename Up>
+        explicit _GLIBCXX_CONSTEXPR
+        ExplicitConsAlloc(const ExplicitConsAlloc<Up>&) { }
+
+      template<typename Up>
+        struct rebind
+        { typedef ExplicitConsAlloc<Up> other; };
+    };
+
+#if __cplusplus >= 201103L
+  template<typename Tp>
+    class CustomPointerAlloc : public std::allocator<Tp>
+    {
+      template<typename Up, typename Sp = __gnu_cxx::_Std_pointer_impl<Up>>
+	using Ptr =  __gnu_cxx::_Pointer_adapter<Sp>;
+
+    public:
+      CustomPointerAlloc() = default;
+
+      template<typename Up>
+	constexpr
+        CustomPointerAlloc(const CustomPointerAlloc<Up>&) { }
+
+      template<typename Up>
+        struct rebind
+        { typedef CustomPointerAlloc<Up> other; };
+
+      typedef Ptr<Tp> 		pointer;
+      typedef Ptr<const Tp>	const_pointer;
+      typedef Ptr<void>		void_pointer;
+      typedef Ptr<const void>	const_void_pointer;
+
+      _GLIBCXX14_CONSTEXPR
+      pointer allocate(std::size_t n, const_void_pointer = {})
+      { return pointer(std::allocator<Tp>::allocate(n)); }
+
+      _GLIBCXX14_CONSTEXPR
+      void deallocate(pointer p, std::size_t n)
+      { std::allocator<Tp>::deallocate(std::addressof(*p), n); }
+    };
+
+  // A class type meeting *only* the Cpp17NullablePointer requirements.
+  // Can be used as a base class for fancy pointers (like PointerBase, below)
+  // or to wrap a built-in pointer type to remove operations not required
+  // by the Cpp17NullablePointer requirements (dereference, increment etc.)
+  template<typename Ptr>
+    struct NullablePointer
+    {
+      // N.B. default constructor does not initialize value
+      NullablePointer() = default;
+      NullablePointer(std::nullptr_t) noexcept : value() { }
+
+      explicit operator bool() const noexcept { return value != nullptr; }
+
+      friend constexpr bool
+      operator==(NullablePointer lhs, NullablePointer rhs) noexcept
+      { return lhs.value == rhs.value; }
+
+      friend constexpr bool
+      operator!=(NullablePointer lhs, NullablePointer rhs) noexcept
+      { return lhs.value != rhs.value; }
+
+    protected:
+      constexpr explicit NullablePointer(Ptr p) noexcept : value(p) { }
+      Ptr value;
+    };
+
+  // NullablePointer<void> is an empty type that models Cpp17NullablePointer.
+  template<>
+    struct NullablePointer<void>
+    {
+      NullablePointer() = default;
+      constexpr NullablePointer(std::nullptr_t) noexcept { }
+      constexpr explicit NullablePointer(const volatile void*) noexcept { }
+
+      constexpr explicit operator bool() const noexcept { return false; }
+
+      friend constexpr bool
+      operator==(NullablePointer, NullablePointer) noexcept
+      { return true; }
+
+      friend constexpr bool
+      operator!=(NullablePointer, NullablePointer) noexcept
+      { return false; }
+    };
+
+  // Utility for use as CRTP base class of custom pointer types
+  template<typename Derived, typename T>
+    struct PointerBase : NullablePointer<T*>
+    {
+      typedef T element_type;
+
+      // typedefs for iterator_traits
+      typedef T value_type;
+      typedef std::ptrdiff_t difference_type;
+      typedef std::random_access_iterator_tag iterator_category;
+      typedef Derived pointer;
+      typedef T& reference;
+
+      using NullablePointer<T*>::NullablePointer;
+
+      // Public (but explicit) constructor from raw pointer:
+      explicit PointerBase(T* p) noexcept : NullablePointer<T*>(p) { }
+
+      template<typename D, typename U,
+	       typename = decltype(static_cast<T*>(std::declval<U*>()))>
+	PointerBase(const PointerBase<D, U>& p)
+	: NullablePointer<T*>(p.operator->()) { }
+
+      T& operator*() const { return *this->value; }
+      T* operator->() const { return this->value; }
+      T& operator[](difference_type n) const { return this->value[n]; }
+
+      Derived& operator++() { ++this->value; return derived(); }
+      Derived& operator--() { --this->value; return derived(); }
+
+      Derived operator++(int) { return Derived(this->value++); }
+
+      Derived operator--(int) { return Derived(this->value--); }
+
+      Derived& operator+=(difference_type n)
+      {
+	this->value += n;
+	return derived();
+      }
+
+      Derived& operator-=(difference_type n)
+      {
+	this->value -= n;
+	return derived();
+      }
+
+      Derived
+      operator+(difference_type n) const
+      {
+	Derived p(derived());
+	return p += n;
+      }
+
+      Derived
+      operator-(difference_type n) const
+      {
+	Derived p(derived());
+	return p -= n;
+      }
+
+    private:
+      friend std::ptrdiff_t operator-(PointerBase l, PointerBase r)
+      { return l.value - r.value; }
+
+      friend bool operator<(PointerBase l, PointerBase r)
+      { return l.value < r.value; }
+      friend bool operator>(PointerBase l, PointerBase r)
+      { return l.value > r.value; }
+      friend bool operator<=(PointerBase l, PointerBase r)
+      { return l.value <= r.value; }
+      friend bool operator>=(PointerBase l, PointerBase r)
+      { return l.value >= r.value; }
+
+      Derived&
+      derived() { return static_cast<Derived&>(*this); }
+
+      const Derived&
+      derived() const { return static_cast<const Derived&>(*this); }
+    };
+
+  // implementation for pointer-to-void specializations
+  template<typename T>
+    struct PointerBase_void : NullablePointer<T*>
+    {
+      typedef T element_type;
+
+      // typedefs for iterator_traits
+      typedef T value_type;
+      typedef std::ptrdiff_t difference_type;
+      typedef std::random_access_iterator_tag iterator_category;
+
+      using NullablePointer<T*>::NullablePointer;
+
+      T* operator->() const { return this->value; }
+
+      template<typename D, typename U,
+	       typename = decltype(static_cast<T*>(std::declval<U*>()))>
+	PointerBase_void(const PointerBase<D, U>& p)
+	: NullablePointer<T*>(p.operator->()) { }
+    };
+
+  template<typename Derived>
+    struct PointerBase<Derived, void> : PointerBase_void<void>
+    {
+      using PointerBase_void::PointerBase_void;
+      typedef Derived pointer;
+    };
+
+  template<typename Derived>
+    struct PointerBase<Derived, const void> : PointerBase_void<const void>
+    {
+      using PointerBase_void::PointerBase_void;
+      typedef Derived pointer;
+    };
+#endif // C++11
+
+#if __cplusplus >= 201703L
+#if __cpp_aligned_new
+  // A concrete memory_resource, with error checking.
+  class memory_resource : public std::pmr::memory_resource
+  {
+  public:
+    memory_resource()
+    : lists(new allocation_lists)
+    { }
+
+    memory_resource(const memory_resource& r) noexcept
+    : lists(r.lists)
+    { lists->refcount++; }
+
+    memory_resource& operator=(const memory_resource&) = delete;
+
+    ~memory_resource()
+    {
+      if (lists->refcount-- == 1)
+	delete lists;  // last one out turns out the lights
+    }
+
+    struct bad_size { };
+    struct bad_alignment { };
+    struct bad_address { };
+
+    // Deallocate everything (moving the tracking info to the freed list)
+    void
+    deallocate_everything()
+    {
+      while (lists->active)
+	{
+	  auto a = lists->active;
+	  // Intentionally virtual dispatch, to inform derived classes:
+	  this->do_deallocate(a->p, a->bytes, a->alignment);
+	}
+    }
+
+    // Clear the freed list
+    void
+    forget_freed_allocations()
+    { lists->forget_allocations(lists->freed); }
+
+    // Count how many allocations have been done and not freed.
+    std::size_t
+    number_of_active_allocations() const noexcept
+    {
+      std::size_t n = 0;
+      for (auto a = lists->active; a != nullptr; a = a->next)
+	++n;
+      return n;
+    }
+
+  protected:
+    void*
+    do_allocate(std::size_t bytes, std::size_t alignment) override
+    {
+      // TODO perform a single allocation and put the allocation struct
+      // in the buffer using placement new? It means deallocation won't
+      // actually return memory to the OS, as it will stay in lists->freed.
+      //
+      // TODO adjust the returned pointer to be minimally aligned?
+      // e.g. if alignment==1 don't return something aligned to 2 bytes.
+      // Maybe not worth it, at least monotonic_buffer_resource will
+      // never ask upstream for anything with small alignment.
+      void* p = ::operator new(bytes, std::align_val_t(alignment));
+      lists->active = new allocation{p, bytes, alignment, lists->active};
+      return p;
+    }
+
+    void
+    do_deallocate(void* p, std::size_t bytes, std::size_t alignment) override
+    {
+      allocation** aptr = &lists->active;
+      while (*aptr)
+	{
+	  allocation* a = *aptr;
+	  if (p == a->p)
+	    {
+	      if (bytes != a->bytes)
+		_S_throw<bad_size>();
+	      if (alignment != a->alignment)
+		_S_throw<bad_alignment>();
+#if __cpp_sized_deallocation
+	      ::operator delete(p, bytes, std::align_val_t(alignment));
+#else
+	      ::operator delete(p, std::align_val_t(alignment));
+#endif
+	      *aptr = a->next;
+	      a->next = lists->freed;
+	      lists->freed = a;
+	      return;
+	    }
+	  aptr = &a->next;
+	}
+      _S_throw<bad_address>();
+    }
+
+    bool
+    do_is_equal(const std::pmr::memory_resource& r) const noexcept override
+    {
+#if __cpp_rtti
+      // Equality is determined by sharing the same allocation_lists object.
+      if (auto p = dynamic_cast<const memory_resource*>(&r))
+	return p->lists == lists;
+#else
+      if (this == &r) // Is this the best we can do without RTTI?
+	return true;
+#endif
+      return false;
+    }
+
+  private:
+    template<typename E>
+      static void
+      _S_throw()
+      {
+#if __cpp_exceptions
+	throw E();
+#else
+	__builtin_abort();
+#endif
+      }
+
+    struct allocation
+    {
+      void* p;
+      std::size_t bytes;
+      std::size_t alignment;
+      allocation* next;
+    };
+
+    // Maintain list of allocated blocks and list of freed blocks.
+    // Copies of this memory_resource share the same ref-counted lists.
+    struct allocation_lists
+    {
+      unsigned refcount = 1;
+      allocation* active = nullptr;
+      allocation* freed = nullptr;
+
+      void forget_allocations(allocation*& list)
+      {
+	while (list)
+	  {
+	    auto p = list;
+	    list = list->next;
+	    delete p;
+	  }
+      }
+
+      ~allocation_lists()
+      {
+	forget_allocations(active); // Anything in this list is a leak!
+	forget_allocations(freed);
+      }
+    };
+
+    allocation_lists* lists;
+  };
+#endif // aligned-new
+
+  // Set the default resource, and restore the previous one on destruction.
+  struct default_resource_mgr
+  {
+    explicit default_resource_mgr(std::pmr::memory_resource* r)
+    : prev(std::pmr::set_default_resource(r))
+    { }
+
+    ~default_resource_mgr()
+    { std::pmr::set_default_resource(prev); }
+
+    std::pmr::memory_resource* prev;
+  };
+
+#endif // C++17
+
+} // namespace __gnu_test
+
+#endif // _GLIBCXX_TESTSUITE_ALLOCATOR_H

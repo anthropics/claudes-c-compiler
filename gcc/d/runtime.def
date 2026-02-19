@@ -1,0 +1,116 @@
+/* runtime.def -- Definitions for D runtime functions.
+   Copyright (C) 2014-2026 Free Software Foundation, Inc.
+
+GCC is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 3, or (at your option)
+any later version.
+
+GCC is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with GCC; see the file COPYING3.  If not see
+<http://www.gnu.org/licenses/>.  */
+
+/* D runtime library functions.  */
+
+/* DEF_D_RUNTIME (CODE, NAME, FLAGS)
+   CODE	    The enum code used to refer to this function.
+   NAME	    The name of this function as a string.
+   FLAGS    ECF flags to describe attributes of the function.
+
+   Used for declaring functions that are called by generated code.  Most are
+   extern(C) - for those that are not, ensure to use correct mangling.  */
+
+/* Helper macros for parameter building.  */
+#define P0()	0
+#define P1(T1)	1, LCT_ ## T1
+#define P2(T1, T2) \
+		2, LCT_ ## T1, LCT_ ## T2
+#define P3(T1, T2, T3) \
+		3, LCT_ ## T1, LCT_ ## T2, LCT_ ## T3
+#define P4(T1, T2, T3, T4) \
+		4, LCT_ ## T1, LCT_ ## T2, LCT_ ## T3, LCT_ ## T4
+#define P5(T1, T2, T3, T4, T5)  \
+		5, LCT_ ## T1, LCT_ ## T2, LCT_ ## T3, LCT_ ## T4, LCT_ ## T5
+#define RT(T1)	LCT_ ## T1
+
+/* Used when an assert() contract fails.  */
+DEF_D_RUNTIME (ASSERTP, "_d_assertp", RT(NORETURN), P2(IMMUTABLE_CHARPTR, UINT),
+	       ECF_NORETURN)
+DEF_D_RUNTIME (ASSERT_MSG, "_d_assert_msg", RT(NORETURN),
+	       P3(STRING, STRING, UINT),
+	       ECF_NORETURN)
+
+/* Used when an assert() contract fails in a unittest function.  */
+DEF_D_RUNTIME (UNITTESTP, "_d_unittestp", RT(NORETURN),
+	       P2(IMMUTABLE_CHARPTR, UINT),
+	       ECF_NORETURN)
+DEF_D_RUNTIME (UNITTEST_MSG, "_d_unittest_msg", RT(NORETURN),
+	       P3(STRING, STRING, UINT), ECF_NORETURN)
+
+/* Used when an array index outside the bounds of its range.  */
+DEF_D_RUNTIME (ARRAYBOUNDSP, "_d_arrayboundsp", RT(NORETURN),
+	       P2(IMMUTABLE_CHARPTR, UINT), ECF_NORETURN)
+DEF_D_RUNTIME (ARRAYBOUNDS_SLICEP, "_d_arraybounds_slicep", RT(NORETURN),
+	       P5(IMMUTABLE_CHARPTR, UINT, SIZE_T, SIZE_T, SIZE_T),
+	       ECF_NORETURN)
+DEF_D_RUNTIME (ARRAYBOUNDS_INDEXP, "_d_arraybounds_indexp", RT(NORETURN),
+	       P4(IMMUTABLE_CHARPTR, UINT, SIZE_T, SIZE_T), ECF_NORETURN)
+
+/* Used when calling delete on a stack-allocated class or interface.  */
+DEF_D_RUNTIME (CALLFINALIZER, "_d_callfinalizer", RT(VOID), P1(VOIDPTR), 0)
+DEF_D_RUNTIME (CALLINTERFACEFINALIZER, "_d_callinterfacefinalizer", RT(VOID),
+	       P1(VOIDPTR), 0)
+
+/* Used for (array.length = n) expressions.  The `i' variant is for when the
+   initializer is nonzero.  */
+DEF_D_RUNTIME (ARRAYSETLENGTHT, "_d_arraysetlengthT", RT(ARRAY_VOID),
+	       P3(CONST_TYPEINFO, SIZE_T, ARRAYPTR_VOID), 0)
+DEF_D_RUNTIME (ARRAYSETLENGTHIT, "_d_arraysetlengthiT", RT(ARRAY_VOID),
+	       P3(CONST_TYPEINFO, SIZE_T, ARRAYPTR_VOID), 0)
+
+/* Used for allocating closures on the GC heap.  */
+DEF_D_RUNTIME (ALLOCMEMORY, "_d_allocmemory", RT(VOIDPTR), P1(SIZE_T),
+	       ECF_MALLOC)
+
+/* Used for copying an array into a slice, adds an enforcment that the source
+   and destination are equal in size and do not overlap.  */
+DEF_D_RUNTIME (ARRAYCOPY, "_d_arraycopy", RT(ARRAY_VOID),
+	       P3(SIZE_T, ARRAY_VOID, ARRAY_VOID), 0)
+
+/* Used for appending a single element to an array.  */
+DEF_D_RUNTIME (ARRAYAPPENDCTX, "_d_arrayappendcTX", RT(ARRAY_BYTE),
+	       P3(CONST_TYPEINFO, ARRAYPTR_BYTE, SIZE_T), 0)
+
+/* Same as appending a single element to an array, but specific for when the
+   source is a UTF-32 character, and the destination is a UTF-8 or 16 array.  */
+DEF_D_RUNTIME (ARRAYAPPENDCD, "_d_arrayappendcd", RT(ARRAY_VOID),
+	       P2(ARRAYPTR_BYTE, DCHAR), 0)
+DEF_D_RUNTIME (ARRAYAPPENDWD, "_d_arrayappendwd", RT(ARRAY_VOID),
+	       P2(ARRAYPTR_BYTE, DCHAR), 0)
+
+/* Used for throw() expressions.  */
+DEF_D_RUNTIME (THROW, "_d_throw", RT(NORETURN), P1(OBJECT), ECF_NORETURN)
+DEF_D_RUNTIME (BEGIN_CATCH, "__gdc_begin_catch", RT(VOIDPTR), P1(VOIDPTR), 0)
+
+/* C++ exception handlers.  */
+DEF_D_RUNTIME (CXA_BEGIN_CATCH, "__cxa_begin_catch", RT(VOIDPTR), P1(VOIDPTR),
+	       ECF_NOTHROW)
+DEF_D_RUNTIME (CXA_END_CATCH, "__cxa_end_catch", RT(VOID), P0(), 0)
+
+/* When invariant() contracts are turned on, used after testing whether a
+   class != null for validating the state of a class.  */
+DEF_D_RUNTIME (INVARIANT, "_D2rt10invariant_12_d_invariantFC6ObjectZv",
+	       RT(VOID), P1(OBJECT), 0)
+
+#undef P0
+#undef P1
+#undef P2
+#undef P3
+#undef P4
+#undef P5
+#undef RT

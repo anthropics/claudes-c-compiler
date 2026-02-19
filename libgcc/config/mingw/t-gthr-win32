@@ -1,0 +1,6 @@
+# We need a unique module interfacing with the Win32 API for thread support.
+LIB2ADDEH += $(srcdir)/config/i386/gthr-win32-thread.c
+# We hide calls to the Win32 API needed for condition variable support here.
+LIB2ADD_ST += $(srcdir)/config/i386/gthr-win32-cond.c
+# We hide calls to the Win32 API needed for the rest here.
+LIB2ADD_ST += $(srcdir)/config/i386/gthr-win32.c

@@ -1,0 +1,104 @@
+; lang.opt -- Options for the gcc Go front end.
+
+; Copyright (C) 2009-2026 Free Software Foundation, Inc.
+;
+; This file is part of GCC.
+;
+; GCC is free software; you can redistribute it and/or modify it under
+; the terms of the GNU General Public License as published by the Free
+; Software Foundation; either version 3, or (at your option) any later
+; version.
+; 
+; GCC is distributed in the hope that it will be useful, but WITHOUT ANY
+; WARRANTY; without even the implied warranty of MERCHANTABILITY or
+; FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+; for more details.
+; 
+; You should have received a copy of the GNU General Public License
+; along with GCC; see the file COPYING3.  If not see
+; <http://www.gnu.org/licenses/>.
+
+; See the GCC internals manual for a description of this file's format.
+
+; Please try to keep this file in ASCII collating order.
+
+Language
+Go
+
+I
+Go Joined Separate
+; Documented in c.opt
+
+L
+Go Joined Separate
+; Not documented
+
+Wall
+Go
+; Documented in c.opt
+
+fgo-c-header=
+Go Joined RejectNegative
+-fgo-c-header=<file>	Write Go struct definitions to file as C code.
+
+fgo-check-divide-zero
+Go Var(go_check_divide_zero) Init(1)
+Add explicit checks for division by zero.
+
+fgo-check-divide-overflow
+Go Var(go_check_divide_overflow) Init(1)
+Add explicit checks for division overflow in INT_MIN / -1.
+
+fgo-compiling-runtime
+Go Var(go_compiling_runtime) Init(0)
+Apply special rules for compiling runtime package.
+
+fgo-dump-
+Go Joined RejectNegative
+-fgo-dump-<type>	Dump Go frontend internal information.
+
+fgo-embedcfg=
+Go Joined RejectNegative
+-fgo-embedcfg=<file>	List embedded files via go:embed.
+
+fgo-importcfg=
+Go Joined RejectNegative
+-fgo-importcfg=<file>	Provide file that tells where to find imports.
+
+fgo-optimize-
+Go Joined
+-fgo-optimize-<type>	Turn on optimization passes in the frontend.
+
+fgo-pkgpath=
+Go Joined RejectNegative
+-fgo-pkgpath=<string>	Set Go package path.
+
+fgo-prefix=
+Go Joined RejectNegative
+-fgo-prefix=<string>	Set package-specific prefix for exported Go names.
+
+fgo-relative-import-path=
+Go Joined RejectNegative
+-fgo-relative-import-path=<path>	Treat a relative import as relative to path.
+
+frequire-return-statement
+Go Var(go_require_return_statement) Init(1) Warning
+Functions which return values must end with return statements.
+
+fgo-debug-escape
+Go Joined UInteger Var(go_debug_escape_level) Init(0)
+Emit debugging information related to the escape analysis pass when run with -fgo-optimize-allocs.
+
+fgo-debug-escape-hash=
+Go Joined RejectNegative Var(go_debug_escape_hash) Init(0)
+-fgo-debug-escape-hash=<string>	Hash value to debug escape analysis.
+
+fgo-debug-optimization
+Go Var(go_debug_optimization) Init(0)
+Emit optimization diagnostics.
+
+o
+Go Joined Separate
+; Documented in common.opt
+
+; This comment is to ensure we retain the blank line above.

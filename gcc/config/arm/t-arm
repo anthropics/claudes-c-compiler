@@ -1,0 +1,210 @@
+# Rules common to all arm targets
+#
+# Copyright (C) 2004-2026 Free Software Foundation, Inc.
+#
+# This file is part of GCC.
+#
+# GCC is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3, or (at your option)
+# any later version.
+#
+# GCC is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with GCC; see the file COPYING3.  If not see
+# <http://www.gnu.org/licenses/>.
+
+GTM_H += arm-cpu.h arm-isa.h
+
+# All md files - except for arm.md.
+# This list should be kept in alphabetical order and updated whenever an md
+# file is added or removed.
+MD_INCLUDES=	$(srcdir)/config/arm/arm1020e.md \
+		$(srcdir)/config/arm/arm1026ejs.md \
+		$(srcdir)/config/arm/arm1136jfs.md \
+		$(srcdir)/config/arm/arm926ejs.md \
+		$(srcdir)/config/arm/arm-fixed.md \
+		$(srcdir)/config/arm/arm-generic.md \
+		$(srcdir)/config/arm/arm-tune.md \
+		$(srcdir)/config/arm/constraints.md \
+		$(srcdir)/config/arm/cortex-a15.md \
+		$(srcdir)/config/arm/cortex-a5.md \
+		$(srcdir)/config/arm/cortex-a7.md \
+		$(srcdir)/config/arm/cortex-a8.md \
+		$(srcdir)/config/arm/cortex-a8-neon.md \
+		$(srcdir)/config/arm/cortex-a9.md \
+		$(srcdir)/config/arm/cortex-a9-neon.md \
+		$(srcdir)/config/arm/cortex-a53.md \
+		$(srcdir)/config/arm/xgene1.md \
+		$(srcdir)/config/arm/cortex-m4-fpu.md \
+		$(srcdir)/config/arm/cortex-m4.md \
+		$(srcdir)/config/arm/cortex-r4f.md \
+		$(srcdir)/config/arm/cortex-r4.md \
+		$(srcdir)/config/arm/fa526.md \
+		$(srcdir)/config/arm/fa606te.md \
+		$(srcdir)/config/arm/fa626te.md \
+		$(srcdir)/config/arm/fa726te.md \
+		$(srcdir)/config/arm/fmp626.md \
+		$(srcdir)/config/arm/iterators.md \
+		$(srcdir)/config/arm/ldmstm.md \
+		$(srcdir)/config/arm/ldrdstrd.md \
+		$(srcdir)/config/arm/mve.md \
+		$(srcdir)/config/arm/neon.md \
+		$(srcdir)/config/arm/predicates.md \
+		$(srcdir)/config/arm/sync.md \
+		$(srcdir)/config/arm/thumb2.md \
+		$(srcdir)/config/arm/vec-common.md \
+		$(srcdir)/config/arm/vfp11.md \
+		$(srcdir)/config/arm/vfp.md
+
+s-config s-conditions s-flags s-codes s-constants s-emit s-recog s-preds \
+	s-opinit s-extract s-peep s-attr s-attrtab s-output: $(MD_INCLUDES)
+
+$(srcdir)/config/arm/arm-tune.md: $(srcdir)/config/arm/parsecpu.awk \
+	$(srcdir)/config/arm/arm-cpus.in
+	$(AWK) -f $(srcdir)/config/arm/parsecpu.awk -v cmd=md \
+		$(srcdir)/config/arm/arm-cpus.in > arm-tune.new
+	$(srcdir)/../move-if-change arm-tune.new \
+				    $(srcdir)/config/arm/arm-tune.md
+
+$(srcdir)/config/arm/arm-tables.opt: $(srcdir)/config/arm/parsecpu.awk \
+  $(srcdir)/config/arm/arm-cpus.in
+	$(AWK) -f $(srcdir)/config/arm/parsecpu.awk -v cmd=opt \
+		$(srcdir)/config/arm/arm-cpus.in > arm-tables.new
+	$(srcdir)/../move-if-change arm-tables.new \
+				    $(srcdir)/config/arm/arm-tables.opt
+
+arm-cpu.h: s-arm-cpu ; @true
+s-arm-cpu: $(srcdir)/config/arm/parsecpu.awk \
+  $(srcdir)/config/arm/arm-cpus.in
+	$(AWK) -f $(srcdir)/config/arm/parsecpu.awk -v cmd=headers \
+		$(srcdir)/config/arm/arm-cpus.in > tmp-arm-cpu.h
+	$(SHELL) $(srcdir)/../move-if-change tmp-arm-cpu.h arm-cpu.h
+	$(STAMP) s-arm-cpu
+
+arm-isa.h: s-arm-isa ; @true
+s-arm-isa: $(srcdir)/config/arm/parsecpu.awk \
+  $(srcdir)/config/arm/arm-cpus.in
+	$(AWK) -f $(srcdir)/config/arm/parsecpu.awk -v cmd=isa \
+		$(srcdir)/config/arm/arm-cpus.in > tmp-arm-isa.h
+	$(SHELL) $(srcdir)/../move-if-change tmp-arm-isa.h arm-isa.h
+	$(STAMP) s-arm-isa
+
+arm-cpu-data.h: s-arm-data ; @true
+s-arm-data: $(srcdir)/config/arm/parsecpu.awk \
+  $(srcdir)/config/arm/arm-cpus.in
+	$(AWK) -f $(srcdir)/config/arm/parsecpu.awk -v cmd=data \
+		$(srcdir)/config/arm/arm-cpus.in > tmp-arm-cpu-data.h
+	$(SHELL) $(srcdir)/../move-if-change tmp-arm-cpu-data.h arm-cpu-data.h
+	$(STAMP) s-arm-data
+
+arm-cpu-cdata.h: s-arm-cdata ; @true
+s-arm-cdata: $(srcdir)/config/arm/parsecpu.awk \
+  $(srcdir)/config/arm/arm-cpus.in
+	$(AWK) -f $(srcdir)/config/arm/parsecpu.awk -v cmd=common-data \
+		$(srcdir)/config/arm/arm-cpus.in > tmp-arm-cpu-cdata.h
+	$(SHELL) $(srcdir)/../move-if-change tmp-arm-cpu-cdata.h arm-cpu-cdata.h
+	$(STAMP) s-arm-cdata
+
+arm-native.h: s-arm-native ; @true
+s-arm-native: $(srcdir)/config/arm/parsecpu.awk \
+  $(srcdir)/config/arm/arm-cpus.in
+	$(AWK) -f $(srcdir)/config/arm/parsecpu.awk -v cmd=native \
+		$(srcdir)/config/arm/arm-cpus.in > tmp-arm-native.h
+	$(SHELL) $(srcdir)/../move-if-change tmp-arm-native.h arm-native.h
+	$(STAMP) s-arm-native
+
+aarch-common.o: $(srcdir)/config/arm/aarch-common.cc $(CONFIG_H) $(SYSTEM_H) \
+    coretypes.h $(TM_H) $(TM_P_H) $(RTL_H) $(TREE_H) output.h $(C_COMMON_H)
+	$(COMPILER) -c $(ALL_COMPILERFLAGS) $(ALL_CPPFLAGS) $(INCLUDES) \
+		$(srcdir)/config/arm/aarch-common.cc
+
+arm.o: $(srcdir)/config/arm/arm.cc $(CONFIG_H) $(SYSTEM_H) coretypes.h $(TM_H) \
+  $(RTL_H) $(TREE_H) $(HASH_TABLE_H) $(OBSTACK_H) $(REGS_H) hard-reg-set.h \
+  insn-config.h conditions.h output.h dumpfile.h \
+  $(INSN_ATTR_H) $(FLAGS_H) reload.h $(FUNCTION_H) \
+  $(EXPR_H) $(OPTABS_H) $(RECOG_H) $(CGRAPH_H) \
+  $(GGC_H) except.h $(C_PRAGMA_H) $(TM_P_H) \
+  $(TARGET_H) $(TARGET_DEF_H) debug.h langhooks.h $(DF_H) \
+  intl.h libfuncs.h $(PARAMS_H) $(OPTS_H) sched-int.h \
+  arm-cpu-data.h \
+  $(srcdir)/config/arm/arm-protos.h \
+  $(srcdir)/config/arm/arm_neon_builtins.def \
+  $(srcdir)/config/arm/arm_vfp_builtins.def \
+  $(srcdir)/config/arm/arm_mve_builtins.def
+
+arm-builtins.o: $(srcdir)/config/arm/arm-builtins.cc $(CONFIG_H) \
+  $(SYSTEM_H) coretypes.h $(TM_H) \
+  $(RTL_H) $(TREE_H) expr.h $(TM_P_H) $(RECOG_H) langhooks.h \
+  $(DIAGNOSTIC_CORE_H) $(OPTABS_H) \
+  $(srcdir)/config/arm/arm-protos.h \
+  $(srcdir)/config/arm/arm_acle_builtins.def \
+  $(srcdir)/config/arm/arm_neon_builtins.def \
+  $(srcdir)/config/arm/arm_vfp_builtins.def \
+  $(srcdir)/config/arm/arm_mve_builtins.def \
+  $(srcdir)/config/arm/arm-simd-builtin-types.def
+	$(COMPILER) -c $(ALL_COMPILERFLAGS) $(ALL_CPPFLAGS) $(INCLUDES) \
+		$(srcdir)/config/arm/arm-builtins.cc
+
+arm-mve-builtins.o: $(srcdir)/config/arm/arm-mve-builtins.cc $(CONFIG_H) \
+  $(SYSTEM_H) coretypes.h $(TM_H) $(TREE_H) $(RTL_H) $(TM_P_H) \
+  memmodel.h insn-codes.h optabs.h recog.h expr.h basic-block.h \
+  function.h fold-const.h gimple.h gimple-fold.h emit-rtl.h langhooks.h \
+  stringpool.h attribs.h diagnostic.h \
+  $(srcdir)/config/arm/arm-protos.h \
+  $(srcdir)/config/arm/arm-builtins.h \
+  $(srcdir)/config/arm/arm-mve-builtins.h \
+  $(srcdir)/config/arm/arm-mve-builtins-base.h \
+  $(srcdir)/config/arm/arm-mve-builtins-shapes.h \
+  $(srcdir)/config/arm/arm-mve-builtins.def \
+  $(srcdir)/config/arm/arm-mve-builtins-base.def
+	$(COMPILER) -c $(ALL_COMPILERFLAGS) $(ALL_CPPFLAGS) $(INCLUDES) \
+		$(srcdir)/config/arm/arm-mve-builtins.cc
+
+arm-mve-builtins-shapes.o: \
+  $(srcdir)/config/arm/arm-mve-builtins-shapes.cc \
+  $(CONFIG_H) $(SYSTEM_H) coretypes.h $(TM_H) $(TREE_H) \
+  $(RTL_H) memmodel.h insn-codes.h optabs.h \
+  $(srcdir)/config/arm/arm-mve-builtins.h \
+  $(srcdir)/config/arm/arm-mve-builtins-shapes.h
+	$(COMPILER) -c $(ALL_COMPILERFLAGS) $(ALL_CPPFLAGS) $(INCLUDES) \
+		$(srcdir)/config/arm/arm-mve-builtins-shapes.cc
+
+arm-mve-builtins-base.o: \
+  $(srcdir)/config/arm/arm-mve-builtins-base.cc \
+  $(CONFIG_H) $(SYSTEM_H) coretypes.h $(TM_H) $(TREE_H) $(RTL_H) \
+  memmodel.h insn-codes.h $(OPTABS_H) \
+  $(BASIC_BLOCK_H) $(FUNCTION_H) $(GIMPLE_H) \
+  $(srcdir)/config/arm/arm-mve-builtins.h \
+  $(srcdir)/config/arm/arm-mve-builtins-shapes.h \
+  $(srcdir)/config/arm/arm-mve-builtins-base.h \
+  $(srcdir)/config/arm/arm-mve-builtins-functions.h
+	$(COMPILER) -c $(ALL_COMPILERFLAGS) $(ALL_CPPFLAGS) $(INCLUDES) \
+		$(srcdir)/config/arm/arm-mve-builtins-base.cc
+
+arm-c.o: $(srcdir)/config/arm/arm-c.cc $(CONFIG_H) $(SYSTEM_H) \
+    coretypes.h $(TM_H) $(TREE_H) output.h $(C_COMMON_H)
+	$(COMPILER) -c $(ALL_COMPILERFLAGS) $(ALL_CPPFLAGS) $(INCLUDES) \
+		$(srcdir)/config/arm/arm-c.cc
+
+arm-d.o: $(srcdir)/config/arm/arm-d.cc
+	$(COMPILE) $<
+	$(POSTCOMPILE)
+
+arm-common.o: arm-cpu-cdata.h
+
+driver-arm.o: arm-native.h
+
+PASSES_EXTRA += $(srcdir)/config/arm/arm-passes.def
+
+aarch-bti-insert.o: $(srcdir)/config/arm/aarch-bti-insert.cc \
+    $(CONFIG_H) $(SYSTEM_H) $(TM_H) $(REGS_H) insn-config.h $(RTL_BASE_H) \
+    dominance.h cfg.h cfganal.h $(BASIC_BLOCK_H) $(INSN_ATTR_H) $(RECOG_H) \
+    output.h hash-map.h $(DF_H) $(OBSTACK_H) $(TARGET_H) $(RTL_H) \
+    $(CONTEXT_H) $(TREE_PASS_H) regrename.h
+	$(COMPILER) -c $(ALL_COMPILERFLAGS) $(ALL_CPPFLAGS) $(INCLUDES) \
+		$(srcdir)/config/arm/aarch-bti-insert.cc

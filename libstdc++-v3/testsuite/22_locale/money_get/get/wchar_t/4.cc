@@ -1,0 +1,64 @@
+// { dg-require-namedlocale "en_HK.ISO8859-1" }
+
+// 2001-09-12 Benjamin Kosnik  <bkoz@redhat.com>
+
+// Copyright (C) 2001-2026 Free Software Foundation, Inc.
+//
+// This file is part of the GNU ISO C++ Library.  This library is free
+// software; you can redistribute it and/or modify it under the
+// terms of the GNU General Public License as published by the
+// Free Software Foundation; either version 3, or (at your option)
+// any later version.
+
+// This library is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+
+// You should have received a copy of the GNU General Public License along
+// with this library; see the file COPYING3.  If not see
+// <http://www.gnu.org/licenses/>.
+
+// 22.2.6.1.1 money_get members
+
+#include <locale>
+#include <sstream>
+#include <testsuite_hooks.h>
+
+// test double version
+void test04()
+{
+  using namespace std;
+  typedef istreambuf_iterator<wchar_t> iterator_type;
+
+  // basic construction
+  locale loc_c = locale::classic();
+  locale loc_hk = locale(ISO_8859(1,en_HK));
+  VERIFY( loc_c != loc_hk );
+
+  // input less than frac_digits
+  const long double digits4 = -1.0;
+  
+  iterator_type end;
+  wistringstream iss;
+  iss.imbue(loc_hk);
+  // cache the money_get facet
+  const money_get<wchar_t>& mon_get = use_facet<money_get<wchar_t> >(iss.getloc()); 
+
+  // now try with showbase, to get currency symbol in format
+  iss.setf(ios_base::showbase);
+
+  iss.str(L"(HKD .01)"); 
+  iterator_type is_it03(iss);
+  long double result3;
+  ios_base::iostate err03 = ios_base::goodbit;
+  mon_get.get(is_it03, end, true, iss, err03, result3);
+  VERIFY( result3 == digits4 );
+  VERIFY( err03 == ios_base::eofbit );
+}
+
+int main()
+{
+  test04();
+  return 0;
+}

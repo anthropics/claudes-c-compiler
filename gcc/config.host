@@ -1,0 +1,297 @@
+# GCC host-specific configuration file.
+# Copyright (C) 1997-2026 Free Software Foundation, Inc.
+
+#This file is part of GCC.
+
+#GCC is free software; you can redistribute it and/or modify it under
+#the terms of the GNU General Public License as published by the Free
+#Software Foundation; either version 3, or (at your option) any later
+#version.
+
+#GCC is distributed in the hope that it will be useful, but WITHOUT
+#ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+#FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+#for more details.
+
+#You should have received a copy of the GNU General Public License
+#along with GCC; see the file COPYING3.  If not see
+#<http://www.gnu.org/licenses/>.
+
+# This is the GCC host-specific configuration file
+# where a configuration type is mapped to different system-specific
+# definitions and files.  This is invoked by the autoconf-generated
+# configure script.  Putting it in a separate shell file lets us skip
+# running autoconf when modifying host-specific information.
+
+# This file switches on the shell variable ${host}.  As much of this as
+# is reasonable should be replaced with autoconf tests in the future.
+
+# This file sets the following shell variables for use by the
+# autoconf-generated configure script:
+#
+#  host_xm_file         List of files to include when compiling for the
+#                       host machine.
+#
+#  host_xm_defines      List of macros to define when compiling for the
+#                       host machine.
+#
+#  host_xmake_file      List of host-specific makefile-fragments.
+#
+#  host_exeext          Set to the suffix, if the host machine requires
+#                       executables to have a file name suffix.
+#
+#  host_extra_objs      List of extra host-dependent objects that should
+#                       be linked into the compiler proper.
+#
+#  host_extra_gcc_objs  List of extra host-dependent objects that should
+#                       be linked into the gcc driver.
+#
+#  out_host_hook_obj    An object file that provides the host hooks.
+#
+#  host_can_use_collect2 Set to yes normally; to no if the host cannot
+#			link or otherwise use collect2
+#
+#  use_long_long_for_widest_fast_int Set this to 'yes' if 'long long'
+#			(or '__int64') is wider than 'long' but still
+#			efficeiently supported by the host hardware.
+#			Only affects compile speed.  Default is 'no'.
+#
+#  host_lto_plugin_soname Set this to the name to which the LTO linker
+#			plugin gets compiled on this host, if it is
+#			different from the default "liblto_plugin.so".
+
+# When setting any of these variables, check to see if a corresponding
+# variable is present in config.build; if so, you will likely want to 
+# set it in both places.
+
+# Default settings.
+host_xm_file=
+host_xm_defines=
+host_xmake_file=
+host_exeext=
+host_extra_objs=
+host_extra_gcc_objs=
+out_host_hook_obj=host-default.o
+host_can_use_collect2=yes
+use_long_long_for_widest_fast_int=no
+host_lto_plugin_soname=liblto_plugin.so
+
+# Unsupported hosts list.  Generally, only include hosts known to fail here,
+# since we allow hosts not listed to be supported generically.
+case ${host} in
+   i[34567]86-sequent-sysv \
+ | i[34567]86-sequent-sysv[123]* \
+ | i[34567]86-go32-* \
+ | i[34567]86-*-go32* \
+ | vax-*-vms*)
+    echo "*** Configuration for host ${host} not supported" 1>&2
+    exit 1
+    ;;
+esac
+
+# Common parts for widely ported systems.
+case ${host} in
+  *-darwin*)
+    # Generic darwin host support.
+    out_host_hook_obj=host-darwin.o
+    host_xmake_file="${host_xmake_file} x-darwin"
+    ;;
+esac
+
+case ${host} in
+  aarch64*-*-freebsd* | aarch64*-*-linux* | aarch64*-*-fuchsia* |\
+  aarch64*-*-darwin*)
+    case ${target} in
+      aarch64*-*-*)
+	host_extra_gcc_objs="driver-aarch64.o"
+	host_xmake_file="${host_xmake_file} aarch64/x-aarch64"
+	;;
+    esac
+    ;;
+  arm*-*-freebsd* | arm*-*-netbsd* | arm*-*-linux* | arm*-*-fuchsia*)
+    case ${target} in
+      arm*-*-*)
+	host_extra_gcc_objs="driver-arm.o"
+	host_xmake_file="${host_xmake_file} arm/x-arm"
+	;;
+    esac
+    ;;
+  alpha*-*-linux*)
+    case ${target} in
+      alpha*-*-linux*)
+	host_extra_gcc_objs="driver-alpha.o"
+	host_xmake_file="${host_xmake_file} alpha/x-alpha"
+	;;
+    esac
+    ;;
+  i[34567]86-*-* \
+  | x86_64-*-* )
+    case ${target} in
+      i[34567]86-*-* \
+      | x86_64-*-* )
+	host_extra_gcc_objs="driver-i386.o"
+	host_xmake_file="${host_xmake_file} i386/x-i386"
+	;;
+    esac
+    ;;
+  mips*-*-linux*)
+    case ${target} in
+      mips*-*-linux*)
+	host_extra_gcc_objs="driver-native.o"
+	host_xmake_file="${host_xmake_file} mips/x-native"
+      ;;
+    esac
+    ;;
+  rs6000-*-* \
+  | powerpc*-*-* )
+    case ${target} in
+      rs6000-*-* \
+      | powerpc*-*-* )
+        host_extra_gcc_objs="driver-rs6000.o"
+        host_xmake_file="${host_xmake_file} rs6000/x-rs6000"
+        ;;
+    esac
+    case ${host} in
+      *-*-linux* | *-*-freebsd*)
+	if test "${GCC}:${ac_cv_sizeof_long}" = yes:4; then
+	  # On powerpc*-*-linux* use -Wl,--relax to link cc1,
+	  # if ld is new enough, otherwise force -O1 in CFLAGS.
+	  host_ppc_relax_xmake_file=
+	  host_ld_ver=`${CC} -Wl,--version 2>/dev/null | sed 1q`
+	  if echo "$host_ld_ver" | grep GNU > /dev/null; then
+	    host_ld_date=`echo $host_ld_ver \
+			  | sed -n 's,^.*\([2-9][0-9][0-9][0-9]\)[-]*\([01][0-9]\)[-]*\([0-3][0-9]\).*$,\1\2\3,p'`
+	    if test 0"$host_ld_date" -gt 20080806; then
+	      host_ppc_relax_xmake_file=rs6000/x-linux-relax
+	    fi
+	  fi
+	  if test -z "${host_ppc_relax_xmake_file}"; then
+	    host_ppc_relax_xmake_file=x-cflags-O1
+	  fi
+	  host_xmake_file="${host_xmake_file} ${host_ppc_relax_xmake_file}"
+	fi
+	;;
+    esac
+    ;;
+  s390-*-* | s390x-*-*)
+    case ${target} in
+      s390-*-* | s390x-*-*)
+        host_extra_gcc_objs="driver-native.o"
+        host_xmake_file="${host_xmake_file} s390/x-native"
+        ;;
+    esac
+    ;;
+  sparc*-*-solaris2*)
+    case ${target} in
+      sparc*-*-solaris2*)
+	host_extra_gcc_objs="driver-sparc.o"
+	host_xmake_file="${host_xmake_file} sparc/x-sparc"
+	;;
+    esac
+    ;;
+  sparc*-*-linux*)
+    case ${target} in
+      sparc*-*-linux*)
+	host_extra_gcc_objs="driver-sparc.o"
+	host_xmake_file="${host_xmake_file} sparc/x-sparc"
+	;;
+    esac
+    ;;
+esac
+
+# Machine-specific settings.
+case ${host} in
+  hppa*64*-*-hpux11*)
+    out_host_hook_obj=host-hpux.o
+    host_xmake_file="${host_xmake_file} x-hpux"
+    ;;
+  hppa*-*-linux*)
+    out_host_hook_obj=host-hpux.o
+    host_xmake_file="${host_xmake_file} x-hpux"
+    ;;
+  i[34567]86-*-solaris2* | x86_64-*-solaris2*)
+    out_host_hook_obj=host-solaris.o
+    host_xmake_file="${host_xmake_file} x-solaris"
+    ;;
+  i[34567]86-pc-msdosdjgpp*)
+    host_xm_file=i386/xm-djgpp.h
+    host_exeext=.exe
+    # Shorten $target_noncanonical for 8.3 filename conventions.
+    case ${target} in
+      *pc-msdosdjgpp*)
+        target_noncanonical=djgpp
+        ;;
+    esac
+    ;;
+  i[34567]86-*-cygwin* | x86_64-*-cygwin*)
+    host_xm_file=i386/xm-cygwin.h
+    out_host_hook_obj=host-cygwin.o
+    host_xmake_file="${host_xmake_file} i386/x-cygwin"
+    host_exeext=.exe
+    host_lto_plugin_soname=cyglto_plugin.dll
+    ;;
+  i[34567]86-*-mingw32* | x86_64-*-mingw*)
+    host_xm_file=i386/xm-mingw32.h
+    host_xmake_file="${host_xmake_file} ${host_xmake_mingw} i386/x-mingw32"
+    host_extra_gcc_objs="${host_extra_gcc_objs} ${host_extra_gcc_objs_mingw} driver-mingw32.o"
+    host_extra_objs="${host_extra_objs} ${host_extra_objs_mingw}"
+    host_exeext=.exe
+    out_host_hook_obj=host-mingw32.o
+    host_lto_plugin_soname=liblto_plugin.dll
+    case ${host} in
+      x86_64-*-*)
+        use_long_long_for_widest_fast_int=yes
+        ;;
+    esac
+    ;;
+  aarch64*-*-darwin*)
+    out_host_hook_obj="${out_host_hook_obj} host-aarch64-darwin.o"
+    host_xmake_file="${host_xmake_file} aarch64/x-darwin"
+    ;;
+  i[34567]86-*-darwin* | x86_64-*-darwin*)
+    out_host_hook_obj="${out_host_hook_obj} host-i386-darwin.o"
+    host_xmake_file="${host_xmake_file} i386/x-darwin"
+    ;;
+  powerpc-*-darwin*)
+    out_host_hook_obj="${out_host_hook_obj} host-ppc-darwin.o"
+    host_xmake_file="${host_xmake_file} rs6000/x-darwin"
+    ;;
+  powerpc64-*-darwin*)
+    out_host_hook_obj="${out_host_hook_obj} host-ppc64-darwin.o"
+    host_xmake_file="${host_xmake_file} rs6000/x-darwin64"
+    ;;
+  rs6000-ibm-aix* | powerpc-ibm-aix*)
+    host_xmake_file="${host_xmake_file} rs6000/x-aix"
+    ;;
+  *-*-solaris2*)
+    out_host_hook_obj=host-solaris.o
+    host_xmake_file="${host_xmake_file} x-solaris"
+    ;;
+  *-*-linux*)
+    out_host_hook_obj=host-linux.o
+    host_xmake_file="${host_xmake_file} x-linux"
+    ;;
+  *-*-freebsd*)
+    out_host_hook_obj=host-freebsd.o
+    host_xmake_file="${host_xmake_file} x-freebsd"
+    ;;
+  *-*-openbsd*)
+    out_host_hook_obj=host-openbsd.o
+    host_xmake_file="${host_xmake_file} x-openbsd"
+    ;;
+  *-*-netbsd*)
+    out_host_hook_obj=host-netbsd.o
+    host_xmake_file="${host_xmake_file} x-netbsd"
+    ;;
+  ia64-*-hpux*)
+    use_long_long_for_widest_fast_int=yes
+    out_host_hook_obj=host-hpux.o
+    host_xmake_file="${host_xmake_file} x-hpux"
+    ;;
+  *-*-*vms*)
+    host_xm_file="vms/xm-vms.h"
+    host_xmake_file=vms/x-vms
+    host_exeext=.exe
+    host_can_use_collect2=no
+    ;;
+esac

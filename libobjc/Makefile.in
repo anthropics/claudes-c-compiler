@@ -1,0 +1,355 @@
+# Makefile for GNU Objective C runtime library.
+# Copyright (C) 1993-2026 Free Software Foundation, Inc.
+
+#This file is part of GCC.
+
+#GCC is free software; you can redistribute it and/or modify
+#it under the terms of the GNU General Public License as published by
+#the Free Software Foundation; either version 3, or (at your option)
+#any later version.
+
+#GCC is distributed in the hope that it will be useful,
+#but WITHOUT ANY WARRANTY; without even the implied warranty of
+#MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#GNU General Public License for more details.
+
+#You should have received a copy of the GNU General Public License
+#along with GCC; see the file COPYING3.  If not see
+#<http://www.gnu.org/licenses/>.
+
+#This was cribbed from the libchill, libiberty and libstdc++
+#Makefile.in files.  Some of this stuff may be unnecessary and
+#worthless.
+
+SHELL = @SHELL@
+MAKEOVERRIDES=
+
+#### Start of system configuration section. ####
+
+srcdir = @glibcpp_srcdir@
+VPATH = @glibcpp_srcdir@
+prefix = @prefix@
+exec_prefix = @exec_prefix@
+target_noncanonical = @target_noncanonical@
+gcc_version := $(shell @get_gcc_base_ver@ $(srcdir)/../gcc/BASE-VER)
+host_subdir = @host_subdir@
+top_srcdir = @top_srcdir@
+multi_basedir = @multi_basedir@
+toolexecdir = @toolexecdir@
+# Toolexecdir is used only by toolexeclibdir
+toolexeclibdir = @toolexeclibdir@
+
+includedirname = @includedirname@
+libsuffix = @libsuffix@
+
+lt_host_flags = @lt_host_flags@
+extra_ldflags_libobjc = @extra_ldflags_libobjc@
+
+top_builddir = .
+
+libdir = $(exec_prefix)/lib
+libsubdir = $(libdir)/gcc/$(target_noncanonical)/$(gcc_version)
+
+# Multilib support variables.
+MULTISRCTOP =
+MULTIBUILDTOP =
+MULTIDIRS =
+MULTISUBDIR =
+MULTIDO = true
+MULTICLEAN = true
+
+# Not configured per top-level version, since that doesn't get passed
+# down at configure time, but overridden by the top-level install
+# target.
+INSTALL = @INSTALL@
+INSTALL_PROGRAM = @INSTALL_PROGRAM@
+INSTALL_DATA = @INSTALL_DATA@
+
+AR = @AR@
+AR_FLAGS = rc
+
+RANLIB = @RANLIB@
+
+CC = @CC@
+CFLAGS = @CFLAGS@
+XCFLAGS = @XCFLAGS@
+WARN_CFLAGS = -W -Wall -Wwrite-strings -Wstrict-prototypes
+ALL_CFLAGS = -I. -I$(srcdir) $(CPPFLAGS) $(DEFS) \
+	$(XCFLAGS) $(CFLAGS) $(WARN_CFLAGS) \
+	-DIN_GCC -DIN_TARGET_LIBS -fno-strict-aliasing -fexceptions
+
+# Libtool
+# The following strings describe the version of the obj-C library 
+# begin compiled and compatibility issues.
+# Please refer to Libtool documentation about how to manage these 
+# numbers.
+LIBOBJC_VERSION = @VERSION@
+LIBOBJC_GC_VERSION = @VERSION@
+LIBTOOL = @LIBTOOL@ $(LIBTOOLFLAGS)
+LIBTOOL_COMPILE = $(LIBTOOL) --mode=compile
+LIBTOOL_LINK    = $(LIBTOOL) --mode=link 
+LIBTOOL_INSTALL = $(LIBTOOL) --mode=install
+LIBTOOL_CLEAN   = $(LIBTOOL) --mode=clean
+#LIBTOOL_UNINSTALL = $(LIBTOOL) --mode=uninstall
+
+OBJC_GCFLAGS=@OBJC_GCFLAGS@
+OBJC_BOEHM_GC=@OBJC_BOEHM_GC@
+OBJC_BOEHM_GC_INCLUDES=@OBJC_BOEHM_GC_INCLUDES@
+OBJC_BOEHM_GC_LIBS=@OBJC_BOEHM_GC_LIBS@
+
+INCLUDES = -I$(srcdir)/$(MULTISRCTOP)../gcc \
+  -I$(srcdir)/$(MULTISRCTOP)../gcc/config \
+  -I$(MULTIBUILDTOP)../../$(host_subdir)/gcc \
+  -I$(srcdir)/$(MULTISRCTOP)../libgcc \
+  -I$(MULTIBUILDTOP)../libgcc \
+  -I$(srcdir)/$(MULTISRCTOP)../include \
+  $(OBJC_BOEHM_GC_INCLUDES)
+
+##
+## The list of header/source files
+##
+
+# User-visible header files, from the objc/ directory
+OBJC_H = \
+  objc.h \
+  objc-exception.h \
+  objc-sync.h \
+  \
+  NXConstStr.h \
+  Object.h \
+  Protocol.h \
+  message.h \
+  objc-decls.h \
+  runtime.h \
+  thr.h
+
+# Objective-C source files to compile
+OBJC_SOURCE_FILES = \
+   NXConstStr.m \
+   Object.m \
+   Protocol.m \
+   accessors.m \
+   linking.m
+
+# C source files to compile
+C_SOURCE_FILES = \
+   class.c \
+   encoding.c \
+   error.c \
+   gc.c \
+   hash.c \
+   init.c \
+   ivars.c \
+   memory.c \
+   methods.c \
+   nil_method.c \
+   objc-foreach.c \
+   objc-sync.c \
+   objects.c \
+   protocols.c \
+   sarray.c \
+   selector.c \
+   sendmsg.c \
+   thr.c \
+   exception.c
+
+# Object files to link (when the library is linked with no GC (Garbage Collection))
+OBJS = \
+  $(patsubst %.m,%.lo,$(OBJC_SOURCE_FILES)) \
+  $(patsubst %.c,%.lo,$(C_SOURCE_FILES))
+
+# Object files to link (when the library is linked with GC (Garbage Collection))
+OBJS_GC = \
+  $(patsubst %.m,%_gc.lo,$(OBJC_SOURCE_FILES)) \
+  $(patsubst %.c,%_gc.lo,$(C_SOURCE_FILES))
+
+
+##
+## The rules to build
+##
+
+# Flags to pass to a recursive make.
+FLAGS_TO_PASS = \
+	"AR=$(AR)" \
+	"AR_FLAGS=$(AR_FLAGS)" \
+	"CC=$(CC)" \
+	"CFLAGS=$(CFLAGS)" \
+	"DESTDIR=$(DESTDIR)" \
+	"LIBCFLAGS=$(LIBCFLAGS)" \
+	"EXTRA_OFILES=$(EXTRA_OFILES)" \
+	"HDEFINES=$(HDEFINES)" \
+	"INSTALL=$(INSTALL)" \
+	"INSTALL_DATA=$(INSTALL_DATA)" \
+	"INSTALL_PROGRAM=$(INSTALL_PROGRAM)" \
+	"LDFLAGS=$(LDFLAGS)" \
+	"LIBTOOL=$(LIBTOOL)" \
+	"LOADLIBES=$(LOADLIBES)" \
+	"PICFLAG=$(PICFLAG)" \
+	"RANLIB=$(RANLIB)" \
+	"SHELL=$(SHELL)" \
+	"prefix=$(prefix)" \
+	"exec_prefix=$(exec_prefix)" \
+	"libdir=$(libdir)" \
+	"libsubdir=$(libsubdir)" \
+	"tooldir=$(tooldir)"
+
+# The 'all' rule must be the first one so that it is executed if
+# nothing is specified on the command-line.
+all: libobjc$(libsuffix).la $(OBJC_BOEHM_GC)
+	: $(MAKE) ; exec $(MULTIDO) $(FLAGS_TO_PASS) multi-do DO=all
+
+.SUFFIXES:
+.SUFFIXES: .c .m .lo
+
+%.lo: %.c
+	$(LIBTOOL_COMPILE) $(CC) $< -c \
+	   $(ALL_CFLAGS) $(INCLUDES) \
+	   -o $@
+
+%_gc.lo: %.c
+	$(LIBTOOL_COMPILE) $(CC) $< -c \
+	   $(ALL_CFLAGS) $(INCLUDES) $(OBJC_GCFLAGS) \
+	   -o $@
+
+%.lo: %.m
+	$(LIBTOOL_COMPILE) $(CC) $< -c \
+	   $(ALL_CFLAGS) $(INCLUDES) -fgnu-runtime \
+	   -o $@
+
+%_gc.lo: %.m
+	$(LIBTOOL_COMPILE) $(CC) $< -c \
+	   $(ALL_CFLAGS) $(INCLUDES) $(OBJC_GCFLAGS) -fgnu-runtime \
+	   -o $@
+
+# sendmsg has a special rule because it depends on runtime-info.h.
+runtime-info.h: 
+	echo "" > tmp-runtime.m
+	echo "/* This file is automatically generated */" > $@
+	$(CC) $(MULTIFLAGS) -print-objc-runtime-info -S tmp-runtime.m >> $@
+	rm -f tmp-runtime.m tmp-runtime.s
+
+sendmsg.lo: sendmsg.c runtime-info.h
+	$(LIBTOOL_COMPILE) $(CC) $< -c \
+	   $(ALL_CFLAGS) $(INCLUDES) \
+	   -o $@
+
+sendmsg_gc.lo: sendmsg.c runtime-info.h
+	$(LIBTOOL_COMPILE) $(CC) $< -c \
+	   $(ALL_CFLAGS) $(INCLUDES) $(OBJC_GCFLAGS) \
+	   -o $@
+
+# These files have separate rules because they require special
+# compiler flags.
+
+exception.lo: exception.c
+	$(LIBTOOL_COMPILE) $(CC) $< -c \
+	   $(ALL_CFLAGS) $(INCLUDES) -fexceptions \
+	   -o $@
+
+exception_gc.lo: exception.c
+	$(LIBTOOL_COMPILE) $(CC) $< -c \
+	   $(ALL_CFLAGS) $(INCLUDES) $(OBJC_GCFLAGS) -fexceptions \
+	   -o $@
+
+doc: info dvi pdf html
+
+# No install-html or install-pdf support
+.PHONY: install-html install-pdf install-info
+install-html:
+install-pdf:
+install-info:
+
+LTLDFLAGS = $(shell $(SHELL) $(top_srcdir)/../libtool-ldflags $(LDFLAGS))
+
+libobjc$(libsuffix).la: $(OBJS)
+	$(LIBTOOL_LINK) $(CC) -o $@ $(OBJS) \
+		-Wc,-shared-libgcc -rpath $(toolexeclibdir) \
+		-version-info $(LIBOBJC_VERSION) $(extra_ldflags_libobjc) \
+		$(LTLDFLAGS)
+
+libobjc_gc$(libsuffix).la: $(OBJS_GC)
+	$(LIBTOOL_LINK) $(CC) -o $@ $(OBJS_GC) $(OBJC_BOEHM_GC_LIBS) \
+		-Wc,-shared-libgcc -rpath $(toolexeclibdir) \
+		-version-info $(LIBOBJC_GC_VERSION) $(extra_ldflags_libobjc) \
+		$(LTLDFLAGS)
+
+info:
+dvi:
+pdf:
+html:
+
+Makefile: Makefile.in config.status
+	$(SHELL) config.status
+
+config.status: configure
+	rm -f config.cache
+	CONFIG_SITE=no-such-file CC='$(CC)' AR='$(AR)' CFLAGS='$(CFLAGS)' \
+	CPPFLAGS='$(CPPFLAGS)' $(SHELL) config.status --recheck
+
+AUTOCONF = autoconf
+ACLOCAL = aclocal
+ACLOCAL_AMFLAGS = -I ../config -I ..
+aclocal_deps = \
+	$(srcdir)/../config/multi.m4 \
+	$(srcdir)/../config/override.m4 \
+	$(srcdir)/../config/proginstall.m4 \
+	$(srcdir)/../config/toolexeclibdir.m4 \
+	$(srcdir)/../ltoptions.m4 \
+	$(srcdir)/../ltsugar.m4 \
+	$(srcdir)/../ltversion.m4 \
+	$(srcdir)/../lt~obsolete.m4 \
+	$(srcdir)/../config/cet.m4 \
+	$(srcdir)/acinclude.m4
+
+$(srcdir)/configure: @MAINT@ configure.ac $(srcdir)/aclocal.m4
+	rm -f config.cache
+	cd $(srcdir) && $(AUTOCONF)
+
+$(srcdir)/aclocal.m4: @MAINT@ $(aclocal_deps)
+	cd $(srcdir) && $(ACLOCAL) $(ACLOCAL_AMFLAGS)
+
+install: install-libs install-headers
+
+install-libs: installdirs
+	$(SHELL) $(multi_basedir)/mkinstalldirs $(DESTDIR)$(toolexeclibdir)
+	$(LIBTOOL_INSTALL) $(INSTALL) libobjc$(libsuffix).la $(DESTDIR)$(toolexeclibdir);
+	if [ "$(OBJC_BOEHM_GC)" ]; then \
+	  $(LIBTOOL_INSTALL) $(INSTALL) libobjc_gc$(libsuffix).la \
+				$(DESTDIR)$(toolexeclibdir);\
+	fi
+	$(MULTIDO) $(FLAGS_TO_PASS) multi-do DO="$@"
+	@-$(LIBTOOL) --mode=finish $(DESTDIR)$(toolexeclibdir)
+
+# Copy Objective-C headers to installation include directory.
+install-headers:
+	$(SHELL) $(multi_basedir)/mkinstalldirs $(DESTDIR)$(libsubdir)/$(includedirname)/objc
+	for file in $(OBJC_H); do \
+	  realfile=$(srcdir)/objc/$${file}; \
+	  $(INSTALL_DATA) $${realfile} $(DESTDIR)$(libsubdir)/$(includedirname)/objc; \
+	done
+
+check uninstall install-strip dist installcheck installdirs:
+
+mostlyclean:
+	-$(LIBTOOL_CLEAN) rm -f libobjc$(libsuffix).la libobjc_gc$(libsuffix).la *.lo
+	-rm -f runtime-info.h tmp-runtime.s *.o *.lo libobjc* xforward \
+		fflags *.aux *.cp *.dvi *.pdf *.fn *.info *.ky *.log *.pg \
+		*.toc *.tp *.vr *.html libobj.exp
+	@$(MULTICLEAN) multi-clean DO=mostlyclean
+
+clean: mostlyclean
+	rm -f config.log
+	@$(MULTICLEAN) multi-clean DO=clean
+
+distclean: clean
+	@$(MULTICLEAN) multi-clean DO=distclean
+	rm -f config.cache config.status Makefile configure
+
+maintainer-clean realclean: distclean
+
+.PHONY: mostlyclean clean distclean maintainer-clean all check uninstall \
+	install-strip dist installcheck installdirs 
+
+# Don't export variables to the environment, in order to not confuse
+# configure.
+.NOEXPORT:

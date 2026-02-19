@@ -1,0 +1,138 @@
+msim
+Target
+Use simulator runtime.
+
+mtiny-printf
+Target Mask(TINY_PRINTF)
+Use a lightweight configuration of printf and puts to reduce code size. For single-threaded applications, not requiring reentrant I/O only. Requires Newlib Nano IO.
+
+masm-hex
+Target Mask(ASM_HEX)
+Force assembly output to always use hex constants.
+
+mmcu=
+Target ToLower Joined RejectNegative Var(target_mcu)
+Specify the MCU to build for.
+
+mwarn-mcu
+Target Var(msp430_warn_mcu) Init(1)
+Warn if an MCU name is unrecognized or conflicts with other options (default: on).
+
+mwarn-devices-csv
+Target Var(msp430_warn_devices_csv) Init(1)
+Warn if devices.csv is not found or there are problem parsing it (default: on).
+
+mcpu=
+Target Joined RejectNegative Var(target_cpu) ToLower Enum(msp430_cpu_types) Init(MSP430_CPU_MSP430X_DEFAULT) Undocumented
+Specify the ISA to build for: msp430, msp430x, msp430xv2.
+
+Enum
+Name(msp430_cpu_types) Type(enum msp430_cpu_types)
+
+EnumValue
+Enum(msp430_cpu_types) String(msp430) Value(MSP430_CPU_MSP430) Canonical
+
+EnumValue
+Enum(msp430_cpu_types) String(430) Value(MSP430_CPU_MSP430)
+
+EnumValue
+Enum(msp430_cpu_types) String(msp430x) Value(MSP430_CPU_MSP430X) Canonical
+
+EnumValue
+Enum(msp430_cpu_types) String(430x) Value(MSP430_CPU_MSP430X)
+
+EnumValue
+Enum(msp430_cpu_types) String(msp430xv2) Value(MSP430_CPU_MSP430XV2) Canonical
+
+EnumValue
+Enum(msp430_cpu_types) String(430xv2) Value(MSP430_CPU_MSP430XV2)
+
+mlarge
+Target Mask(LARGE) RejectNegative
+Select large model - 20-bit addresses/pointers.
+
+msmall
+Target InverseMask(LARGE) RejectNegative
+Select small model - 16-bit addresses/pointers (default).
+
+mrelax
+Target
+Optimize opcode sizes at link time.
+
+mOs
+Target Undocumented Mask(OPT_SPACE)
+
+minrt
+Target Mask(MINRT) RejectNegative
+Use a minimum runtime (no static initializers or ctors) for memory-constrained devices.
+
+HeaderInclude
+config/msp430/msp430-opts.h
+
+mhwmult=
+Target Joined RejectNegative ToLower Var(msp430_hwmult_type) Enum(msp430_hwmult_types) Init(MSP430_HWMULT_AUTO)
+Specify the type of hardware multiply to support.
+
+Enum
+Name(msp430_hwmult_types) Type(enum msp430_hwmult_types)
+
+EnumValue
+Enum(msp430_hwmult_types) String(none) Value(MSP430_HWMULT_NONE)
+
+EnumValue
+Enum(msp430_hwmult_types) String(auto) Value(MSP430_HWMULT_AUTO)
+
+EnumValue
+Enum(msp430_hwmult_types) String(16bit) Value(MSP430_HWMULT_SMALL)
+
+EnumValue
+Enum(msp430_hwmult_types) String(32bit) Value(MSP430_HWMULT_LARGE)
+
+EnumValue
+Enum(msp430_hwmult_types) String(f5series) Value(MSP430_HWMULT_F5SERIES)
+
+mcode-region=
+Target Joined RejectNegative ToLower Var(msp430_code_region) Enum(msp430_regions) Init(MSP430_REGION_LOWER)
+Specify whether functions should be placed into the lower or upper memory regions, or if they should be shuffled between the regions (either) for best fit (default: lower).
+
+mdata-region=
+Target Joined RejectNegative ToLower Var(msp430_data_region) Enum(msp430_regions) Init(MSP430_REGION_LOWER)
+Specify whether variables should be placed into the lower or upper memory regions, or if they should be shuffled between the regions (either) for best fit (default: lower).
+
+muse-lower-region-prefix
+Target Mask(USE_LOWER_REGION_PREFIX)
+Add the .lower prefix to section names when compiling with -m{code,data}-region=lower (disabled by default).
+
+Enum
+Name(msp430_regions) Type(enum msp430_regions)
+
+EnumValue
+Enum(msp430_regions) String(none) Value(MSP430_REGION_ANY)
+
+EnumValue
+Enum(msp430_regions) String(either) Value(MSP430_REGION_EITHER)
+
+EnumValue
+Enum(msp430_regions) String(lower) Value(MSP430_REGION_LOWER)
+
+EnumValue
+Enum(msp430_regions) String(upper) Value(MSP430_REGION_UPPER)
+
+msilicon-errata=
+Target Joined RejectNegative ToLower
+Passes on a request to the assembler to enable fixes for various silicon errata.
+
+msilicon-errata-warn=
+Target Joined RejectNegative ToLower
+Passes on a request to the assembler to warn about various silicon errata.
+
+mdevices-csv-loc=
+Target Joined Var(msp430_devices_csv_loc) RejectNegative Undocumented
+The path to devices.csv.  The GCC driver can normally locate devices.csv itself
+and pass this option to the compiler, so the user shouldn't need to pass this.
+
+mmax-inline-shift=
+Target RejectNegative Joined UInteger IntegerRange(0,65) Var(msp430_max_inline_shift) Init(65)
+For shift operations by a constant amount, which require an individual instruction to shift by one
+position, set the maximum number of inline shift instructions (maximum value 64) to emit instead of using the corresponding __mspabi helper function.
+The default value is 4.

@@ -1,0 +1,72 @@
+! { dg-do run }
+! Test whether import works
+! PR fortran/29601
+
+subroutine test(x)
+  type myType3
+    sequence
+    integer :: i
+  end type myType3
+  type(myType3) :: x
+  if(x%i /= 7) STOP 1
+  x%i = 1
+end subroutine test
+
+
+subroutine bar(x,y)
+  type myType
+    sequence
+    integer :: i
+  end type myType
+  type(myType) :: x
+  integer(8) :: y
+  if(y /= 8) STOP 2
+  if(x%i /= 2) STOP 3
+  x%i = 5
+  y = 42
+end subroutine bar
+
+module testmod
+  implicit none
+  integer, parameter :: kind = 8
+  type modType
+    real :: rv
+  end type modType
+  interface
+    subroutine other(x,y)
+       import
+       real(kind)    :: x
+       type(modType) :: y
+    end subroutine
+  end interface
+end module testmod
+
+program foo
+  integer, parameter :: dp = 8
+  type myType
+    sequence
+    integer :: i
+  end type myType
+  type myType3
+    sequence
+    integer :: i
+  end type myType3
+  interface
+    subroutine bar(x,y)
+      import
+      type(myType) :: x
+      integer(dp)     :: y
+    end subroutine bar
+  end interface
+
+  type(myType) :: y
+  type(myType3) :: z
+  integer(8) :: i8
+  y%i = 2
+  i8 = 8
+  call bar(y,i8)
+  if(y%i /= 5 .or. i8/= 42) STOP 4
+  z%i = 7
+  call test(z)
+  if(z%i /= 1) STOP 5
+end program foo

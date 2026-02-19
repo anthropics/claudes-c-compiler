@@ -1,0 +1,96 @@
+/* { dg-require-effective-target vect_int } */
+/* { dg-add-options bind_pic_locally } */
+
+#include <stdarg.h>
+#include "tree-vect.h"
+
+#if VECTOR_BITS > 128
+#define NSHORTS (VECTOR_BITS / 16)
+#else
+#define NSHORTS 8
+#endif
+
+#define NINTS (NSHORTS / 2)
+#define N (NSHORTS * 4)
+
+short sa[N];
+short sb[N] = {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,
+		16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31};
+int ia[N];
+int ib[N] = {0,3,6,9,12,15,18,21,24,27,30,33,36,39,42,45,
+	       0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15};
+
+/* Current peeling-for-alignment scheme will consider the 'sa[i+7]'
+   access for peeling, and therefore will examine the option of
+   using a peeling factor = V-7%V = 1,3 for V=8,4 respectively, 
+   which will also align the access to 'ia[i+3]', and the loop could be 
+   vectorized on all targets that support unaligned loads.  */
+
+__attribute__ ((noinline)) int main1 (int n)
+{
+  int i;
+
+  /* Multiple types with different sizes, used in idependent
+     copmutations. Vectorizable.  */
+  for (i = 0; i < n; i++)
+    {
+      sa[i + NSHORTS - 1] = sb[i];
+      ia[i + NINTS - 1] = ib[i + 1];
+    }
+
+  /* check results:  */
+#pragma GCC novector
+  for (i = 0; i < n; i++)
+    {
+      if (sa[i + NSHORTS - 1] != sb[i] || ia[i + NINTS - 1] != ib[i + 1])
+	abort ();
+    }
+
+  return 0;
+}
+
+/* Current peeling-for-alignment scheme will consider the 'ia[i+3]'
+   access for peeling, and therefore will examine the option of
+   using a peeling factor = (V-3)%V = 1 for V=2,4. 
+   This will not align the access 'sa[i+3]' (for which we need to
+   peel 5 iterations). However, 'ia[i+3]' also gets aligned if we peel 5
+   iterations, so the loop is vectorizable on all targets that support
+   unaligned loads.  */
+
+__attribute__ ((noinline)) int main2 (int n)
+{
+  int i;
+
+  /* Multiple types with different sizes, used in independent
+     copmutations.  */
+  for (i = 0; i < n; i++)
+    {
+      ia[i + NINTS - 1] = ib[i];
+      sa[i + NINTS - 1] = sb[i + 1];
+    }
+
+  /* check results:  */
+#pragma GCC novector
+  for (i = 0; i < n; i++)
+    {
+      if (sa[i + NINTS - 1] != sb[i + 1] || ia[i + NINTS - 1] != ib[i])
+        abort ();
+    }
+
+  return 0;
+}
+
+int main (void)
+{ 
+  check_vect ();
+  
+  main1 (N - NSHORTS + 1);
+  main2 (N - NINTS + 1);
+
+  return 0;
+}
+
+/* { dg-final { scan-tree-dump-times "vectorized 1 loops" 2 "vect" { xfail { vect_no_align && { ! vect_hw_misalign } } } } } */
+/* { dg-final { scan-tree-dump-times "Alignment of access forced using peeling" 2 "vect" { xfail { { ! vect_unaligned_possible } || vect_sizes_32B_16B } } } } */
+/* { dg-final { scan-tree-dump-times "Vectorizing an unaligned access" 4 "vect" { target { vect_no_align && { { ! vect_hw_misalign } && vect_sizes_32B_16B } } }} } */
+

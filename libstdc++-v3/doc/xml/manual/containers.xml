@@ -1,0 +1,558 @@
+<chapter xmlns="http://docbook.org/ns/docbook" version="5.0"
+	 xml:id="std.containers" xreflabel="Containers">
+<?dbhtml filename="containers.html"?>
+
+<info><title>
+  Containers
+  <indexterm><primary>Containers</primary></indexterm>
+</title>
+  <keywordset>
+    <keyword>ISO C++</keyword>
+    <keyword>library</keyword>
+  </keywordset>
+</info>
+
+
+
+<!-- Sect1 01 : Sequences -->
+<section xml:id="std.containers.sequences" xreflabel="Sequences"><info><title>Sequences</title></info>
+<?dbhtml filename="sequences.html"?>
+
+
+<section xml:id="containers.sequences.list" xreflabel="list"><info><title>list</title></info>
+<?dbhtml filename="list.html"?>
+
+  <section xml:id="sequences.list.size" xreflabel="list::size() is O(n)"><info><title>list::size() is O(n)</title></info>
+
+   <para>
+     Yes it is, at least using the <link linkend="manual.intro.using.abi">old
+     ABI</link>, and that's okay.  This is a decision that we preserved
+     when we imported SGI's STL implementation.  The following is
+     quoted from <link xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="https://web.archive.org/web/20161222192301/http://www.sgi.com/tech/stl/FAQ.html">their FAQ</link>:
+   </para>
+   <blockquote>
+     <para>
+       The size() member function, for list and slist, takes time
+       proportional to the number of elements in the list.  This was a
+       deliberate tradeoff.  The only way to get a constant-time
+       size() for linked lists would be to maintain an extra member
+       variable containing the list's size.  This would require taking
+       extra time to update that variable (it would make splice() a
+       linear time operation, for example), and it would also make the
+       list larger.  Many list algorithms don't require that extra
+       word (algorithms that do require it might do better with
+       vectors than with lists), and, when it is necessary to maintain
+       an explicit size count, it's something that users can do
+       themselves.
+     </para>
+     <para>
+       This choice is permitted by the C++ standard. The standard says
+       that size() <quote>should</quote> be constant time, and
+       <quote>should</quote> does not mean the same thing as
+       <quote>shall</quote>.  This is the officially recommended ISO
+       wording for saying that an implementation is supposed to do
+       something unless there is a good reason not to.
+      </para>
+      <para>
+	One implication of linear time size(): you should never write
+      </para>
+	 <programlisting>
+	 if (L.size() == 0)
+	     ...
+	 </programlisting>
+
+	 <para>
+	 Instead, you should write
+	 </para>
+
+	 <programlisting>
+	 if (L.empty())
+	     ...
+	 </programlisting>
+   </blockquote>
+  </section>
+</section>
+
+</section>
+
+<!-- Sect1 02 : Associative -->
+<section xml:id="std.containers.associative" xreflabel="Associative"><info><title>Associative</title></info>
+<?dbhtml filename="associative.html"?>
+
+
+  <section xml:id="containers.associative.insert_hints" xreflabel="Insertion Hints"><info><title>Insertion Hints</title></info>
+
+   <para>
+     Section [23.1.2], Table 69, of the C++ standard lists this
+     function for all of the associative containers (map, set, etc):
+   </para>
+<programlisting>
+      a.insert(p,t);
+</programlisting>
+   <para>
+     where 'p' is an iterator into the container 'a', and 't' is the
+     item to insert.  The standard says that <quote><code>t</code> is
+     inserted as close as possible to the position just prior to
+     <code>p</code>.</quote> (Library DR #233 addresses this topic,
+     referring to <link xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2005/n1780.html">N1780</link>.
+     Since version 4.2 GCC implements the resolution to DR 233, so
+     that insertions happen as close as possible to the hint. For
+     earlier releases the hint was only used as described below.
+   </para>
+   <para>
+     Here we'll describe how the hinting works in the libstdc++
+     implementation, and what you need to do in order to take
+     advantage of it.  (Insertions can change from logarithmic
+     complexity to amortized constant time, if the hint is properly
+     used.)  Also, since the current implementation is based on the
+     SGI STL one, these points may hold true for other library
+     implementations also, since the HP/SGI code is used in a lot of
+     places.
+   </para>
+   <para>
+     In the following text, the phrases <emphasis>greater
+     than</emphasis> and <emphasis>less than</emphasis> refer to the
+     results of the strict weak ordering imposed on the container by
+     its comparison object, which defaults to (basically)
+     <quote>&lt;</quote>.  Using those phrases is semantically sloppy,
+     but I didn't want to get bogged down in syntax.  I assume that if
+     you are intelligent enough to use your own comparison objects,
+     you are also intelligent enough to assign <quote>greater</quote>
+     and <quote>lesser</quote> their new meanings in the next
+     paragraph.  *grin*
+   </para>
+   <para>
+     If the <code>hint</code> parameter ('p' above) is equivalent to:
+   </para>
+     <itemizedlist>
+      <listitem>
+	<para>
+	  <code>begin()</code>, then the item being inserted should
+	  have a key less than all the other keys in the container.
+	  The item will be inserted at the beginning of the container,
+	  becoming the new entry at <code>begin()</code>.
+      </para>
+      </listitem>
+      <listitem>
+	<para>
+	  <code>end()</code>, then the item being inserted should have
+	  a key greater than all the other keys in the container.  The
+	  item will be inserted at the end of the container, becoming
+	  the new entry before <code>end()</code>.
+      </para>
+      </listitem>
+      <listitem>
+	<para>
+	  neither <code>begin()</code> nor <code>end()</code>, then:
+	  Let <code>h</code> be the entry in the container pointed to
+	  by <code>hint</code>, that is, <code>h = *hint</code>.  Then
+	  the item being inserted should have a key less than that of
+	  <code>h</code>, and greater than that of the item preceding
+	  <code>h</code>.  The new item will be inserted between
+	  <code>h</code> and <code>h</code>'s predecessor.
+	  </para>
+      </listitem>
+     </itemizedlist>
+   <para>
+     For <code>multimap</code> and <code>multiset</code>, the
+     restrictions are slightly looser: <quote>greater than</quote>
+     should be replaced by <quote>not less than</quote>and <quote>less
+     than</quote> should be replaced by <quote>not greater
+     than.</quote> (Why not replace greater with
+     greater-than-or-equal-to?  You probably could in your head, but
+     the mathematicians will tell you that it isn't the same thing.)
+   </para>
+   <para>
+     If the conditions are not met, then the hint is not used, and the
+     insertion proceeds as if you had called <code> a.insert(t)
+     </code> instead.  (<emphasis>Note </emphasis> that GCC releases
+     prior to 3.0.2 had a bug in the case with <code>hint ==
+     begin()</code> for the <code>map</code> and <code>set</code>
+     classes.  You should not use a hint argument in those releases.)
+   </para>
+   <para>
+     This behavior goes well with other containers'
+     <code>insert()</code> functions which take an iterator: if used,
+     the new item will be inserted before the iterator passed as an
+     argument, same as the other containers.
+   </para>
+   <para>
+     <emphasis>Note </emphasis> also that the hint in this
+     implementation is a one-shot.  The older insertion-with-hint
+     routines check the immediately surrounding entries to ensure that
+     the new item would in fact belong there.  If the hint does not
+     point to the correct place, then no further local searching is
+     done; the search begins from scratch in logarithmic time.
+   </para>
+  </section>
+
+
+  <section xml:id="containers.associative.bitset" xreflabel="bitset"><info><title>bitset</title></info>
+    <?dbhtml filename="bitset.html"?>
+
+    <section xml:id="associative.bitset.size_variable" xreflabel="Variable"><info><title>Size Variable</title></info>
+
+      <para>
+	No, you cannot write code of the form
+      </para>
+      <!-- Careful, the leading spaces in PRE show up directly. -->
+<programlisting>
+      #include &lt;bitset&gt;
+
+      void foo (size_t n)
+      {
+	  std::bitset&lt;n&gt;   bits;
+	  ....
+      }
+</programlisting>
+   <para>
+     because <code>n</code> must be known at compile time.  Your
+     compiler is correct; it is not a bug.  That's the way templates
+     work.  (Yes, it <emphasis>is</emphasis> a feature.)
+   </para>
+   <para>
+     There are a couple of ways to handle this kind of thing.  Please
+     consider all of them before passing judgement.  They include, in
+     no particular order:
+   </para>
+      <itemizedlist>
+	<listitem><para>A very large N in <code>bitset&lt;N&gt;</code>.</para></listitem>
+	<listitem><para>A container&lt;bool&gt;.</para></listitem>
+	<listitem><para>Extremely weird solutions.</para></listitem>
+      </itemizedlist>
+   <para>
+     <emphasis>A very large N in
+     <code>bitset&lt;N&gt;</code>.  </emphasis> It has been
+     pointed out a few times in newsgroups that N bits only takes up
+     (N/8) bytes on most systems, and division by a factor of eight is
+     pretty impressive when speaking of memory.  Half a megabyte given
+     over to a bitset (recall that there is zero space overhead for
+     housekeeping info; it is known at compile time exactly how large
+     the set is) will hold over four million bits.  If you're using
+     those bits as status flags (e.g.,
+     <quote>changed</quote>/<quote>unchanged</quote> flags), that's a
+     <emphasis>lot</emphasis> of state.
+   </para>
+   <para>
+     You can then keep track of the <quote>maximum bit used</quote>
+     during some testing runs on representative data, make note of how
+     many of those bits really need to be there, and then reduce N to
+     a smaller number.  Leave some extra space, of course.  (If you
+     plan to write code like the incorrect example above, where the
+     bitset is a local variable, then you may have to talk your
+     compiler into allowing that much stack space; there may be zero
+     space overhead, but it's all allocated inside the object.)
+   </para>
+   <para>
+     <emphasis>A container&lt;bool&gt;.  </emphasis> The
+     Committee made provision for the space savings possible with that
+     (N/8) usage previously mentioned, so that you don't have to do
+     wasteful things like <code>Container&lt;char&gt;</code> or
+     <code>Container&lt;short int&gt;</code>.  Specifically,
+     <code>vector&lt;bool&gt;</code> is required to be specialized for
+     that space savings.
+   </para>
+   <para>
+     The problem is that <code>vector&lt;bool&gt;</code> doesn't
+     behave like a normal vector anymore.  There have been
+     journal articles which discuss the problems (the ones by Herb
+     Sutter in the May and July/August 1999 issues of C++ Report cover
+     it well).  Future revisions of the ISO C++ Standard will change
+     the requirement for <code>vector&lt;bool&gt;</code>
+     specialization.  In the meantime, <code>deque&lt;bool&gt;</code>
+     is recommended (although its behavior is sane, you probably will
+     not get the space savings, but the allocation scheme is different
+     than that of vector).
+   </para>
+   <para>
+     <emphasis>Extremely weird solutions.  </emphasis> If
+     you have access to the compiler and linker at runtime, you can do
+     something insane, like figuring out just how many bits you need,
+     then writing a temporary source code file.  That file contains an
+     instantiation of <code>bitset</code> for the required number of
+     bits, inside some wrapper functions with unchanging signatures.
+     Have your program then call the compiler on that file using
+     Position Independent Code, then open the newly-created object
+     file and load those wrapper functions.  You'll have an
+     instantiation of <code>bitset&lt;N&gt;</code> for the exact
+     <code>N</code> that you need at the time.  Don't forget to delete
+     the temporary files.  (Yes, this <emphasis>can</emphasis> be, and
+     <emphasis>has been</emphasis>, done.)
+   </para>
+   <!-- I wonder if this next paragraph will get me in trouble... -->
+   <para>
+     This would be the approach of either a visionary genius or a
+     raving lunatic, depending on your programming and management
+     style.  Probably the latter.
+   </para>
+   <para>
+     Which of the above techniques you use, if any, are up to you and
+     your intended application.  Some time/space profiling is
+     indicated if it really matters (don't just guess).  And, if you
+     manage to do anything along the lines of the third category, the
+     author would love to hear from you...
+   </para>
+   <para>
+     Also note that the implementation of bitset used in libstdc++ has
+     <link linkend="manual.ext.containers.sgi">some extensions</link>.
+   </para>
+
+    </section>
+    <section xml:id="associative.bitset.type_string" xreflabel="Type String"><info><title>Type String</title></info>
+
+      <para>
+      </para>
+   <para>
+     Bitmasks do not take char* nor const char* arguments in their
+     constructors.  This is something of an accident, but you can read
+     about the problem: follow the library's <quote>Links</quote> from
+     the homepage, and from the C++ information <quote>defect
+     reflector</quote> link, select the library issues list.  Issue
+     number 116 describes the problem.
+   </para>
+   <para>
+     For now you can simply make a temporary string object using the
+     constructor expression:
+   </para>
+<programlisting>
+      std::bitset&lt;5&gt; b ( std::string("10110") );
+</programlisting>
+
+   <para>
+     instead of
+   </para>
+
+<programlisting>
+      std::bitset&lt;5&gt; b ( "10110" );    // invalid
+</programlisting>
+    </section>
+  </section>
+
+</section>
+
+<!-- Sect1 03 : Unordered Associative -->
+<section xml:id="std.containers.unordered" xreflabel="Unordered">
+  <info><title>Unordered Associative</title></info>
+  <?dbhtml filename="unordered_associative.html"?>
+
+  <section xml:id="containers.unordered.insert_hints" xreflabel="Insertion Hints">
+    <info><title>Insertion Hints</title></info>
+
+    <para>
+     Here is how the hinting works in the libstdc++ implementation of unordered
+     containers, and the rationale behind this behavior.
+    </para>
+    <para>
+      In the following text, the phrase <emphasis>equivalent to</emphasis> refer
+      to the result of the invocation of the equal predicate imposed on the
+      container by its <code>key_equal</code> object, which defaults to (basically)
+      <quote>==</quote>.
+    </para>
+    <para>
+      Unordered containers can be seen as a <code>std::vector</code> of
+      <code>std::forward_list</code>. The <code>std::vector</code> represents
+      the buckets and each <code>std::forward_list</code> is the list of nodes
+      belonging to the same bucket. When inserting an element in such a data
+      structure we first need to compute the element hash code to find the
+      bucket to insert the element to, the second step depends on the uniqueness
+      of elements in the container.
+    </para>
+    <para>
+      In the case of <code>std::unordered_set</code> and
+      <code>std::unordered_map</code> you need to look through all bucket's
+      elements for an equivalent one. If there is none the insertion can be
+      achieved, otherwise the insertion fails. As we always need to loop though
+      all bucket's elements, the hint doesn't tell us if the element is already
+      present, and we don't have any constraint on where the new element is to
+      be inserted, the hint won't be of any help and will then be ignored.
+    </para>
+    <para>
+      In the case of <code>std::unordered_multiset</code>
+      and <code>std::unordered_multimap</code> equivalent elements must be
+      linked together so that the <code>equal_range(const key_type&amp;)</code>
+      can return the range of iterators pointing to all equivalent elements.
+      This is where hinting can be used to point to another equivalent element
+      already part of the container and so skip all non equivalent elements of
+      the bucket. So to be useful the hint shall point to an element equivalent
+      to the one being inserted. The new element will be then inserted right
+      after the hint. Note that because of an implementation detail inserting
+      after a node can require updating the bucket of the following node. To
+      check if the next bucket is to be modified we need to compute the
+      following node's hash code. So if you want your hint to be really efficient
+      it should be followed by another equivalent element, the implementation
+      will detect this equivalence and won't compute next element hash code.
+    </para>
+    <para>
+      It is highly advised to start using unordered containers hints only if you
+      have a benchmark that will demonstrate the benefit of it. If you don't then do
+      not use hints, it might do more harm than good.
+    </para>
+  </section>
+
+  <section xml:id="containers.unordered.hash" xreflabel="Hash">
+    <info><title>Hash Code</title></info>
+
+  <section xml:id="containers.unordered.cache" xreflabel="Cache">
+    <info><title>Hash Code Caching Policy</title></info>
+
+    <para>
+      The unordered containers in libstdc++ may cache the hash code for each
+      element alongside the element itself. In some cases not recalculating
+      the hash code every time it's needed can improve performance, but the
+      additional memory overhead can also reduce performance, so whether an
+      unordered associative container caches the hash code or not depends on
+      the properties described below.
+    </para>
+    <para>
+      The C++ standard requires that <code>erase</code> and <code>swap</code>
+      operations must not throw exceptions. Those operations might need an
+      element's hash code, but cannot use the hash function if it could
+      throw.
+      This means the hash codes will be cached unless the hash function
+      has a non-throwing exception specification such as <code>noexcept</code>
+      or <code>throw()</code>.
+    </para>
+    <para>
+      If the hash function is non-throwing then libstdc++ doesn't need to
+      cache the hash code for
+      correctness, but might still do so for performance if computing a
+      hash code is an expensive operation, as it may be for arbitrarily
+      long strings.
+      As an extension libstdc++ provides a trait type to describe whether
+      a hash function is fast. By default hash functions are assumed to be
+      fast unless the trait is specialized for the hash function and the
+      trait's value is false, in which case the hash code will always be
+      cached.
+      The trait can be specialized for user-defined hash functions like so:
+    </para>
+<programlisting>
+      #include &lt;unordered_set&gt;
+
+      struct hasher
+      {
+        std::size_t operator()(int val) const noexcept
+        {
+          // Some very slow computation of a hash code from an int !
+          ...
+        }
+      }
+
+      namespace std
+      {
+        template&lt;&gt;
+          struct __is_fast_hash&lt;hasher&gt; : std::false_type
+          { };
+      }
+</programlisting>
+  </section>
+</section>
+
+</section>
+
+<!-- Sect1 04 : Interacting with C -->
+<section xml:id="std.containers.c" xreflabel="Interacting with C"><info><title>Interacting with C</title></info>
+<?dbhtml filename="containers_and_c.html"?>
+
+
+  <section xml:id="containers.c.vs_array" xreflabel="Containers vs. Arrays"><info><title>Containers vs. Arrays</title></info>
+
+   <para>
+     You're writing some code and can't decide whether to use builtin
+     arrays or some kind of container.  There are compelling reasons
+     to use one of the container classes, but you're afraid that
+     you'll eventually run into difficulties, change everything back
+     to arrays, and then have to change all the code that uses those
+     data types to keep up with the change.
+   </para>
+   <para>
+     If your code makes use of the standard algorithms, this isn't as
+     scary as it sounds.  The algorithms don't know, nor care, about
+     the kind of <quote>container</quote> on which they work, since
+     the algorithms are only given endpoints to work with.  For the
+     container classes, these are iterators (usually
+     <code>begin()</code> and <code>end()</code>, but not always).
+     For builtin arrays, these are the address of the first element
+     and the <link linkend="iterators.predefined.end">past-the-end</link> element.
+   </para>
+   <para>
+     Some very simple wrapper functions can hide all of that from the
+     rest of the code.  For example, a pair of functions called
+     <code>beginof</code> can be written, one that takes an array,
+     another that takes a vector.  The first returns a pointer to the
+     first element, and the second returns the vector's
+     <code>begin()</code> iterator.
+   </para>
+   <para>
+     The functions should be made template functions, and should also
+     be declared inline.  As pointed out in the comments in the code
+     below, this can lead to <code>beginof</code> being optimized out
+     of existence, so you pay absolutely nothing in terms of increased
+     code size or execution time.
+   </para>
+   <para>
+     The result is that if all your algorithm calls look like
+   </para>
+<programlisting>
+   std::transform(beginof(foo), endof(foo), beginof(foo), SomeFunction);
+</programlisting>
+   <para>
+     then the type of foo can change from an array of ints to a vector
+     of ints to a deque of ints and back again, without ever changing
+     any client code.
+   </para>
+
+<programlisting>
+// beginof
+template&lt;typename T&gt;
+  inline typename vector&lt;T&gt;::iterator
+  beginof(vector&lt;T&gt; &amp;v)
+  { return v.begin(); }
+
+template&lt;typename T, unsigned int sz&gt;
+  inline T*
+  beginof(T (&amp;array)[sz]) { return array; }
+
+// endof
+template&lt;typename T&gt;
+  inline typename vector&lt;T&gt;::iterator
+  endof(vector&lt;T&gt; &amp;v)
+  { return v.end(); }
+
+template&lt;typename T, unsigned int sz&gt;
+  inline T*
+  endof(T (&amp;array)[sz]) { return array + sz; }
+
+// lengthof
+template&lt;typename T&gt;
+  inline typename vector&lt;T&gt;::size_type
+  lengthof(vector&lt;T&gt; &amp;v)
+  { return v.size(); }
+
+template&lt;typename T, unsigned int sz&gt;
+  inline unsigned int
+  lengthof(T (&amp;)[sz]) { return sz; }
+</programlisting>
+
+   <para>
+     Astute readers will notice two things at once: first, that the
+     container class is still a <code>vector&lt;T&gt;</code> instead
+     of a more general <code>Container&lt;T&gt;</code>.  This would
+     mean that three functions for <code>deque</code> would have to be
+     added, another three for <code>list</code>, and so on.  This is
+     due to problems with getting template resolution correct; I find
+     it easier just to give the extra three lines and avoid confusion.
+   </para>
+   <para>
+     Second, the line
+   </para>
+<programlisting>
+    inline unsigned int lengthof (T (&amp;)[sz]) { return sz; }
+</programlisting>
+   <para>
+     looks just weird!  Hint:  unused parameters can be left nameless.
+   </para>
+  </section>
+
+</section>
+
+</chapter>

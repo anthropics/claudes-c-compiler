@@ -1,0 +1,15 @@
+# When TFmode was first added to x86-64 in gcc 4.3.0, some TFmode
+# support functions got improper versions by accident.  Here we
+# correct the version and provide backward binary compatibility.
+
+# Filter out the following TFmode functions.
+tf-compats = getf2.c letf2.c eqtf2.c
+tf-functions := $(addprefix $(srcdir)/soft-fp/, $(tf-compats))
+LIB2ADD := $(filter-out $(tf-functions), $(LIB2ADD))
+LIB2ADD += $(addprefix $(srcdir)/config/i386/64/, $(tf-compats))
+
+# Replace _divtc3, _multc3 and _powitf2.
+libgcc2-tf-functions = _divtc3 _multc3 _powitf2
+LIB2FUNCS_EXCLUDE += $(libgcc2-tf-functions)
+libgcc2-tf-compats = $(addsuffix .c, $(libgcc2-tf-functions))
+LIB2ADD += $(addprefix $(srcdir)/config/i386/64/, $(libgcc2-tf-compats))

@@ -1,0 +1,60 @@
+#   Copyright (C) 2019-2026 Free Software Foundation, Inc.
+
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+# 
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+# 
+# You should have received a copy of the GNU General Public License
+# along with GCC; see the file COPYING3.  If not see
+# <http://www.gnu.org/licenses/>.
+
+# GCC testsuite that uses the `dg.exp' driver.
+
+# Load support procs.
+load_lib gcc-dg.exp
+
+# If the analyzer has not been enabled, bail.
+if { ![check_effective_target_analyzer] } {
+    return
+}
+
+global DEFAULT_CFLAGS
+if [info exists DEFAULT_CFLAGS] then {
+  set save_default_cflags $DEFAULT_CFLAGS
+}
+
+# If a testcase doesn't have special options, use these.
+set DEFAULT_CFLAGS "-fanalyzer -Wanalyzer-too-complex -Wanalyzer-symbol-too-complex"
+
+if { [istarget "*-*-darwin*" ] } {
+  # On macOS, system headers redefine by default some macros (memcpy,
+  # memmove, etc) to checked versions, which defeats the analyzer. We
+  # want to turn this off.
+  # See https://gcc.gnu.org/bugzilla/show_bug.cgi?id=104042
+  set DEFAULT_CFLAGS "$DEFAULT_CFLAGS -D_FORTIFY_SOURCE=0"
+}
+
+# Initialize `dg'.
+dg-init
+
+# Main loop.
+dg-runtest [lsort [glob -nocomplain $srcdir/$subdir/*.\[cS\]]] \
+	"" $DEFAULT_CFLAGS
+
+dg-runtest [lsort [glob -nocomplain $srcdir/c-c++-common/analyzer/*.\[cS\]]] \
+	"" $DEFAULT_CFLAGS
+
+# All done.
+dg-finish
+
+if [info exists save_default_cflags] {
+  set DEFAULT_CFLAGS $save_default_cflags
+} else {
+  unset DEFAULT_CFLAGS
+}

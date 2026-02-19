@@ -1,0 +1,466 @@
+#!/bin/bash
+
+# Runs doxygen and massages the output files.
+# Copyright (C) 2001-2026 Free Software Foundation, Inc.
+#
+# Synopsis:  run_doxygen --mode=[html|latex|man|xml] --host_alias=<alias> \
+#                        v3srcdir \
+#                        v3builddir \
+#                        shortname
+#
+# Originally hacked together by Phil Edwards <pme@gcc.gnu.org>
+
+
+# We can check now that the version of doxygen is >= this variable.
+DOXYVER=1.7.0
+
+find_doxygen() {
+    local -r v_required=`echo $DOXYVER |  \
+		awk -F. '{if(NF<3)$3=0;print ($1*100+$2)*100+$3}'`
+    local testing_version doxygen maybedoxy v_found
+    # thank you goat book
+    set `IFS=:; X="$PATH:/usr/local/bin:/bin:/usr/bin"; echo $X`
+    for dir
+    do
+      # AC_EXEEXT could come in useful here
+      maybedoxy="$dir/doxygen"
+      test -f "$maybedoxy" && testing_version=`$maybedoxy --version`
+      if test -n "$testing_version"; then
+       v_found=`echo $testing_version |  \
+		awk -F. '{if(NF<3)$3=0;print ($1*100+$2)*100+$3}'`
+       if test $v_found -ge $v_required; then
+	 doxygen="$maybedoxy"
+	 break
+       fi
+      fi
+    done
+    if test -z "$doxygen"; then
+	fail "Could not find Doxygen $DOXYVER in path."
+    fi
+    # We need to use other tools from the same package/version.
+    echo :: Using Doxygen tools from ${dir}.
+    PATH=$dir:$PATH
+    hash -r
+}
+
+print_usage() {
+    cat <<EOF
+Usage:  run_doxygen --mode=MODE --host_alias=HOST_ALIAS [<options>]
+		    <v3-src-dir> <v3-build-dir> <shortnamesp>
+      MODE is one of:
+	  html           Generate user-level HTML library documentation.
+	  man            Generate user-level man pages.
+	  xml            Generate user-level XML pages.
+	  latex          Generate user-level LaTeX pages.
+
+      HOST_ALIAS is the GCC host alias triplet set at configure time.
+
+      shortnamesp is one of YES or NO and is used as the SHORT_NAMES value
+      in the Doxygen config file.
+
+      Supported options:
+
+      --help | -h      Print this message and exit.
+      --latex_cmd=CMD  Set LATEX_CMD_NAME=CMD in the Doxygen config file.
+
+Note:  Requires Doxygen ${DOXYVER} or later; get it at
+       ftp://ftp.stack.nl/pub/users/dimitri/doxygen-${DOXYVER}.src.tar.gz
+
+EOF
+}
+
+# Print an error message followed by usage to stderr, then exit.
+fail() {
+  echo "$0: error: $*" 1>&2
+  echo 1>&2
+  print_usage 1>&2
+  exit 1
+}
+
+parse_options() {
+  while [ $# -ne 0 ]
+  do
+    # Blatantly ripped from autoconf, er, I mean, "gratefully standing
+    # on the shoulders of those giants who have gone before us."
+    case "$1" in
+      -*=*) arg=`echo "$1" | sed 's/[-_a-zA-Z0-9]*=//'` ;;
+      *) arg= ;;
+    esac
+
+    case "$1" in
+      --mode=*)
+	mode=$arg ;;
+      --host_alias=*)
+	host_alias=$arg ;;
+      --help | -h)
+	print_usage ; exit ;;
+      --mode | --host_alias)
+	fail "missing argument: $1" ;;
+      --latex_cmd=*)
+	latex_cmd=$arg ;;
+      --*)
+	fail "invalid option: $1" ;;
+      *)
+	break ;;
+    esac
+    shift
+  done
+
+  if [ $# -ne 3 ]
+  then
+    fail "wrong number of arguments"
+  fi
+  srcdir="$1"
+  builddir="$2"
+  outdir="$2/doc/doxygen"
+  shortname="$3"
+}
+
+
+# script begins here
+mode=unset
+host_alias=unset
+srcdir=unset
+outdir=unset
+shortname=unset
+do_html=false
+do_man=false
+do_xml=false
+do_latex=false
+latex_cmd=
+enabled_sections=
+generate_tagfile=
+DATEtext=`date '+%Y-%m-%d'`
+
+# Show how this script is called.
+echo run_doxygen $*
+
+parse_options $*
+find_doxygen
+
+if test $srcdir = unset || test $outdir = unset || test $mode = unset || test $shortname = unset || test $host_alias = unset; then
+    # this could be better
+    fail "You have not given enough information...!  $srcdir - "
+fi
+
+case x"$mode" in
+    xhtml)
+      do_html=true
+      enabled_sections=maint
+      generate_tagfile="$outdir/html/libstdc++.tag"
+      ;;
+    xlatex)
+      do_latex=true
+      enabled_sections=maint
+      ;;
+    xman)
+      do_man=true
+      ;;
+    xxml)
+      do_xml=true
+      enabled_sections=maint
+      ;;
+    *)
+      echo run_doxygen error:  $mode is an invalid mode 1>&2
+      exit 1 ;;
+esac
+
+case x"$shortname" in
+    xYES)
+      ;;
+    xNO)
+      ;;
+    *)
+      echo run_doxygen error:  $shortname is invalid 1>&2
+      exit 1 ;;
+esac
+
+
+mkdir -p $outdir
+chmod u+w $outdir
+
+# Run it
+(
+    set -e
+    cd $builddir
+    sed -e "s=@outdir@=${outdir}=g" \
+	-e "s=@srcdir@=${srcdir}=g" \
+	-e "s=@shortname@=${shortname}=g" \
+	-e "s=@builddir@=${builddir}=g" \
+	-e "s=@host_alias@=${host_alias}=g" \
+	-e "s=@enabled_sections@=${enabled_sections}=" \
+	-e "s=@do_html@=${do_html}=" \
+	-e "s=@do_latex@=${do_latex}=" \
+	-e "s=@latex_cmd@=${latex_cmd}=" \
+	-e "s=@do_man@=${do_man}=" \
+	-e "s=@do_xml@=${do_xml}=" \
+	-e "s=@generate_tagfile@=${generate_tagfile}=" \
+	${srcdir}/doc/doxygen/user.cfg.in > ${outdir}/${mode}.cfg
+    echo :: NOTE that this may take some time...
+    echo doxygen ${outdir}/${mode}.cfg
+    doxygen ${outdir}/${mode}.cfg
+)
+ret=$?
+test $ret -ne 0 && exit $ret
+
+if $do_xml; then
+    echo ::
+    echo :: XML pages begin with
+    echo :: ${outdir}/xml/index.xml
+fi
+
+if $do_latex; then
+    cd ${outdir}/${mode}
+
+    # Grrr, Doxygen 1.8.x changed the -w latex options.
+    need_footer=`doxygen -h | sed -n -e '/-w latex/s=.*footer.*=true=p'`
+
+    # Also drop in the header file (maybe footer file) and style sheet
+    if $need_footer; then
+      doxygen -w latex header.tex footer.tex doxygen.sty
+    else
+      doxygen -w latex header.tex doxygen.sty
+    fi
+    
+    echo ::
+    echo :: LaTeX pages begin with
+    echo :: ${outdir}/latex/refman.tex
+fi
+    
+if $do_html; then
+  cd ${outdir}/${mode}
+
+  #doxytag -t libstdc++.tag . > /dev/null 2>&1
+
+  # Strip pathnames from tag file.
+  sed -e '/<path>/d' libstdc++.tag > TEMP
+  mv TEMP libstdc++.tag
+
+  sed -e "s=@DATE@=${DATEtext}=" \
+      ${srcdir}/doc/doxygen/mainpage.html > index.html
+
+  # The following bit of line noise changes annoying
+  #   std::foo < typename _Ugly1, typename _Ugly2, .... _DefaultUgly17 >
+  # to user-friendly
+  #   std::foo
+  # in the major "Compound List" page.
+  sed -e 's=\(::[[:alnum:]_]*\)&lt; .* &gt;=\1=' annotated.html > annstrip.html
+  mv annstrip.html annotated.html
+
+  cp ${srcdir}/doc/doxygen/tables.html tables.html
+
+  echo ::
+  echo :: HTML pages begin with
+  echo :: ${outdir}/html/index.html
+fi
+
+# Mess with the man pages.  We don't need documentation of the internal
+# headers, since the man pages for those contain nothing useful anyhow.  The
+# man pages for doxygen modules need to be renamed (or deleted).  And the
+# generated #include lines need to be changed from the internal names to the
+# standard ones (e.g., "#include <stl_tempbuf.h>" -> "#include <memory>").
+if $do_man; then
+echo ::
+echo :: Fixing up the man pages...
+cd $outdir/man/man3
+
+# File names with embedded spaces (EVIL!) need to be....?  renamed or removed?
+find . -name "* *" -print0 | xargs -0r rm        # requires GNU tools
+
+# man pages are for functions/types/other entities, not source files
+# directly.  who the heck would type "man foo.h" anyhow?
+# FIXME: This also removes std.3 which is the only place that a lot of
+# functions are documented. Should we keep it?
+find . -name "[a-z]*" -a ! -name "std_*" -print | xargs rm
+rm -f *.h.3 *.hpp.3 *config* *.cc.3 *.tcc.3 *_t.3
+#rm ext_*.3 tr1_*.3 debug_*.3
+
+# this is used to examine what we would have deleted, for debugging
+#mkdir trash
+#find . -name "[a-z]*" -a ! -name "std_*" -print | xargs -i mv {} trash
+#mv *.h.3 *config* *.cc.3 *.tcc.3 *_t.3  trash
+
+gxx=$($builddir/scripts/testsuite_flags --build-cxx)
+cppflags=$($builddir/scripts/testsuite_flags --build-includes)
+cxxflags="-Og -g -std=gnu++23"
+
+# Standardize the displayed header names.  If anyone who knows perl cares
+# enough to rewrite all this, feel free.  This only gets run once a century,
+# and I'm off getting coffee then anyhow, so I didn't care enough to make
+# this super-fast.
+$gxx $cppflags $cxxflags ${srcdir}/doc/doxygen/stdheader.cc -o ./stdheader || exit 1
+# Doxygen outputs something like "\fC#include <unique_lock\&.h>\fP" and
+# we want that internal header to be replaced with something like <mutex>.
+problematic=`grep -E -l '#include <.*h>' [a-z]*.3`
+for f in $problematic; do
+    # this is also slow, but safe and easy to debug
+    oldh=`sed -n '/f[CR]#include </s/.*<\(.*\)>.*/\1/p' $f`
+    if [ "$oldh" == "" ]; then
+      echo "ERROR: Doxygen man page formatting changed" 2>&1
+      continue
+    fi
+    newh=`echo $oldh | sed 's/\\\\&\\././g' | ./stdheader`
+    sed "s=${oldh/\\/.}=${newh}=" $f > TEMP && mv TEMP $f
+done
+rm stdheader
+
+# Some of the pages for generated modules have text that confuses certain
+# implementations of man(1), e.g. on GNU/Linux.  We need to have another
+# top-level *roff tag to /stop/ the .SH NAME entry.
+problematic=`grep -E --files-without-match '^\.SH SYNOPSIS' [A-Z]*.3`
+#problematic='Containers.3 Sequences.3 Assoc_containers.3 Iterator_types.3'
+
+for f in $problematic; do
+    sed '/^\.SH NAME/{
+n
+a\
+\
+.SH SYNOPSIS
+    }' $f > TEMP
+    mv TEMP $f
+done
+
+# Also, break this (generated) line up.  It's ugly as sin.
+problematic=`grep -l '[^^]Definition at line' *.3`
+for f in $problematic; do
+    sed 's/Definition at line/\
+.PP\
+&/'  $f > TEMP
+    mv TEMP $f
+done
+
+cp ${srcdir}/doc/doxygen/Intro.3 C++Intro.3
+
+# Why didn't I do this at the start?  Were rabid weasels eating my brain?
+# Who the fsck would "man std_vector" when the class isn't named that?
+
+# If no files match a glob, skip the for-loop:
+shopt -s nullglob
+# First, deal with nested namespaces.
+for ns in chrono filesystem ranges views literals; do
+  for f in std_${ns}_*; do
+      newname=`echo $f | sed "s/std_${ns}_/std::${ns}::/"`
+      mv $f $newname
+  done
+done
+for f in *__debug_*; do
+    newname=`echo $f | sed 's/__debug_/__debug::/'`
+    mv $f $newname
+done
+for f in *decimal_*; do
+    newname=`echo $f | sed 's/decimal_/decimal::/'`
+    mv $f $newname
+done
+for f in *__detail_*; do
+    newname=`echo $f | sed 's/__detail_/__detail::/'`
+    mv $f $newname
+done
+for f in *__gnu_pbds_detail_*; do
+    newname=`echo $f | sed 's/detail_/detail::/'`
+    mv $f $newname
+done
+for f in *__parallel_*; do
+    newname=`echo $f | sed 's/__parallel_/__parallel::/'`
+    mv $f $newname
+done
+
+# Remove inline namespaces used for versioning.
+for f in *_V2_*; do
+    newname=`echo $f | sed 's/_V2_/::/'`
+    sed 's/::_V2::/::/g' $f > $newname
+    rm $f
+done
+for f in *_experimental_filesystem_v?_*; do
+    newname=`echo $f | sed 's/_filesystem_v._/::filesystem::/'`
+    sed 's/::filesystem::v.::/::filesystem::/g' $f > $newname
+    rm $f
+done
+for f in *experimental_fundamentals_v?_*; do
+    newname=`echo $f | sed 's/experimental_.*_v[[:digit:]]_/experimental::/'`
+    sed 's/::experimental::fundamentals_v[[:digit:]]::/::experimental::/g' $f > $newname
+    rm $f
+done
+
+# Then, clean up other top-level namespaces.
+for f in std_tr1_*; do
+    newname=`echo $f | sed 's/^std_tr1_/std::tr1::/'`
+    mv $f $newname
+done
+for f in std_tr2_*; do
+    newname=`echo $f | sed 's/^std_tr2_/std::tr2::/'`
+    mv $f $newname
+done
+for f in std_*; do
+    newname=`echo $f | sed 's/^std_/std::/'`
+    mv $f $newname
+done
+for f in __gnu_cxx_*; do
+    newname=`echo $f | sed 's/^__gnu_cxx_/__gnu_cxx::/'`
+    mv $f $newname
+done
+for f in __gnu_debug_*; do
+    newname=`echo $f | sed 's/^__gnu_debug_/__gnu_debug::/'`
+    mv $f $newname
+done
+for f in __gnu_parallel_*; do
+    newname=`echo $f | sed 's/^__gnu_parallel_/__gnu_parallel::/'`
+    mv $f $newname
+done
+for f in __gnu_pbds_*; do
+    newname=`echo $f | sed 's/^__gnu_pbds_/__gnu_pbds::/'`
+    mv $f $newname
+done
+for f in __cxxabiv1_*; do
+    newname=`echo $f | sed 's/^__cxxabiv1_/abi::/'`
+    mv $f $newname
+done
+
+mv std::__unspecified___exception_ptr.3 std::exception_ptr.3
+
+# Then piecemeal nested classes
+
+for f in std*distribution_param_type.3; do
+    newname=`echo $f | sed 's/distribution_param_type/distribution::param_type/'`
+    mv $f $newname
+done
+
+for f in std*filesystem::path_iterator.3; do
+    newname=`echo $f | sed 's/path_iterator/path::iterator/'`
+    mv $f $newname
+done
+
+mv std::chrono::tzdb_list_const_iterator.3 std::chrono::tzdb_list::const_iterator.3
+
+# Generic removal bits, where there are things in the generated man
+# pages that need to be killed.
+for f in *_libstdc__-v3_*; do
+    rm $f
+done
+
+for f in *_src_*; do
+    rm $f
+done
+
+# Remove all internal implementation details?
+# rm std::_[A-Z]*.3 std::__detail*.3
+
+shopt -u nullglob
+
+
+# Also, for some reason, typedefs don't get their own man pages.  Sigh.
+for f in ios streambuf istream ostream iostream stringbuf \
+	 istringstream ostringstream stringstream filebuf ifstream \
+	 ofstream fstream string
+do
+    echo ".so man3/std::basic_${f}.3" > std::${f}.3
+    echo ".so man3/std::basic_${f}.3" > std::w${f}.3
+done
+
+echo ::
+echo :: Man pages in ${outdir}/man
+fi
+
+# all done
+echo ::
+
+exit 0

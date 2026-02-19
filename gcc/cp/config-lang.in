@@ -1,0 +1,58 @@
+# Top level configure fragment for GNU C++.
+#   Copyright (C) 1994-2026 Free Software Foundation, Inc.
+
+#This file is part of GCC.
+
+#GCC is free software; you can redistribute it and/or modify
+#it under the terms of the GNU General Public License as published by
+#the Free Software Foundation; either version 3, or (at your option)
+#any later version.
+
+#GCC is distributed in the hope that it will be useful,
+#but WITHOUT ANY WARRANTY; without even the implied warranty of
+#MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#GNU General Public License for more details.
+
+# You should have received a copy of the GNU General Public License
+# along with GCC; see the file COPYING3.  If not see
+# <http://www.gnu.org/licenses/>.
+
+# Configure looks for the existence of this file to auto-config each language.
+# We define several parameters used by configure:
+#
+# language	- name of language as it would appear in $(LANGUAGES)
+# compilers	- value to add to $(COMPILERS)
+
+language="c++"
+
+compilers="cc1plus\$(exeext)"
+
+target_libs="target-libstdc++-v3"
+
+# The header files must come first, but otherwise please keep this
+# list sorted.
+gtfiles="\
+\$(srcdir)/cp/name-lookup.h \$(srcdir)/cp/cp-tree.h \
+\$(srcdir)/c-family/c-common.h \$(srcdir)/c-family/c-objc.h \
+\$(srcdir)/c-family/c-pragma.h \$(srcdir)/cp/decl.h \
+\$(srcdir)/cp/parser.h \
+\$(srcdir)/c-family/c-common.cc \$(srcdir)/c-family/c-format.cc \
+\$(srcdir)/c-family/c-cppbuiltin.cc \$(srcdir)/c-family/c-pragma.cc \
+\$(srcdir)/cp/call.cc \$(srcdir)/cp/class.cc \$(srcdir)/cp/constexpr.cc \
+\$(srcdir)/cp/contracts.cc \
+\$(srcdir)/cp/constraint.cc \$(srcdir)/cp/coroutines.cc \
+\$(srcdir)/cp/cp-gimplify.cc \
+\$(srcdir)/cp/cp-lang.cc \$(srcdir)/cp/cp-objcp-common.cc \
+\$(srcdir)/cp/decl.cc \$(srcdir)/cp/decl2.cc \
+\$(srcdir)/cp/except.cc \
+\$(srcdir)/cp/friend.cc \
+\$(srcdir)/cp/init.cc \
+\$(srcdir)/cp/lambda.cc \$(srcdir)/cp/lex.cc \$(srcdir)/cp/logic.cc \
+\$(srcdir)/cp/mangle.cc \$(srcdir)/cp/method.cc \$(srcdir)/cp/module.cc \
+\$(srcdir)/cp/name-lookup.cc \
+\$(srcdir)/cp/parser.cc \$(srcdir)/cp/pt.cc \
+\$(srcdir)/cp/reflect.cc \$(srcdir)/cp/rtti.cc \
+\$(srcdir)/cp/semantics.cc \
+\$(srcdir)/cp/tree.cc \$(srcdir)/cp/typeck2.cc \
+\$(srcdir)/cp/vtable-class-hierarchy.cc \
+" 

@@ -1,0 +1,129 @@
+# Plugins for offload execution, configure.ac fragment.  -*- mode: autoconf -*-
+#
+# Copyright (C) 2014-2026 Free Software Foundation, Inc.
+#
+# Contributed by Mentor Embedded.
+#
+# This file is part of the GNU Offloading and Multi Processing Library
+# (libgomp).
+#
+# Libgomp is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3, or (at your option)
+# any later version.
+#
+# Libgomp is distributed in the hope that it will be useful, but WITHOUT ANY
+# WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+# FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
+# more details.
+#
+# Under Section 7 of GPL version 3, you are granted additional
+# permissions described in the GCC Runtime Library Exception, version
+# 3.1, as published by the Free Software Foundation.
+#
+# You should have received a copy of the GNU General Public License and
+# a copy of the GCC Runtime Library Exception along with this program;
+# see the files COPYING3 and COPYING.RUNTIME respectively.  If not, see
+# <http://www.gnu.org/licenses/>.
+
+plugin_support=yes
+DL_LIBS=
+AC_SUBST(DL_LIBS)
+AC_CHECK_LIB(dl, dlsym, [DL_LIBS=-ldl], [plugin_support=no])
+if test x"$plugin_support" = xyes; then
+  AC_DEFINE(PLUGIN_SUPPORT, 1,
+    [Define if all infrastructure, needed for plugins, is supported.])
+elif test "x${enable_offload_targets-no}" != xno; then
+  AC_MSG_ERROR([Can't support offloading without support for plugins])
+fi
+AC_CHECK_HEADERS_ONCE(unistd.h)
+AC_CHECK_FUNCS_ONCE(secure_getenv __secure_getenv getuid geteuid getgid getegid)
+
+
+PLUGIN_NVPTX=0
+PLUGIN_GCN=0
+# Parse '--enable-offload-targets', figure out the corresponding libgomp
+# plugins, and configure to find the corresponding offload compilers.
+# 'offload_plugins' and 'offload_targets' will be populated in the same order.
+offload_plugins=
+offload_targets=
+AC_SUBST(offload_plugins)
+AC_SUBST(offload_targets)
+offload_additional_options=
+offload_additional_lib_paths=
+AC_SUBST(offload_additional_options)
+AC_SUBST(offload_additional_lib_paths)
+if test x"$enable_offload_targets" != x; then
+  for tgt in `echo $enable_offload_targets | sed -e 's#,# #g'`; do
+    tgt_dir=`echo $tgt | grep '=' | sed 's/.*=//'`
+    tgt=`echo $tgt | sed 's/=.*//'`
+    tgt_plugin=
+    case $tgt in
+      nvptx*)
+	case "${target}" in
+	  aarch64*-*-* | powerpc64le-*-* | x86_64-*-*)
+	    case "$ac_cv_sizeof_void_p" in
+	      4)
+		# PR libgomp/65099: Currently, we only support offloading in
+		# 64-bit configurations.
+		PLUGIN_NVPTX=0
+		;;
+	      *)
+		tgt_plugin=nvptx
+		PLUGIN_NVPTX=1
+		;;
+	    esac
+	    ;;
+	  *-*-*)
+	    # Target architecture not supported.
+	    PLUGIN_NVPTX=0
+	    ;;
+	esac
+	;;
+      amdgcn*)
+	case "${target}" in
+	  x86_64-*-*)
+	    case "$ac_cv_sizeof_void_p" in
+	      4)
+		PLUGIN_GCN=0
+		;;
+	      *)
+		tgt_plugin=gcn
+		PLUGIN_GCN=1
+		;;
+	      esac
+	    ;;
+	  *-*-*)
+	    PLUGIN_GCN=0
+	     ;;
+	esac
+	;;
+      *)
+	AC_MSG_ERROR([unknown offload target specified])
+	;;
+    esac
+    if test x"$tgt_plugin" = x; then
+      # Not configuring libgomp for this offload target if we're not building
+      # the corresponding offload plugin.
+      continue
+    elif test x"$offload_plugins" = x; then
+      offload_plugins=$tgt_plugin
+      offload_targets=$tgt
+    else
+      offload_plugins=$offload_plugins,$tgt_plugin
+      offload_targets=$offload_targets,$tgt
+    fi
+    # Configure additional search paths.
+    if test x"$tgt_dir" != x; then
+      offload_additional_options="$offload_additional_options -B$tgt_dir/\$(libexecdir:\$(exec_prefix)/%=%)/gcc/\$(target_alias)/\$(gcc_version) -B$tgt_dir/bin"
+      offload_additional_lib_paths="$offload_additional_lib_paths:$tgt_dir/lib64:$tgt_dir/lib:$tgt_dir/lib32"
+    else
+      offload_additional_options="$offload_additional_options -B\$(libexecdir)/gcc/\$(target_alias)/\$(gcc_version) -B\$(bindir)"
+      offload_additional_lib_paths="$offload_additional_lib_paths:$toolexeclibdir"
+    fi
+  done
+fi
+AC_DEFINE_UNQUOTED(OFFLOAD_PLUGINS, "$offload_plugins",
+  [Define to offload plugins, separated by commas.])
+AM_CONDITIONAL([PLUGIN_NVPTX], [test $PLUGIN_NVPTX = 1])
+AM_CONDITIONAL([PLUGIN_GCN], [test $PLUGIN_GCN = 1])

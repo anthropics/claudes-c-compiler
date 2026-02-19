@@ -1,0 +1,117 @@
+; Options for the Renesas M32R port of the compiler.
+
+; Copyright (C) 2005-2026 Free Software Foundation, Inc.
+;
+; This file is part of GCC.
+;
+; GCC is free software; you can redistribute it and/or modify it under
+; the terms of the GNU General Public License as published by the Free
+; Software Foundation; either version 3, or (at your option) any later
+; version.
+;
+; GCC is distributed in the hope that it will be useful, but WITHOUT ANY
+; WARRANTY; without even the implied warranty of MERCHANTABILITY or
+; FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+; for more details.
+;
+; You should have received a copy of the GNU General Public License
+; along with GCC; see the file COPYING3.  If not see
+; <http://www.gnu.org/licenses/>.
+
+HeaderInclude
+config/m32r/m32r-opts.h
+
+; Selected code model.
+Variable
+enum m32r_model m32r_model_selected = M32R_MODEL_DEFAULT
+
+; Selected SDA support.
+Variable
+enum m32r_sdata m32r_sdata_selected = M32R_SDATA_DEFAULT
+
+m32rx
+Target RejectNegative Mask(M32RX)
+Compile for the m32rx.
+
+m32r2
+Target RejectNegative Mask(M32R2)
+Compile for the m32r2.
+
+m32r
+Target RejectNegative
+Compile for the m32r.
+
+malign-loops
+Target Mask(ALIGN_LOOPS)
+Align all loops to 32 byte boundary.
+
+mbranch-cost=1
+Target RejectNegative Mask(BRANCH_COST)
+Prefer branches over conditional execution.
+
+mbranch-cost=2
+Target RejectNegative InverseMask(BRANCH_COST)
+Give branches their default cost.
+
+mdebug
+Target Mask(DEBUG)
+Display compile time statistics.
+
+mflush-func=
+Target RejectNegative Joined Var(m32r_cache_flush_func) Init(CACHE_FLUSH_FUNC)
+Specify cache flush function.
+
+mflush-trap=
+Target RejectNegative Joined UInteger Var(m32r_cache_flush_trap) Init(CACHE_FLUSH_TRAP)
+Specify cache flush trap number.
+
+missue-rate=1
+Target RejectNegative Mask(LOW_ISSUE_RATE)
+Only issue one instruction per cycle.
+
+missue-rate=2
+Target RejectNegative InverseMask(LOW_ISSUE_RATE)
+Allow two instructions to be issued per cycle.
+
+mmodel=
+Target RejectNegative Joined Enum(m32r_model) Var(m32r_model_selected)
+Code size: small, medium or large.
+
+Enum
+Name(m32r_model) Type(enum m32r_model)
+
+EnumValue
+Enum(m32r_model) String(small) Value(M32R_MODEL_SMALL)
+
+EnumValue
+Enum(m32r_model) String(medium) Value(M32R_MODEL_MEDIUM)
+
+EnumValue
+Enum(m32r_model) String(large) Value(M32R_MODEL_LARGE)
+
+mno-flush-func
+Target RejectNegative
+Don't call any cache flush functions.
+
+mno-flush-trap
+Target RejectNegative Var(m32r_cache_flush_trap, -1)
+Don't call any cache flush trap.
+
+; mrelax
+; Target Mask(RELAX)
+
+msdata=
+Target RejectNegative Joined Enum(m32r_sdata) Var(m32r_sdata_selected)
+Small data area: none, sdata, use.
+
+Enum
+Name(m32r_sdata) Type(enum m32r_sdata)
+
+EnumValue
+Enum(m32r_sdata) String(none) Value(M32R_SDATA_NONE)
+
+EnumValue
+Enum(m32r_sdata) String(sdata) Value(M32R_SDATA_SDATA)
+
+EnumValue
+Enum(m32r_sdata) String(use) Value(M32R_SDATA_USE)

@@ -1,0 +1,881 @@
+#   Copyright (C) 1997-2026 Free Software Foundation, Inc.
+
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+# 
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+# 
+# You should have received a copy of the GNU General Public License
+# along with GCC; see the file COPYING3.  If not see
+# <http://www.gnu.org/licenses/>.
+
+# Verify various kinds of gcov output: line counts, branch percentages,
+# and call return percentages.  None of this is language-specific.
+
+load_lib "target-supports.exp"
+
+global GCOV
+
+#
+# clean-gcov-file -- delete a working file the compiler creates for gcov
+#
+# TESTCASE is the name of the test.
+# SUFFIX is file suffix
+
+proc clean-gcov-file { testcase suffix } {
+    set basename [file tail $testcase]
+    set base [file rootname $basename]
+    remote_file host delete $base.$suffix
+    # The absolute path to the output when building on the host is
+    # used by the compiled program on the target to determine where
+    # the .gcda file goes there.
+    remote_file target delete [remote_file host absolute $base.$suffix]
+}
+
+# Transfer the .gcda file for a test from the target to the host.
+
+proc transfer-gcda { testcase } {
+    set basename [file tail $testcase]
+    set base [file rootname $basename]
+    # The absolute path to the output when building on the host is
+    # used by the compiled program on the target to determine where
+    # the .gcda file goes there.
+    set gcda [remote_file host absolute "$base.gcda"]
+    set gcda [remote_upload target $gcda]
+    remote_download host $gcda
+}
+
+#
+# clean-gcov -- delete the working files the compiler creates for gcov
+#
+# TESTCASE is the name of the test.
+#
+proc clean-gcov { testcase } {
+    clean-gcov-file $testcase "gcno"
+    clean-gcov-file $testcase "gcda"
+    clean-gcov-file $testcase "h.gcov"
+    remote_file host delete "$testcase.gcov"
+}
+
+#
+# verify-lines -- check that line counts are as expected
+#
+# TESTNAME is the name of the test, including unique flags.
+# TESTCASE is the name of the test file.
+# FILE is the name of the gcov output file.
+#
+proc verify-lines { testname testcase file } {
+    #send_user "verify-lines\n"
+    global subdir
+
+    set failed 0
+    set fd [open $file r]
+    while { [gets $fd line] >= 0 } {
+        # We want to match both "-" and "#####" as count as well as numbers,
+        # since we want to detect lines that shouldn't be marked as covered.
+	if [regexp "^ *(\[^:]*): *(\[0-9\\-#]+):.*count\\((\[0-9\\-#=\\.kMGTPEZY\*]+)\\)(.*)" \
+		"$line" all is n shouldbe rest] {
+	    if [regexp "^ *{(.*)}" $rest all xfailed] {
+		switch [dg-process-target $xfailed] {
+		    "N" { continue }
+		    "F" { setup_xfail "*-*-*" }
+		}
+	    }
+	    if { $is == "" } {
+		fail "$testname line $n: no data available"
+		incr failed
+	    } elseif { $is != $shouldbe } {
+		fail "$testname line $n: is $is:should be $shouldbe"
+		incr failed
+	    } else {
+		pass "$testname count for line $n"
+	    }
+	}
+    }
+    close $fd
+    return $failed
+}
+
+
+#
+# verify-branches -- check that branch percentages are as expected
+#
+# TESTNAME is the name of the test, including unique flags.
+# TESTCASE is the name of the test file.
+# FILE is the name of the gcov output file.
+#
+# Checks are based on comments in the source file.  This means to look for
+# branch percentages 10 or 90, 20 or 80, and # 70 or 30:
+#     /* branch(10, 20, 70) */
+# This means that all specified percentages should have been seen by now:
+#     /* branch(end) */
+# All specified percentages must also be seen by the next branch(n) or
+# by the end of the file.
+#
+# Each check depends on the compiler having generated the expected
+# branch instructions.  Don't check for branches that might be
+# optimized away or replaced with predicated instructions.
+#
+proc verify-branches { testname testcase file } {
+    #send_user "verify-branches\n"
+
+    set failed 0
+    set shouldbe ""
+    set fd [open $file r]
+    set n 0
+    while { [gets $fd line] >= 0 } {
+	regexp "^\[^:\]+: *(\[0-9\]+):" "$line" all n
+	if [regexp "branch" $line] {
+	    verbose "Processing branch line $n: $line" 3
+	    if [regexp "branch\\((\[0-9 \]+)\\)" "$line" all new_shouldbe] {
+		# All percentages in the current list should have been seen.
+		if {[llength $shouldbe] != 0} {
+		    fail "$testname line $n: expected branch percentages not found: $shouldbe"
+		    incr failed
+		    set shouldbe ""
+		}
+		set shouldbe $new_shouldbe
+		#send_user "$n: looking for: $shouldbe\n"
+	        # Record the percentages to check for. Replace percentage
+		# n > 50 with 100-n, since block ordering affects the
+		# direction of a branch.
+		for {set i 0} {$i < [llength $shouldbe]} {incr i} {
+		    set num [lindex $shouldbe $i]
+		    if {$num > 50} {
+			set shouldbe [lreplace $shouldbe $i $i [expr 100 - $num]]
+		    }
+		}
+	    } elseif [regexp "branch +\[0-9\]+ taken (-\[0-9\]+)%" "$line" \
+			all taken] {
+		# Percentages should never be negative.
+		fail "$testname line $n: negative percentage: $taken"
+		incr failed
+	    } elseif [regexp "branch +\[0-9\]+ taken (\[0-9\]+)%" "$line" \
+			all taken] {
+		#send_user "$n: taken = $taken\n"
+		# Percentages should never be greater than 100.
+		if {$taken > 100} {
+		    fail "$testname line $n: branch percentage greater than 100: $taken"
+		    incr failed
+		}
+		if {$taken > 50} {
+		    set taken [expr 100 - $taken]
+		}
+		# If this percentage is one to check for then remove it
+		# from the list.  It's normal to ignore some reports.
+		set i [lsearch $shouldbe $taken]
+		if {$i != -1} {
+		    set shouldbe [lreplace $shouldbe $i $i]
+		}
+	    } elseif [regexp "branch\\(end\\)" "$line"] {
+		# All percentages in the list should have been seen by now.
+		if {[llength $shouldbe] != 0} {
+		    fail "$testname line n: expected branch percentages not found: $shouldbe"
+		    incr failed
+		}
+		set shouldbe ""
+	    }
+	}
+    }
+    # All percentages in the list should have been seen.
+    if {[llength $shouldbe] != 0} {
+	fail "$testname line $n: expected branch percentages not found: $shouldbe"
+	incr failed
+    }
+    close $fd
+    return $failed
+}
+
+#
+# verify-conditions -- check that conditions are checked as expected
+#
+# TESTNAME is the name of the test, including unique flags.
+# TESTCASE is the name of the test file.
+# FILE is the name of the gcov output file.
+#
+# Checks are based on comments in the source file. Condition coverage comes
+# with with two types of output, a summary and a list of the uncovered
+# conditions. Both must be checked to pass the test
+#
+# To check for conditions, add a comment the line of a conditional:
+# /* conditions(n/m) true(0 1) false(1) */
+#
+# where n/m are the covered and total conditions in the expression. The true()
+# and false() take the indices expected *not* covered.
+#
+# This means that all coverage statements should have been seen:
+# /* conditions(end) */
+#
+# If all conditions are covered i.e. n == m, then conditions(end) can be
+# omitted. If either true() or false() are empty they can be omitted too.
+#
+# In some very specific cases there is a need to match multiple conditions on
+# the same line, for example if (a && fn (b || c) && d), which is interpreted
+# roughly as tmp _bc = b || c; if (a && _bc && d).  The argument to fn is
+# considered its own expression and its coverage report will be written on the
+# same line.  For these cases, use conditions(n/m; n/m;...) true(0 1;;...)
+# where ; marks the end of the list element where the ith list matches the ith
+# expression. The true()/false() matchers can be omitted if no expression
+# expects them, otherwise use the empty list if all true/false outcomes are
+# covered.
+#
+# C++ can insert conditionals in the CFG that are not present in source code.
+# These must be manually suppressed since unexpected and unhandled conditions
+# are an error (to help combat regressions). Output can be suppressed with
+# conditions(suppress) and conditions(end). suppress should usually be on a
+# closing brace.
+#
+# Some expressions, when using unnamed temporaries as operands, will have
+# destructors in expressions. The coverage of the destructor will be reported
+# on the same line as the expression itself, but suppress() would also swallow
+# the expected tested-for messages. To handle these, use the destructor() [1]
+# which will suppress everything from and including the second "conditions
+# covered".
+#
+# [1] it is important that the destructor() is *on the same line* as the
+#     conditions(m/n)
+proc verify-conditions { testname testcase file } {
+    set failed 0
+    set suppress 0
+    set destructor 0
+    set should ""
+    set shouldt ""
+    set shouldf ""
+    set shouldall ""
+    set fd [open $file r]
+    set lineno 0
+    set checks [list]
+    set keywords {"end" "suppress"}
+    while {[gets $fd line] >= 0} {
+	regexp "^\[^:\]+: *(\[0-9\]+):" "$line" all lineno
+	set prefix "$testname line $lineno"
+
+	if {![regexp "condition" $line]} {
+	    continue
+	}
+
+	# Missing coverage for both true and false will cause a failure, but
+	# only count it once for the report.
+	set ok 1
+	if [regexp {conditions *\([0-9a-z/; ]+\)} "$line" all] {
+	    # *Very* coarse sanity check: conditions() should either be a
+	    # keyword or n/m, anything else means a buggy test case. end is
+	    # optional for cases where all conditions are covered, since it
+	    # only expects a single line of output.
+	    regexp {conditions *\(([0-9a-z/]+)\)} "$line" all e
+	    if {([lsearch -exact $keywords $e] >= 0 || [regexp {\d+/\d+} "$e"]) == 0} {
+		fail "$prefix: expected conditions (n/m), (suppress) or (end); was ($e)"
+		incr failed
+		continue
+	    }
+
+	    # Any keyword means a new context. Set the error flag if not all
+	    # expected output has been seen, and reset the state.
+	    if {[llength $shouldt] != 0} {
+		fail "$prefix: expected 'not covered (true)' for terms: $shouldt"
+		set ok 0
+	    }
+
+	    if {[llength $shouldf] != 0} {
+		fail "$prefix: expected 'not covered (false)' for terms: $shouldf"
+		set ok 0
+	    }
+
+	    if {$shouldall ne ""} {
+		fail "$prefix: coverage summary not found; expected $shouldall"
+		set ok 0
+	    }
+
+	    if {[llength $checks] != 0} {
+		set missing [llength checks]
+		fail "$prefix: expected $missing more conditions"
+		set ok 0
+	    }
+
+	    set suppress 0
+	    set destructor 0
+	    set setup 0
+	    set checks [list]
+
+	    if [regexp {destructor\(\)} "$line"] {
+		set destructor 1
+	    }
+
+	    # Find the expressions on this line. There may be more, to support
+	    # constructs like (a && fn (b && c) && d).
+	    # The match produces lists like [conditions(n/m) n m]
+	    set argconds ""
+	    set argtrue ""
+	    set argfalse ""
+	    regexp {conditions *\(([0-9 /;]+)\)} $line _ argconds
+	    regexp {true *\(([0-9 ;]+)\)} $line _ argtrue
+	    regexp {false *\(([0-9 ;]+)\)} $line _ argfalse
+	    set condv [split $argconds ";"]
+	    set truev [split $argtrue ";"]
+	    set falsev [split $argfalse ";"]
+	    set ncases [llength $condv]
+
+	    for {set i 0} {$i < $ncases} {incr i} {
+		set summary [lindex $condv $i]
+		set n [lindex [split $summary "/"] 0]
+		set m [lindex [split $summary "/"] 1]
+		set newt [lindex $truev $i]
+		set newf [lindex $falsev $i]
+
+		# Sanity check - if the true() and false() vectors should have
+		# m-n elements to cover all uncovered conditions. Because of
+		# masking it can sometimes be surprising what terms are
+		# independent, so this makes for more robust test at the cost
+		# of being slightly more annoying to write.
+		set nterms [expr [llength $newt] + [llength $newf]]
+		set nexpected [expr {$m - $n}]
+		if {$nterms != $nexpected} {
+		    fail "$prefix: expected $nexpected uncovered terms; got $nterms"
+		    set ok 0
+		}
+		set shouldall $e
+		set should ""
+		set shouldt $newt
+		set shouldf $newf
+		set shouldall [regsub -all { } "$n/$m" ""]
+		lappend checks [list $should $shouldt $shouldf $shouldall $newt $newf]
+	    }
+
+	    if {[llength $checks] > 0} {
+		# no-op - the stack of checks to do is set up
+	    } elseif {$e == "end"} {
+		# no-op - state should already been reset, and errors flagged
+	    } elseif {$e == "suppress"} {
+		set suppress 1
+	    } else {
+		# this should be unreachable, 
+		fail "$prefix: unhandled control ($e), should be unreachable"
+		set ok 0
+	    }
+	} elseif {$suppress == 1} {
+	    # ignore everything in a suppress block. C++ especially can insert
+	    # conditionals in exceptions and destructors which would otherwise
+	    # be considered unhandled.
+	    continue
+	} elseif [regexp {condition +(\d+) not covered \((.*)\)} "$line" all cond condv] {
+	    foreach v {true false} {
+		if [regexp $v $condv] {
+		    if {"$v" == "true"} {
+			set should shouldt
+		    } else {
+			set should shouldf
+		    }
+
+		    set i [lsearch [set $should] $cond]
+		    if {$i != -1} {
+			set $should [lreplace [set $should] $i $i]
+		    } else {
+			fail "$prefix: unexpected uncovered term $cond ($v)"
+			set ok 0
+		    }
+		}
+	    }
+	} elseif [regexp {condition outcomes covered (\d+/\d+)} "$line" all cond] {
+	    # the destructor-generated "conditions covered" lines will be
+	    # written after all expression-related output. Handle these by
+	    # turning on suppression if the destructor-suppression is
+	    # requested.
+	    if {$shouldall == "" && $destructor == 1} {
+		set suppress 1
+		continue
+	    }
+
+	    if {[llength $checks] == 0} {
+		fail "$prefix: unexpected summary $cond"
+		set ok 0
+	    } else {
+		# Report any missing conditions from the previous set if this
+		# is not the first condition block
+		if {$setup == 1} {
+		    if {[llength $shouldt] != 0} {
+			fail "$prefix: expected 'not covered (true)' for terms: $shouldt"
+			set ok 0
+		    }
+		    if {[llength $shouldf] != 0} {
+			fail "$prefix: expected 'not covered (false)' for terms: $shouldf"
+			set ok 0
+		    }
+		    if {$shouldall ne ""} {
+			fail "$prefix: coverage summary not found; expected $shouldall"
+			set ok 0
+		    }
+		}
+		set setup 1
+		set current [lindex $checks 0]
+		set checks [lreplace $checks 0 0]
+		set should  [lindex $current 0]
+		set shouldt  [lindex $current 1]
+		set shouldf  [lindex $current 2]
+		set shouldall  [lindex $current 3]
+		set newt  [lindex $current 4]
+		set newf  [lindex $current 5]
+
+		if {$cond == $shouldall} {
+		    set shouldall ""
+		} else {
+		    fail "$prefix: unexpected summary - expected $shouldall, got $cond"
+		    set ok 0
+		}
+	    }
+	}
+
+	if {$ok != 1} {
+	    incr failed
+	}
+    }
+    close $fd
+    return $failed
+}
+
+#
+# verify-calls -- check that call return percentages are as expected
+#
+# TESTNAME is the name of the test, including unique flags.
+# TESTCASE is the name of the test file.
+# FILE is the name of the gcov output file.
+#
+# Checks are based on comments in the source file.  This means to look for
+# call return percentages 50, 20, 33:
+#     /* returns(50, 20, 33) */
+# This means that all specified percentages should have been seen by now:
+#     /* returns(end) */
+# All specified percentages must also be seen by the next returns(n) or
+# by the end of the file.
+#
+# Each check depends on the compiler having generated the expected
+# call instructions.  Don't check for calls that are inserted by the
+# compiler or that might be inlined.
+#
+proc verify-calls { testname testcase file } {
+    #send_user "verify-calls\n"
+
+    set failed 0
+    set shouldbe ""
+    set fd [open $file r]
+    set n 0
+    while { [gets $fd line] >= 0 } {
+	regexp "^\[^:\]+: *(\[0-9\]+):" "$line" all n
+	if [regexp "return" $line] {
+	    verbose "Processing returns line $n: $line" 3
+	    if [regexp "returns\\((\[0-9 \]+)\\)" "$line" all new_shouldbe] {
+		# All percentages in the current list should have been seen.
+		if {[llength $shouldbe] != 0} {
+		    fail "$testname line $n: expected return percentages not found: $shouldbe"
+		    incr failed
+		    set shouldbe ""
+		}
+	        # Record the percentages to check for.
+		set shouldbe $new_shouldbe
+	    } elseif [regexp "call +\[0-9\]+ returned (-\[0-9\]+)%" "$line" \
+			all returns] {
+		# Percentages should never be negative.
+		fail "$testname line $n: negative percentage: $returns"
+		incr failed
+	    } elseif [regexp "call +\[0-9\]+ returned (\[0-9\]+)%" "$line" \
+			all returns] {
+		# For branches we check that percentages are not greater than
+		# 100 but call return percentages can be, as for setjmp(), so
+		# don't count that as an error.
+		#
+		# If this percentage is one to check for then remove it
+		# from the list.  It's normal to ignore some reports.
+		set i [lsearch $shouldbe $returns]
+		if {$i != -1} {
+		    set shouldbe [lreplace $shouldbe $i $i]
+		}
+	    } elseif [regexp "returns\\(end\\)" "$line"] {
+		# All percentages in the list should have been seen by now.
+		if {[llength $shouldbe] != 0} {
+		    fail "$testname line $n: expected return percentages not found: $shouldbe"
+		    incr failed
+		}
+		set shouldbe ""
+	    }
+	}
+    }
+    # All percentages in the list should have been seen.
+    if {[llength $shouldbe] != 0} {
+	fail "$testname line $n: expected return percentages not found: $shouldbe"
+	incr failed
+    }
+    close $fd
+    return $failed
+}
+
+# Verify that report filtering includes and excludes the right functions.
+proc verify-filters { testname testcase file expected unexpected } {
+    set fd [open $file r]
+
+    set seen {}
+    set ex [concat $expected $unexpected]
+
+    while { [gets $fd line] >= 0 } {
+	foreach sym $ex {
+	    if [regexp "$sym" "$line"] {
+		lappend seen $sym
+	    }
+	}
+    }
+
+    set seen [lsort -unique $seen]
+
+    set ex {}
+    foreach key $expected {
+	if { $key ni $seen } {
+	    lappend ex $key
+	}
+    }
+    set unex {}
+    foreach key $unexpected {
+	if { $key in $seen } {
+	    lappend unex $key
+	}
+    }
+
+    foreach sym $ex {
+	fail "Did not see expected symbol '$sym'"
+    }
+
+    foreach sym $unex {
+	fail "Found unexpected symbol '$sym'"
+    }
+
+    close $fd
+    return [expr [llength $ex] + [llength $unex]]
+}
+
+proc verify-prime-paths { testname testcase file } {
+    set failed 0
+    set fd [open $file r]
+
+    set expected_n -1
+    set expected_m -1
+    set recording 0
+    set expected ""
+
+    while { [gets $fd line] >= 0 } {
+	regexp "^\[^:\]+: *(\[0-9\]+):" "$line" all lineno
+	set prefix "$testname line $lineno"
+
+	if {[regexp "BEGIN *paths" $line]} {
+	    set recording 1
+	    set expected ""
+	    set expected_covered ""
+	    set expected_n -1
+	    set expected_m -1
+	    set seen ""
+	    continue
+	}
+
+	if { $recording != 1 } {
+	    continue
+	}
+
+	if [regexp {summary: *(\d+)/(\d+)} $line _ n m] {
+	    set expected_n $n
+	    set expected_m $m
+	}
+
+	if [regexp "expect: *(.*)" $line all ln] {
+	    set cases ""
+	    set ln [regsub -all {\s+} $ln " "]
+	    foreach case [split  $ln " "] {
+		lappend cases $case
+	    }
+	    lappend expected $cases
+	}
+
+	if [regexp "expect covered: *(.*)" $line all ln] {
+	    set cases ""
+	    set ln [regsub -all {\s+} $ln " "]
+	    foreach case [split  $ln " "] {
+		lappend cases $case
+	    }
+	    lappend expected_covered $cases
+	}
+
+	if [regexp "END" $line] {
+	    if {$recording != 1} {
+		incr failed
+		fail "unexpected END at line $lineno, missing BEGIN"
+
+		# Abort the test if there is a mismatch, to avoid creating
+		# unecessary errors.  At this point the test itself is broken.
+		break
+	    }
+	    set recording 0
+
+	    if {[llength $expected] > 0} {
+		incr failed
+		fail "expected: '$expected'"
+	    }
+
+	    if {[llength $expected_covered] > 0} {
+		incr failed
+		fail "expected covered: '$expected_covered'"
+	    }
+	}
+
+	if [regexp {paths covered (\d+) of (\d+)} $line _ n m] {
+	    if { $n ne $expected_n || $m ne $expected_m } {
+		incr failed
+		fail "$prefix: expected $expected_n/$expected_m covered paths, was $n/$m"
+	    }
+	}
+
+	if [regexp {path *\d+ not covered: lines (.*)} $line _ path] {
+	    set pathl ""
+	    foreach ln [split $path " "] {
+		if [regexp {\s*(.*)\s*} $ln _ key] {
+		    lappend pathl $key
+		}
+	    }
+	    set i [lsearch $expected $pathl]
+	    set expected [lreplace $expected $i $i]
+	}
+
+	if [regexp {path *\d+ covered: lines (.*)} $line _ path] {
+	    set pathl ""
+	    foreach ln [split $path " "] {
+		if [regexp {\s*(.*)\s*} $ln _ key] {
+		    lappend pathl $key
+		}
+	    }
+	    set i [lsearch $expected_covered $pathl]
+	    set expected_covered [lreplace $expected_covered $i $i]
+	}
+    }
+
+    close $fd
+    return $failed
+}
+
+proc gcov-pytest-format-line { args } {
+    global subdir
+
+    set testcase [lindex $args 0]
+    set pytest_script [lindex $args 1]
+    set output_line [lindex $args 2]
+
+    set index [string first "::" $output_line]
+    set test_output [string range $output_line [expr $index + 2] [string length $output_line]]
+
+    return "$subdir/$testcase ${pytest_script}::${test_output}"
+}
+
+# Call by dg-final to run gcov --json-format which produces a JSON file
+# that is later analysed by a pytest Python script.
+# We pass filename of a test via GCOV_PATH environment variable.
+
+proc run-gcov-pytest { args } {
+    global GCOV
+    global srcdir subdir
+    # Extract the test file name from the arguments.
+    set testcase [lindex $args 0]
+
+    verbose "Running $GCOV $testcase in $srcdir/$subdir" 2
+    set testcase [remote_download host $testcase]
+    set result [remote_exec host $GCOV "$testcase -i -abc"]
+
+    set pytest_script [lindex $args 1]
+    if { ![check_effective_target_pytest3] } {
+      unsupported "$pytest_script pytest python3 is missing"
+      return
+    }
+
+    setenv GCOV_PATH $testcase
+    spawn -noecho python3 -m pytest --color=no -rap -s --tb=no $srcdir/$subdir/$pytest_script
+
+    set prefix "\[^\r\n\]*"
+    expect {
+      -re "FAILED($prefix)\[^\r\n\]+\r\n" {
+       set output [gcov-pytest-format-line $testcase $pytest_script $expect_out(1,string)]
+       fail $output
+       exp_continue
+      }
+      -re "ERROR($prefix)\[^\r\n\]+\r\n" {
+       set output [gcov-pytest-format-line $testcase $pytest_script $expect_out(1,string)]
+       fail $output
+       exp_continue
+      }
+      -re "PASSED($prefix)\[^\r\n\]+\r\n" {
+       set output [gcov-pytest-format-line $testcase $pytest_script $expect_out(1,string)]
+       pass $output
+       exp_continue
+      }
+    }
+
+    clean-gcov $testcase
+}
+
+# Called by dg-final to run gcov and analyze the results.
+#
+# ARGS consists of the optional strings "branches" and/or "calls",
+# (indicating that these things should be verified) followed by a 
+# list of arguments to provide to gcov, including the name of the
+# source file.
+
+proc run-gcov { args } {
+    global GCOV
+    global srcdir subdir
+
+    set gcov_args ""
+    set gcov_verify_calls 0
+    set gcov_verify_branches 0
+    set gcov_verify_conditions 0
+    set gcov_verify_prime_paths 0
+    set gcov_verify_lines 1
+    set gcov_verify_intermediate 0
+    set gcov_verify_filters 0
+    set gcov_remove_gcda 0
+    set xfailed 0
+
+    foreach a $args {
+	if { $a == "calls" } {
+	  set gcov_verify_calls 1
+	} elseif { $a == "branches" } {
+	  set gcov_verify_branches 1
+	} elseif { $a == "conditions" } {
+	  set gcov_verify_conditions 1
+	} elseif { [lindex $a 0] == "filters" } {
+	  set gcov_verify_filters 1
+	  set verify_filters_expected [lindex $a 1]
+	  set verify_filters_unexpected [lindex $a 2]
+	} elseif { $a == "prime-paths" } {
+	  set gcov_verify_prime_paths 1
+	} elseif { $a == "intermediate" } {
+	  set gcov_verify_intermediate 1
+	  set gcov_verify_calls 0
+	  set gcov_verify_branches 0
+	  set gcov_verify_conditions 0
+	  set gcov_verify_lines 0
+	  set gcov_verify_filters 0
+	} elseif { $a == "remove-gcda" } {
+	  set gcov_remove_gcda 1
+	} elseif { $gcov_args == "" } {
+	    set gcov_args $a
+	} else {
+	    switch [dg-process-target $a] {
+		"N" { return }
+		"F" { set xfailed 1 }
+	    }
+	}
+    }
+
+    set testname [testname-for-summary]
+
+    # Extract the test file name from the arguments.
+    set testcase [lindex $gcov_args end]
+
+    if { $gcov_remove_gcda } {
+	verbose "Removing $testcase.gcda"
+	clean-gcov-file $testcase "gcda"
+    } else {
+	transfer-gcda $testcase
+	global additional_sources_used
+	if [info exists additional_sources_used] {
+	    foreach srcfile $additional_sources_used {
+		transfer-gcda $srcfile
+	    }
+	}
+    }
+
+    verbose "Running $GCOV $testcase" 2
+    set testcase [remote_download host $testcase]
+    set result [remote_exec host $GCOV $gcov_args]
+    if { [lindex $result 0] != 0 } {
+	if { $xfailed } {
+	    setup_xfail "*-*-*"
+	}
+	fail "$testname gcov failed: [lindex $result 1]"
+	clean-gcov $testcase
+	return
+    }
+
+    set builtin_index [string first "File '<built-in>'" $result]
+    if { $builtin_index != -1 } {
+        fail "$testname gcov failed: <built-in>.gcov should not be created"
+        clean-gcov $testcase
+        return
+    }
+
+    # Get the gcov output file after making sure it exists.
+    set files [glob -nocomplain $testcase.gcov]
+    if { $files == "" } {
+	if { $xfailed } {
+	    setup_xfail "*-*-*"
+	}
+        fail "$testname gcov failed: $testcase.gcov does not exist"
+        clean-gcov $testcase
+        return
+    }
+    remote_upload host $testcase.gcov $testcase.gcov
+
+    # Check that line execution counts are as expected.
+    if { $gcov_verify_lines } {
+	# Check that line execution counts are as expected.
+	set lfailed [verify-lines $testname $testcase $testcase.gcov]
+    } else {
+	set lfailed 0
+    }
+
+    # If requested via the .x file, check that branch and call information
+    # is correct.
+    if { $gcov_verify_branches } {
+	set bfailed [verify-branches $testname $testcase $testcase.gcov]
+    } else {
+	set bfailed 0
+    }
+    if { $gcov_verify_conditions } {
+	set cdfailed [verify-conditions $testname $testcase $testcase.gcov]
+    } else {
+	set cdfailed 0
+    }
+    if { $gcov_verify_prime_paths } {
+	set ppfailed [verify-prime-paths $testname $testcase $testcase.gcov]
+    } else {
+	set ppfailed 0
+    }
+    if { $gcov_verify_calls } {
+	set cfailed [verify-calls $testname $testcase $testcase.gcov]
+    } else {
+	set cfailed 0
+    }
+    if { $gcov_verify_intermediate } {
+	# Check that intermediate format has the expected format
+	set ifailed [verify-intermediate $testname $testcase $testcase.gcov]
+    } else {
+	set ifailed 0
+    }
+    if { $gcov_verify_filters } {
+	set ffailed [verify-filters $testname $testcase $testcase.gcov $verify_filters_expected $verify_filters_unexpected]
+    } else {
+	set ffailed 0
+    }
+
+    # Report whether the gcov test passed or failed.  If there were
+    # multiple failures then the message is a summary.
+    set tfailed [expr $lfailed + $bfailed + $cdfailed + $ppfailed + $cfailed + $ifailed + $ffailed]
+    if { $xfailed } {
+	setup_xfail "*-*-*"
+    }
+    if { $tfailed > 0 } {
+	fail "$testname gcov: $lfailed failures in line counts, $bfailed in branch percentages, $cdfailed in condition/decision, $ppfailed in prime-paths, $cfailed in return percentages, $ifailed in intermediate format, $ffailed failed in filters"
+	if { $xfailed } {
+	    clean-gcov $testcase
+	}
+    } else {
+	pass "$testname gcov"
+	clean-gcov $testcase
+    }
+}

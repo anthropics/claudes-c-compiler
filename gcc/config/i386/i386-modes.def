@@ -1,0 +1,120 @@
+/* Definitions of target machine for GCC for IA-32.
+   Copyright (C) 2002-2026 Free Software Foundation, Inc.
+
+This file is part of GCC.
+
+GCC is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 3, or (at your option)
+any later version.
+
+GCC is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with GCC; see the file COPYING3.  If not see
+<http://www.gnu.org/licenses/>.  */
+
+/* The x86_64 ABI specifies both XF and TF modes.
+   XFmode is __float80 is IEEE extended; TFmode is __float128
+   is IEEE quad.  */
+
+FRACTIONAL_FLOAT_MODE (XF, 80, 12, ieee_extended_intel_96_format);
+FLOAT_MODE (TF, 16, ieee_quad_format);
+FLOAT_MODE (HF, 2, ieee_half_format);
+FLOAT_MODE (BF, 2, 0);
+ADJUST_FLOAT_FORMAT (BF, &arm_bfloat_half_format);
+
+/* In ILP32 mode, XFmode has size 12 and alignment 4.
+   In LP64 mode, XFmode has size and alignment 16.  */
+ADJUST_FLOAT_FORMAT (XF, (TARGET_128BIT_LONG_DOUBLE
+			  ? &ieee_extended_intel_128_format
+			  : TARGET_96_ROUND_53_LONG_DOUBLE
+			  ? &ieee_extended_intel_96_round_53_format
+			  : &ieee_extended_intel_96_format));
+ADJUST_BYTESIZE  (XF, TARGET_128BIT_LONG_DOUBLE ? 16 : 12);
+ADJUST_ALIGNMENT (XF, TARGET_128BIT_LONG_DOUBLE ? 16 : 4);
+
+/* Add any extra modes needed to represent the condition code.
+
+   For the i386, we need separate modes when floating-point
+   equality comparisons are being done.
+
+   Add CCNO to indicate comparisons against zero that require
+   Overflow flag to be unset.  Sign bit test is used instead and
+   thus can be used to form "a&b>0" type of tests.
+
+   Add CCGC to indicate comparisons against zero that allow
+   unspecified garbage in the Carry flag.  This mode is used
+   by inc/dec instructions.
+
+   Add CCGOC to indicate comparisons against zero that allow
+   unspecified garbage in the Carry and Overflow flag. This
+   mode is used to simulate comparisons of (a-b) and (a+b)
+   against zero using sub/cmp/add operations.
+
+   Add CCGZ to indicate comparisons that allow unspecified garbage
+   in the Zero flag.  This mode is used in double-word comparisons.
+
+   Add CCA to indicate that only the Above flag is valid.
+   Add CCC to indicate that only the Carry flag is valid.
+   Add CCO to indicate that only the Overflow flag is valid.
+   Add CCP to indicate that only the Parity flag is valid.
+   Add CCS to indicate that only the Sign flag is valid.
+   Add CCZ to indicate that only the Zero flag is valid.  */
+
+CC_MODE (CCGC);
+CC_MODE (CCGOC);
+CC_MODE (CCNO);
+CC_MODE (CCGZ);
+CC_MODE (CCA);
+CC_MODE (CCC);
+CC_MODE (CCO);
+CC_MODE (CCP);
+CC_MODE (CCS);
+CC_MODE (CCZ);
+
+CC_MODE (CCFP);
+
+/* Vector modes.  Note that VEC_CONCAT patterns require vector
+   sizes twice as big as implemented in hardware.  */
+VECTOR_MODES (INT, 4);        /*              V4QI V2HI */
+VECTOR_MODES (INT, 8);        /*         V8QI V4HI V2SI */
+VECTOR_MODES (INT, 16);       /*   V16QI V8HI V4SI V2DI */
+VECTOR_MODES (INT, 32);       /*  V32QI V16HI V8SI V4DI */
+VECTOR_MODES (INT, 64);       /* V64QI V32HI V16SI V8DI */
+VECTOR_MODES (INT, 128);      /* V128QI V64HI V32SI V16DI */
+VECTOR_MODES (FLOAT, 8);      /*              V4HF V2SF */
+VECTOR_MODES (FLOAT, 16);     /*         V8HF V4SF V2DF */
+VECTOR_MODES (FLOAT, 32);     /*   V16HF V8SF V4DF V2TF */
+VECTOR_MODES (FLOAT, 64);     /*  V32HF V16SF V8DF V4TF */
+VECTOR_MODES (FLOAT, 128);    /* V64HF V32SF V16DF V8TF */
+VECTOR_MODE (FLOAT, HF, 2);   /* 	      	   V2HF */
+VECTOR_MODE (FLOAT, BF, 2);   /* 	      	   V2BF */
+VECTOR_MODE (FLOAT, HF, 6);   /*		   V6HF */
+VECTOR_MODE (INT, TI, 1);     /*                   V1TI */
+VECTOR_MODE (INT, DI, 1);     /*                   V1DI */
+VECTOR_MODE (INT, SI, 1);     /*                   V1SI */
+VECTOR_MODE (INT, QI, 2);     /*                   V2QI */
+VECTOR_MODE (INT, QI, 12);    /*                  V12QI */
+VECTOR_MODE (INT, QI, 14);    /*                  V14QI */
+VECTOR_MODE (INT, HI, 6);     /*                   V6HI */
+
+INT_MODE (OI, 32);
+INT_MODE (XI, 64);
+
+/* Modes needs a consecutive register pair.
+   Note that Using PARTIAL_INT_MODE but not INT_MODE is to avoid mode promotion
+   issues.  */
+PARTIAL_INT_MODE (HI, 16, P2QI);
+PARTIAL_INT_MODE (SI, 32, P2HI);
+
+/* Mode used for signed overflow checking of TImode.  For the overflow
+   checking we actually need just 1 or 2 bits beyond TImode precision.
+   Use 160 bits to have a multiple of 32.  */
+PARTIAL_INT_MODE (OI, 160, POI);
+
+/* The symbol Pmode stands for one of the above machine modes (usually SImode).
+   The tm.h file specifies which one.  It is not a distinct mode.  */

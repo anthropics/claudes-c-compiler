@@ -1,0 +1,68 @@
+/* Definitions of prototypes for RISC-V built-in functions.  -*- C -*-
+   Copyright (C) 2011-2026 Free Software Foundation, Inc.
+   Contributed by Andrew Waterman (andrew@sifive.com).
+   Based on MIPS target for GNU compiler.
+
+This file is part of GCC.
+
+GCC is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 3, or (at your option)
+any later version.
+
+GCC is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with GCC; see the file COPYING3.  If not see
+<http://www.gnu.org/licenses/>.  */
+
+/* Invoke DEF_RISCV_FTYPE (NARGS, LIST) for each prototype used by
+   RISCV built-in functions, where:
+
+      NARGS is the number of arguments.
+      LIST contains the return-type code followed by the codes for each
+        argument type.  */
+
+DEF_RISCV_FTYPE (0, (USI))
+DEF_RISCV_FTYPE (0, (VOID))
+DEF_RISCV_FTYPE (1, (VOID, USI))
+DEF_RISCV_FTYPE (1, (VOID, VOID_PTR))
+DEF_RISCV_FTYPE (1, (USI, VOID_PTR))
+DEF_RISCV_FTYPE (1, (USI, USI))
+DEF_RISCV_FTYPE (1, (UDI, UDI))
+DEF_RISCV_FTYPE (1, (USI, UQI))
+DEF_RISCV_FTYPE (1, (USI, UHI))
+DEF_RISCV_FTYPE (1, (SI, QI))
+DEF_RISCV_FTYPE (1, (SI, HI))
+DEF_RISCV_FTYPE (1, (BF, SF))
+DEF_RISCV_FTYPE (1, (SF, BF))
+DEF_RISCV_FTYPE (2, (USI, UQI, UQI))
+DEF_RISCV_FTYPE (2, (USI, USI, UHI))
+DEF_RISCV_FTYPE (2, (USI, USI, QI))
+DEF_RISCV_FTYPE (2, (USI, USI, HI))
+DEF_RISCV_FTYPE (2, (USI, UHI, UHI))
+DEF_RISCV_FTYPE (2, (USI, USI, USI))
+DEF_RISCV_FTYPE (2, (USI, USI, UQI))
+DEF_RISCV_FTYPE (2, (UDI, UQI, UQI))
+DEF_RISCV_FTYPE (2, (UDI, UHI, UHI))
+DEF_RISCV_FTYPE (2, (UDI, USI, USI))
+DEF_RISCV_FTYPE (2, (UDI, UDI, UQI))
+DEF_RISCV_FTYPE (2, (UDI, UDI, USI))
+DEF_RISCV_FTYPE (2, (UDI, UDI, UDI))
+DEF_RISCV_FTYPE (2, (SI, USI, USI))
+DEF_RISCV_FTYPE (2, (SI, SI, SI))
+DEF_RISCV_FTYPE (2, (DI, UDI, UDI))
+DEF_RISCV_FTYPE (3, (USI, USI, USI, UQI))
+DEF_RISCV_FTYPE (3, (USI, USI, USI, QI))
+DEF_RISCV_FTYPE (3, (USI, USI, UQI, USI))
+DEF_RISCV_FTYPE (3, (USI, USI, QI, USI))
+DEF_RISCV_FTYPE (3, (USI, USI, UHI, USI))
+DEF_RISCV_FTYPE (3, (USI, USI, HI, USI))
+DEF_RISCV_FTYPE (3, (USI, USI, USI, USI))
+DEF_RISCV_FTYPE (3, (SI, SI, SI, UQI))
+DEF_RISCV_FTYPE (3, (SI, SI, SI, SI))
+DEF_RISCV_FTYPE (4, (USI, USI, USI, USI, UQI))
+DEF_RISCV_FTYPE (4, (SI, SI, SI, SI, UQI))

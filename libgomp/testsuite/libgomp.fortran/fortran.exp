@@ -1,0 +1,67 @@
+load_lib libgomp-dg.exp
+load_gcc_lib gcc-dg.exp
+load_gcc_lib gfortran-dg.exp
+
+if { $blddir != "" } {
+    set libgfortran_library_path "../libgfortran/.libs"
+    set shlib_ext [get_shlib_extension]
+    if { ![file exists "${blddir}/${libgfortran_library_path}/libgfortran.a"]
+	 && ![file exists "${blddir}/${libgfortran_library_path}/libgfortran.${shlib_ext}"] } {
+        verbose -log "No libgfortran library found, will not execute fortran tests"
+	unset libgfortran_library_path
+	return
+    }
+    lappend lang_library_paths $libgfortran_library_path
+
+    set libquadmath_library_path "../libquadmath/.libs"
+    if { [file exists "${blddir}/${libquadmath_library_path}/libquadmath.a"]
+	 || [file exists "${blddir}/${libquadmath_library_path}/libquadmath.${shlib_ext}"] } {
+	lappend lang_library_paths $libquadmath_library_path
+    } else {
+	set libquadmath_library_path ""
+    }
+} elseif { ![info exists GFORTRAN_UNDER_TEST] } {
+    verbose -log "GFORTRAN_UNDER_TEST not defined, will not execute fortran tests"
+    return
+}
+if { $blddir != "" } {
+    set lang_source_re {^.*\.[fF](|90|95|03|08)$}
+    set lang_include_flags "-fintrinsic-modules-path=${blddir}"
+}
+lappend ALWAYS_CFLAGS "compiler=$GFORTRAN_UNDER_TEST"
+
+# Initialize dg.
+dg-init
+
+# Turn on OpenMP.
+lappend ALWAYS_CFLAGS "additional_flags=-fopenmp"
+
+# Gather a list of all tests.
+set tests [lsort [find $srcdir/$subdir *.\[fF\]{,90,95,03,08}]]
+
+set ld_library_path $always_ld_library_path
+if { $blddir != "" } {
+    append ld_library_path ":${blddir}/${libgfortran_library_path}"
+
+    if { $libquadmath_library_path != "" } {
+	append ld_library_path ":${blddir}/${libquadmath_library_path}"
+    }
+}
+append ld_library_path [gcc-set-multilib-library-path $GCC_UNDER_TEST]
+set_ld_library_path_env_vars
+
+# For Fortran we're doing torture testing, as Fortran has far more tests
+# with arrays etc. that testing just -O0 or -O2 is insufficient, that is
+# typically not the case for C/C++.
+gfortran-dg-runtest $tests "" ""
+
+if { $blddir != "" } {
+    unset lang_source_re
+    unset lang_include_flags
+    unset libgfortran_library_path
+    unset libquadmath_library_path
+    unset lang_library_paths
+}
+
+# All done.
+dg-finish

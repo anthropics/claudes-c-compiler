@@ -1,0 +1,164 @@
+; Options for the HP PA-RISC port of the compiler.
+
+; Copyright (C) 2005-2026 Free Software Foundation, Inc.
+;
+; This file is part of GCC.
+;
+; GCC is free software; you can redistribute it and/or modify it under
+; the terms of the GNU General Public License as published by the Free
+; Software Foundation; either version 3, or (at your option) any later
+; version.
+;
+; GCC is distributed in the hope that it will be useful, but WITHOUT ANY
+; WARRANTY; without even the implied warranty of MERCHANTABILITY or
+; FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+; for more details.
+;
+; You should have received a copy of the GNU General Public License
+; along with GCC; see the file COPYING3.  If not see
+; <http://www.gnu.org/licenses/>.
+
+HeaderInclude
+config/pa/pa-opts.h
+
+; Which cpu we are scheduling for.
+Variable
+enum processor_type pa_cpu = TARGET_SCHED_DEFAULT
+
+march=1.0
+Target RejectNegative
+Generate PA1.0 code.
+
+march=1.1
+Target RejectNegative
+Generate PA1.1 code.
+
+march=2.0
+Target RejectNegative
+Generate PA2.0 code (requires binutils 2.10 or later).
+
+matomic-libcalls
+Target Var(TARGET_ATOMIC_LIBCALLS) Init(1)
+Generate libcalls for atomic loads and stores when sync libcalls are disabled.
+
+mbig-switch
+Target Ignore Undocumented
+Does nothing.  Preserved for backward compatibility.
+
+mcaller-copies
+Target Mask(CALLER_COPIES)
+Caller copies function arguments passed by hidden reference.
+
+mcoherent-ldcw
+Target Var(TARGET_COHERENT_LDCW) Init(0)
+Use ldcw/ldcd coherent cache-control hint.
+
+mdisable-fpregs
+Target Mask(SOFT_FLOAT)
+Disable FP regs.  Equivalent to -msoft-float.
+
+mdisable-indexing
+Target Mask(DISABLE_INDEXING)
+Disable indexed addressing.
+
+mfast-indirect-calls
+Target Mask(FAST_INDIRECT_CALLS)
+Generate fast indirect calls.
+
+mfixed-range=
+Target RejectNegative Joined Var(pa_deferred_options) Defer
+Specify range of registers to make fixed.
+
+mgas
+Target Mask(GAS)
+Assume code will be assembled by GAS.
+
+mjump-in-delay
+Target Ignore Undocumented
+Does nothing.  Preserved for backward compatibility.
+
+;; Not used by gcc
+mlinker-opt
+Target RejectNegative
+Enable linker optimizations.
+
+mlong-calls
+Target Mask(LONG_CALLS)
+Always generate long calls.
+
+mlra
+Target Var(pa_lra_p) Init(1) Undocumented
+Use LRA instead of reload (transitional).
+
+mlong-load-store
+Target Mask(LONG_LOAD_STORE)
+Emit long load/store sequences.
+
+mnosnake
+Target RejectNegative Undocumented
+Generate PA1.0 code.
+
+mno-space-regs
+Target RejectNegative Mask(NO_SPACE_REGS)
+Disable space regs.
+
+mordered
+Target Var(TARGET_ORDERED) Init(0)
+Assume memory references are ordered and barriers are not needed.
+
+mpa-risc-1-0
+Target RejectNegative
+Generate PA1.0 code.
+
+mpa-risc-1-1
+Target RejectNegative Mask(PA_11)
+Generate PA1.1 code.
+
+mpa-risc-2-0
+Target RejectNegative Mask(PA_20)
+Generate PA2.0 code (requires binutils 2.10 or later).
+
+mportable-runtime
+Target Mask(PORTABLE_RUNTIME)
+Use portable calling conventions.
+
+mschedule=
+Target RejectNegative Joined Enum(pa_schedule) Var(pa_cpu)
+Specify CPU for scheduling purposes.  Valid arguments are 700, 7100, 7100LC, 7200, 7300, and 8000.
+
+Enum
+Name(pa_schedule) Type(enum processor_type)
+
+EnumValue
+Enum(pa_schedule) String(8000) Value(PROCESSOR_8000)
+
+EnumValue
+Enum(pa_schedule) String(7100) Value(PROCESSOR_7100)
+
+EnumValue
+Enum(pa_schedule) String(700) Value(PROCESSOR_700)
+
+EnumValue
+Enum(pa_schedule) String(7100LC) Value(PROCESSOR_7100LC)
+
+EnumValue
+Enum(pa_schedule) String(7200) Value(PROCESSOR_7200)
+
+EnumValue
+Enum(pa_schedule) String(7300) Value(PROCESSOR_7300)
+
+msoft-float
+Target Mask(SOFT_FLOAT)
+Use software floating point.
+
+msoft-mult
+Target Mask(SOFT_MULT)
+Use software integer multiplication.
+
+msnake
+Target RejectNegative Undocumented
+Generate PA1.1 code.
+
+mspace-regs
+Target RejectNegative InverseMask(NO_SPACE_REGS)
+Do not disable space regs.

@@ -1,0 +1,44 @@
+! { dg-do compile }
+! { dg-options "-fopenmp" }
+! { dg-additional-options "-Wno-deprecated-openmp" }
+subroutine foo
+  integer :: i
+  !$omp do schedule (nonmonotonic: static, 2)
+  do i = 0, 64
+  end do
+  !$omp do schedule (nonmonotonic : static)
+  do i = 0, 64
+  end do
+  !$omp do schedule (nonmonotonic : runtime)
+  do i = 0, 64
+  end do
+  !$omp do schedule (nonmonotonic : auto)
+  do i = 0, 64
+  end do
+  !$omp do schedule (nonmonotonic : dynamic) ordered	! { dg-error "NONMONOTONIC schedule modifier specified with ORDERED clause" }
+  do i = 0, 64
+    !$omp ordered
+    !$omp end ordered
+  end do
+  !$omp do ordered schedule(nonmonotonic : dynamic, 5)	! { dg-error "NONMONOTONIC schedule modifier specified with ORDERED clause" }
+  do i = 0, 64
+    !$omp ordered
+    !$omp end ordered
+  end do
+  !$omp do schedule (nonmonotonic : guided) ordered(1)	! { dg-error "NONMONOTONIC schedule modifier specified with ORDERED clause" }
+  do i = 0, 64
+    !$omp ordered depend(sink: i - 1)
+    !$omp ordered depend(source)
+  end do
+  !$omp do ordered(1) schedule(nonmonotonic : guided, 2)	! { dg-error "NONMONOTONIC schedule modifier specified with ORDERED clause" }
+  do i = 0, 64
+    !$omp ordered depend(source)
+    !$ordered depend(sink: i - 1)
+  end do
+  !$omp do schedule (nonmonotonic , monotonic : dynamic)	! { dg-error "Both MONOTONIC and NONMONOTONIC schedule modifiers specified" }
+  do i = 0, 64
+  end do
+  !$omp do schedule (monotonic,nonmonotonic:dynamic)	! { dg-error "Both MONOTONIC and NONMONOTONIC schedule modifiers specified" }
+  do i = 0, 64
+  end do
+end subroutine foo

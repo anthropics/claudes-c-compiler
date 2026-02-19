@@ -1,0 +1,82 @@
+#   Copyright (C) 2008-2026 Free Software Foundation, Inc.
+
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+# 
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+# 
+# You should have received a copy of the GNU General Public License
+# along with GCC; see the file COPYING3.  If not see
+# <http://www.gnu.org/licenses/>.
+
+# GCC testsuite that uses the `dg.exp' driver.
+
+# Load support procs.
+load_lib gfortran-dg.exp
+
+if ![check_effective_target_fgraphite] {
+  return
+}
+
+# Remove VALUE from LIST_VARIABLE.
+proc lremove {list_variable value} {
+    upvar 1 $list_variable var
+    set idx [lsearch -exact $var $value]
+    set var [lreplace $var $idx $idx]
+}
+
+# The default action for a test is 'compile'.  Save current default.
+global dg-do-what-default
+set save-dg-do-what-default ${dg-do-what-default}
+
+# Initialize `dg'.
+dg-init
+
+set wait_to_run_files [lsort [glob -nocomplain $srcdir/$subdir/*.\[fF\]{,90,95,03,08} ] ]
+set id_files          [lsort [glob -nocomplain $srcdir/$subdir/id-*.\[fF\]{,90,95,03,08} ] ]
+set opt_files         [lsort [glob -nocomplain $srcdir/$subdir/interchange-*.\[fF\]{,90,95,03,08} \
+					       $srcdir/$subdir/block-*.\[fF\]{,90,95,03,08} ] ]
+set scop_files        [lsort [glob -nocomplain $srcdir/$subdir/scop-*.\[fF\]{,90,95,03,08} ] ]
+set run_id_files      [lsort [glob -nocomplain $srcdir/$subdir/run-id-*.\[fF\]{,90,95,03,08} ] ]
+set vect_files        [lsort [glob -nocomplain $srcdir/$subdir/vect-*.\[fF\]{,90,95,03,08} ] ]
+
+# Tests to be compiled.
+set dg-do-what-default compile
+gfortran-dg-runtest $scop_files        "" "-O2 -fgraphite -fdump-tree-graphite-all"
+gfortran-dg-runtest $id_files          "" "-O2 -fgraphite-identity -ffast-math"
+gfortran-dg-runtest $opt_files         "" "-O2 -floop-nest-optimize -ffast-math -fdump-tree-graphite-all"
+
+# Set up a list of effective targets to run vector tests for all supported
+# targets.
+global EFFECTIVE_TARGETS
+set EFFECTIVE_TARGETS ""
+
+# Vectorizer tests, to be run or compiled, depending on target capabilities.
+if [check_vect_support_and_set_flags] {
+   et-dg-runtest gfortran-dg-runtest $vect_files "" \
+      "-O2 -fgraphite-identity -ftree-vectorize -fno-vect-cost-model -fdump-tree-vect-details -ffast-math"
+}
+
+# Tests to be run.
+set dg-do-what-default run
+gfortran-dg-runtest $run_id_files      "" "-O2 -fgraphite-identity"
+
+# The default action for the rest of the files is 'compile'.
+set dg-do-what-default compile
+foreach f $id_files          {lremove wait_to_run_files $f}
+foreach f $opt_files         {lremove wait_to_run_files $f}
+foreach f $scop_files        {lremove wait_to_run_files $f}
+foreach f $run_id_files      {lremove wait_to_run_files $f}
+foreach f $vect_files        {lremove wait_to_run_files $f}
+gfortran-dg-runtest $wait_to_run_files "" ""
+
+# Clean up.
+set dg-do-what-default ${save-dg-do-what-default}
+
+# All done.
+dg-finish

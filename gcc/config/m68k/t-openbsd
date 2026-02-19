@@ -1,0 +1,4 @@
+# gdb gets confused if pic code is linked with non pic
+# We cope by building all variants of libgcc.
+M68K_MLIB_OPTIONS += fpic/fPIC
+M68K_MLIB_DIRNAMES += fpic fPIC

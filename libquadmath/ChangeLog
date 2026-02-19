@@ -1,0 +1,1385 @@
+2026-01-01  Jakub Jelinek  <jakub@redhat.com>
+
+	* libquadmath.texi: Bump @copying's copyright year.
+
+2025-12-29  Rainer Orth  <ro@CeBiTec.Uni-Bielefeld.DE>
+
+	* configure: Regenerate.
+
+2025-11-03  Sam James  <sam@gentoo.org>
+
+	* configure: Regenerate.
+
+2025-10-05  Sam James  <sam@gentoo.org>
+
+	* Makefile.in: Regenerate.
+	* aclocal.m4: Regenerate.
+	* configure: Regenerate.
+
+2025-04-09  Jakub Jelinek  <jakub@redhat.com>
+
+	* math/expq.c (C): Fix up THREEp96 constant.
+
+2025-04-07  Lulu Cheng  <chenglulu@loongson.cn>
+
+	PR target/119408
+	* configure.ac: When checking for __float128 support, determine
+	whether the current architecture is LoongArch.  If so, return false.
+	* configure: Regenerate.
+	Sigend-off-by: Xi Ruoyao <xry111@xry111.site>
+	Sigend-off-by: Jakub Jelinek <jakub@redhat.com>
+
+2025-04-01  Jakub Jelinek  <jakub@redhat.com>
+
+	* strtod/strtod_l.c (____STRTOF_INTERNAL): Avoid old-style function
+	definitions.
+	* printf/addmul_1.c (mpn_addmul_1): Likewise.
+	* printf/mul_1.c (mpn_mul_1): Likewise.
+	* printf/submul_1.c (mpn_submul_1): Likewise.
+
+2025-01-02  Jakub Jelinek  <jakub@redhat.com>
+
+	* libquadmath.texi: Bump @copying's copyright year.
+
+2024-08-28  Francois-Xavier Coudert  <fxcoudert@gcc.gnu.org>
+
+	* libquadmath.texi (M_LOG2Eq, M_LOG10Eq, M_1_PIq,
+	M_2_PIq, M_2_SQRTPIq, M_SQRT1_2q): Adjust descriptioni
+	of these constants.
+
+2024-08-03  Jakub Jelinek  <jakub@redhat.com>
+
+	PR target/116007
+	* math/sqrtq.c (TFtype): For PowerPC without __LONG_DOUBLE_IEEE128__
+	define to __float128 before including soft-fp.h and quad.h.
+
+2024-05-07  Rainer Orth  <ro@CeBiTec.Uni-Bielefeld.DE>
+
+	* Makefile.am [LIBQUAD_USE_SYMVER_SUN] (quadmath.map-sun): Pass
+	$(libquadmath_la_OBJECTS), $(libquadmath_la_LIBADD) to
+	make_sunver.pl unmodified.
+	* Makefile.in: Regenerate.
+
+2024-04-09  Jakub Jelinek  <jakub@redhat.com>
+
+	* sfp-machine.h (__LITTLE_ENDIAN, __BIG_ENDIAN, __BYTE_ORDER): Define
+	if __BYTE_ORDER isn't defined.
+
+2024-04-09  Jakub Jelinek  <jakub@redhat.com>
+
+	PR libquadmath/114623
+	* sfp-machine.h: New file.
+	* math/sqrtq.c: Include from libgcc/soft-fp also soft-fp.h and quad.h
+	if possible.
+	(USE_SOFT_FP): Define in that case.
+	(sqrtq): Use soft-fp based implementation for the finite positive
+	arguments if possible.
+
+2024-04-03  Simon Chopin  <simon.chopin@canonical.com>
+	    Jakub Jelinek  <jakub@redhat.com>
+
+	PR libquadmath/114533
+	* printf/printf_fp.c (__quadmath_printf_fp): Use memcpy to copy
+	__float128 out of args.
+	* printf/printf_fphex.c (__quadmath_printf_fphex): Likewise.
+
+2024-01-03  Jakub Jelinek  <jakub@redhat.com>
+
+	* libquadmath.texi: Bump @copying's copyright year.
+
+2023-12-22  Christophe Lyon  <christophe.lyon@linaro.org>
+
+	* Makefile.am: Allow overriding EXEPCT.
+	* Makefile.in: Regenerate.
+
+2023-12-12  Jakub Jelinek  <jakub@redhat.com>
+
+	PR libquadmath/112963
+	* configure.ac (LIBM): Readd AC_CHECK_LIBM-like check without doing
+	AC_CHECK_LIB in it.
+	* configure: Regenerated.
+	* Makefile.in: Regenerated.
+
+2023-10-23  Iain Sandoe  <iain@sandoe.co.uk>
+
+	PR libquadmath/111928
+	* Makefile.in: Regenerate.
+	* configure: Regenerate.
+	* configure.ac: Remove AC_CHECK_LIBM.
+
+2023-10-22  Iain Sandoe  <iain@sandoe.co.uk>
+
+	* Makefile.am: Handle Darwin rpaths.
+	* Makefile.in: Regenerate.
+	* configure: Regenerate.
+	* configure.ac: Handle Darwin rpaths.
+
+2023-08-07  Nick Alcock  <nick.alcock@oracle.com>
+
+	* configure: Regenerate.
+
+2023-08-07  Alexander von Gluck IV  <kallisti5@unixzen.com>
+
+	* configure: Regenerate.
+
+2023-08-07  Nick Alcock  <nick.alcock@oracle.com>
+
+	* configure: Regenerate.
+
+2023-08-07  Nick Alcock  <nick.alcock@oracle.com>
+
+	* configure: Regenerate.
+
+2023-08-07  H.J. Lu  <hjl.tools@gmail.com>
+
+	* configure: Regenerate.
+
+2023-08-07  H.J. Lu  <hjl.tools@gmail.com>
+
+	* configure: Regenerate.
+
+2023-03-02  niXman  <i.nixman@autistici.org>
+	    Jakub Jelinek  <jakub@redhat.com>
+
+	PR libquadmath/87204
+	PR libquadmath/94756
+	* printf/gmp-impl.h (mp_limb_t, mp_limb_signed_t, BITS_PER_MP_LIMB):
+	Use 64-bit limbs on LLP64 targets.
+	* strtod/strtod_l.c (round_and_return): Cherry-pick glibc
+	9310c284ae9 BZ #16151, 4406c41c1d6 BZ #16965 and fcd6b5ac36a
+	BZ #23279 fixes.
+	(____STRTOF_INTERNAL): Cherry-pick glibc b0debe14fcf BZ #23007,
+	5556d30caee BZ #18247, 09555b9721d and c6aac3bf366 BZ #26137 and
+	d84f25c7d87 fixes.
+
+2023-01-02  Jakub Jelinek  <jakub@redhat.com>
+
+	* libquadmath.texi: Bump @copying's copyright year.
+
+2022-11-14  Martin Liska  <mliska@suse.cz>
+
+	Revert:
+	2022-11-14  Martin Liska  <mliska@suse.cz>
+
+	* doc/conf.py: New file.
+	* doc/copyright.rst: New file.
+	* doc/gnu-free-documentation-license.rst: New file.
+	* doc/i-o-library-routines.rst: New file.
+	* doc/index.rst: New file.
+	* doc/indices-and-tables.rst: New file.
+	* doc/introduction.rst: New file.
+	* doc/math-library-routines.rst: New file.
+	* doc/quadmathsnprintf.rst: New file.
+	* doc/reporting-bugs.rst: New file.
+	* doc/strtoflt128.rst: New file.
+	* doc/typedef-and-constants.rst: New file.
+
+2022-11-14  Martin Liska  <mliska@suse.cz>
+
+	Revert:
+	2022-11-14  Martin Liska  <mliska@suse.cz>
+
+	* Makefile.in: Support Sphinx based documentation.
+
+2022-11-14  Martin Liska  <mliska@suse.cz>
+
+	Revert:
+	2022-11-14  Martin Liska  <mliska@suse.cz>
+
+	* libquadmath.texi: Removed.
+
+2022-11-14  Martin Liska  <mliska@suse.cz>
+
+	Revert:
+	2022-11-14  Martin Liska  <mliska@suse.cz>
+
+	* Makefile.in: Support --with-sphinx-build.
+	* configure.ac: Likewise.
+	* configure: Regenerate.
+
+2022-11-14  Martin Liska  <mliska@suse.cz>
+
+	Revert:
+	2022-11-14  Martin Liska  <mliska@suse.cz>
+
+	* Makefile.in: Build info pages conditionally.
+
+2022-11-14  Martin Liska  <mliska@suse.cz>
+
+	Revert:
+	2022-11-14  Martin Liska  <mliska@suse.cz>
+
+	* doc/copyright.rst:
+	Add trailing newline.
+	* doc/gnu-free-documentation-license.rst:
+	Add trailing newline.
+	* doc/i-o-library-routines.rst:
+	Add trailing newline.
+	* doc/index.rst:
+	Add trailing newline.
+	* doc/indices-and-tables.rst:
+	Add trailing newline.
+	* doc/introduction.rst:
+	Add trailing newline.
+	* doc/math-library-routines.rst:
+	Add trailing newline.
+	* doc/quadmathsnprintf.rst:
+	Add trailing newline.
+	* doc/reporting-bugs.rst:
+	Add trailing newline.
+	* doc/strtoflt128.rst:
+	Add trailing newline.
+	* doc/typedef-and-constants.rst:
+	Add trailing newline.
+
+2022-11-14  Martin Liska  <mliska@suse.cz>
+
+	Revert:
+	2022-11-14  Martin Liska  <mliska@suse.cz>
+
+	* Makefile.in: Add missing HAS_SPHINX_BUILD.
+
+2022-11-14  Martin Liska  <mliska@suse.cz>
+
+	Revert:
+	2022-11-14  Martin Liska  <mliska@suse.cz>
+
+	* doc/conf.py: Add newline at last line.
+
+2022-11-14  Martin Liska  <mliska@suse.cz>
+
+	Revert:
+	2022-11-14  Martin Liska  <mliska@suse.cz>
+
+	PR other/107620
+	* configure: Regenerate.
+	* configure.ac: Always set sphinx-build.
+
+2022-11-13  Martin Liska  <mliska@suse.cz>
+
+	PR other/107620
+	* configure: Regenerate.
+	* configure.ac: Always set sphinx-build.
+
+2022-11-10  Martin Liska  <mliska@suse.cz>
+
+	* doc/conf.py: Add newline at last line.
+
+2022-11-09  Martin Liska  <mliska@suse.cz>
+
+	* Makefile.in: Add missing HAS_SPHINX_BUILD.
+
+2022-11-09  Martin Liska  <mliska@suse.cz>
+
+	* doc/copyright.rst:
+	Add trailing newline.
+	* doc/gnu-free-documentation-license.rst:
+	Add trailing newline.
+	* doc/i-o-library-routines.rst:
+	Add trailing newline.
+	* doc/index.rst:
+	Add trailing newline.
+	* doc/indices-and-tables.rst:
+	Add trailing newline.
+	* doc/introduction.rst:
+	Add trailing newline.
+	* doc/math-library-routines.rst:
+	Add trailing newline.
+	* doc/quadmathsnprintf.rst:
+	Add trailing newline.
+	* doc/reporting-bugs.rst:
+	Add trailing newline.
+	* doc/strtoflt128.rst:
+	Add trailing newline.
+	* doc/typedef-and-constants.rst:
+	Add trailing newline.
+
+2022-11-09  Martin Liska  <mliska@suse.cz>
+
+	* Makefile.in: Build info pages conditionally.
+
+2022-11-09  Martin Liska  <mliska@suse.cz>
+
+	* Makefile.in: Support --with-sphinx-build.
+	* configure.ac: Likewise.
+	* configure: Regenerate.
+
+2022-11-09  Martin Liska  <mliska@suse.cz>
+
+	* libquadmath.texi: Removed.
+
+2022-11-09  Martin Liska  <mliska@suse.cz>
+
+	* Makefile.in: Support Sphinx based documentation.
+
+2022-11-09  Martin Liska  <mliska@suse.cz>
+
+	* doc/conf.py: New file.
+	* doc/copyright.rst: New file.
+	* doc/gnu-free-documentation-license.rst: New file.
+	* doc/i-o-library-routines.rst: New file.
+	* doc/index.rst: New file.
+	* doc/indices-and-tables.rst: New file.
+	* doc/introduction.rst: New file.
+	* doc/math-library-routines.rst: New file.
+	* doc/quadmathsnprintf.rst: New file.
+	* doc/reporting-bugs.rst: New file.
+	* doc/strtoflt128.rst: New file.
+	* doc/typedef-and-constants.rst: New file.
+
+2022-10-12  Martin Liska  <mliska@suse.cz>
+
+	* configure: Regenerate.
+
+2022-10-11  Olivier Hainque  <hainque@adacore.com>
+	    Olivier Hainque  <hainque@adacore.com>
+
+	* configure: Regenerate.
+
+2022-08-25  Martin Liska  <mliska@suse.cz>
+
+	* configure: Regenerate.
+
+2022-01-11  Jakub Jelinek  <jakub@redhat.com>
+
+	* configure.ac: Set XCFLAGS to -mno-gnu-attribute on
+	powerpc64le*-linux*.
+	* configure: Regenerated.
+
+2022-01-03  Jakub Jelinek  <jakub@redhat.com>
+
+	* libquadmath.texi: Bump @copying's copyright year.
+
+2021-06-08  Martin Liska  <mliska@suse.cz>
+
+	* libquadmath.texi: Fix typo.
+
+2021-01-05  Samuel Thibault  <samuel.thibault@ens-lyon.org>
+
+	* configure: Re-generate.
+
+2021-01-01  Jakub Jelinek  <jakub@redhat.com>
+
+	* libquadmath.texi: Bump @copying's copyright year.
+
+2020-12-05  Iain Sandoe  <iain@sandoe.co.uk>
+
+	PR target/97865
+	* configure: Regenerate.
+
+2020-11-29  John David Anglin  <danglin@gcc.gnu.org>
+
+	* configure: Regenerate.
+
+2020-05-29  H.J. Lu  <hjl.tools@gmail.com>
+
+	PR bootstrap/95413
+	* configure: Regenerated.
+
+2020-05-15  H.J. Lu  <hongjiu.lu@intel.com>
+
+	PR bootstrap/95147
+	* configure: Regenerated.
+
+2020-05-14  H.J. Lu  <hongjiu.lu@intel.com>
+
+	* configure: Regenerated.
+
+2020-02-12  Sandra Loosemore  <sandra@codesourcery.com>
+
+	PR libstdc++/79193
+	PR libstdc++/88999
+
+	* configure: Regenerated.
+
+2020-01-24  Maciej W. Rozycki  <macro@wdc.com>
+
+	* configure.ac: Handle `--with-toolexeclibdir='.
+	* Makefile.in: Regenerate.
+	* aclocal.m4: Regenerate.
+	* configure: Regenerate.
+
+2020-01-01  Jakub Jelinek  <jakub@redhat.com>
+
+	Update copyright years.
+
+	* libquadmath.texi: Bump @copying's copyright year.
+
+2019-09-27  Maciej W. Rozycki  <macro@wdc.com>
+
+	* configure: Regenerate.
+
+2019-08-02  Jakub Jelinek  <jakub@redhat.com>
+
+	* quadmath.h (M_Eq, M_LOG2Eq, M_LOG10Eq, M_LN2q, M_LN10q, M_PIq,
+	M_PI_2q, M_PI_4q, M_1_PIq, M_2_PIq, M_2_SQRTPIq, M_SQRT2q,
+	M_SQRT1_2q): Use two more decimal places.
+
+2019-01-01  Jakub Jelinek  <jakub@redhat.com>
+
+	Update copyright years.
+
+	* libquadmath.texi: Bump @copying's copyright year.
+
+2018-12-11  Jakub Jelinek  <jakub@redhat.com>
+
+	PR c/88430
+	* quadmath_weak.h (__qmath2): Add __quadmath_throw.
+
+2018-11-07  Joseph Myers  <joseph@codesourcery.com>
+
+	* quadmath-imp.h (ieee854_float128): Use mantissa0, mantissa1,
+	mantissa2 and mantissa3 fields instead of mant_high and mant_low.
+	Change nan field to ieee_nan.
+	* update-quadmath.py (update_sources): Also update fmaq.c.
+	* math/nanq.c (nanq): Use ieee_nan field of union.
+	Zero-initialize f.  Set quiet_nan field.
+	* printf/flt1282mpn.c, printf/printf_fphex.c, strtod/mpn2flt128.c,
+	strtod/strtoflt128.c: Use mantissa0, mantissa1, mantissa2 and
+	mantissa3 fields.  Use ieee_nan and quiet_nan field.
+	* math/fmaq.c: Regenerate from glibc sources with
+	update-quadmath.py.
+
+2018-11-05  Joseph Myers  <joseph@codesourcery.com>
+
+	PR libquadmath/68686
+	* Makefile.am: (libquadmath_la_SOURCES): Remove math/isinf_nsq.c.
+	Add math/exp2q.c math/issignalingq.c math/lgammaq_neg.c
+	math/lgammaq_product.c math/tanq_kernel.c math/tgammaq_product.c
+	math/casinhq_kernel.c.
+	* Makefile.in: Regenerate.
+	* libquadmath.texi (exp2q, issignalingq): Document.
+	* quadmath-imp.h: Include <errno.h>, <limits.h>, <stdbool.h> and
+	<fenv.h>.
+	(HIGH_ORDER_BIT_IS_SET_FOR_SNAN, FIX_FLT128_LONG_CONVERT_OVERFLOW)
+	(FIX_FLT128_LLONG_CONVERT_OVERFLOW, __quadmath_kernel_tanq)
+	(__quadmath_gamma_productq, __quadmath_gammaq_r)
+	(__quadmath_lgamma_negq, __quadmath_lgamma_productq)
+	(__quadmath_lgammaq_r, __quadmath_kernel_casinhq, mul_splitq)
+	(math_check_force_underflow_complex, __glibc_likely)
+	(__glibc_unlikely, struct rm_ctx, SET_RESTORE_ROUNDF128)
+	(libc_feholdsetround_ctx, libc_feresetround_ctx): New.
+	(feraiseexcept, fenv_t, feholdexcept, fesetround, feupdateenv)
+	(fesetenv, fetestexcept, feclearexcept): Define if not supported
+	through <fenv.h>.
+	(__quadmath_isinf_nsq): Remove.
+	* quadmath.h (exp2q, issignalingq): New.
+	* quadmath.map (QUADMATH_1.2): New.
+	* quadmath_weak.h (exp2q, issignalingq): New.
+	* update-quadmath.py: New file.
+	* math/isinf_nsq.c: Remove file.
+	* math/casinhq_kernel.c, math/exp2q.c, math/expq_table.h,
+	math/issignalingq.c, math/lgammaq_neg.c, math/lgammaq_product.c,
+	math/tanq_kernel.c, math/tgammaq_product.c: New files.  Generated
+	from glibc sources with update-quadmath.py.
+	* math/acoshq.c, math/acosq.c, math/asinhq.c, math/asinq.c,
+	math/atan2q.c, math/atanhq.c, math/atanq.c, math/cacoshq.c,
+	math/cacosq.c, math/casinhq.c, math/casinq.c, math/catanhq.c,
+	math/catanq.c, math/cbrtq.c, math/ccoshq.c, math/ceilq.c,
+	math/cexpq.c, math/cimagq.c, math/clog10q.c, math/clogq.c,
+	math/conjq.c, math/copysignq.c, math/coshq.c, math/cosq.c,
+	math/cosq_kernel.c, math/cprojq.c, math/crealq.c, math/csinhq.c,
+	math/csinq.c, math/csqrtq.c, math/ctanhq.c, math/ctanq.c,
+	math/erfq.c, math/expm1q.c, math/expq.c, math/fabsq.c,
+	math/fdimq.c, math/finiteq.c, math/floorq.c, math/fmaxq.c,
+	math/fminq.c, math/fmodq.c, math/frexpq.c, math/hypotq.c,
+	math/ilogbq.c, math/isinfq.c, math/isnanq.c, math/j0q.c,
+	math/j1q.c, math/jnq.c, math/ldexpq.c, math/lgammaq.c,
+	math/llrintq.c, math/llroundq.c, math/log10q.c, math/log1pq.c,
+	math/log2q.c, math/logbq.c, math/logq.c, math/lrintq.c,
+	math/lroundq.c, math/modfq.c, math/nearbyintq.c,
+	math/nextafterq.c, math/powq.c, math/remainderq.c, math/remquoq.c,
+	math/rintq.c, math/roundq.c, math/scalblnq.c, math/scalbnq.c,
+	math/signbitq.c, math/sincos_table.c, math/sincosq.c,
+	math/sincosq_kernel.c, math/sinhq.c, math/sinq.c,
+	math/sinq_kernel.c, math/tanhq.c, math/tanq.c, math/tgammaq.c,
+	math/truncq.c, math/x2y2m1q.c: Regenerate from glibc sources with
+	update-quadmath.py.
+
+2018-10-31  Joseph Myers  <joseph@codesourcery.com>
+
+	PR bootstrap/82856
+	* Makefile.am: Include multilib.am.
+	(AUTOMAKE_OPTIONS): Remove 1.8.  Add info-in-builddir.
+	(all-local): Define outside conditional code.
+	(CLEANFILES): Remove libquadmath.info.
+	* configure.ac: Remove AC_PREREQ.
+	* Makefile.in, aclocal.m4, config.h.in, configure: Regenerate.
+
+2018-04-24  H.J. Lu  <hongjiu.lu@intel.com>
+
+	* configure: Regenerated.
+
+2018-04-19  Jakub Jelinek  <jakub@redhat.com>
+
+	* configure: Regenerated.
+
+2018-04-18  David Malcolm  <dmalcolm@redhat.com>
+
+	PR jit/85384
+	* configure: Regenerate.
+
+2018-02-14  Igor Tsimbalist  <igor.v.tsimbalist@intel.com>
+
+	PR target/84148
+	* configure: Regenerate.
+
+2018-01-03  Jakub Jelinek  <jakub@redhat.com>
+
+	* libquadmath.texi: Bump @copying's copyright year.
+
+2017-11-17  Igor Tsimbalist  <igor.v.tsimbalist@intel.com>
+
+	* Makefile.am: Update AM_CFLAGS.
+	* Makefile.in: Regenerate:
+	* acinclude.m4: Add enable.m4 and cet.m4.
+	* configure: Regenerate.
+	* configure.ac: Set CET_FLAGS. Update XCFLAGS.
+
+2017-11-05  Tom de Vries  <tom@codesourcery.com>
+
+	PR other/82784
+	* printf/gmp-impl.h (MPN_MUL_N_RECURSE): Remove semicolon after
+	"do {} while (0)".
+
+2017-09-01  Michael Meissner  <meissner@linux.vnet.ibm.com>
+
+	PR libquadmath/81848
+	* configure.ac (powerpc*-linux*): Use attribute mode KC to create
+	complex __float128 on PowerPC instead of attribute mode TC.
+	* quadmath.h (__complex128): Likewise.
+	* configure: Regenerate.
+	* math/cbrtq.c (CBRT2): Use __float128 not long double.
+	(CBRT4): Likewise.
+	(CBRT2I): Likewise.
+	(CBRT4I): Likewise.
+	* math/j0q.c (U0): Likewise.
+	* math/sqrtq.c (sqrtq): Don't depend on implicit conversion
+	between __float128, instead explicitly convert the __float128
+	value to long double because the PowerPC does not allow __float128
+	and long double in the same expression.
+
+2017-07-19  Gerald Pfeifer  <gerald@pfeifer.com>
+
+	* math/powq.c (powq): Use uint32_t instead of u_int32_t.
+
+2017-07-19  Jakub Jelinek  <jakub@redhat.com>
+
+	PR libquadmath/65757
+	* quadmath-imp.h (math_opt_barrier, math_force_eval,
+	math_narrow_eval, math_check_force_underflow,
+	math_check_force_underflow_nonneg): Define.
+	* math/ceilq.c: Backport changes from upstream glibc
+	between 2012-11-01 and 2017-07-13.
+	* math/remquoq.c: Likewise.
+	* math/expq.c: Likewise.
+	* math/llroundq.c: Likewise.
+	* math/logq.c: Likewise.
+	* math/atanq.c: Likewise.
+	* math/nearbyintq.c: Likewise.
+	* math/scalblnq.c: Likewise.
+	* math/finiteq.c: Likewise.
+	* math/atanhq.c: Likewise.
+	* math/expm1q.c: Likewise.
+	* math/sinhq.c: Likewise.
+	* math/log10q.c: Likewise.
+	* math/rintq.c: Likewise.
+	* math/roundq.c: Likewise.
+	* math/fmaq.c: Likewise.
+	* math/erfq.c: Likewise.
+	* math/log2q.c: Likewise.
+	* math/lroundq.c: Likewise.
+	* math/j1q.c: Likewise.
+	* math/scalbnq.c: Likewise.
+	* math/truncq.c: Likewise.
+	* math/frexpq.c: Likewise.
+	* math/sincosq.c: Likewise.
+	* math/tanhq.c: Likewise.
+	* math/asinq.c: Likewise.
+	* math/coshq.c: Likewise.
+	* math/j0q.c: Likewise.
+	* math/asinhq.c: Likewise.
+	* math/floorq.c: Likewise.
+	* math/sinq_kernel.c: Likewise.
+	* math/powq.c: Likewise.
+	* math/hypotq.c: Likewise.
+	* math/sincos_table.c: Likewise.
+	* math/rem_pio2q.c: Likewise.
+	* math/nextafterq.c: Likewise.
+	* math/log1pq.c: Likewise.
+	* math/sincosq_kernel.c: Likewise.
+	* math/tanq.c: Likewise.
+	* math/acosq.c: Likewise.
+	* math/lrintq.c: Likewise.
+	* math/llrintq.c: Likewise.
+
+2017-02-09  Gerald Pfeifer  <gerald@pfeifer.com>
+
+	* configure.ac (ACX_BUGURL): Update.
+	* configure: Regenerate.
+
+2017-01-17  Jakub Jelinek  <jakub@redhat.com>
+
+	PR other/79046
+	* configure.ac: Add GCC_BASE_VER.
+	* Makefile.am (gcc_version): Use @get_gcc_base_ver@ instead of cat to
+	get version from BASE-VER file.
+	* configure: Regenerated.
+	* Makefile.in: Regenerated.
+
+2017-01-01  Jakub Jelinek  <jakub@redhat.com>
+
+	* libquadmath.texi: Bump @copying's copyright year.
+
+2016-11-15  Matthias Klose  <doko@ubuntu.com>
+
+	* configure: Regenerate.
+
+2016-01-04  Jakub Jelinek  <jakub@redhat.com>
+
+	* libquadmath.texi: Bump @copying's copyright year.
+
+2015-08-09  Francois-Xavier Coudert  <fxcoudert@gcc.gnu.org>
+
+	* Makefile.am (libquadmath_la_SOURCES): Add matha/logbq.c.
+	* Makefile.in: Regenerate.
+	* libquadmath.texi: Document logbq.
+	* quadmath.h: Add logbq prototype.
+	* quadmath.map: Add logbq.
+	* quadmath_weak.h: Add logbq prototype.
+	* math/logbq.c: New file
+
+2015-05-13  Michael Haubenwallner  <michael.haubenwallner@ssi-schaefer.com>
+
+	* Makefile.in: Regenerated with automake-1.11.6.
+	* aclocal.m4: Likewise.
+	* configure: Likewise.
+
+2015-01-26  Matthias Klose  <doko@ubuntu.com>
+
+	* configure.ac: Move AM_ENABLE_MULTILIB before AC_PROG_CC.
+	* configure: Regenerate.
+
+2015-01-05  Jakub Jelinek  <jakub@redhat.com>
+
+	* libquadmath.texi: Bump @copying's copyright year.
+
+2014-11-21  H.J. Lu  <hongjiu.lu@intel.com>
+
+	PR bootstrap/63784
+	* configure: Regenerated.
+
+2014-11-11  Francois-Xavier Coudert  <fxcoudert@gcc.gnu.org>
+
+	PR target/63610
+	* configure: Regenerate.
+
+2014-10-21  Francois-Xavier Coudert  <fxcoudert@gcc.gnu.org>
+
+	PR libquadmath/55821
+	* Makefile.am: Unconditionally define libquadmath_TEXINFOS.
+	* Makefile.in: Regenerate.
+
+2014-10-09  Francois-Xavier Coudert  <fxcoudert@gcc.gnu.org>
+
+	PR libquadmath/55821
+	* Makefile.am: Conditionally define info_TEXINFOS and
+	libquadmath_TEXINFOS.
+	* Makefile.in: Regenerate.
+
+2014-10-08  Francois-Xavier Coudert  <fxcoudert@gcc.gnu.org>
+
+	PR libquadmath/63487
+	* libquadmath.texi (sincosq): Fix typo.
+
+2014-01-02  Tobias Burnus  <burnus@net-b.de>
+
+	* libquadmath.texi: Bump @copying's copyright year.
+
+2013-12-04  Richard Sandiford  <rdsandiford@googlemail.com>
+
+	* Makefile.am (AM_CPPFLAGS): Define.
+	* Makefile.in: Regenerate.
+	* printf/gmp-impl.h: Remove path from longlong.h include.
+
+2013-09-20  Alan Modra  <amodra@gmail.com>
+
+	* configure: Regenerate.
+
+2013-03-06  Shakthi Kannan  <shakthimaan@gmail.com>
+
+	PR libquadmath/55473
+	* quadmath.h: Add 'extern "C"' block for C++ use.
+
+2013-02-19  Jakub Jelinek  <jakub@redhat.com>
+
+	PR libquadmath/56379
+	* strtod/strtod_l.c (mpn_lshift_1): Rewritten as function-like
+	macro.
+
+2013-02-17  Tobias Burnus  <burnus@net-b.de>
+
+	* math/cacoshq.c (cacoshq): Call signbitq instead of signbit.
+
+2013-02-06  Richard Sandiford  <rdsandiford@googlemail.com>
+
+	Revert previous patch.
+
+2013-02-03  Richard Sandiford  <rdsandiford@googlemail.com>
+
+	Update copyright years.
+
+2013-01-22  Jakub Jelinek  <jakub@redhat.com>
+
+	PR libquadmath/56072
+	* libquadmath.texi (M_PI_2q, M_PI_4q): Fix up description.
+
+2012-12-13  Jakub Jelinek  <jakub@redhat.com>
+
+	* math/cbrtq.c (cbrtq): Use Q suffixed floating point constants
+	instead of L suffixed ones.
+	* math/fmaq.c (fmaq): Likewise.
+	* math/rintq.c (TWO112): Likewise.
+
+2012-12-03  Tobias Burnus  <burnus@net-b.de>
+
+	* strtod/strtod_l.c (___STRTOF_INTERNAL): Fix exponent
+	reading.
+
+2012-11-25  Tobias Burnus  <burnus@net-b.de>
+
+	PR libquadmath/55462
+	* strtod/strtod_l.c (round_and_return): Use HAVE_FENV_H
+	instead of nonexisting HAVE_GET_ROUNDING_MODE.
+
+2012-11-23  H.J. Lu  <hongjiu.lu@intel.com>
+
+	PR bootstrap/55455
+	* quadmath-rounding-mode.h (get_rounding_mode): Don't pass
+	void to fegetround.
+
+2012-11-23  Tobias Burnus  <burnus@net-b.de>
+	    Joseph Myers  <joseph@codesourcery.com>
+
+	* quadmath-rounding-mode.h: New.
+	* printf/fpioconst.c: Update from GLIBC. Fix strtod rounding.
+	* printf/fpioconst.h: Ditto.
+	* printf/printf_fp.c (__quadmath_printf_fp): Update from GLIBC.
+	Make printf respect the rounding mode for decimal output.
+	* printf/printf_fphex.c (__quadmath_printf_fphex): Update from
+	GLIBC.  Make printf respect the rounding mode for hex output.
+	* strtod/strtod_l.c: Update from GLIBC. Make strtod respect the
+	rounding mode. Fix strtod handling of underflow.
+
+2012-11-22  David S. Miller  <davem@davemloft.net>
+	    Tobias Burnus  <burnus@net-b.de>
+	    Joseph Myers  <joseph@codesourcery.com>
+
+	* math/atanq.c (atanq): Update from GLIBC. Handle tiny and
+	very large arguments properly.
+	* math/j0q.c (y0q): Update from GLIBC. Avoid arithmetic
+	underflow when 'x' is very small.
+	* math/j1q.c (y1q): Ditto.
+	* math/log1pq.c (log1pq): Update from GLIBC. Saturate
+	nonzero exponents with absolute value below 0x1p-128 to
+	+/- 0x1p-128.
+	* math/powq.c (powq): Update from GLIBC. If xm1 is
+	smaller than LDBL_EPSILON/2.0L, just return xm1.
+
+2012-11-21  Tobias Burnus  <burnus@net-b.de>
+
+	PR libquadmath/55225
+	* math/lgammaq.c (lgammaq): Use local variable if
+	math.h does not provide signgam.
+	* acinclude.m4 (LIBQUAD_CHECK_MATH_H_SIGNGAM): New check.
+	* configure.ac: Use it.
+	* configure: Regenerate.
+	* config.h.in: Regenerate.
+
+2012-11-15  Tobias Burnus  <burnus@net-b.de>
+	    Joseph Myers  <joseph@codesourcery.com>
+
+	* math/fmaq.c (fmaq): Merge from GLIBC. Fix fma
+	underflows with small x * y; Fix overflow results
+	outside round-to-nearest mode; make use of Dekker
+	and Knuth algorithms use round-to-nearest.
+
+2012-11-01  Tobias Burnus  <burnus@net-b.de>
+
+	* math/fmaq.c (fmaq): Fix build.
+
+2012-11-01  Tobias Burnus  <burnus@net-b.de>
+	    Joseph Myers  <joseph@codesourcery.com>
+
+	* math/fmaq.c (fmaq): Merge from GLIBC. Handle cases
+	with small x * y using scaling, not as x * y + z.
+	* math/lgammaq.c (lgammaq): Fix signgam handling.
+
+2012-11-01  Tobias Burnus  <burnus@net-b.de>
+
+	* Makefile.am (libquadmath_la_SOURCES): Add new math/* files.
+	* Makefile.in: Regenerated.
+	* math/acoshq.c: Update comment.
+	* math/acosq.c: Ditto.
+	* math/asinhq.c: Ditto.
+	* math/asinq.c: Ditto.
+	* math/atan2q.c: Ditto.
+	* math/atanhq.c: Ditto.
+	* math/ceilq.c: Ditto.
+	* math/copysignq.c: Ditto.
+	* math/cosq.c: Ditto.
+	* math/coshq.c: Ditto.
+	* math/erfq.c: Ditto.
+	* math/fabsq.c: Ditto.
+	* math/finiteq.c: Ditto.
+	* math/floorq.c: Ditto.
+	* math/fmodq.c: Ditto.
+	* math/frexpq.c: Ditto.
+	* math/isnanq.c: Ditto.
+	* math/j0q.c: Ditto.
+	* math/j1q.c: Ditto.
+	* math/ldexpq.c: Ditto.
+	* math/llroundq.c: Ditto.
+	* math/log10q.c: Ditto.
+	* math/log1pq.c: Ditto.
+	* math/log2q.c: Ditto.
+	* math/logq.c: Ditto.
+	* math/lroundq.c: Ditto.
+	* math/modfq.c: Ditto.
+	* math/nextafterq.c: Ditto.
+	* math/powq.c: Ditto.
+	* math/rem_pio2q.c: Ditto.
+	* math/remainderq.c: Ditto.
+	* math/rintq.c: Ditto.
+	* math/roundq.c: Ditto.
+	* math/scalblnq.c: Ditto.
+	* math/scalbnq.c: Ditto.
+	* math/sincosq_kernel.c: Ditto.
+	* math/sinq.c: Ditto.
+	* math/tanq.c: Ditto.
+	* math/expq.c: Ditto.
+	(__expq_table, expq): Renamed local array from __expl_table.
+	* math/cosq_kernel.c (__quadmath_kernel_cosq): Fix sign handling.
+	* math/cacoshq.c: Changes from GLIBC; fix returned sign.
+	* math/casinhq.c: Changes from GLIBC to fix special-case.
+	* math/cbrtq.c: Use modified GLIBC version.
+	* math/complex.c (ccoshd, cexpq, clog10q, clogq, csinhq, csinq,
+	ctanhq, ctanq): Moved to separates files.
+	(mult_c128, div_c128): Removed no longer needed functions.
+	(cexpiq): Call sincosq instead of sinq and cosq.
+	(cosq): Call cosh(-re,im) instead of cosq/sinq/sinh/cosh.
+	* math/ccoshq.c (ccoshq): New file, moved from complex.c and
+	modified based on GLIBC.
+	* math/cexpq.c (cexp): Ditto.
+	* math/clog10q.c (clog10q): Ditto.
+	* math/clogq.c (clogq): Ditto.
+	* math/csinhq.c: Ditto.
+	* math/csinq.c: Ditto.
+	* math/csqrtq.c: Ditto.
+	* math/ctanhq.c: Ditto.
+	* math/ctanq.c: Ditto.
+	* math/fmaq.c (fmaq): Port TININESS_AFTER_ROUNDING handling
+	from GLIBC.
+	* math/ilogbq.c (ilogbq): Add errno = EDOM handling.
+	* math/isinf_nsq.c (__quadmath_isinf_nsq): New file, ported
+	from GLIBC.
+	* math/lgammaq.c (lgammaq): Add signgam handling.
+	* math/sinhq.c (sinhq): Fix sign handling.
+	* math/sinq_kernel.c (__quadmath_kernel_sinq): Ditto.
+	* math/tgammaq.c (tgammaq): Ditto.
+	* math/x2y2m1q.c: New file.
+	* quadmath-imp.h (TININESS_AFTER_ROUNDING): New define.
+	(__quadmath_x2y2m1q, __quadmath_isinf_nsq): New prototypes.
+
+2012-10-31  Tobias Burnus  <burnus@net-b.de>
+	    Joseph Myers <joseph@codesourcery.com>
+	    David S. Miller <davem@davemloft.net>
+	    Ulrich Drepper <drepper@redhat.com>
+	    Marek Polacek <polacek@redhat.com>:
+	    Petr Baudis <pasky@suse.cz>
+
+	* math/complex.c (csqrtq): NaN and INF fixes. 
+	* math/sqrtq.c (sqrt): NaN, INF and < 0 fixes.
+	* math/expm1q.c (expm1q): Changes from GLIBC. Use expq for
+	large parameters. Fix errno for boundary conditions.
+	* math/finiteq.c (finiteq): Add comment.
+	* math/fmaq.c (fmaq): Changes from GLIBC. Fix missing underflows
+	and bad results for some subnormal results. Fix sign of inexact
+	zero return. Fix sign of exact zero return. 
+	Ensure additions are not scheduled after fetestexcept.
+	* math/jnq.c (jnq): Changes from GLIBC. Set up errno properly
+	for ynq. Fix jnq precision.
+	* math/nearbyintq.c (nearbyintq): Changes from GLIBC. Do not
+	manipulate bits before adding and subtracting TWO112[sx].
+	* math/rintq.c (rintq): Ditto.
+	* math/scalbnq.c (scalbnq): Changes from GLIBC. Fix integer
+	overflow.
+
+2012-09-14  David Edelsohn  <dje.gcc@gmail.com>
+
+	* configure: Regenerated.
+
+2012-05-29  Benjamin Kosnik  <bkoz@redhat.com>
+
+	PR libstdc++/51007
+	* configure.ac: Allow gnu, gnu* variants for --enable-symvers argument.
+	* configure: Regenerated.
+
+2012-05-16  H.J. Lu  <hongjiu.lu@intel.com>
+
+	* configure: Regenerated.
+
+2011-11-21  Andreas Tobler  <andreast@fgznet.ch>
+
+	* configure: Regenerate.
+
+2011-11-07  Kai Tietz  <ktietz@redhat.com>
+
+	PR target/51007
+	* quadmath-imp.h (ieee854_float128): Adjust
+	for ms-bitfield layout.
+
+2011-11-02  Rainer Orth  <ro@CeBiTec.Uni-Bielefeld.DE>
+
+	* printf/gmp-impl.h: Adapt path to longlong.h.
+
+2011-09-21  Joseph Myers  <joseph@codesourcery.com>
+
+	* Makefile.am (FLAGS_TO_PASS): Define.
+	* Makefile.in: Regenerate.
+
+2011-08-01  Jakub Jelinek  <jakub@redhat.com>
+
+	* math/rem_pio2q.c (__quadmath_kernel_rem_pio2): Fix up fq to y
+	conversion for prec 3 and __FLT_EVAL_METHOD__ != 0.
+
+2011-04-03  Tobias Burnus  <burnus@net-b.de>
+
+	PR fortran/48311
+	* libquadmath.texi (strtoflt128): Fix typo.
+	(quadmath_snprintf): Move note up, make @item.
+
+2011-03-25  Jakub Jelinek  <jakub@redhat.com>
+
+	* printf/printf_fp.c (__quadmath_printf_fp): Use memcpy instead of
+	mempcpy.
+
+2011-03-21  Rainer Orth  <ro@CeBiTec.Uni-Bielefeld.DE>
+
+	PR bootstrap/48135
+	* configure.ac (quadmath_use_symver): Handle --disable-symvers.
+	* configure: Regenerate.
+
+2011-02-28  Jakub Jelinek  <jakub@redhat.com>
+
+	* printf/quadmath-printf.c (quadmath_snprintf): Make sure
+	that for size > 0 str is always zero terminated.
+
+2011-02-20  Jakub Jelinek  <jakub@redhat.com>
+
+	PR bootstrap/47827
+	* printf/quadmath-printf.h (NAN): Redefine to __builtin_nanf ("").
+
+2011-02-17  Jakub Jelinek  <jakub@redhat.com>
+
+	* libquadmath.texi (FLT128_DIG, FLT128_MIN_10_EXP,
+	FLT128_MAX_10_EXP): Document.
+	(strtoflt128): Remove obsolete comment.
+	* configure.ac (HAVE_STRTOULL): New check.
+	* printf/gmp-impl.h (mpn_construct_float128): New prototype,
+	define.
+	* printf/mul_n.c: Include <config.h>.
+	* printf/add_n.c: Likewise.
+	* printf/cmp.c: Likewise.
+	* printf/fpioconst.c: Likewise.
+	* printf/mul_1.c: Likewise.
+	* printf/rshift.c: Likewise.
+	* printf/lshift.c: Likewise.
+	* printf/submul_1.c: Likewise.
+	* printf/sub_n.c: Likewise.
+	* printf/divrem.c: Likewise.
+	* printf/addmul_1.c: Likewise.
+	* printf/mul.c: Likewise.
+	* printf/quadmath-printf.h (isupper, isdigit, tolower): Change
+	to avoid evaluating argument multiple times.
+	(isxdigit): Redefine.
+	* strtod/strtoflt128.c: New file.
+	* strtod/strtod_l.c: New file.
+	* strtod/mpn2flt128.c: New file.
+	* strtod/grouping.h: New file.
+	* strtod/tens_in_limb.c: New file.
+	* gdtoa/arith.h: Removed.
+	* gdtoa/gd_qnan.h: Removed.
+	* gdtoa/gdtoa_fltrnds.h: Removed.
+	* gdtoa/gdtoa.h: Removed.
+	* gdtoa/gdtoaimp.h: Removed.
+	* gdtoa/gethex.c: Removed.
+	* gdtoa/gmisc.c: Removed.
+	* gdtoa/hd_init.c: Removed.
+	* gdtoa/hexnan.c: Removed.
+	* gdtoa/makefile: Removed.
+	* gdtoa/misc.c: Removed.
+	* gdtoa/README.gdtoa: Removed.
+	* gdtoa/smisc.c: Removed.
+	* gdtoa/strtodg.c: Removed.
+	* gdtoa/strtopQ.c: Removed.
+	* gdtoa/sum.c: Removed.
+	* quadmath.h (FLT128_DIG, FLT128_MIN_10_EXP, FLT128_MAX_10_EXP):
+	Define.
+	* Makefile.am (libquadmath_la_SOURCES): Remove gdtoa/*, add
+	strtod/strtoflt128.c, strtod/mpn2flt128.c and strtod/tens_in_limb.c.
+	* config.h.in: Regenerated.
+	* configure: Regenerated.
+	* Makefile.in: Regenerated.
+
+2011-02-16  Jakub Jelinek  <jakub@redhat.com>
+
+	* printf/quadmath-printf.c: Also check __GLIBC__ when checking
+	whether workarounds for printf hook handling should be added.
+
+	* configure.ac: Check for locale.h too.
+	(USE_LOCALE_SUPPORT): Remove check.
+	(USE_NL_LANGINFO, USE_NL_LANGINFO_WC, USE_LOCALECONV): New checks.
+	(USE_I18_NUMBER_H): Check also for _NL_CTYPE_MB_CUR_MAX.
+	* printf/printf_fphex.c (__quadmath_printf_fphex): Use nl_langinfo
+	or localeconv for narrow version and nl_langinfo if USE_NL_LANGINFO_WC
+	for wide version.
+	* printf/quadmath-printf.h: Include locale.h if HAVE_LOCALE_H.
+	* printf/printf_fp.c (USE_I18N_NUMBER_H): Don't define to 0.
+	(__quadmath_printf_fp): Use nl_langinfo or localeconv for narrow
+	version and nl_langinfo if USE_NL_LANGINFO_WC for wide version.
+	Guard nl_langinfo (_NL_CTYPE_MB_CUR_MAX) use with
+	USE_I18N_NUMBER_H #ifdef.
+	* configure: Regenerated.
+	* config.h.in: Regenerated.
+
+2011-02-14  Jakub Jelinek  <jakub@redhat.com>
+
+	PR bootstrap/47736
+	* configure.ac (HAVE_PRINTF_HOOKS): Test if printf_info struct has
+	user field.
+	* printf/quadmath-printf.c (quadmath_snprintf): Clear whole info
+	field instead of setting individual fields to 0.  Don't set info.user
+	to -1.
+	* configure: Regenerated.
+
+	* configure.ac (HAVE_HIDDEN_VISIBILITY): Test with -Werror in CFLAGS.
+	* printf/printf_fp.c: Don't include <alloca.h>.
+	* printf/quadmath-printf.h (_itoa): Redefine to __quadmath_itoa.
+	* configure: Regenerated.
+
+	PR fortran/47642
+	* libquadmath.texi (quadmath_snprintf): Document.
+	(quadmath_flt128tostr): Remove.
+	* Makefile.am (libquadmath_la_SOURCES): Add printf/*.c.
+	Remove  quadmath_io.c, gdtoa/gdtoa.c, gdtoa/g__fmt.c,
+	gdtoa/g_Qfmt.c, gdtoa/dmisc.c and gdtoa/ulp.c.
+	* quadmath.h (quadmath_snprintf): New prototype.
+	(quadmath_flt128tostr): Remove.
+	* quadmath_weak.h (quadmath_snprintf): Add.
+	(quadmath_flt128tostr): Remove.
+	* configure.ac: New AC_CHECK_HEADERS headers: langinfo.h, wchar.h,
+	wctype.h, limits.h, ctype.h, printf.h, errno.h.
+	(AC_USE_SYSTEM_EXTENSIONS): Add.
+	(HAVE_HIDDEN_VISIBILITY, HAVE_PRINTF_HOOKS,
+	USE_LOCALE_SUPPORT, USE_I18N_NUMBER_H): New checks.
+	* quadmath.map (QUADMATH_1.0): Add quadmath_snprintf.  Remove
+	quadmath_flt128tostr.
+	* printf/printf_fphex.c: New file.
+	* printf/_itowa.h: New file.
+	* printf/mul_n.c: New file.
+	* printf/quadmath-printf.h: New file.
+	* printf/submul_1.c: New file.
+	* printf/quadmath-printf.c: New file.
+	* printf/gmp-impl.h: New file.
+	* printf/lshift.c: New file.
+	* printf/fpioconst.h: New file.
+	* printf/add_n.c: New file.
+	* printf/cmp.c: New file.
+	* printf/sub_n.c: New file.
+	* printf/mul.c: New file.
+	* printf/divrem.c: New file.
+	* printf/addmul_1.c: New file.
+	* printf/printf_fp.c: New file.
+	* printf/_itoa.h: New file.
+	* printf/fpioconst.c: New file.
+	* printf/_i18n_number.h: New file.
+	* printf/flt1282mpn.c: New file.
+	* printf/rshift.c: New file.
+	* printf/mul_1.c: New file.
+	* quadmath_io.c: Removed.
+	* gdtoa/gdtoa.c: Removed.
+	* gdtoa/g__fmt.c: Removed.
+	* gdtoa/g_Qfmt.c: Removed.
+	* gdtoa/dmisc.c: Removed.
+	* gdtoa/ulp.c: Removed.
+	* config.h.in: Regenerated.
+	* configure: Regenerated.
+	* Makefile.in: Regenerated.
+
+2011-02-13  Ralf Wildenhues  <Ralf.Wildenhues@gmx.de>
+
+	* Makefile.in: Regenerate.
+	* aclocal.m4: Likewise.
+	* configure: Likewise.
+
+2011-01-31  Jerry DeLisle  <jvdelisle@gcc.gnu.org>
+
+	PR libquadmath/47293
+	* gdtoa/qd_qnan.h: Fix NAN bit patterns.
+	* gdtoa/strtopQ.c (strtoflt128): Handle endianess with NAN.
+
+2011-01-17  Tobias Burnus  <burnus@net-b.de>
+
+	PR fortran/47295
+	* libquadmath.text: Document typedef and constants.
+
+2011-01-17  Tobias Burnus  <burnus@net-b.de>
+
+	PR fortran/46817
+	* quadmath-imp.h: Refer to libquadmath not ot libiberty,
+	bump copyright year and use /**/ instead of // comments.
+	* quadmath.h: Ditto.
+	* quadmath-weak.h: Ditto.
+	* quadmath_io.c: Ditto.
+
+2011-01-16  Jakub Jelinek  <jakub@redhat.com>
+
+	PR libfortran/47322
+	* math/remquoq.c (remquoq): Use uint64_t type instead of u_int64_t.
+
+	PR fortran/46625
+	* quadmath.map (QUADMATH_1.0): Remove quadmath_strtopQ
+	and quadmath_dtoaq.  Add strtoflt128 and quadmath_flt128tostr.
+	* quadmath_weak.h (quadmath_strtopQ, quadmath_dtoaq): Remove.
+	(strtoflt128, quadmath_flt128tostr): Add.
+	* gdtoa/strtopQ.c (quadmath_strtopQ): Rename to...
+	(strtoflt128): ... this.  Return __float128, instead of writing
+	to memory pointed by last argument.
+	* quadmath.h: Use C style comments instead of C++ style.
+	(quadmath_strtopQ, quadmath_dtoaq): Remove prototypes.
+	(strtoflt128, quadmath_flt128tostr): Add prototypes.
+	* libquadmath.texi (quadmath_dtoaq): Rename to quadmath_flt128tostr.
+	(quadmath_strtopQ): Rename to strtoflt128.  Adjust prototype,
+	adjust examples.
+	* quadmath_io.c (quadmath_dtoaq): Rename to...
+	(quadmath_flt128tostr): ... this.
+
+	* quadmath.h (__quadmath_throw, __quadmath_nth): Define.
+	Use it for all prototypes.
+
+	PR fortran/46416
+	* quadmath.h (cbrtq, finiteq, isnanq, signbitq, sqrtq): Remove
+	const from prototype argument.
+	(cimagq, conjq, cprojq, crealq, fdimq, fmaxq, fminq, ilogbq,
+	llrintq, log2q, lrintq, nearbyintq, remquoq): New prototypes.
+	(__quadmath_extern_inline): Define.
+	(cimagq, conjq, crealq): New inlines.
+	* Makefile.am (libquadmath_la_SOURCES): Add math/cimagq.c,
+	math/conjq.c, math/cprojq.c, math/crealq.c, math/fdimq.c,
+	math/fmaxq.c, math/fminq.c, math/ilogbq.c, math/llrintq.c,
+	math/log2q.c, math/lrintq.c, math/nearbyintq.c and math/remquoq.c.
+	* Makefile.in: Regenerated.
+	* quadmath_weak.h (cimagq, conjq, cprojq, crealq, fdimq, fmaxq,
+	fminq, ilogbq, llrintq, log2q, lrintq, nearbyintq, remquoq): Add.
+	* quadmath-imp.h (__LITTLE_ENDIAN__): Don't define.
+	(ieee854_float128): Use __BYTE_ORDER == __ORDER_BIG_ENDIAN__
+	tests instead of __BIG_ENDIAN__.
+	* quadmath.map (QUADMATH_1.0): Add cimagq, conjq, cprojq, crealq,
+	fdimq, fmaxq, fminq, ilogbq, llrintq, log2q, lrintq, nearbyintq
+	and remquoq.
+	* libquadmath.texi (cimagq, conjq, cprojq, crealq, fdimq, fmaxq,
+	fminq, ilogbq, llrintq, log2q, lrintq, nearbyintq, remquoq): Add.
+	* math/cprojq.c: New file.
+	* math/ilogbq.c: New file.
+	* math/fminq.c: New file.
+	* math/llrintq.c: New file.
+	* math/log2q.c: New file.
+	* math/lrintq.c: New file.
+	* math/crealq.c: New file.
+	* math/nearbyintq.c: New file.
+	* math/fmaxq.c: New file.
+	* math/conjq.c: New file.
+	* math/remquoq.c: New file.
+	* math/cimagq.c: New file.
+	* math/fdimq.c: New file.
+
+	* math/ldexpq.c: Include errno.h.  Set errno to ERANGE if needed.
+
+	PR fortran/46416
+	* quadmath.h (cacosq, cacoshq, casinq, casinhq, catanq, catanhq):
+	New prototypes.
+	(M_Eq, M_LOG2Eq, M_LOG10Eq, M_LN2q, M_LN10q, M_PIq, M_PI_2q, M_PI_4q,
+	M_1_PIq, M_2_PIq, M_2_SQRTPIq, M_SQRT2q, M_SQRT1_2q): Define.
+	* quadmath_weak.h (cacosq, cacoshq, casinq, casinhq, catanq,
+	catanhq): Add.
+	* quadmath-imp.h (fpclassifyq, QUADFP_NAN, QUADFP_INFINITE,
+	QUADFP_ZERO, QUADFP_SUBNORMAL, QUADFP_NORMAL): Define.
+	* quadmath.map (QUADMATH_1.0): Add cacosq, cacoshq, casinq, casinhq,
+	catanq and catanhq.
+	* Makefile.am (libquadmath_la_SOURCES): Add math/cacosq.c,
+	math/cacoshq.c, math/casinq.c, math/casinhq.c, math/catanq.c
+	and math/catanhq.c.
+	* Makefile.in: Regenerated.
+	* libquadmath.texi (cacosq, cacoshq, casinq, casinhq,
+	catanq, catanhq): Add.
+	* math/cacoshq.c: New file.
+	* math/cacosq.c: New file.
+	* math/catanq.c: New file.
+	* math/catanhq.c: New file.
+	* math/casinq.c: New file.
+	* math/casinhq.c: New file.
+
+	* math/hypotq.c (hypotq): Use Q suffix instead of L.
+	* math/atan2q.c (tiny, pi_o_4, pi_o_2, pi, pi_lo, atan2q): Likewise.
+	* math/cosq.c (cosq): Likewise.
+
+	PR fortran/46402
+	* quadmath.map (QUADMATH_1.0): Add fmaq.
+	* configure.ac: Check for fenv.h, feholdexcept, fesetround,
+	feupdateenv, fesetenv and fetestexcept.
+	* configure: Regenerated.
+	* config.h.in: Regenerated.
+	* quadmath.h (fmaq): New prototype.
+	* quadmath_weak.h (fmaq): Add.
+	* Makefile.am (libquadmath_la_SOURCES): Add math/fmaq.c.
+	* Makefile.in: Regenerated.
+	* quadmath-imp.h: Include config.h.
+	* math/expq.c: Include fenv.h.
+	(USE_FENV_H): Define if libm support for fe* is there.
+	(expq): Add fesetround etc. support if USE_FENV_H is defined.
+	* math/fmaq.c: New file.
+	* libquadmath.texi (fmaq): Add.
+
+2011-01-14  Tobias Burnus  <burnus@net-b.de>
+
+	PR fortran/47182
+	* configure.ac: Use ACX_BUGURL.
+	* libquadmath.texi: Include libquadmath-vers.texi for BUGURL.
+	* Makefile.am: Create libquadmath-vers.texi.
+	* configure.in: Regenerate.
+	* Makefile.in: Regenerate.
+
+2011-01-06  Ralf Wildenhues  <Ralf.Wildenhues@gmx.de>
+
+	PR fortran/47174
+	* Makefile.am (libquadmath.info): Unconditionally override
+	target, not only if BUILD_LIBQUADMATH.
+	* Makefile.in: Regenerate.
+	* configure.ac (AM_INIT_AUTOMAKE): Add -Wno-override option to
+	avoid warning from automake.
+
+2010-12-19  Tobias Burnus  <burnus@net-b.de>
+
+	PR fortran/46520
+	* configure.ac: Do not call AC_CHECK_LIB for gcc_no_link.
+	* configure: Regenerate
+
+2010-12-13  Tobias Burnus  <burnus@net-b.de>
+
+	PR fortran/46625
+	* gdtoa/gdtoaimp.h: Mangle internal functions by
+	prefixing them with __quadmath. Don't use gdtoa's strcp(y).
+	* gdtoa/g_Qfmt.c (g_Qfmt): Use strcpy instead of strcp.
+	* gdtoa/misc.c (strcpy): Renamed from strcp and only use
+	if NO_STRING_H is set.
+	* quadmath-imp.h (__quadmath_rem_pio2q, __quadmath_kernel_sincosq
+	__quadmath_kernel_sinq, __quadmath_kernel_cosq): Added
+	__quadmath prefix to internal functions.
+	* math/cosq.c (cosq): Ditto.
+	* math/sinq.c (cosq): Ditto.
+	* math/tanq.c (tanq,__quadmath_kernel_tanq): Ditto.
+	* math/rem_pio2q.c (rem_pio2, __quadmath_kernel_rem_pio2): Ditto.
+	* math/sinq_kernel.c (__quadmath_kernel_sinq): Ditto.
+	* math/cosq_kernel.c (__quadmath_kernel_cosq): Ditto.
+
+2010-12-08  Tobias Burnus  <burnus@net-b.de>
+
+	PR fortran/46772
+	* gdtoa/gdtoa.h: Include stdlib.h instead of declare strtod.
+	* gdtoa/gdtoaimp.h: Don't declare strtod.
+
+2010-12-08  Tobias Burnus  <burnus@net-b.de>
+
+	PR fortran/46520
+	* configure.ac: Use GCC_TRY_COMPILE_OR_LINK instead of
+	AC_TRY_LINK and cache libquad_have_float128.
+	* configure: Regenerate.
+
+2010-12-08  Tobias Burnus  <burnus@net-b.de>
+
+	PR fortran/46543
+	* configure.ac: Add texinfo checks.
+	* Makefile.am: Handle .texi documentation.
+	* libquadmath.texi: New.
+	* configure: Regenerated.
+	* Makefile.in: Regenerated.
+
+2010-12-06  Tobias Burnus  <burnus@net-b.de>
+
+	PR fortran/46817
+	* quadmath-imp.h: Add LGPL header.
+	* quadmath.h: Add LGPL header.
+	* quadmath_io.c: Add LGPL header.
+	* quadmath_weak.h: Add LGPL header.
+
+2010-12-06  Dave Korn  <dave.korn.cygwin@gmail.com>
+
+	PR target/40125
+	PR lto/46695
+	* configure.ac: Invoke ACX_LT_HOST_FLAGS.
+	* Makefile.am (libquadmath_la_LDFLAGS): Use lt_host_flags.
+	* aclocal.m4: Regenerate.
+	* configure: Regenerate.
+	* Makefile.in: Regenerate.
+
+2010-11-30  Tobias Burnus  <burnus@net-b.de>
+
+	PR fortran/46594
+	* Makefile.am: Install include files in
+	target/version specific directory.
+	* Makefile.in: Regenerate.
+
+2010-11-30  Tobias Burnus  <burnus@net-b.de>
+
+	* acinclude.m4 (LIBGOMP_CHECK_SYNC_BUILTINS,
+	LIBGOMP_CHECK_ATTRIBUTE_VISIBILITY,
+	LIBGOMP_CHECK_ATTRIBUTE_DLLEXPORT): Remove.
+
+2010-11-29  Kai Tietz  <kai.tietz@onevision.com>
+
+	* configure: Regenerated.
+	* Makefile.in: Regenerated.
+	* configure.ac (ACX_NONCANONICAL_TARGET): Call it.
+	(target_alias): Use AC_SUBST for it.
+	(GCC_NO_EXECUTABLES): Call it.
+	(AC_PROG_CC): Improve multilib handling.
+	Check that gcc is used for compilation.
+	Use pattern from libssp for symbol versioning checking.
+	* Makefile.am (LTLDFLAGS): Removed.
+	(libquadmath_la_LDFLAGS): Add -no-undefined.
+	(libquadmath_la_LINK): Commented out.
+	(libquadmath_la_DEPENDENCIES): Add libquadmath_la_LIBADD.
+	(AM_MAKEFLAGS): Add hack for argument passing by top-level.
+	(MAKEOVERRIDES): New.
+	* aclocal.m4: Regenerated.
+
+2010-11-19  Rainer Orth  <ro@CeBiTec.Uni-Bielefeld.DE>
+
+	* Makefile.am (libquadmath_la_LIBADD): Move -lm ...
+	(libquadmath_la_LDFLAGS): ... here.
+	(quadmath.map-sun): Tabify.
+	Fix sed expression.
+	* Makefile.in: Regenerate.
+
+2010-11-16  Francois-Xavier Coudert  <fxcoudert@gcc.gnu.org>
+	    Tobias Burnus  <burnus@net-b.de>
+
+	PR fortran/32049
+	Initial implementation and checkin.
+
+Copyright (C) 2010-2026 Free Software Foundation, Inc.
+
+Copying and distribution of this file, with or without modification,
+are permitted in any medium without royalty provided the copyright
+notice and this notice are preserved.

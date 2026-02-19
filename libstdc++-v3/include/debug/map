@@ -1,0 +1,69 @@
+// Debugging map/multimap implementation -*- C++ -*-
+
+// Copyright (C) 2003-2026 Free Software Foundation, Inc.
+//
+// This file is part of the GNU ISO C++ Library.  This library is free
+// software; you can redistribute it and/or modify it under the
+// terms of the GNU General Public License as published by the
+// Free Software Foundation; either version 3, or (at your option)
+// any later version.
+
+// This library is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+
+// Under Section 7 of GPL version 3, you are granted additional
+// permissions described in the GCC Runtime Library Exception, version
+// 3.1, as published by the Free Software Foundation.
+
+// You should have received a copy of the GNU General Public License and
+// a copy of the GCC Runtime Library Exception along with this program;
+// see the files COPYING3 and COPYING.RUNTIME respectively.  If not, see
+// <http://www.gnu.org/licenses/>.
+
+/** @file debug/map
+ *  This file is a GNU debug extension to the Standard C++ Library.
+ */
+
+#ifndef _GLIBCXX_DEBUG_MAP
+#define _GLIBCXX_DEBUG_MAP 1
+
+#ifdef _GLIBCXX_SYSHDR
+#pragma GCC system_header
+#endif
+
+#include <bits/c++config.h>
+namespace std _GLIBCXX_VISIBILITY(default) { namespace __debug {
+  template<typename _Key, typename _Tp, typename _Cmp, typename _Allocator>
+    class map;
+  template<typename _Key, typename _Tp, typename _Cmp, typename _Allocator>
+    class multimap;
+} } // namespace std::__debug
+
+#include <map>
+#include <debug/map.h>
+#include <debug/multimap.h>
+
+#ifdef __glibcxx_erase_if // C++ >= 20 && HOSTED
+namespace std _GLIBCXX_VISIBILITY(default)
+{
+_GLIBCXX_BEGIN_NAMESPACE_VERSION
+  template<typename _Key, typename _Tp, typename _Compare, typename _Alloc,
+	   typename _Predicate>
+    inline typename __debug::map<_Key, _Tp, _Compare, _Alloc>::size_type
+    erase_if(__debug::map<_Key, _Tp, _Compare, _Alloc>& __cont,
+	     _Predicate __pred)
+    { return __detail::__erase_nodes_if(__cont, __cont._M_base(), __pred); }
+
+  template<typename _Key, typename _Tp, typename _Compare, typename _Alloc,
+	   typename _Predicate>
+    inline typename __debug::multimap<_Key, _Tp, _Compare, _Alloc>::size_type
+    erase_if(__debug::multimap<_Key, _Tp, _Compare, _Alloc>& __cont,
+	     _Predicate __pred)
+    { return __detail::__erase_nodes_if(__cont, __cont._M_base(), __pred); }
+_GLIBCXX_END_NAMESPACE_VERSION
+} // namespace std
+#endif // __glibcxx_erase_if
+
+#endif

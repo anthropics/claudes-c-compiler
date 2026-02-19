@@ -1,0 +1,65 @@
+# GCC Makefile fragment for Synopsys DesignWare ARC
+
+# Copyright (C) 2007-2026 Free Software Foundation, Inc.
+# Contributor: Joern Rennecke <joern.rennecke@embecosm.com>
+#              on behalf of Synopsys Inc.
+
+# This file is part of GCC.
+
+# GCC is free software; you can redistribute it and/or modify it under the
+# terms of the GNU General Public License as published by the Free Software
+# Foundation; either version 3, or (at your option) any later version.
+
+# GCC is distributed in the hope that it will be useful, but WITHOUT ANY
+# WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+# FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
+# details.
+
+# You should have received a copy of the GNU General Public License along
+# with GCC; see the file COPYING3.  If not see
+# <http://www.gnu.org/licenses/>.
+
+CROSS_LIBGCC1 = libgcc1-asm.a
+LIB1ASMSRC = arc/lib1funcs.S
+LIB1ASMFUNCS = _mulsi3 _umulsidi3  _umulsi3_highpart _muldi3 \
+  _udivsi3 _divsi3 _umodsi3 _modsi3 \
+  _divmod_tools _clzsi2 \
+  _millicodethunk_st _millicodethunk_ld _millicodethunk_ret \
+  _adddf3 _muldf3 _addsf3 _mulsf3 _divsf3 _divdf3 _truncdfsf2 _extendsfdf2 \
+  _eqdf2 _eqsf2 _gedf2 _gesf2 _gtdf2 _gtsf2 _uneqdf2 _uneqsf2 _ordsf2 _orddf2 \
+  _fixdfsi _fixsfsi _floatsidf _floatsisf _fixunsdfsi _floatunsidf
+
+#LIBGCC2_CFLAGS = -g1 -O2 $(LIBGCC2_INCLUDES) $(GCC_CFLAGS)
+
+# For floating-point emulation, we mostly use hand-coded assembly.
+# We use fp-bit.c for debugging purposes, and some parts of it
+# as a fallback for hardware configurations for which the hand-coded
+# assembly support is incomplete, i.e., where there is no NORM and/or no
+# supported multiply instruction.  Using floating point on such a
+# configuration is generally inadvisable, but we got to provide support
+# somehow so that we can run the testsuites.
+# fp-hack.h / dp-hack.h take care of slecting the parts that are needed,
+# and (for debugging) of renaming functions so that they can be
+# used in an asm wrapper.
+
+LIB2ADD = fp-bit.c dp-bit.c
+LIB2ADD += $(srcdir)/config/arc/lib2funcs.c
+
+dp-bit.c: $(srcdir)/fp-bit.c
+	echo '#ifndef __big_endian__' > dp-bit.c
+	echo '#endif' >> dp-bit.c
+	echo '#include "fp-bit.h"' >> dp-bit.c
+	echo '#include "config/arc/dp-hack.h"' >> dp-bit.c
+	grep -v 'include.*fp-bit.h' $(srcdir)/fp-bit.c >> dp-bit.c
+
+fp-bit.c: $(srcdir)/fp-bit.c
+	echo '#define FLOAT' > fp-bit.c
+	echo '#ifndef __big_endian__' >> fp-bit.c
+	echo '#endif' >> fp-bit.c
+	echo '#include "config/arc/fp-hack.h"' >> fp-bit.c
+	cat $(srcdir)/fp-bit.c >> fp-bit.c
+
+# .init/.fini section routines
+
+crttls.o: $(srcdir)/config/arc/crttls.S
+	$(crt_compile) -c -x assembler-with-cpp $<

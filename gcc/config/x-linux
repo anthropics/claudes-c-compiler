@@ -1,0 +1,3 @@
+host-linux.o : $(srcdir)/config/host-linux.cc
+	  $(COMPILE) $<
+	  $(POSTCOMPILE)

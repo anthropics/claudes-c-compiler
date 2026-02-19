@@ -1,0 +1,70 @@
+# Copyright (C) 2006-2026 Free Software Foundation, Inc.
+#
+# This file is part of GCC.
+#
+# GCC is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3, or (at your option)
+# any later version.
+#
+# GCC is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with GCC; see the file COPYING3.  If not see
+# <http://www.gnu.org/licenses/>.
+
+# This harness is for tests that should be run at all optimisation levels.
+
+load_lib target-supports.exp
+
+# Exit immediately if this isn't a x86 target.
+if { ![istarget i?86*-*-*] && ![istarget x86_64-*-*] } then {
+  return
+}
+
+set MATH_TORTURE_OPTIONS [list \
+        { -O0 } \
+        { -O0 -mfpmath=387 } \
+        { -O0 -mfpmath=387 -ffast-math } \
+        { -O2 } \
+        { -O2 -mfpmath=387 } \
+        { -O2 -mfpmath=387 -ffast-math } \
+]
+
+if { [check_effective_target_sse] } {
+    lappend MATH_TORTURE_OPTIONS \
+        { -O0 -msse -mno-sse2 -mfpmath=sse } \
+        { -O0 -msse -mno-sse2 -mfpmath=sse,387 } \
+        { -O0 -msse -mno-sse2 -mfpmath=sse -ffast-math } \
+        { -O0 -msse -mno-sse2 -mfpmath=sse,387 -ffast-math } \
+        { -O2 -msse -mno-sse2 -mfpmath=sse } \
+        { -O2 -msse -mno-sse2 -mfpmath=sse,387 } \
+        { -O2 -msse -mno-sse2 -mfpmath=sse -ffast-math } \
+        { -O2 -msse -mno-sse2 -mfpmath=sse,387 -ffast-math } \
+}
+
+if { [check_effective_target_sse2] } {
+    lappend MATH_TORTURE_OPTIONS \
+        { -O0 -msse -msse2 -mfpmath=sse } \
+        { -O0 -msse -msse2 -mfpmath=sse,387 } \
+        { -O0 -msse -msse2 -mfpmath=sse -ffast-math } \
+        { -O0 -msse -msse2 -mfpmath=sse,387 -ffast-math } \
+        { -O2 -msse -msse2 -mfpmath=sse } \
+        { -O2 -msse -msse2 -mfpmath=sse,387 } \
+        { -O2 -msse -msse2 -mfpmath=sse -ffast-math } \
+        { -O2 -msse -msse2 -mfpmath=sse,387 -ffast-math } \
+}
+
+load_lib gcc-dg.exp
+load_lib torture-options.exp
+
+torture-init
+set-torture-options $MATH_TORTURE_OPTIONS {{}} $LTO_TORTURE_OPTIONS
+
+dg-init
+gcc-dg-runtest [lsort [glob $srcdir/$subdir/*.c]] "" ""
+torture-finish
+dg-finish

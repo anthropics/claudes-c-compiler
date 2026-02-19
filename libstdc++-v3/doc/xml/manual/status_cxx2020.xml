@@ -1,0 +1,5953 @@
+<section xmlns="http://docbook.org/ns/docbook" version="5.0"
+   xml:id="status.iso.2020" xreflabel="Status C++ 2020">
+<?dbhtml filename="status_iso_cxx2020.html"?>
+
+<info><title>C++ 2020</title>
+  <keywordset>
+    <keyword>ISO C++</keyword>
+    <keyword>2020</keyword>
+  </keywordset>
+</info>
+
+<para>
+In this implementation the <literal>-std=gnu++20</literal> or
+<literal>-std=c++20</literal> flag must be used to enable language
+and library
+features. See <link linkend="manual.intro.using.flags">dialect</link>
+options. The pre-defined symbol
+<constant>__cplusplus</constant> is used to check for the
+presence of the required flag.
+</para>
+
+<para>
+This section describes the C++20 and library TS support in
+mainline GCC, not in any particular release.
+</para>
+
+<para>
+The following table lists new library features that are included in
+the C++20 standard. The "Proposal" column provides a link to the
+ISO C++ committee proposal that describes the feature, while the "Status"
+column indicates the first version of GCC that contains an implementation of
+this feature (if it has been implemented).
+A dash (&#x2014;) in the status column indicates that the changes in the proposal
+either do not affect the code in libstdc++, or the changes are not required for conformance.
+The "SD-6 Feature Test / Notes" column shows the corresponding macro or header from
+<link xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="https://isocpp.org/std/standing-documents/sd-6-sg10-feature-test-recommendations">SD-6:
+Feature-testing recommendations for C++</link> (where applicable)
+or any notes about the implementation.
+</para>
+
+<table frame="all" xml:id="table.cxx20_features">
+<title>C++ 2020 Library Features</title>
+
+<tgroup cols="4" align="left" colsep="0" rowsep="1">
+<colspec colname="c1"/>
+<colspec colname="c2"/>
+<colspec colname="c3"/>
+<colspec colname="c4"/>
+  <thead>
+    <row>
+      <entry>Library Feature</entry>
+      <entry>Proposal</entry>
+      <entry>Status</entry>
+      <entry>SD-6 Feature Test / Notes</entry>
+    </row>
+  </thead>
+
+  <tbody>
+
+    <row>
+      <entry namest="c1" nameend="c4" align="left">
+        <emphasis role="bold">Compile-time programming</emphasis>
+      </entry>
+    </row>
+
+    <row>
+      <entry>  Add constexpr modifiers to functions in <code>&lt;algorithm&gt;</code> and <code>&lt;utility&gt;</code> Headers </entry>
+      <entry>
+        <link xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2017/p0202r3.html">
+        P0202R3 </link>
+      </entry>
+      <entry align="center"> 10.1 </entry>
+      <entry> <code>__cpp_lib_constexpr_algorithms &gt;= 201703L</code> </entry>
+    </row>
+
+    <row>
+      <entry>  Constexpr for <code>swap</code> and swap related functions </entry>
+      <entry>
+        <link xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2018/p0879r0.html">
+        P0879R0 </link>
+      </entry>
+      <entry align="center"> 10.1 </entry>
+      <entry> <code>__cpp_lib_constexpr_algorithms &gt;= 201806L</code> </entry>
+    </row>
+
+    <row>
+      <entry>  Constexpr for <code>std::complex</code> </entry>
+      <entry>
+        <link xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2017/p0415r1.html">
+        P0415R1 </link>
+      </entry>
+      <entry align="center"> 9.1 </entry>
+      <entry> <code>__cpp_lib_constexpr_complex &gt;= 201711L</code> (since 9.4, see Note 1) </entry>
+    </row>
+
+    <row>
+      <entry>  <code>std::is_constant_evaluated()</code> </entry>
+      <entry>
+        <link xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2018/p0595r2.html">
+        P0595R2 </link>
+      </entry>
+      <entry align="center"> 9.1 </entry>
+      <entry> <code>__cpp_lib_is_constant_evaluated &gt;= 201811L</code> </entry>
+    </row>
+
+    <row>
+      <entry>  More constexpr containers </entry>
+      <entry>
+        <link xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2019/p0784r7.html">
+        P0784R7 </link>
+      </entry>
+      <entry align="center"> 10.1 </entry>
+      <entry> <code>__cpp_lib_constexpr_dynamic_alloc &gt;= 201907L</code> </entry>
+    </row>
+
+    <row>
+      <entry>  Making <code>std::string</code> constexpr </entry>
+      <entry>
+        <link xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2019/p0980r1.pdf">
+        P0980R1 </link>
+      </entry>
+      <entry align="center"> 12.1 </entry>
+      <entry> <code>__cpp_lib_constexpr_string &gt;= 201907L</code> </entry>
+    </row>
+
+    <row>
+      <entry>  Making <code>std::vector</code> constexpr </entry>
+      <entry>
+        <link xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2019/p1004r2.pdf">
+        P1004R2 </link>
+      </entry>
+      <entry align="center"> 12.1 </entry>
+      <entry> <code>__cpp_lib_constexpr_vector &gt;= 201907L</code> </entry>
+    </row>
+
+    <row>
+      <entry>  Constexpr in <code>std::pointer_traits</code> </entry>
+      <entry>
+        <link xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2018/p1006r1.pdf">
+        P1006R1 </link>
+      </entry>
+      <entry align="center"> 9.1 </entry>
+      <entry> <code>__cpp_lib_constexpr_memory &gt;= 201811L</code> (since 9.4, see Note 1) </entry>
+    </row>
+
+    <row>
+      <entry>  constexpr for <code>&lt;numeric&gt;</code> algorithms </entry>
+      <entry>
+        <link xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2019/p1645r1.html">
+        P1645R1 </link>
+      </entry>
+      <entry align="center"> 10.1 </entry>
+      <entry> <code>__cpp_lib_constexpr_numeric &gt;= 201911L</code> </entry>
+    </row>
+
+    <row>
+      <entry>  Constexpr iterator requirements </entry>
+      <entry>
+        <link xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2018/p0858r0.html">
+        P0858R0 </link>
+      </entry>
+      <entry align="center"> 9.1 </entry>
+      <entry>
+        <informaltable colsep="0" rowsep="0" rowheader="norowheader" frame="none"><tgroup cols="1"><tbody>
+        <row><entry> <code>__cpp_lib_array_constexpr &gt;= 201803L</code> </entry></row>
+        <row><entry> <code>__cpp_lib_string_view &gt;= 201803L</code> </entry></row>
+        <row><entry> (both since 9.4, see Note 1) </entry></row>
+        </tbody></tgroup></informaltable>
+      </entry>
+    </row>
+
+    <row>
+      <entry>  <code>constexpr</code> comparison operators for <code>std::array</code> </entry>
+      <entry>
+        <link xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2018/p1023r0.pdf">
+        P1023R0 </link>
+      </entry>
+      <entry align="center"> 10.1 </entry>
+      <entry> <code>__cpp_lib_array_constexpr &gt;= 201806</code> </entry>
+    </row>
+
+    <row>
+      <entry>  Misc constexpr bits </entry>
+      <entry>
+        <link xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2018/p1032r1.html">
+        P1032R1 </link>
+      </entry>
+      <entry align="center"> 10.1 </entry>
+      <entry>
+        <informaltable colsep="0" rowsep="0" rowheader="norowheader" frame="none"><tgroup cols="1"><tbody>
+        <row><entry> <code>__cpp_lib_array_constexpr &gt;= 201811L</code> </entry></row>
+        <row><entry> <code>__cpp_lib_constexpr_functional &gt;= 201811L</code> </entry></row>
+        <row><entry> <code>__cpp_lib_constexpr_iterator &gt;= 201811L</code> </entry></row>
+        <row><entry> <code>__cpp_lib_constexpr_string_view &gt;= 201811L</code> </entry></row>
+        <row><entry> <code>__cpp_lib_constexpr_tuple &gt;= 201811L</code> </entry></row>
+        <row><entry> <code>__cpp_lib_constexpr_utility &gt;= 201811L</code> </entry></row>
+        </tbody></tgroup></informaltable>
+      </entry>
+    </row>
+
+    <row>
+      <entry>  <code>constexpr <emphasis>INVOKE</emphasis></code> </entry>
+      <entry>
+        <link xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2019/p1065r2.html">
+        P1065R2 </link>
+      </entry>
+      <entry align="center"> 10.1 </entry>
+      <entry> <code>__cpp_lib_constexpr_functional &gt;= 201907L</code> </entry>
+    </row>
+
+
+    <row>
+      <entry>  Transformation Trait <code>remove_cvref</code> </entry>
+      <entry>
+        <link xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2017/p0550r2.pdf">
+        P0550R2 </link>
+      </entry>
+      <entry align="center"> 9.1 </entry>
+      <entry> <code>__cpp_lib_remove_cvref &gt;= 201711L</code> (since 9.4, see Note 1) </entry>
+    </row>
+
+    <row>
+      <entry>  Implicit conversion traits and utility functions </entry>
+      <entry>
+        <link xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2018/p0758r1.html">
+        P0758R1 </link>
+      </entry>
+      <entry align="center"> 9.1 </entry>
+      <entry> <code>__cpp_lib_is_nothrow_convertible &gt;= 201806L</code>  (since 9.4, see Note 1) </entry>
+    </row>
+
+    <row>
+      <entry>  The <code>identity</code> metafunction </entry>
+      <entry>
+        <link xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2018/p0887r1.pdf">
+        P0887R1 </link>
+      </entry>
+      <entry align="center"> 9.1 </entry>
+      <entry> <code>__cpp_lib_type_identity &gt;= 201806L</code> (since 9.4, see Note 1) </entry>
+    </row>
+
+
+    <row>
+      <entry>  <code>unwrap_ref_decay</code> and <code>unwrap_reference</code> </entry>
+      <entry>
+        <link xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2018/p0318r1.pdf">
+        P0318R1 </link>
+      </entry>
+      <entry align="center"> 9.1 </entry>
+      <entry> <code>__cpp_lib_unwrap_ref &gt;= 201811L</code> (since 9.4, see Note 1) </entry>
+    </row>
+
+    <row>
+      <entry>  Improving Completeness Requirements for Type Traits </entry>
+      <entry>
+        <link xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2018/p1285r0.pdf">
+        P1285R0 </link>
+      </entry>
+      <entry align="center"> &#x2014; </entry>
+      <entry> Most misuses are diagnosed, but not all. </entry>
+    </row>
+
+    <row>
+      <entry>  Missing feature test macros </entry>
+      <entry>
+        <link xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2018/p1353r0.html">
+        P1353R0 </link>
+      </entry>
+      <entry align="center"> 9.1 </entry>
+      <entry />
+    </row>
+
+    <row>
+      <entry> Making std::underlying_type SFINAE-friendly </entry>
+      <entry>
+        <link xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2019/p0340r3.html">
+        P0340R3 </link>
+      </entry>
+      <entry align="center"> 9.1 </entry>
+      <entry />
+    </row>
+
+    <row>
+      <entry> Traits for [Un]bounded Arrays </entry>
+      <entry>
+        <link xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2019/p1357r1.pdf">
+        P1357R1 </link>
+      </entry>
+      <entry align="center"> 9.1 </entry>
+      <entry> <code>__cpp_lib_bounded_array_traits &gt;= 201902L</code> </entry>
+    </row>
+
+    <row>
+      <entry> Layout-compatibility and pointer-interconvertibility traits </entry>
+      <entry>
+        <link xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2019/p0466r5.pdf">
+        P0466R5 </link>
+      </entry>
+      <entry align="center"> 12.1 </entry>
+      <entry>
+        <informaltable colsep="0" rowsep="0" rowheader="norowheader" frame="none"><tgroup cols="1"><tbody>
+        <row><entry> <code>__cpp_lib_is_layout_compatible &gt;= 201907L</code> </entry></row>
+        <row><entry> <code>__cpp_lib_is_pointer_interconvertible &gt;= 201907L</code> </entry></row>
+        </tbody></tgroup></informaltable>
+      </entry>
+    </row>
+
+    <row>
+      <entry>  Integrating feature-test macros into the C++ WD </entry>
+      <entry>
+        <link xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2018/p0941r2.html">
+        P0941R2 </link>
+      </entry>
+      <entry align="center"> 5.1 </entry>
+      <entry />
+    </row>
+
+    <row>
+      <entry>  <code>&lt;version&gt;</code> </entry>
+      <entry>
+        <link xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2018/p0754r2.pdf">
+        P0754R2 </link>
+      </entry>
+      <entry align="center"> 9.1 </entry>
+      <entry> <code>__has_include(&lt;version&gt;)</code> </entry>
+    </row>
+
+
+    <row>
+      <entry namest="c1" nameend="c4" align="left">
+        <emphasis role="bold">Synchronization</emphasis>
+      </entry>
+    </row>
+
+    <row>
+      <entry>  Atomic Ref </entry>
+      <entry>
+        <link xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2018/p0019r8.html">
+        P0019R8 </link>
+      </entry>
+      <entry align="center"> 10.1 </entry>
+      <entry> <code>__cpp_lib_atomic_ref &gt;= 201806L</code> </entry>
+    </row>
+
+    <row>
+      <entry>  Floating Point Atomic </entry>
+      <entry>
+        <link xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2017/p0020r6.html">
+        P0020R6 </link>
+      </entry>
+      <entry align="center"> 10.1 </entry>
+      <entry> <code>__cpp_lib_atomic_float &gt;= 201711L</code> </entry>
+    </row>
+
+    <row>
+      <entry>  C++ Synchronized Buffered Ostream </entry>
+      <entry>
+        <link xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2017/p0053r7.pdf">
+        P0053R7 </link>
+      </entry>
+      <entry align="center"> 11.1 </entry>
+      <entry> <code>__cpp_lib_syncbuf &gt;= 201711L</code> </entry>
+    </row>
+
+    <row>
+      <entry>  Manipulators for C++ Synchronized Buffered Ostream </entry>
+      <entry>
+        <link xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2018/p0753r2.pdf">
+        P0753R2 </link>
+      </entry>
+      <entry align="center"> 11.1 </entry>
+      <entry> <code>__cpp_lib_syncbuf &gt;= 201803L</code> </entry>
+    </row>
+
+    <row>
+      <entry>  Make <code>std::memory_order</code> a scoped enumeration </entry>
+      <entry>
+        <link xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2016/p0439r0.html">
+        P0439R0 </link>
+      </entry>
+      <entry align="center"> 9.1 </entry>
+      <entry />
+    </row>
+
+    <row>
+      <entry>  The Curious Case of Padding Bits, Featuring Atomic Compare-and-Exchange </entry>
+      <entry>
+        <link xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2018/p0528r3.html">
+        P0528R3 </link>
+      </entry>
+      <entry align="center"> 13.1 </entry>
+      <entry />
+    </row>
+
+    <row>
+      <entry>  Atomic <code>shared_ptr</code> </entry>
+      <entry>
+        <link xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2017/p0718r2.html">
+        P0718R2 </link>
+      </entry>
+      <entry align="center"> 12.1 </entry>
+      <entry> <code> __cpp_lib_atomic_shared_ptr &gt;= 201711L</code> </entry>
+    </row>
+
+    <row>
+      <entry> std::stop_token and std::jthread </entry>
+      <entry>
+        <link xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2019/p0660r10.pdf">
+        P0660R10 </link>
+      </entry>
+      <entry align="center"> 10.1 </entry>
+      <entry> <code>__cpp_lib_jthread &gt;= 201907L</code> </entry>
+    </row>
+
+    <row>
+      <entry> Rename <code>condition_variable_any</code> interruptible wait methods </entry>
+      <entry>
+        <link xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2019/p1869r1.html">
+        P1869R1 </link>
+      </entry>
+      <entry align="center"> 10.1 </entry>
+      <entry> <code>__cpp_lib_jthread &gt;= 201911L</code> </entry>
+    </row>
+
+    <row>
+      <entry> Atomic waiting and notifying, std::semaphore, std::latch and std::barrier </entry>
+      <entry>
+        <link xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2019/p1135r6.html">
+        P1135R6 </link>
+      </entry>
+      <entry align="center"> 11.1 </entry>
+      <entry>
+        <informaltable colsep="0" rowsep="0" rowheader="norowheader" frame="none"><tgroup cols="1"><tbody>
+        <row><entry> <code>__cpp_lib_atomic_lock_free_type_aliases &gt;= 201907L</code> </entry></row>
+        <row><entry> <code>__cpp_lib_atomic_flag_test &gt;= 201907L</code> </entry></row>
+        <row><entry> <code>__cpp_lib_atomic_wait &gt;= 201907L</code> </entry></row>
+        <row><entry> <code>__cpp_lib_semaphore &gt;= 201907L</code> </entry></row>
+        <row><entry> <code>__cpp_lib_latch &gt;= 201907L</code> </entry></row>
+        <row><entry> <code>__cpp_lib_barrier &gt;= 201907L</code> </entry></row>
+        </tbody></tgroup></informaltable>
+      </entry>
+    </row>
+
+    <row>
+      <entry> Fixing Atomic Initialization </entry>
+      <entry>
+        <link xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2019/p0883r2.pdf">
+        P0883R2 </link>
+      </entry>
+      <entry align="center"> 10.1 </entry>
+      <entry> <code>__cpp_lib_atomic_value_initialization &gt;= 201911L</code> </entry>
+    </row>
+
+
+
+    <row>
+      <entry namest="c1" nameend="c4" align="left">
+        <emphasis role="bold">Ranges and Concepts</emphasis>
+      </entry>
+    </row>
+
+    <row>
+      <entry>  Standard Library Concepts </entry>
+      <entry>
+        <link xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2018/p0898r3.pdf">
+        P0898R3 </link>
+      </entry>
+      <entry align="center"> 10.1 </entry>
+      <entry> <code>__cpp_lib_concepts &gt;= 201806L</code> </entry>
+    </row>
+
+    <row>
+      <entry>  Rename concepts to standard_case for C++20, while we still can </entry>
+      <entry>
+        <link xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2019/p1754r1.pdf">
+        P1754R1 </link>
+      </entry>
+      <entry align="center"> 10.1 </entry>
+      <entry> <code>__cpp_lib_concepts &gt;= 201907L</code> </entry>
+    </row>
+
+    <row>
+      <entry>  Wording for <emphasis><code>boolean-testable</code></emphasis> </entry>
+      <entry>
+        <link xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2020/p1964r2.html">
+        P1964R2 </link>
+      </entry>
+      <entry align="center"> 10.1 </entry>
+      <entry> <code>__cpp_lib_concepts &gt;= 202002L</code> </entry>
+    </row>
+
+    <row>
+      <entry>  The One Ranges Proposal </entry>
+      <entry>
+        <link xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2018/p0896r4.pdf">
+        P0896R4 </link>
+      </entry>
+      <entry align="center"> 10.1 </entry>
+      <entry> <code>__cpp_lib_ranges &gt;= 201811L</code> </entry>
+    </row>
+
+    <row>
+      <entry>  Input Range Adaptors </entry>
+      <entry>
+        <link xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2019/p1035r7.pdf">
+        P1035R7 </link>
+      </entry>
+      <entry align="center"> 10.1 </entry>
+      <entry> <code>__cpp_lib_ranges &gt;= 201907L</code> </entry>
+    </row>
+
+    <row>
+      <entry>  <code>ranges</code> compare algorithm are over-constrained </entry>
+      <entry>
+        <link xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2019/p1716r3.html">
+        P1716R3 </link>
+      </entry>
+      <entry align="center"> 10.1 </entry>
+      <entry> <code>__cpp_lib_ranges &gt;= 201911L</code> </entry>
+    </row>
+
+    <row>
+      <entry>  Remove CommonReference requirement from StrictWeakOrdering (a.k.a Fixing Relations) </entry>
+      <entry>
+        <link xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2018/p1248r1.html">
+        P1248R1 </link>
+      </entry>
+      <entry align="center"> 10.1 </entry>
+      <entry />
+    </row>
+
+    <row>
+      <entry> Ranges Design Cleanup </entry>
+      <entry>
+        <link xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2019/p1252r2.pdf">
+        P1252R2 </link>
+      </entry>
+      <entry align="center"> 10.1 </entry>
+      <entry />
+    </row>
+
+    <row>
+      <entry> Avoid template bloat for <code>safe_ranges</code> in combination with ‘subrange-y’ view adaptors.</entry>
+      <entry>
+        <link xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2020/p1739r4.html">
+        P1739R4 </link>
+      </entry>
+      <entry align="center"> 12.1 </entry>
+      <entry />
+    </row>
+
+
+    <row>
+      <entry namest="c1" nameend="c4" align="left">
+        <emphasis role="bold">Time, dates, calendars, time zones</emphasis>
+      </entry>
+    </row>
+
+    <row>
+      <entry>  Extending chrono to Calendars and Time Zones </entry>
+      <entry>
+        <link xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2018/p0355r7.html">
+        P0355R7 </link>
+      </entry>
+      <entry> 14.1 (see Note 2) </entry>
+      <entry> <code>__cpp_lib_chrono &gt;= 201803L</code> </entry>
+    </row>
+
+    <row>
+      <entry> Miscellaneous minor fixes for chrono </entry>
+      <entry>
+        <link xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2019/p1466r3.html">
+        P1466R3 </link>
+      </entry>
+      <entry> 11.1 (see Note 2) </entry>
+      <entry> <code>__cpp_lib_chrono &gt;= 201907L</code> </entry>
+    </row>
+
+    <row>
+      <entry>  <code>&lt;chrono&gt;</code> <code>zero()</code>, <code>min()</code>, and <code>max()</code> should be <code>noexcept</code> </entry>
+      <entry>
+        <link xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2018/p0972r0.pdf">
+        P0972R0 </link>
+      </entry>
+      <entry align="center"> 9.1 </entry>
+      <entry />
+    </row>
+
+
+    <row>
+      <entry namest="c1" nameend="c4" align="left">
+        <emphasis role="bold">Three-way comparison</emphasis>
+      </entry>
+    </row>
+
+    <row>
+      <entry>  Library Support for the Spaceship (Comparison) Operator </entry>
+      <entry>
+        <link xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2017/p0768r1.pdf">
+        P0768R1 </link>
+      </entry>
+      <entry align="center"> 10.1 </entry>
+      <entry> <code>__cpp_lib_three_way_comparison &gt;= 201711L</code> </entry>
+    </row>
+
+    <row>
+      <entry>  Symmetry for spaceship </entry>
+      <entry>
+        <link xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2018/p0905r1.html">
+        P0905R1 </link>
+      </entry>
+      <entry align="center"> 10.1 </entry>
+      <entry />
+    </row>
+
+    <row>
+      <entry> Adding &lt;=&gt; to the standard library </entry>
+      <entry>
+        <link xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2019/p1614r2.html">
+        P1614R2 </link>
+      </entry>
+      <entry align="center"> 10.1 </entry>
+      <entry>
+        <code>__cpp_lib_three_way_comparison &gt;= 201907L</code>
+      </entry>
+    </row>
+
+
+    <row>
+      <entry namest="c1" nameend="c4" align="left">
+        <emphasis role="bold">Strings and text</emphasis>
+      </entry>
+    </row>
+
+    <row>
+      <entry>  <code>string::reserve</code> Should Not Shrink </entry>
+      <entry>
+        <link xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2018/p0966r1.html">
+        P0966R1 </link>
+      </entry>
+      <entry align="center"> 11.1 </entry>
+      <entry />
+    </row>
+
+    <row>
+      <entry>  <code>char8_t</code>: A type for UTF-8 characters and strings </entry>
+      <entry>
+        <link xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2018/p0482r6.html">
+        P0482R6 </link>
+      </entry>
+      <entry align="center"> 9.1 </entry>
+      <entry> <code>__cpp_lib_char8_t &gt;= 201811L</code> </entry>
+    </row>
+
+    <row>
+      <entry>  <code>char8_t</code> backward compatibility remediation </entry>
+      <entry>
+        <link xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2019/p1423r3.html">
+        P1423R3 </link>
+      </entry>
+      <entry align="center"> 10.1 </entry>
+      <entry> <code>__cpp_lib_char8_t &gt;= 201907L</code> </entry>
+    </row>
+
+    <row>
+      <entry> Text formatting </entry>
+      <entry>
+        <link xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2019/p0645r10.html">
+        P0645R10 </link>
+      </entry>
+      <entry align="center"> 13.1 </entry>
+      <entry>
+        <code>__cpp_lib_format &gt;= 201907L</code>
+      </entry>
+    </row>
+
+    <row>
+      <entry> Integration of chrono with text formatting </entry>
+      <entry>
+        <link xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2019/p1361r2.pdf">
+        P1361R2 </link>
+      </entry>
+      <entry align="center"> 13.1 </entry>
+      <entry>
+        <code>__cpp_lib_format &gt;= 201907L</code>
+      </entry>
+    </row>
+
+    <row>
+      <entry> Printf corner cases in <code>std::format</code> </entry>
+      <entry>
+        <link xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2019/p1652r1.html">
+        P1652R1 </link>
+      </entry>
+      <entry align="center"> 13.1 </entry>
+      <entry>
+        <code>__cpp_lib_format &gt;= 201907L</code>
+      </entry>
+    </row>
+
+    <row>
+      <entry>  String Prefix and Suffix Checking </entry>
+      <entry>
+        <link xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2017/p0457r2.html">
+        P0457R2 </link>
+      </entry>
+      <entry align="center"> 9.1 </entry>
+      <entry> <code>__cpp_lib_starts_ends_with &gt;= 201711L</code> (since 9.4, see Note 1) </entry>
+    </row>
+
+    <row>
+      <entry>  Update The Reference To The Unicode Standard </entry>
+      <entry>
+        <link xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2018/p1025r1.html">
+        P1025R1 </link>
+      </entry>
+      <entry align="center"> &#x2014;</entry>
+      <entry />
+    </row>
+
+
+    <row>
+      <entry namest="c1" nameend="c4" align="left">
+        <emphasis role="bold">Containers</emphasis>
+      </entry>
+    </row>
+
+    <row>
+      <entry> span: bounds-safe views for sequences of objects </entry>
+      <entry>
+        <link xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2018/p0122r7.pdf">
+        P0122R7 </link>
+      </entry>
+      <entry align="center"> 10.1 </entry>
+      <entry> <code>__cpp_lib_span &gt;= 201803L</code> </entry>
+    </row>
+
+    <row>
+      <entry>
+        Usability Enhancements for <classname>std::span</classname>
+      </entry>
+      <entry>
+        <link xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2019/p1024r3.pdf">
+        P1024R3 </link>
+      </entry>
+      <entry align="center"> 10.1 </entry>
+      <entry> <code>__cpp_lib_span &gt;= 201902L</code> </entry>
+    </row>
+
+    <row>
+      <entry>  Should Span be Regular? </entry>
+      <entry>
+        <link xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2018/p1085r2.md">
+        P1085R2 </link>
+      </entry>
+      <entry align="center"> 10.1 </entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry> Fixed-size <code>&lt;span&gt;</code> construction from dynamic range </entry>
+      <entry>
+        <link xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2020/p1976r2.html">
+        P1976R2 </link>
+      </entry>
+      <entry align="center"> 10.1 </entry>
+      <entry> <code>__cpp_lib_span &gt;= 202002L</code> </entry>
+    </row>
+
+    <row>
+      <entry> <code>std::to_array</code> </entry>
+      <entry>
+        <link xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2019/p0325r4.html">
+        P0325R4 </link>
+      </entry>
+      <entry align="center"> 10.1 </entry>
+      <entry> <code>__cpp_lib_to_array &gt;= 201907L</code> </entry>
+    </row>
+
+    <row>
+      <entry>  Checking for Existence of an Element in Associative Containers </entry>
+      <entry>
+        <link xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2018/p0458r2.html">
+        P0458R2 </link>
+      </entry>
+      <entry align="center"> 9.1 </entry>
+      <entry />
+    </row>
+
+    <row>
+      <entry>  Comparing Unordered Containers </entry>
+      <entry>
+        <link xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2018/p0809r0.pdf">
+        P0809R0 </link>
+      </entry>
+      <entry align="center"> &#x2014; </entry>
+      <entry />
+    </row>
+
+    <row>
+      <entry>  Heterogeneous lookup for unordered containers </entry>
+      <entry>
+        <link xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2018/p0919r3.html">
+        P0919R3 </link>
+      </entry>
+      <entry align="center"> 11.1 </entry>
+      <entry> <code>__cpp_lib_generic_unordered_lookup &gt;= 201811</code> </entry>
+    </row>
+
+    <row>
+      <entry> Refinement Proposal for P0919 </entry>
+      <entry>
+        <link xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2019/p1690r1.html">
+        P1690R1 </link>
+      </entry>
+      <entry align="center"> 11.1 </entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>  Adopt Consistent Container Erasure from Library Fundamentals 2 for C++20 </entry>
+      <entry>
+        <link xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2018/p1209r0.html">
+        P1209R0 </link>
+      </entry>
+      <entry align="center"> 9.1 </entry>
+      <entry> <code>__cpp_lib_erase_if &gt;= 201811L</code> </entry>
+    </row>
+
+    <row>
+      <entry>  Improving the Return Value of Erase-Like Algorithms </entry>
+      <entry>
+        <link xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2018/p0646r1.pdf">
+        P0646R1 </link>
+      </entry>
+      <entry align="center"> 9.1 </entry>
+      <entry> <code>__cpp_lib_list_remove_return_type &gt;= 201806L</code> </entry>
+    </row>
+
+    <row>
+      <entry>  Improving the Return Value of Erase-Like Algorithms II: Free <code>erase</code>/<code>erase_if</code> </entry>
+      <entry>
+        <link xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2019/p1115r3.pdf">
+        P1115R3 </link>
+      </entry>
+      <entry align="center"> 9.1 </entry>
+      <entry>
+        <informaltable colsep="0" rowsep="0" rowheader="norowheader" frame="none"><tgroup cols="1"><tbody>
+        <row><entry> <code>__cpp_lib_erase_if &gt;= 202002L</code> </entry></row>
+        <row><entry> (defined to <code>201900L</code> for GCC 9.1 and 9.2 so use <code>&gt; 201811L</code>) </entry></row>
+        </tbody></tgroup></informaltable>
+      </entry>
+    </row>
+
+    <row>
+      <entry> Signed ssize() functions, unsigned size() functions </entry>
+      <entry>
+        <link xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2019/p1227r2.html">
+        P1227R2 </link>
+      </entry>
+      <entry align="center"> 10.1 </entry>
+      <entry> <code>__cpp_lib_ssize &gt;= 201902L</code> </entry>
+    </row>
+
+
+    <row>
+      <entry namest="c1" nameend="c4" align="left">
+        <emphasis role="bold">Memory management</emphasis>
+      </entry>
+    </row>
+
+    <row>
+      <entry>  Utility to convert a pointer to a raw pointer </entry>
+      <entry>
+        <link xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2017/p0653r2.html">
+        P0653R2 </link>
+      </entry>
+      <entry align="center"> 8.1 </entry>
+      <entry> <code>__cpp_lib_to_address &gt;= 201711L</code> (since 9.4, see Note 1) </entry>
+    </row>
+
+    <row>
+      <entry>  Extending <code>make_shared</code> to Support Arrays </entry>
+      <entry>
+        <link xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2017/p0674r1.html">
+        P0674R1 </link>
+      </entry>
+      <entry align="center"> 12.1 </entry>
+      <entry> <code>__cpp_lib_shared_ptr_arrays &gt;= 201707L</code> </entry>
+    </row>
+
+    <row>
+      <entry>  Efficient sized delete for variable sized classes </entry>
+      <entry>
+        <link xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2018/p0722r3.html">
+        P0722R3 </link>
+      </entry>
+      <entry align="center"> 9.1 </entry>
+      <entry> <code>__cpp_lib_destroying_delete &gt;= 201806L</code> </entry>
+    </row>
+
+    <row>
+      <entry>  Utility functions to implement uses-allocator construction </entry>
+      <entry>
+        <link xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2018/p0591r4.pdf">
+        P0591R4 </link>
+      </entry>
+      <entry align="center"> 9.1 </entry>
+      <entry>
+        <code>std::scoped_allocator_adaptor</code> changes missing in 9.1.0
+      </entry>
+    </row>
+
+    <row>
+      <entry>  <code>std::assume_aligned</code> </entry>
+      <entry>
+        <link xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2018/p1007r3.pdf">
+        P1007R3 </link>
+      </entry>
+      <entry align="center"> 9.1 </entry>
+      <entry> <code>__cpp_lib_assume_aligned &gt;= 201811L</code> (since 9.4, see Note 1) </entry>
+    </row>
+
+    <row>
+      <entry>  Smart pointer creation with default initialization </entry>
+      <entry>
+        <link xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2018/p1020r1.html">
+        P1020R1 </link>
+      </entry>
+      <entry align="center"> 12.1 </entry>
+      <entry> <code>__cpp_lib_smart_ptr_for_overwrite &gt;= 201811L</code> </entry>
+    </row>
+
+    <row>
+      <entry>  Rename "default_init" Functions </entry>
+      <entry>
+        <link xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2020/p1973r1.pdf">
+        P1973R1 </link>
+      </entry>
+      <entry align="center"> 12.1 </entry>
+      <entry> <code>__cpp_lib_smart_ptr_for_overwrite &gt;= 201811L</code> </entry>
+    </row>
+
+    <row>
+      <entry>  Make stateful allocator propagation more consistent for <code>operator+(basic_string)</code> </entry>
+      <entry>
+        <link xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2018/p1165r1.html">
+        P1165R1 </link>
+      </entry>
+      <entry align="center"> 10.1 </entry>
+      <entry />
+    </row>
+
+    <row>
+      <entry>
+        <classname>polymorphic_allocator&lt;&gt;</classname> as a vocabulary type
+      </entry>
+      <entry>
+        <link xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2019/p0339r6.pdf">
+        P0339R6 </link>
+      </entry>
+      <entry align="center"> 9.1 </entry>
+      <entry>
+      <code>__cpp_lib_polymorphic_allocator &gt;= 201902L</code> (since 9.4, see Note 1)
+      </entry>
+    </row>
+
+    <row>
+      <entry>  LWG 2511: guaranteed copy elision for piecewise construction </entry>
+      <entry>
+        <link xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2018/p0475r1.html">
+        P0475R1 </link>
+      </entry>
+      <entry align="center"> 7.1 </entry>
+      <entry />
+    </row>
+
+
+    <row>
+      <entry namest="c1" nameend="c4" align="left">
+        <emphasis role="bold">Miscellaneous</emphasis>
+      </entry>
+    </row>
+
+    <row>
+      <entry>  <code>nodiscard</code> in the Library </entry>
+      <entry>
+        <link xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2017/p0600r1.pdf">
+        P0600R1 </link>
+      </entry>
+      <entry align="center"> 9.1 </entry>
+      <entry />
+    </row>
+
+    <row>
+      <entry>  de-pessimize legacy algorithms with <code>std::move</code> </entry>
+      <entry>
+        <link xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2017/p0616r0.pdf">
+        P0616R0 </link>
+      </entry>
+      <entry align="center"> 9.1 </entry>
+      <entry />
+    </row>
+
+    <row>
+      <entry>  Deprecate POD </entry>
+      <entry>
+        <link xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2017/p0767r1.html">
+        P0767R1 </link>
+      </entry>
+      <entry align="center"> 10.1 </entry>
+      <entry />
+    </row>
+
+    <row>
+      <entry>  Treating Unnecessary <code>decay</code> </entry>
+      <entry>
+        <link xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2017/p0777r1.pdf">
+        P0777R1 </link>
+      </entry>
+      <entry align="center"> 9.1 </entry>
+      <entry />
+    </row>
+
+    <row>
+      <?dbhtml bgcolor="#C8B0B0" ?>
+      <entry>  Thou Shalt Not Specialize std Function Templates! </entry>
+      <entry>
+        <link xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2018/p0551r3.pdf">
+        P0551R3 </link>
+      </entry>
+      <entry align="center"> </entry>
+      <entry>These changes will not be implemented.</entry>
+    </row>
+
+    <row>
+      <entry>  Bit-casting object representations </entry>
+      <entry>
+        <link xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2018/p0476r2.html">
+        P0476R2 </link>
+      </entry>
+      <entry align="center"> 11.1 </entry>
+      <entry> <code>__cpp_lib_bit_cast &gt;= 201806L</code> </entry>
+    </row>
+
+    <row>
+      <entry>  Integral power-of-2 operations </entry>
+      <entry>
+        <link xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2018/p0556r3.html">
+        P0556R3 </link>
+      </entry>
+      <entry align="center"> 9.1 </entry>
+      <entry> <code>__cpp_lib_int_pow2 &gt;= 201806L</code> (since 9.4, see Note 1) </entry>
+    </row>
+
+    <row>
+      <entry> On the names of low-level bit manipulation functions </entry>
+      <entry>
+        <link xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2020/p1956r1.pdf">
+        P1956R1 </link>
+      </entry>
+      <entry align="center"> 10.1 </entry>
+      <entry> <code>__cpp_lib_int_pow2 &gt;= 202002L</code> </entry>
+    </row>
+
+    <row>
+      <entry> Safe integral comparisons </entry>
+      <entry>
+        <link xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2020/p0586r2.html">
+        P0586R2 </link>
+      </entry>
+      <entry align="center"> 10.1 </entry>
+      <entry> <code>__cpp_lib_integer_comparison_functions &gt;= 202002L</code> </entry>
+    </row>
+
+    <row>
+      <entry>  Reviewing Deprecated Facilities of C++17 for C++20 </entry>
+      <entry>
+        <link xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2018/p0619r4.html">
+        P0619R4 </link>
+      </entry>
+      <entry align="center"> 12.1 </entry>
+      <entry />
+    </row>
+
+    <row>
+      <entry>  <code>fpos</code> Requirements </entry>
+      <entry>
+        <link xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2018/p0759r1.html">
+        P0759R1 </link>
+      </entry>
+      <entry align="center"> &#x2014; </entry>
+      <entry />
+    </row>
+
+    <row>
+      <entry>  Add <code>shift</code> to <code>&lt;algorithm&gt;</code> </entry>
+      <entry>
+        <link xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2018/p0769r2.pdf">
+        P0769R2 </link>
+      </entry>
+      <entry align="center"> 10.1 </entry>
+      <entry> <code>__cpp_lib_shift &gt;= 201806L</code> </entry>
+    </row>
+
+    <row>
+      <entry>  Standard Library Specification in a Concepts and Contracts World </entry>
+      <entry>
+        <link xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2018/p0788r3.pdf">
+        P0788R3 </link>
+      </entry>
+      <entry align="center"> &#x2014; </entry>
+      <entry />
+    </row>
+
+    <row>
+      <entry>  <code>explicit(bool)</code> </entry>
+      <entry>
+        <link xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2018/p0892r2.html">
+        P0892R2 </link>
+      </entry>
+      <entry align="center"> &#x2014; </entry>
+      <entry />
+    </row>
+
+    <row>
+      <entry>  Eradicating unnecessarily explicit default constructors from the standard library </entry>
+      <entry>
+        <link xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2018/p0935r0.html">
+        P0935R0 </link>
+      </entry>
+      <entry align="center"> 9.1 </entry>
+      <entry />
+    </row>
+
+    <row>
+      <entry>  <code>std::function</code> move constructor should be <code>noexcept</code> </entry>
+      <entry>
+        <link xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2018/p0771r1.pdf">
+        P0771R1 </link>
+      </entry>
+      <entry align="center"> 7.2 </entry>
+      <entry />
+    </row>
+
+    <row>
+      <entry>  Simplified partial function application </entry>
+      <entry>
+        <link xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2018/p0356r5.html">
+        P0356R5 </link>
+      </entry>
+      <entry align="center"> 9.1 </entry>
+      <entry> <code>__cpp_lib_bind_front &gt;= 201811L</code> </entry>
+    </row>
+
+    <row>
+      <entry>  <code>bind_front</code> should not unwrap <code>reference_wrapper</code> </entry>
+      <entry>
+        <link xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2019/p1651r0.html">
+        P1651R0 </link>
+      </entry>
+      <entry align="center"> 9.3 </entry>
+      <entry> <code>__cpp_lib_bind_front &gt;= 201907L</code> </entry>
+    </row>
+
+    <row>
+      <entry>  <code>reference_wrapper</code> for incomplete types </entry>
+      <entry>
+        <link xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2018/p0357r3.html">
+        P0357R3 </link>
+      </entry>
+      <entry align="center"> 9.1 </entry>
+      <entry />
+    </row>
+
+    <row>
+      <entry>  Fixing <code>operator&gt;&gt;(basic_istream&amp;, CharT*)</code> (LWG 2499) </entry>
+      <entry>
+        <link xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2018/p0487r1.html">
+        P0487R1 </link>
+      </entry>
+      <entry align="center"> 11.1 </entry>
+      <entry />
+    </row>
+
+    <row>
+      <entry>  <code>variant</code> and <code>optional</code> should propagate copy/move triviality </entry>
+      <entry>
+        <link xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2018/p0602r4.html">
+        P0602R4 </link>
+      </entry>
+      <entry align="center"> 8.3 </entry>
+      <entry />
+    </row>
+
+    <row>
+      <entry>  A sane <code>variant</code> converting constructor </entry>
+      <entry>
+        <link xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2018/p0608r3.html">
+        P0608R3 </link>
+      </entry>
+      <entry align="center"> 10.1 </entry>
+      <entry />
+    </row>
+
+    <row>
+      <entry>  <code>visit&lt;R&gt;</code>: Explicit Return Type for <code>visit</code> </entry>
+      <entry>
+        <link xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2018/p0655r1.pdf">
+        P0655R1 </link>
+      </entry>
+      <entry align="center"> 9.1 </entry>
+      <entry />
+    </row>
+
+    <row>
+      <entry>  P0899R1 - LWG 3016 is not a defect </entry>
+      <entry>
+        <link xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2018/p0899r1.html">
+        P0899R1 </link>
+      </entry>
+      <entry align="center"> 7.1 </entry>
+      <entry />
+    </row>
+
+    <row>
+      <entry>  Editorial Guidance for merging P0019r8 and P0528r3 </entry>
+      <entry>
+        <link xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2018/p1123r0.html">
+        P1123R0 </link>
+      </entry>
+      <entry align="center"> &#x2014; </entry>
+      <entry />
+    </row>
+
+    <row>
+      <entry>  Cleaning up Clause 20 </entry>
+      <entry>
+        <link xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2018/p1148r0.pdf">
+        P1148R0 </link>
+      </entry>
+      <entry align="center"> &#x2014; </entry>
+      <entry />
+    </row>
+
+    <row>
+      <?dbhtml bgcolor="#C8B0B0" ?>
+      <entry>  Completing the Rebase of Library Fundamentals, Version 3, Working Draft </entry>
+      <entry>
+        <link xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2018/p1210r0.html">
+        P1210R0 </link>
+      </entry>
+      <entry align="center"> </entry>
+      <entry />
+    </row>
+
+    <row>
+      <entry>  Alternative Wording for P0907R4 Signed Integers are Two's Complement </entry>
+      <entry>
+        <link xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2018/p1236r1.html">
+        P1236R1 </link>
+      </entry>
+      <entry align="center"> &#x2014; </entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>
+        I Stream, You Stream, We All Stream for
+        <classname>istream_iterator</classname>
+      </entry>
+      <entry>
+        <link xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2019/p0738r2.html">
+        P0738R2 </link>
+      </entry>
+      <entry align="center"> 10.1 </entry>
+      <entry />
+    </row>
+
+    <row>
+      <entry>
+        Mandating the Standard Library:
+        Clause 16 - Language support library
+      </entry>
+      <entry>
+        <link xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2019/p1458r1.pdf">
+        P1458R1 </link>
+      </entry>
+      <entry align="center"> &#x2014; </entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>
+        Mandating the Standard Library:
+        Clause 18 - Diagnostics library
+      </entry>
+      <entry>
+        <link xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2019/p1458r1.pdf">
+        P1459R1 </link>
+      </entry>
+      <entry align="center"> &#x2014; </entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>
+        Mandating the Standard Library:
+        Clause 20 - Strings library
+      </entry>
+      <entry>
+        <link xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2019/p1462r1.html">
+        P1462R1 </link>
+      </entry>
+      <entry align="center"> &#x2014; </entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>
+        Mandating the Standard Library:
+        Clause 21 - Containers library
+      </entry>
+      <entry>
+        <link xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2019/p1463r1.pdf">
+        P1463R1 </link>
+      </entry>
+      <entry align="center"> 10.1 </entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>
+        Mandating the Standard Library:
+        Clause 22 - Iterators library
+      </entry>
+      <entry>
+        <link xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2019/p1464r1.pdf">
+        P1464R1 </link>
+      </entry>
+      <entry align="center"> &#x2014; </entry>
+      <entry />
+    </row>
+
+    <row>
+      <entry> Make <code>create_directory()</code> Intuitive </entry>
+      <entry>
+        <link xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2019/p1164r1.pdf">
+        P1164R1
+  </link>
+      </entry>
+      <entry align="center"> 8.3 </entry>
+      <entry> Treated as a DR for C++17 </entry>
+    </row>
+
+    <row>
+      <entry>
+        Target Vectorization Policies from Parallelism V2 TS to C++20
+      </entry>
+      <entry>
+        <link xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2019/p1001r2.html">
+        P1001R2 </link>
+      </entry>
+      <entry align="center"> 9.1 </entry>
+      <entry> <code>__cpp_lib_execution &gt;= 201902L</code> (since 9.4, see Note 1)</entry>
+    </row>
+
+    <row>
+      <entry> Merge Coroutines TS into C++20 working draft </entry>
+      <entry>
+        <link xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2019/p0912r5.html">
+        P0912R5 </link>
+      </entry>
+      <entry align="center"> 10.1 </entry>
+      <entry> <code>__cpp_lib_coroutines &gt;= 201902L</code> </entry>
+    </row>
+
+    <row>
+      <entry>  Endian just Endian </entry>
+      <entry>
+        <link xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2017/p0463r1.html">
+        P0463R1 </link>
+      </entry>
+      <entry align="center"> 8.1 </entry>
+      <entry> <code>__cpp_lib_endian &gt;= 201907L</code> </entry>
+    </row>
+
+    <row>
+      <entry> Bit operations </entry>
+      <entry>
+        <link xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2019/p0553r4.html">
+        P0553R4 </link>
+      </entry>
+      <entry align="center"> 9.1 </entry>
+      <entry> <code>__cpp_lib_bitops &gt;= 201907L</code> (since 9.4, see Note 1) </entry>
+    </row>
+
+    <row>
+      <entry>  Well-behaved interpolation for numbers and pointers </entry>
+      <entry>
+        <link xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2019/p0811r3.html">
+        P0811R3 </link>
+      </entry>
+      <entry align="center"> 9.1 </entry>
+      <entry> <code>__cpp_lib_interpolate &gt;= 201902L</code> </entry>
+    </row>
+
+    <row>
+      <entry> Mathematical constants </entry>
+      <entry>
+        <link xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2019/p0631r8.pdf">
+        P0631R8 </link>
+      </entry>
+      <entry align="center"> 10.1 </entry>
+      <entry> <code>__cpp_lib_math_constants &gt;= 201907L</code> </entry>
+    </row>
+
+    <row>
+      <entry> std::source_location </entry>
+      <entry>
+        <link xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2019/p1208r6.pdf">
+        P1208R6 </link>
+      </entry>
+      <entry align="center"> 11.1 </entry>
+      <entry>
+        <code>__cpp_lib_source_location &gt;= 201907L</code>
+      </entry>
+    </row>
+
+    <row>
+      <entry> Efficient access to std::basic_stringbuf's Buffer </entry>
+      <entry>
+        <link xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2019/p0408r7.pdf">
+        P0408R7 </link>
+      </entry>
+      <entry align="center"> 11.1 </entry>
+      <entry />
+    </row>
+
+  </tbody>
+</tgroup>
+</table>
+
+<para>
+Note 1: This feature is supported in older releases but the
+<code>__cpp_lib</code> macro is not defined to the right value
+(or not defined at all) until the version shown in parentheses.
+</para>
+
+<para>
+Note 2: The C++20 calendar types are supported since 11.1,
+time zones and UTC are supported since 13.1,
+and <function>chrono::parse</function> is supported since 14.1.
+</para>
+
+<para>
+The following status table is based on the table of contents of
+ISO/IEC 14882:2020.
+Some subclauses are not shown in the table where the content is unchanged
+since C++17 and the implementation is complete.
+</para>
+
+<table frame="all" xml:id="table.cxx20_status">
+<title>C++ 2020 Implementation Status</title>
+
+<tgroup cols="4" align="left" colsep="0" rowsep="1">
+<colspec colname="c1"/>
+<colspec colname="c2"/>
+<colspec colname="c3"/>
+<colspec colname="c4"/>
+  <thead>
+    <row>
+      <entry>Section</entry>
+      <entry>Description</entry>
+      <entry>Status</entry>
+      <entry>Comments</entry>
+    </row>
+  </thead>
+
+  <tbody>
+
+    <row>
+      <entry>
+	<emphasis>17</emphasis>
+      </entry>
+      <entry namest="c2" nameend="c4" align="left">
+	<emphasis>Language support library</emphasis>
+      </entry>
+    </row>
+
+    <row>
+      <entry>17.1</entry>
+      <entry>General</entry>
+      <entry/>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>17.2</entry>
+      <entry>Common definitions</entry>
+      <entry/>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>17.2.1</entry>
+      <entry>Header <code>&lt;cstddef&gt;</code> synopsis</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>17.2.2</entry>
+      <entry>Header <code>&lt;cstdlib&gt;</code> synopsis</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>17.2.3</entry>
+      <entry>Null pointers</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>17.2.4</entry>
+      <entry>Sizes, alignments, and offsets</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>17.2.5</entry>
+      <entry><code>byte</code> type operations</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>17.3</entry>
+      <entry>Implementation properties</entry>
+      <entry/>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>17.3.1</entry>
+      <entry>General</entry>
+      <entry/>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>17.3.2</entry>
+      <entry>Header <code>&lt;version&gt;</code> synopsis</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>17.3.3</entry>
+      <entry>Header <code>&lt;limits&gt;</code> synopsis</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>17.3.4</entry>
+      <entry>Floating-point type properties</entry>
+      <entry/>
+      <entry/>
+    </row>
+
+    <row>
+      <?dbhtml bgcolor="#C8B0B0" ?>
+      <entry>17.3.4.1</entry>
+      <entry>Type <code>float_round_style</code></entry>
+      <entry>N</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <?dbhtml bgcolor="#C8B0B0" ?>
+      <entry>17.3.4.2</entry>
+      <entry>Type <code>float_denorm_style</code></entry>
+      <entry>N</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>17.3.5</entry>
+      <entry>Class template <code>numeric_limits</code></entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>17.3.6</entry>
+      <entry>Header <code>&lt;climits&gt;</code> synopsis</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>17.3.7</entry>
+      <entry>Header <code>&lt;cfloat&gt;</code> synopsis</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>17.4</entry>
+      <entry>Integer types</entry>
+      <entry/>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>17.4.1</entry>
+      <entry>General</entry>
+      <entry/>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>17.4.2</entry>
+      <entry>Header <code>&lt;cstdint&gt;</code> synopsis</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <?dbhtml bgcolor="#B0B0B0" ?>
+      <entry>17.5</entry>
+      <entry>Startup and termination</entry>
+      <entry>Partial</entry>
+      <entry>C library dependency for quick_exit, at_quick_exit</entry>
+    </row>
+
+    <row>
+      <entry>17.6</entry>
+      <entry>Dynamic memory management</entry>
+      <entry>Y</entry>
+    </row>
+
+    <row>
+      <entry>17.7</entry>
+      <entry>Type identification</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>17.8</entry>
+      <entry>Source location</entry>
+      <entry/>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>17.8.1</entry>
+      <entry>Header <code>&lt;source_location&gt;</code> synopsis</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>17.8.2</entry>
+      <entry>Class <code>source_location</code></entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>17.9</entry>
+      <entry>Exception handling</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>17.10</entry>
+      <entry>Initializer lists</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>17.11</entry>
+      <entry>Comparisons</entry>
+      <entry/>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>17.11.1</entry>
+      <entry>Header <code>&lt;compare&gt;</code> synopsis</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>17.11.2</entry>
+      <entry>Comparison category types</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>17.11.3</entry>
+      <entry>Class template <code>common_comparison_category</code></entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>17.11.4</entry>
+      <entry>Concept <code>three_way_comparable</code></entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>17.11.5</entry>
+      <entry>Result of three-way comparison</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>17.11.6</entry>
+      <entry>Comparison algorithms</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>17.12</entry>
+      <entry>Coroutines</entry>
+      <entry/>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>17.12.1</entry>
+      <entry>General</entry>
+      <entry/>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>17.12.2</entry>
+      <entry>Header <code>&lt;coroutine&gt;</code> synopsis</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>17.12.3</entry>
+      <entry>Coroutine traits</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>17.12.4</entry>
+      <entry>Class template <code>coroutine_handle</code></entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>17.12.5</entry>
+      <entry>No-op coroutines</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>17.13</entry>
+      <entry>Other runtime support</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>
+	<emphasis>18</emphasis>
+      </entry>
+      <entry namest="c2" nameend="c4" align="left">
+	<emphasis>Concepts library</emphasis>
+      </entry>
+    </row>
+
+    <row>
+      <entry>18.1</entry>
+      <entry>General</entry>
+      <entry/>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>18.2</entry>
+      <entry>Equality preservation</entry>
+      <entry/>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>18.3</entry>
+      <entry>Header <code>&lt;concepts&gt;</code> synopsis</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>18.4</entry>
+      <entry>Language-related concepts</entry>
+      <entry/>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>18.4.1</entry>
+      <entry>General</entry>
+      <entry/>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>18.4.2</entry>
+      <entry>Concept <code>same_as</code></entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>18.4.3</entry>
+      <entry>Concept <code>derived_from</code></entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>18.4.4</entry>
+      <entry>Concept <code>convertible_to</code></entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>18.4.5</entry>
+      <entry>Concept <code>common_reference_with</code></entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>18.4.6</entry>
+      <entry>Concept <code>common_with</code></entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>18.4.7</entry>
+      <entry>Arithmetic concepts</entry>
+      <entry/>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>18.4.8</entry>
+      <entry>Concept <code>assignable_from</code></entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>18.4.9</entry>
+      <entry>Concept <code>swappable</code></entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>18.4.10</entry>
+      <entry>Concept <code>destructible</code></entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>18.4.11</entry>
+      <entry>Concept <code>constructible_from</code></entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>18.4.12</entry>
+      <entry>Concept <code>default_initializable</code></entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>18.4.13</entry>
+      <entry>Concept <code>move_constructible</code></entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>18.4.14</entry>
+      <entry>Concept <code>copy_constructible</code></entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>18.5</entry>
+      <entry>Comparison concepts</entry>
+      <entry/>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>18.5.1</entry>
+      <entry>General</entry>
+      <entry/>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>18.5.2</entry>
+      <entry>Boolean testability</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>18.5.3</entry>
+      <entry>Concept <code>equality_comparable</code></entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>18.5.4</entry>
+      <entry>Concept <code>totally_ordered</code></entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>18.6</entry>
+      <entry>Object concepts</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>18.7</entry>
+      <entry>Callable concepts</entry>
+      <entry/>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>18.7.1</entry>
+      <entry>General</entry>
+      <entry/>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>18.7.2</entry>
+      <entry>Concept <code>invocable</code></entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>18.7.3</entry>
+      <entry>Concept <code>regular_invocable</code></entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>18.7.4</entry>
+      <entry>Concept <code>predicate</code></entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>18.7.5</entry>
+      <entry>Concept <code>relation</code></entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>18.7.6</entry>
+      <entry>Concept <code>equivalence_relation</code></entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>18.7.7</entry>
+      <entry>Concept <code>strict_weak_order</code></entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>
+	<emphasis>19</emphasis>
+      </entry>
+      <entry namest="c2" nameend="c4" align="left">
+	<emphasis>Diagnostics library</emphasis>
+      </entry>
+    </row>
+
+    <row>
+      <entry>19.1</entry>
+      <entry>General</entry>
+      <entry/>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>19.2</entry>
+      <entry>Exception classes</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>19.3</entry>
+      <entry>Assertions</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>19.4</entry>
+      <entry>Error numbers</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>19.5</entry>
+      <entry>System error support</entry>
+      <entry/>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>19.5.1</entry>
+      <entry>General</entry>
+      <entry/>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>19.5.2</entry>
+      <entry>Header <code>&lt;system_error&gt;</code> synopsis</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>19.5.3</entry>
+      <entry>Class <code>error_category</code></entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>19.5.4</entry>
+      <entry>Class <code>error_code</code></entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>19.5.5</entry>
+      <entry>Class <code>error_condition</code></entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>19.5.6</entry>
+      <entry>Comparison operator functions</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>19.5.7</entry>
+      <entry>System error hash support</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>19.5.8</entry>
+      <entry>Class <code>system_error</code></entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>
+	<emphasis>20</emphasis>
+      </entry>
+      <entry namest="c2" nameend="c4" align="left">
+	<emphasis>General utilities library</emphasis>
+      </entry>
+    </row>
+    
+    <row>
+      <entry>20.1</entry>
+      <entry>General</entry>
+      <entry/>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>20.2</entry>
+      <entry>Utility components</entry>
+      <entry/>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>20.2.1</entry>
+      <entry>Header <code>&lt;utility&gt;</code> synopsis</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>20.2.2</entry>
+      <entry><code>swap</code></entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>20.2.3</entry>
+      <entry><code>exchange</code></entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>20.2.4</entry>
+      <entry>Forward/move helpers</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>20.2.5</entry>
+      <entry>Function template <code>as_const</code></entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>20.2.6</entry>
+      <entry>Function template <code>declval</code></entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>20.2.7</entry>
+      <entry>Integer comparison functions</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>20.3</entry>
+      <entry>Compile-time integer sequences</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>20.4</entry>
+      <entry>Pairs</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>20.5</entry>
+      <entry>Tuples</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>20.6</entry>
+      <entry>Optional objects</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>20.7</entry>
+      <entry>Variants</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>20.8</entry>
+      <entry>Storage for any type</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>20.9</entry>
+      <entry>Bitsets</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>20.10</entry>
+      <entry>Memory</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>20.11</entry>
+      <entry>Smart pointers</entry>
+      <entry/>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>20.11.1</entry>
+      <entry>Class template <code>unique_ptr</code></entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>20.11.2</entry>
+      <entry>Class <code>bad_weak_ptr</code></entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>20.11.3</entry>
+      <entry>Class template <code>shared_ptr</code></entry>
+      <entry>Y</entry>
+      <entry>Uses code from boost::shared_ptr.</entry>
+    </row>
+
+    <row>
+      <entry>20.11.4</entry>
+      <entry>Class template <code>weak_ptr</code></entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>20.11.5</entry>
+      <entry>Class template <code>owner_less</code></entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>20.11.6</entry>
+      <entry>Class template <code>enable_shared_from_this</code></entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>20.11.7</entry>
+      <entry>Smart pointer hash support</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>20.12</entry>
+      <entry>Memory resources</entry>
+      <entry/>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>20.12.1</entry>
+      <entry>Header <code>&lt;memory_resource&gt;</code> synopsis</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>20.12.2</entry>
+      <entry>Class <code>memory_resource</code></entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>20.12.3</entry>
+      <entry>Class template <code>polymorphic_allocator</code></entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>20.12.4</entry>
+      <entry>Access to program-wide <code>memory_resource</code> objects</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>20.12.5</entry>
+      <entry>Pool resource classes</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>20.12.6</entry>
+      <entry>Class <code>monotonic_buffer_resource</code></entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>20.13</entry>
+      <entry>Class template <code>scoped_allocator_adaptor</code></entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>20.14</entry>
+      <entry>Function objects</entry>
+      <entry/>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>20.14.1</entry>
+      <entry>General</entry>
+      <entry/>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>20.14.2</entry>
+      <entry>Header <code>&lt;functional&gt;</code> synopsis</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>20.14.3</entry>
+      <entry>Definitions</entry>
+      <entry/>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>20.14.4</entry>
+      <entry>Requirements</entry>
+      <entry/>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>20.14.5</entry>
+      <entry>Function template <code>invoke</code></entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>20.14.6</entry>
+      <entry>Class template <code>reference_wrapper</code></entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>20.14.7</entry>
+      <entry>Arithmetic operations</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>20.14.8</entry>
+      <entry>Comparisons</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>20.14.9</entry>
+      <entry>Concept-constrained comparisons</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>20.14.10</entry>
+      <entry>Logical operations</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>20.14.11</entry>
+      <entry>Bitwise operations</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>20.14.12</entry>
+      <entry>Class <code>identity</code></entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>20.14.13</entry>
+      <entry>Function template <code>not_fn</code></entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>20.14.14</entry>
+      <entry>Function template <code>bind_front</code></entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>20.14.15</entry>
+      <entry>Function object binders</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>20.14.16</entry>
+      <entry>Function template <code>mem_fn</code></entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>20.14.17</entry>
+      <entry>Polymorphic function wrappers</entry>
+      <entry/>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>20.14.17.1</entry>
+      <entry>General</entry>
+      <entry/>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>20.14.17.2</entry>
+      <entry>Class <code>bad_function_call</code></entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>20.14.17.3</entry>
+      <entry>Class template <code>function</code></entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>20.14.18</entry>
+      <entry>Searchers</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>20.15</entry>
+      <entry>Metaprogramming and type traits</entry>
+      <entry/>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>20.15.1</entry>
+      <entry>General</entry>
+      <entry/>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>20.15.2</entry>
+      <entry>Requirements</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>20.15.3</entry>
+      <entry>Header <code>&lt;type_traits&gt;</code> synopsis</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>20.15.4</entry>
+      <entry>Helper classes</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>20.15.5</entry>
+      <entry>Unary type traits</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>20.15.6</entry>
+      <entry>Type property queries</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>20.15.7</entry>
+      <entry>Relationships between types</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>20.15.8</entry>
+      <entry>Transformations between types</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>20.15.9</entry>
+      <entry>Logical operator traits</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>20.15.10</entry>
+      <entry>Member relationships</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>20.15.11</entry>
+      <entry>Constant evaluation context</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>20.16</entry>
+      <entry>Compile-time rational arithmetic</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>20.17</entry>
+      <entry>Class <code>type_index</code></entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>20.18</entry>
+      <entry>Execution policies</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>20.19</entry>
+      <entry>Primitive numeric conversions</entry>
+      <entry/>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>20.19.1</entry>
+      <entry>Header <code>&lt;charconv&gt;</code> synopsis</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>20.19.2</entry>
+      <entry>Primitive numeric output conversion</entry>
+      <entry>Y</entry>
+      <entry>
+ 	Floating-point types up to 64-bit are formatted using
+	<link xmlns:xlink="http://www.w3.org/1999/xlink"
+	  xlink:href="https://github.com/ulfjack/ryu">Ryu</link>.
+	Types with greater precision are formatted using the C library
+	(<function>sprintf</function> and conditionally
+	<function>strfromf128</function>).
+	For powerpc64le-unknown-linux-gnu <function>__sprintfieee128</function>
+	must be provided by Glibc.
+      </entry>
+    </row>
+
+    <row>
+      <entry>20.19.3</entry>
+      <entry>Primitive numeric input conversion</entry>
+      <entry>Y</entry>
+      <entry>
+	Floating-point types up to 64-bit are parsed using
+	<link xmlns:xlink="http://www.w3.org/1999/xlink"
+	  xlink:href="https://github.com/fastfloat/fast_float">fast_float</link>.
+	Types with greater precision are parsed using the C library
+	(<function>strtold</function>).
+	For powerpc64le-unknown-linux-gnu <function>__strtoieee128</function>
+	must be provided by Glibc.
+      </entry>
+      </row>
+
+    <row>
+      <entry>20.20</entry>
+      <entry>Formatting</entry>
+      <entry/>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>20.20.1</entry>
+      <entry>Header <code>&lt;format&gt;</code> synopsis</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>20.20.2</entry>
+      <entry>Format string</entry>
+      <entry/>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>20.20.2.1</entry>
+      <entry> In general</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>20.20.2.2</entry>
+      <entry>Standard format specifiers</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>20.20.3</entry>
+      <entry>Error reporting</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>20.20.4</entry>
+      <entry>Formatting functions</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>20.20.5</entry>
+      <entry>Formatter</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>20.20.5.1</entry>
+      <entry>Formatter requirements</entry>
+      <entry/>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>20.20.5.2</entry>
+      <entry>Formatter specializations</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>20.20.5.3</entry>
+      <entry>Class template <code>basic_format_parse_context</code></entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>20.20.5.4</entry>
+      <entry>Class template <code>basic_format_context</code></entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>20.20.6</entry>
+      <entry>Arguments</entry>
+      <entry/>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>20.20.6.1</entry>
+      <entry>Class template <code>basic_format_arg</code></entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>20.20.6.2</entry>
+      <entry>Class template <emphasis>format-arg-store</emphasis></entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>20.20.6.3</entry>
+      <entry>Class template <code>basic_format_args</code></entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>20.20.7</entry>
+      <entry>Class <code>format_error</code></entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>
+	<emphasis>21</emphasis>
+      </entry>
+      <entry namest="c2" nameend="c4" align="left">
+	<emphasis>Strings library</emphasis>
+      </entry>
+    </row>
+
+    <row>
+      <entry>21.1</entry>
+      <entry>General</entry>
+      <entry/>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>21.2</entry>
+      <entry>Character traits</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>21.3</entry>
+      <entry>String classes</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>21.4</entry>
+      <entry>String view classes</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <?dbhtml bgcolor="#B0B0B0" ?>
+      <entry>21.5</entry>
+      <entry>Null-terminated sequence utilities</entry>
+      <entry>Partial</entry>
+      <entry>C library dependency.</entry>
+    </row>
+
+    <row>
+      <entry>
+	<emphasis>22</emphasis>
+      </entry>
+      <entry namest="c2" nameend="c4" align="left">
+	<emphasis>Containers library</emphasis>
+      </entry>
+    </row>
+
+    <row>
+      <entry>22.1</entry>
+      <entry>General</entry>
+      <entry/>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>22.2</entry>
+      <entry>Container requirements</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>22.3</entry>
+      <entry>Sequence containers</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>22.4</entry>
+      <entry>Associative containers</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>22.5</entry>
+      <entry>Unordered associative containers</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>22.6</entry>
+      <entry>Container adaptors</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>22.7</entry>
+      <entry>Views</entry>
+      <entry/>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>22.7.1</entry>
+      <entry>General</entry>
+      <entry/>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>22.7.2</entry>
+      <entry>Header <code>&lt;span&gt;</code> synopsis</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>22.7.3</entry>
+      <entry>Class template <code>span</code></entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>
+	<emphasis>23</emphasis>
+      </entry>
+      <entry namest="c2" nameend="c4" align="left">
+	<emphasis>Iterators library</emphasis>
+      </entry>
+    </row>
+
+    <row>
+      <entry>23.1</entry>
+      <entry>General</entry>
+      <entry/>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>23.2</entry>
+      <entry>Header <code>&lt;iterator&gt;</code> synopsis</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>23.3</entry>
+      <entry>Iterator requirements</entry>
+      <entry/>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>23.3.1</entry>
+      <entry>In general</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>23.3.2</entry>
+      <entry>Associated types</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>23.3.3</entry>
+      <entry>Customization points</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>23.3.4</entry>
+      <entry>Iterator concepts</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>23.3.5</entry>
+      <entry>C++17 iterator requirements</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>23.3.6</entry>
+      <entry>Indirect callable requirements</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>23.3.7</entry>
+      <entry>Common algorithm requirements</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>23.4</entry>
+      <entry>Iterator primitives</entry>
+      <entry/>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>23.4.1</entry>
+      <entry>General</entry>
+      <entry/>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>23.4.2</entry>
+      <entry>Standard iterator tags</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>23.4.3</entry>
+      <entry>Iterator operations</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>23.4.4</entry>
+      <entry>Range iterator operations</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>23.5</entry>
+      <entry>Iterator adaptors</entry>
+      <entry/>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>23.5.1</entry>
+      <entry>Reverse iterators</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>23.5.2</entry>
+      <entry>Insert iterators</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>23.5.3</entry>
+      <entry>Move iterators and sentinels</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>23.5.4</entry>
+      <entry>Common iterators</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>23.5.5</entry>
+      <entry>Default sentinel</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>23.5.6</entry>
+      <entry>Counted iterators</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>23.5.7</entry>
+      <entry> Unreachable sentinel</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>23.6</entry>
+      <entry> Stream iterators</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>23.6.1</entry>
+      <entry>General</entry>
+      <entry/>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>23.6.2</entry>
+      <entry> Class template <code>istream_iterator</code></entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>23.6.3</entry>
+      <entry>Class template <code>ostream_iterator</code></entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>23.6.4</entry>
+      <entry>Class template <code>istreambuf_iterator</code></entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>23.6.5</entry>
+      <entry>Class template <code>ostreambuf_iterator</code></entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>23.7</entry>
+      <entry>Range access</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>
+	<emphasis>24</emphasis>
+      </entry>
+      <entry namest="c2" nameend="c4" align="left">
+	<emphasis>Ranges library</emphasis>
+      </entry>
+    </row>
+
+    <row>
+      <entry>24.1</entry>
+      <entry>General</entry>
+      <entry/>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>24.2</entry>
+      <entry>Header <code>&lt;ranges&gt;</code> synopsis</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>24.3</entry>
+      <entry>Range access</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>24.4</entry>
+      <entry>Range requirements</entry>
+      <entry/>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>24.4.1</entry>
+      <entry>General</entry>
+      <entry/>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>24.4.2</entry>
+      <entry>Ranges</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>24.4.3</entry>
+      <entry>Sized ranges</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>24.4.4</entry>
+      <entry>Views</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>24.4.5</entry>
+      <entry>Other range refinements</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>24.5</entry>
+      <entry>Range utilities</entry>
+      <entry/>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>24.5.1</entry>
+      <entry>General</entry>
+      <entry/>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>24.5.2</entry>
+      <entry>Helper concepts</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>24.5.3</entry>
+      <entry>View interface</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>24.5.4</entry>
+      <entry>Sub-ranges</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>24.5.5</entry>
+      <entry>Dangling iterator handling</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>24.6</entry>
+      <entry>Range factories</entry>
+      <entry/>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>24.6.1</entry>
+      <entry>General</entry>
+      <entry/>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>24.6.2</entry>
+      <entry>Empty view</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>24.6.3</entry>
+      <entry>Single view</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>24.6.4</entry>
+      <entry>Iota view</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>24.6.5</entry>
+      <entry>Istream view</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>24.7</entry>
+      <entry>Range adaptors</entry>
+      <entry/>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>24.7.1</entry>
+      <entry>General</entry>
+      <entry/>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>24.7.2</entry>
+      <entry>Range adaptor objects</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>24.7.3</entry>
+      <entry>Semiregular wrapper</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>24.7.4</entry>
+      <entry>All view</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>24.7.5</entry>
+      <entry>Filter view</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>24.7.6</entry>
+      <entry>Transform view</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>24.7.7</entry>
+      <entry>Take view</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>24.7.8</entry>
+      <entry>Take while view</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>24.7.9</entry>
+      <entry>Drop view</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>24.7.10</entry>
+      <entry>Drop while view</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>24.7.11</entry>
+      <entry>Join view</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>24.7.12</entry>
+      <entry>Split view</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>24.7.13</entry>
+      <entry>Counted view</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>24.7.14</entry>
+      <entry>Common view</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>24.7.15</entry>
+      <entry>Reverse view</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>24.7.16</entry>
+      <entry>Elements view</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>
+	<emphasis>25</emphasis>
+      </entry>
+      <entry namest="c2" nameend="c4" align="left">
+	<emphasis>Algorithms library</emphasis>
+      </entry>
+    </row>
+
+    <row>
+      <entry>25.1</entry>
+      <entry>General</entry>
+      <entry/>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>25.2</entry>
+      <entry>Algorithms requirements</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>25.3</entry>
+      <entry>Parallel algorithms</entry>
+      <entry/>
+      <entry>Uses code from <link xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="https://uxlfoundation.github.io/oneDPL/parallel_api_main.html">oneDPL</link></entry>
+    </row>
+
+    <row>
+      <entry>25.4</entry>
+      <entry>Header <code>&lt;algorithm&gt;</code> synopsis</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>25.5</entry>
+      <entry>Algorithm result types</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>25.6</entry>
+      <entry>Non-modifying sequence operations</entry>
+      <entry/>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>25.6.1</entry>
+      <entry>All of</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>25.6.2</entry>
+      <entry>Any of</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>25.6.3</entry>
+      <entry>None of</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>25.6.4</entry>
+      <entry>For each</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>25.6.5</entry>
+      <entry>Find</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>25.6.6</entry>
+      <entry>Find end</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>25.6.7</entry>
+      <entry>Find first</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>25.6.8</entry>
+      <entry>Adjacent find</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>25.6.9</entry>
+      <entry>Count</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>25.6.10</entry>
+      <entry>Mismatch</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>25.6.11</entry>
+      <entry>Equal</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>25.6.12</entry>
+      <entry>Is permutation</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>25.6.13</entry>
+      <entry>Search</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>25.7</entry>
+      <entry>Mutating sequence operations</entry>
+      <entry/>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>25.7.1</entry>
+      <entry>Copy</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>25.7.2</entry>
+      <entry>Move</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>25.7.3</entry>
+      <entry>Swap</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>25.7.4</entry>
+      <entry>Transform</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>25.7.5</entry>
+      <entry>Replace</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>25.7.6</entry>
+      <entry>Fill</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>25.7.7</entry>
+      <entry>Generate</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>25.7.8</entry>
+      <entry>Remove</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>25.7.9</entry>
+      <entry>Unique</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>25.7.10</entry>
+      <entry>Reverse</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>25.7.11</entry>
+      <entry>Rotate</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>25.7.12</entry>
+      <entry>Sample</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>25.7.13</entry>
+      <entry>Shuffle</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>25.7.14</entry>
+      <entry>Shift</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>25.8</entry>
+      <entry>Sorting and related operations</entry>
+      <entry/>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>25.8.1</entry>
+      <entry>General</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>25.8.2</entry>
+      <entry>Sorting</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>25.8.3</entry>
+      <entry>Nth element</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>25.8.4</entry>
+      <entry>Binary search</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>25.8.5</entry>
+      <entry>Partitions</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>25.8.6</entry>
+      <entry>Merge</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>25.8.7</entry>
+      <entry>Set operations on sorted structures</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>25.8.8</entry>
+      <entry>Heap operations</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>25.8.9</entry>
+      <entry>Minimum and maximum</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>25.8.10</entry>
+      <entry>Bounded value</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>25.8.11</entry>
+      <entry>Lexicographical comparison</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>25.8.12</entry>
+      <entry>Three-way comparison algorithms</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>25.8.13</entry>
+      <entry>Permutation generators</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>25.9</entry>
+      <entry>Header <code>&lt;numeric&gt;</code> synopsis</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>25.10</entry>
+      <entry>Generalized numeric operations</entry>
+      <entry/>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>25.10.1</entry>
+      <entry>General</entry>
+      <entry/>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>25.10.2</entry>
+      <entry>Definitions</entry>
+      <entry/>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>25.10.3</entry>
+      <entry>Accumulate</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>25.10.4</entry>
+      <entry>Reduce</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>25.10.5</entry>
+      <entry>Inner product</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>25.10.6</entry>
+      <entry>Transform reduce</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>25.10.7</entry>
+      <entry>Partial sum</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>25.10.8</entry>
+      <entry>Exclusive scan</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>25.10.9</entry>
+      <entry>Inclusive scan</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>25.10.10</entry>
+      <entry>Transform exclusive scan</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>25.10.11</entry>
+      <entry>Transform inclusive scan</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>25.10.12</entry>
+      <entry>Adjacent difference</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>25.10.13</entry>
+      <entry>Iota</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>25.10.14</entry>
+      <entry>Greatest common divisor</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>25.10.15</entry>
+      <entry>Least common multiple</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>25.10.16</entry>
+      <entry>Midpoint</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>25.11</entry>
+      <entry>Specialized <code>&lt;memory&gt;</code> algorithms</entry>
+      <entry/>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>25.11.1</entry>
+      <entry>General</entry>
+      <entry/>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>25.11.2</entry>
+      <entry>Special memory concepts</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>25.11.3</entry>
+      <entry><code>uninitialized_default_construct</code></entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>25.11.4</entry>
+      <entry><code>uninitialized_value_construct</code></entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>25.11.5</entry>
+      <entry><code>uninitialized_copy</code></entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>25.11.6</entry>
+      <entry><code>uninitialized_move</code></entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>25.11.7</entry>
+      <entry><code>uninitialized_fill</code></entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>25.11.8</entry>
+      <entry><code>construct_at</code></entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>25.11.9</entry>
+      <entry><code>destroy</code></entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>25.12</entry>
+      <entry>C library algorithms</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>
+	<emphasis>26</emphasis>
+      </entry>
+      <entry namest="c2" nameend="c4" align="left">
+	<emphasis>Numerics library</emphasis>
+      </entry>
+    </row>
+
+
+    <row>
+      <entry>26.1</entry>
+      <entry>General</entry>
+      <entry/>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>26.2</entry>
+      <entry>Numeric type requirements</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>26.3</entry>
+      <entry>The floating-point environment</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>26.4</entry>
+      <entry>Complex numbers</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>26.5</entry>
+      <entry>Bit manipulation</entry>
+      <entry/>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>26.5.1</entry>
+      <entry>General</entry>
+      <entry/>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>26.5.2</entry>
+      <entry>Header <code>&lt;bit&gt;</code> synopsis</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>26.5.3</entry>
+      <entry>Function template <code>bit_cast</code></entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>26.5.4</entry>
+      <entry>Integral powers of 2</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>26.5.5</entry>
+      <entry>Rotating</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>26.5.6</entry>
+      <entry>Counting</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>26.5.7</entry>
+      <entry>Endian</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>26.6</entry>
+      <entry>Random number generation</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>26.7</entry>
+      <entry>Numeric arrays</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>26.8</entry>
+      <entry>Mathematical functions for floating-point types</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>26.9</entry>
+      <entry>Numbers</entry>
+      <entry/>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>26.9.1</entry>
+      <entry>Header <code>&lt;numbers&gt;</code> synopsis</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>26.9.2</entry>
+      <entry>Mathematical constants</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>
+	<emphasis>27</emphasis>
+      </entry>
+      <entry namest="c2" nameend="c4" align="left">
+	<emphasis>Time library</emphasis>
+      </entry>
+    </row>
+
+    <row>
+      <entry>27.1</entry>
+      <entry>General</entry>
+      <entry/>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>27.2</entry>
+      <entry>Header <code>&lt;chrono&gt;</code> synopsis</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>27.3</entry>
+      <entry><emphasis>Cpp17Clock</emphasis> requirements</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>27.4</entry>
+      <entry>Time-related traits</entry>
+      <entry/>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>27.4.1</entry>
+      <entry><code>treat_as_floating_point</code></entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>27.4.2</entry>
+      <entry><code>duration_values</code></entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>27.4.3</entry>
+      <entry>Specializations of <code>common_type</code></entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>27.4.4</entry>
+      <entry>Class template <code>is_clock</code></entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>27.5</entry>
+      <entry>Class template <code>duration</code></entry>
+      <entry/>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>27.5.1</entry>
+      <entry>General</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>27.5.2</entry>
+      <entry>Constructors</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>27.5.3</entry>
+      <entry>Observer</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>27.5.4</entry>
+      <entry>Arithmetic</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>27.5.5</entry>
+      <entry>Special values</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>27.5.6</entry>
+      <entry>Non-member arithmetic</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>27.5.7</entry>
+      <entry>Comparisons</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>27.5.8</entry>
+      <entry>Conversions</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>27.5.9</entry>
+      <entry>Suffixes for duration literals</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>27.5.10</entry>
+      <entry>Algorithms</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>27.5.11</entry>
+      <entry>I/O</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>27.6</entry>
+      <entry>Class template <code>time_point</code></entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>27.7</entry>
+      <entry>Clocks</entry>
+      <entry/>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>27.7.1</entry>
+      <entry>General</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>27.7.2</entry>
+      <entry>Class <code>system_clock</code></entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>27.7.3</entry>
+      <entry>Class <code>utc_clock</code></entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>27.7.4</entry>
+      <entry>Class <code>tai_clock</code></entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>27.7.5</entry>
+      <entry>Class <code>gps_clock</code></entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>27.7.6</entry>
+      <entry>Type <code>file_clock</code></entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>27.7.7</entry>
+      <entry>Class <code>steady_clock</code></entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>27.7.8</entry>
+      <entry>Class <code>high_resolution_clock</code></entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>27.7.9</entry>
+      <entry>Local time</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>27.7.10</entry>
+      <entry><code>time_point</code> conversions</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>27.8</entry>
+      <entry>The civil calendar</entry>
+      <entry/>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>27.8.1</entry>
+      <entry>In general</entry>
+      <entry/>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>27.8.2</entry>
+      <entry>Class <code>last_spec</code></entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>27.8.3</entry>
+      <entry>Class <code>day</code></entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>27.8.4</entry>
+      <entry>Class <code>month</code></entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>27.8.5</entry>
+      <entry>Class <code>year</code></entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>27.8.6</entry>
+      <entry>Class <code>weekday</code></entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>27.8.7</entry>
+      <entry>Class <code>weekday_indexed</code></entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>27.8.8</entry>
+      <entry>Class <code>weekday_last</code></entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>27.8.9</entry>
+      <entry>Class <code>month_day</code></entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>27.8.10</entry>
+      <entry>Class <code>month_day_last</code></entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>27.8.11</entry>
+      <entry>Class <code>month_weekday</code></entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>27.8.12</entry>
+      <entry>Class <code>month_weekday_last</code></entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>27.8.13</entry>
+      <entry>Class <code>year_month</code></entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>27.8.14</entry>
+      <entry>Class <code>year_month_day</code></entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>27.8.15</entry>
+      <entry>Class <code>year_month_day_last</code></entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>27.8.16</entry>
+      <entry>Class <code>year_month_weekday</code></entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>27.8.17</entry>
+      <entry>Class <code>year_month_weekday_last</code></entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>27.9</entry>
+      <entry>Class template <code>hh_mm_ss</code></entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>27.10</entry>
+      <entry>12/24 hours functions</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>27.11</entry>
+      <entry>Time zones</entry>
+      <entry/>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>27.11.1</entry>
+      <entry>In general</entry>
+      <entry/>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>27.11.2</entry>
+      <entry>Time zone database</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>27.11.3</entry>
+      <entry>Exception classes</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>27.11.4</entry>
+      <entry>Information classes</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>27.11.5</entry>
+      <entry>Class <code>time_zone</code></entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>27.11.6</entry>
+      <entry>Class template <code>zoned_traits</code></entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>27.11.7</entry>
+      <entry>Class template <code>zoned_time</code></entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>27.11.8</entry>
+      <entry>Class <code>leap_second</code></entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>27.11.9</entry>
+      <entry>Class <code>time_zone_link</code></entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>27.12</entry>
+      <entry>Formatting</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>27.13</entry>
+      <entry>Parsing</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>27.14</entry>
+      <entry>Header <code>&lt;ctime&gt;</code> synopsis</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>
+	<emphasis>28</emphasis>
+      </entry>
+      <entry namest="c2" nameend="c4" align="left">
+	<emphasis>Localization library</emphasis>
+      </entry>
+    </row>
+
+    <row>
+      <entry>28.1</entry>
+      <entry>General</entry>
+      <entry/>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>28.2</entry>
+      <entry>Header <code>&lt;locale&gt;</code> synopsis</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>28.3</entry>
+      <entry>Locales</entry>
+      <entry/>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>28.3.1</entry>
+      <entry>Class <code>locale</code></entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>28.3.2</entry>
+      <entry><code>locale</code> globals</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>28.3.3</entry>
+      <entry>Convenience interfaces</entry>
+      <entry/>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>28.3.3.1</entry>
+      <entry>Character classification</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>28.3.3.2</entry>
+      <entry>Character conversions</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>28.4</entry>
+      <entry>Standard <code>locale</code> categories</entry>
+      <entry/>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>28.4.1</entry>
+      <entry>General</entry>
+      <entry/>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>28.4.2</entry>
+      <entry>The <code>ctype</code> category</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>28.4.3</entry>
+      <entry>The numeric category</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>28.4.4</entry>
+      <entry>The numeric punctuation facet</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>28.4.5</entry>
+      <entry>The collate category</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>28.4.6</entry>
+      <entry>The time category</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>28.4.7</entry>
+      <entry>The monetary category</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>28.4.8</entry>
+      <entry>The message retrieval category</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>28.5</entry>
+      <entry>C library locales</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>
+	<emphasis>29</emphasis>
+      </entry>
+      <entry namest="c2" nameend="c4" align="left">
+	<emphasis>Input/output library</emphasis>
+      </entry>
+    </row>
+    
+
+
+    <row>
+      <entry>29.1</entry>
+      <entry> General</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>29.2</entry>
+      <entry>Iostreams requirements</entry>
+      <entry/>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>29.2.1</entry>
+      <entry>Imbue limitations</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>29.2.2</entry>
+      <entry>Positioning type limitations</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <?dbhtml bgcolor="#B0B0B0" ?>
+      <entry>29.2.3</entry>
+      <entry>Thread safety</entry>
+      <entry>Partial</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>29.3</entry>
+      <entry>Forward declarations</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>29.4</entry>
+      <entry>Standard iostream objects</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>29.5</entry>
+      <entry>Iostreams base classes</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>29.6</entry>
+      <entry>Stream buffers</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>29.7</entry>
+      <entry>Formatting and manipulators</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>29.8</entry>
+      <entry>String-based streams</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>29.9</entry>
+      <entry>File-based streams</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>29.10</entry>
+      <entry>Synchronized output streams</entry>
+      <entry/>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>29.10.1</entry>
+      <entry>Header <code>&lt;syncstream&gt;</code> synopsis</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>29.10.2</entry>
+      <entry>Class template <code>basic_syncbuf</code></entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>29.10.3</entry>
+      <entry>Class template <code>basic_osyncstream</code></entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>29.11</entry>
+      <entry>File systems</entry>
+      <entry/>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>29.11.1</entry>
+      <entry>General</entry>
+      <entry/>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>29.11.2</entry>
+      <entry>Conformance</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>29.11.3</entry>
+      <entry>Requirements</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>29.11.4</entry>
+      <entry>Header <code>&lt;filesystem&gt;</code> synopsis</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>29.11.5</entry>
+      <entry>Error reporting</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>29.11.6</entry>
+      <entry>Class <code>path</code></entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>29.11.7</entry>
+      <entry>Class <code>filesystem_error</code></entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>29.11.8</entry>
+      <entry>Enumerations</entry>
+      <entry/>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>29.11.8.1</entry>
+      <entry>Enum <code>path::format</code></entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>29.11.8.2</entry>
+      <entry>Enum class <code>file_type</code></entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>29.11.8.3</entry>
+      <entry>Enum class <code>copy_options</code></entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>29.11.8.4</entry>
+      <entry>Enum class <code>perms</code></entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>29.11.8.5</entry>
+      <entry>Enum class <code>perm_options</code></entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>29.11.8.6</entry>
+      <entry>Enum class <code>directory_options</code></entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>29.11.9</entry>
+      <entry>Class <code>file_status</code></entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>29.11.10</entry>
+      <entry>Class <code>directory_entry</code></entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>29.11.11</entry>
+      <entry>Class <code>directory_iterator</code></entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>29.11.12</entry>
+      <entry>Class <code>recursive_directory_iterator</code></entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>29.11.13</entry>
+      <entry>Filesystem operation functions</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>29.12</entry>
+      <entry>C library files</entry>
+      <entry/>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>29.12.1</entry>
+      <entry>Header <code>&lt;cstdio&gt;</code> synopsis</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>29.12.2</entry>
+      <entry>Header <code>&lt;cinttypes&gt;</code> synopsis</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>
+	<emphasis>30</emphasis>
+      </entry>
+      <entry namest="c2" nameend="c4" align="left">
+	<emphasis>Regular expressions library</emphasis>
+      </entry>
+    </row>
+
+
+    <row>
+      <entry>30.1</entry>
+      <entry>General</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>30.2</entry>
+      <entry>Requirements</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>30.3</entry>
+      <entry>Header <code>&lt;regex&gt;</code> synopsis</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>30.4</entry>
+      <entry>Namespace <code>std::regex_constants</code></entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>30.5</entry>
+      <entry>Class <code>regex_error</code></entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <?dbhtml bgcolor="#B0B0B0" ?>
+      <entry>30.6</entry>
+      <entry>Class template <code>regex_traits</code></entry>
+      <entry>Partial</entry>
+      <entry><code>transform_primary</code> is not correctly implemented</entry>
+    </row>
+
+    <row>
+      <entry>30.7</entry>
+      <entry>Class template <code>basic_regex</code></entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>30.8</entry>
+      <entry>Class template <code>sub_match</code></entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>30.9</entry>
+      <entry>Class template <code>match_results</code></entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>30.10</entry>
+      <entry>Regular expression algorithms</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>30.11</entry>
+      <entry>Regular expression iterators</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>30.12</entry>
+      <entry>Modified ECMAScript regular expression grammar</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>
+	<emphasis>31</emphasis>
+      </entry>
+      <entry namest="c2" nameend="c4" align="left">
+	<emphasis>Atomics library</emphasis>
+      </entry>
+    </row>
+
+
+    <row>
+      <entry>31.1</entry>
+      <entry>General</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>31.2</entry>
+      <entry>Header <code>&lt;atomic&gt;</code> synopsis</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>31.3</entry>
+      <entry>Type aliases</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>31.4</entry>
+      <entry>Order and consistency</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>31.5</entry>
+      <entry>Lock-free property</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <?dbhtml bgcolor="#B0B0B0" ?>
+      <entry>31.6</entry>
+      <entry>Waiting and notifying</entry>
+      <entry>Partial</entry>
+      <entry>Waiting and notifying is not supported for volatile objects.</entry>
+    </row>
+
+    <row>
+      <entry>31.7</entry>
+      <entry>Class template <code>atomic_ref</code></entry>
+      <entry/>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>31.7.1</entry>
+      <entry>General</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <?dbhtml bgcolor="#B0B0B0" ?>
+      <entry>31.7.2</entry>
+      <entry>Operations</entry>
+      <entry>Partial</entry>
+      <entry>
+	volatile-qualified overloads for <code>wait</code>,
+        <code>notify_one</code>, and <code>notify_all</code> are not provided.
+      </entry>
+    </row>
+
+    <row>
+      <entry>31.7.3</entry>
+      <entry>Specializations for integral types</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>31.7.4</entry>
+      <entry>Specializations for floating-point types</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>31.7.5</entry>
+      <entry>Partial specialization for pointers</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>31.8</entry>
+      <entry>Class template <code>atomic</code></entry>
+      <entry/>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>31.8.1</entry>
+      <entry>General</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <?dbhtml bgcolor="#B0B0B0" ?>
+      <entry>31.8.2</entry>
+      <entry>Operations on atomic types</entry>
+      <entry>Partial</entry>
+      <entry>Waiting and notifying is not supported for volatile objects.</entry>
+    </row>
+
+    <row>
+      <entry>31.8.3</entry>
+      <entry>Specializations for integers</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>31.8.4</entry>
+      <entry>Specializations for floating-point types</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>31.8.5</entry>
+      <entry>Partial specialization for pointers</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>31.8.6</entry>
+      <entry>Member operators common to integers and pointers to objects</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>31.8.7</entry>
+      <entry>Partial specializations for smart pointers</entry>
+      <entry/>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>31.8.7.1</entry>
+      <entry>General</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>31.8.7.2</entry>
+      <entry>Partial specialization for <code>shared_ptr</code></entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>31.8.7.3</entry>
+      <entry>Partial specialization for <code>weak_ptr</code></entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>31.9</entry>
+      <entry>Non-member functions</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>31.10</entry>
+      <entry>Flag type and operations</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>31.11</entry>
+      <entry>Fences</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>
+	<emphasis>32</emphasis>
+      </entry>
+      <entry namest="c2" nameend="c4" align="left">
+	<emphasis>Threads library</emphasis>
+      </entry>
+    </row>
+
+    <row>
+      <entry>32.1</entry>
+      <entry>General</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>32.2</entry>
+      <entry>Requirements</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>32.3</entry>
+      <entry>Stop tokens</entry>
+      <entry/>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>32.3.1</entry>
+      <entry>Introduction</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>32.3.2</entry>
+      <entry>Header <code>&lt;stop_token&gt;</code> synopsis</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>32.3.3</entry>
+      <entry>Class <code>stop_token</code></entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>32.3.4</entry>
+      <entry>Class <code>stop_source</code></entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>32.3.5</entry>
+      <entry>Class template <code>stop_callback</code></entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>32.4</entry>
+      <entry>Threads</entry>
+      <entry/>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>32.4.1</entry>
+      <entry>General</entry>
+      <entry/>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>32.4.2</entry>
+      <entry>Header <code>&lt;thread&gt;</code> synopsis</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <?dbhtml bgcolor="#B0B0B0" ?>
+      <entry>32.4.3</entry>
+      <entry>Class <code>thread</code></entry>
+      <entry>Partial</entry>
+      <entry><code>thread::id</code> comparisons not well-defined</entry>
+    </row>
+
+    <row>
+      <entry>32.4.4</entry>
+      <entry>Class <code>jthread</code></entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>32.4.5</entry>
+      <entry>Namespace <code>this_thread</code></entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>32.5</entry>
+      <entry>Mutual exclusion</entry>
+      <entry/>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>32.5.1</entry>
+      <entry>General</entry>
+      <entry/>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>32.5.2</entry>
+      <entry>Header <code>&lt;mutex&gt;</code> synopsis</entry>
+      <entry/>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>32.5.3</entry>
+      <entry>Header <code>&lt;shared_mutex&gt;</code> synopsis</entry>
+      <entry/>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>32.5.4</entry>
+      <entry>Mutex requirements</entry>
+      <entry/>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>32.5.4.1</entry>
+      <entry>In general</entry>
+      <entry/>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>32.5.4.2</entry>
+      <entry>Mutex types</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>32.5.4.3</entry>
+      <entry>Timed mutex types</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>32.5.4.4</entry>
+      <entry>Shared mutex types</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>32.5.4.5</entry>
+      <entry>Shared timed mutex types</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>32.5.5</entry>
+      <entry>Locks</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>32.5.6</entry>
+      <entry>Generic locking algorithms</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>32.5.7</entry>
+      <entry>Call once</entry>
+      <entry/>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>32.5.7.1</entry>
+      <entry>Struct <code>once_flag</code></entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <?dbhtml bgcolor="#B0B0B0" ?>
+      <entry>32.5.7.2</entry>
+      <entry>Function <code>call_once</code></entry>
+      <entry>Partial</entry>
+       <entry>Exception support is broken.
+	See <link xmlns:xlink="http://www.w3.org/1999/xlink"
+	xlink:href="https://gcc.gnu.org/bugzilla/show_bug.cgi?id=66146">PR
+	66146</link>.
+      </entry>
+    </row>
+
+    <row>
+      <entry>32.6</entry>
+      <entry>Condition variables</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>32.7</entry>
+      <entry>Semaphore</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>32.7.1</entry>
+      <entry>General</entry>
+      <entry/>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>32.7.2</entry>
+      <entry>Header <code>&lt;semaphore&gt;</code> synopsis</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>32.7.3</entry>
+      <entry>Class template <code>counting_semaphore</code></entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>32.8</entry>
+      <entry>Coordination types</entry>
+      <entry/>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>32.8.1</entry>
+      <entry>General</entry>
+      <entry/>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>32.8.2</entry>
+      <entry>Latches</entry>
+      <entry/>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>32.8.2.1</entry>
+      <entry>General</entry>
+      <entry/>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>32.8.2.2</entry>
+      <entry>Header <code>&lt;latch&gt;</code> synopsis</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>32.8.2.3</entry>
+      <entry>Class <code>latch</code></entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>32.8.3</entry>
+      <entry>Barriers</entry>
+      <entry/>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>32.8.3.1</entry>
+      <entry>General</entry>
+      <entry/>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>32.8.3.2</entry>
+      <entry>Header <code>&lt;barrier&gt;</code> synopsis</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>32.8.3.3</entry>
+      <entry>Class template <code>barrier</code></entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>32.9</entry>
+      <entry>Futures</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>
+	<emphasis>Appendix D</emphasis>
+      </entry>
+      <entry namest="c2" nameend="c4" align="left">
+	<emphasis>Compatibility features</emphasis>
+      </entry>
+    </row>
+
+    <row>
+      <entry>D.10</entry>
+      <entry>C headers</entry>
+      <entry/>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>D.10.1</entry>
+      <entry>General</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>D.10.2</entry>
+      <entry>Header <code>&lt;complex.h&gt;</code> synopsis</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>D.10.3</entry>
+      <entry>Header <code>&lt;iso646.h&gt;</code> synopsis</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>D.10.4</entry>
+      <entry>Header <code>&lt;stdalign.h&gt;</code> synopsis</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>D.10.5</entry>
+      <entry>Header <code>&lt;stdbool.h&gt;</code> synopsis</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>D.10.6</entry>
+      <entry>Header <code>&lt;tgmath.h&gt;</code> synopsis</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>D.10.7</entry>
+      <entry>Other C headers</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>D.12</entry>
+      <entry>Relational operators</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>D.13</entry>
+      <entry><code>char*</code> streams</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>D.13.1</entry>
+      <entry>Header <code>&lt;strstream&gt;</code> synopsis</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>D.13.2</entry>
+      <entry>Class <code>strstreambuf</code></entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>D.13.3</entry>
+      <entry>Class <code>istrstream</code></entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>D.13.4</entry>
+      <entry>Class <code>ostrstream</code></entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>D.13.5</entry>
+      <entry>Class <code>strstream</code></entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>D.14</entry>
+      <entry>Deprecated type traits</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>D.15</entry>
+      <entry>Tuple</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>D.16</entry>
+      <entry>Variant</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>D.17</entry>
+      <entry>Deprecated <code>iterator</code> class template</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>D.18</entry>
+      <entry>Deprecated <code>move_iterator</code> access</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>D.19</entry>
+      <entry>Deprecated <code>shared_ptr</code> atomic access</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>D.20</entry>
+      <entry>Deprecated <code>basic_string</code> capacity</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>D.21</entry>
+      <entry>Deprecated standard code conversion facets</entry>
+      <entry/>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>D.21.1</entry>
+      <entry>General</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>D.21.2</entry>
+      <entry>Header <code>&lt;codecvt&gt;</code> synopsis</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>D.21.3</entry>
+      <entry>Requirements</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>D.22</entry>
+      <entry>Deprecated convenience conversion interfaces</entry>
+      <entry/>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>D.22.1</entry>
+      <entry>General</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>D.22.2</entry>
+      <entry>Class template <code>wstring_convert</code></entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>D.22.3</entry>
+      <entry>Class template <code>wbuffer_convert</code></entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>D.23</entry>
+      <entry>Deprecated locale category facets</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>D.24</entry>
+      <entry>Deprecated filesystem path factory functions</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>D.25</entry>
+      <entry>Deprecated atomic operations</entry>
+      <entry/>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>D.25.1</entry>
+      <entry>General</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>D.25.2</entry>
+      <entry>Volatile access</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>D.25.3</entry>
+      <entry>Non-member functions</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>D.25.4</entry>
+      <entry>Operations on atomic types</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+    <row>
+      <entry>D.25.5</entry>
+      <entry>Flag type and operations</entry>
+      <entry>Y</entry>
+      <entry/>
+    </row>
+
+  </tbody>
+</tgroup>
+</table>
+
+<section xml:id="iso.2020.specific" xreflabel="Implementation Specific"><info><title>Implementation Specific Behavior</title></info>
+
+   <para>For behaviour which is also specified by previous standards,
+      see <link linkend="iso.1998.specific">C++ 1998/2003 Implementation
+      Specific Behavior</link>, <link linkend="iso.2011.specific">C++
+      2011 Implementation Specific Behavior</link>, and
+      <link linkend="iso.2017.specific">C++ 2017 Implementation Specific
+      Behavior</link>. This section only documents behaviour which is new in
+      the 2020 standard.
+   </para>
+
+   <para>
+      <emphasis>16.4.2.4 [compliance]</emphasis> The implementation is
+      freestanding if the <code>-ffreestanding</code> compiler flag is used, 
+      and hosted otherwise.
+   </para>
+
+   <para>
+      <emphasis>16.4.2.4 [compliance]</emphasis>
+      The support for always lock-free integral atomic types and presence of
+      <code>atomic_signed_lock_free</code> and
+      <code>atomic_unsigned_lock_free</code> type aliases depends on the
+      target.
+   </para>
+
+   <para>
+      <emphasis>27.5.11 [time.duration.io]</emphasis>
+      The <literal>"μs"</literal> (<literal>"\u00b5\u0073"</literal>) is used
+      for <code>std::micro</code> <code>Period::type</code> if the macro
+      <code>_GLIBCXX_USE_ALT_MICROSECONDS_SUFFIX</code> is defined to a value
+      other than zero before inclusion of the <code>chrono</code> header,
+      <literal>"us"</literal> is used otherwise.
+   </para>
+
+   <para>
+      <emphasis>29.8.2.2 [stringbuf.cons]</emphasis> Sequence pointers are
+      initialized to null pointers by the
+      <code>basic_stringbuf(ios_base::openmode)</code> constructor.
+   </para>
+
+   <para>
+      <emphasis>31.7.1 [atomics.ref.generic.general]</emphasis>,
+      <emphasis>31.7.3 [atomics.ref.int]</emphasis>,
+      <emphasis>31.7.4 [atomics.ref.float]</emphasis>,
+      <emphasis>31.7.5 [atomics.ref.pointer]</emphasis>
+      The values of <code>is_always_lock_free</code> members depend on the
+      target and cannot be listed here.
+   </para>
+
+   <para>
+      <emphasis>31.7.1 [atomics.ref.generic.general]</emphasis>
+      If <code>sizeof(T)</code> is equal to either <code>1</code>,
+      <code>2</code>, <code>4</code>, <code>8</code>, or <code>16</code>,
+      then the value of <code>required_alignment</code> member is equal to
+      the maximum of <code>alignof(T)</code> and <code>sizeof(T)</code>.
+      Otherwise <code>required_alignment</code> value is <code>alignof(T)</code>.
+   </para>
+
+   <para>
+      <emphasis>31.7.3 [atomics.ref.int]</emphasis>
+      The value of <code>required_alignment</code> member is equal to the
+      maximum of <code>alignof(value_type)</code> and
+      <code>sizeof(value_type)</code>.
+   </para>
+
+   <para>
+      <emphasis>31.7.4 [atomics.ref.float]</emphasis>,
+      <emphasis>31.7.5 [atomics.ref.pointer]</emphasis>
+      The value of <code>required_alignment</code> member is equal to
+      <code>alignof(value_type)</code>.
+   </para>
+
+   <para>
+      <emphasis>32.7.3 [thread.sema.cnt]</emphasis> The value of default
+      argument for the <code>least_max_value</code> parameter depends on the
+      target operating system and platform, however the value of
+      <code>counting_semaphore&lt;&gt;::max()</code> is greater than or equal
+      to <code>numeric_limits&lt;int&gt;::max()</code>.
+   </para>
+
+</section>
+
+</section>

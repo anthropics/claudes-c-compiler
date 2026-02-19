@@ -1,0 +1,240 @@
+; Options for the NVPTX port
+; Copyright (C) 2014-2026 Free Software Foundation, Inc.
+;
+; This file is part of GCC.
+;
+; GCC is free software; you can redistribute it and/or modify it under
+; the terms of the GNU General Public License as published by the Free
+; Software Foundation; either version 3, or (at your option) any later
+; version.
+;
+; GCC is distributed in the hope that it will be useful, but WITHOUT ANY
+; WARRANTY; without even the implied warranty of MERCHANTABILITY or
+; FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+; for more details.
+;
+; You should have received a copy of the GNU General Public License
+; along with GCC; see the file COPYING3.  If not see
+; <http://www.gnu.org/licenses/>.
+
+HeaderInclude
+config/nvptx/nvptx-opts.h
+
+; It's not clear whether this was ever build/tested/used, so this is no longer
+; exposed to the user.
+;m32
+;Target RejectNegative InverseMask(ABI64)
+;Generate code for a 32-bit ABI.
+
+m64
+Target RejectNegative Mask(ABI64)
+Ignored, but preserved for backward compatibility.  Only 64-bit ABI is
+supported.
+
+mmainkernel
+Target RejectNegative
+Link in code for a __main kernel.
+
+moptimize
+Target Var(nvptx_optimize) Init(-1)
+Optimize partition neutering.
+
+msoft-stack
+Target Mask(SOFT_STACK)
+Use custom stacks instead of local memory for automatic storage.
+
+msoft-stack-reserve-local=
+Target Joined RejectNegative UInteger Var(nvptx_softstack_size) Init(128)
+Specify size of .local memory used for stack when the exact amount is not known.
+
+muniform-simt
+Target Mask(UNIFORM_SIMT)
+Generate code that can keep local state uniform across all lanes.
+
+mgomp
+Target Mask(GOMP)
+Generate code for OpenMP offloading: enables -msoft-stack and -muniform-simt.
+
+misa=
+Target RejectNegative Negative(misa=) ToLower Joined Enum(ptx_isa) Var(ptx_isa_option) Init(PTX_ISA_unset)
+Specify the PTX ISA target architecture to use.
+
+march=
+Target RejectNegative Joined Alias(misa=)
+Alias:
+
+march-map=sm_30
+Target RejectNegative Alias(misa=,sm_30)
+
+march-map=sm_32
+Target RejectNegative Alias(misa=,sm_30)
+
+march-map=sm_35
+Target RejectNegative Alias(misa=,sm_35)
+
+march-map=sm_37
+Target RejectNegative Alias(misa=,sm_37)
+
+march-map=sm_50
+Target RejectNegative Alias(misa=,sm_37)
+
+march-map=sm_52
+Target RejectNegative Alias(misa=,sm_52)
+
+march-map=sm_53
+Target RejectNegative Alias(misa=,sm_53)
+
+march-map=sm_60
+Target RejectNegative Alias(misa=,sm_53)
+
+march-map=sm_61
+Target RejectNegative Alias(misa=,sm_61)
+
+march-map=sm_62
+Target RejectNegative Alias(misa=,sm_61)
+
+march-map=sm_70
+Target RejectNegative Alias(misa=,sm_70)
+
+march-map=sm_72
+Target RejectNegative Alias(misa=,sm_70)
+
+march-map=sm_75
+Target RejectNegative Alias(misa=,sm_75)
+
+march-map=sm_80
+Target RejectNegative Alias(misa=,sm_80)
+
+march-map=sm_86
+Target RejectNegative Alias(misa=,sm_80)
+
+march-map=sm_87
+Target RejectNegative Alias(misa=,sm_80)
+
+march-map=sm_89
+Target RejectNegative Alias(misa=,sm_89)
+
+march-map=sm_90
+Target RejectNegative Alias(misa=,sm_89)
+
+march-map=sm_90a
+Target RejectNegative Alias(misa=,sm_89)
+
+march-map=sm_100
+Target RejectNegative Alias(misa=,sm_89)
+
+march-map=sm_100f
+Target RejectNegative Alias(misa=,sm_89)
+
+march-map=sm_100a
+Target RejectNegative Alias(misa=,sm_89)
+
+march-map=sm_101
+Target RejectNegative Alias(misa=,sm_89)
+
+march-map=sm_101f
+Target RejectNegative Alias(misa=,sm_89)
+
+march-map=sm_101a
+Target RejectNegative Alias(misa=,sm_89)
+
+march-map=sm_103
+Target RejectNegative Alias(misa=,sm_89)
+
+march-map=sm_103f
+Target RejectNegative Alias(misa=,sm_89)
+
+march-map=sm_103a
+Target RejectNegative Alias(misa=,sm_89)
+
+march-map=sm_120
+Target RejectNegative Alias(misa=,sm_89)
+
+march-map=sm_120f
+Target RejectNegative Alias(misa=,sm_89)
+
+march-map=sm_120a
+Target RejectNegative Alias(misa=,sm_89)
+
+march-map=sm_121
+Target RejectNegative Alias(misa=,sm_89)
+
+march-map=sm_121f
+Target RejectNegative Alias(misa=,sm_89)
+
+march-map=sm_121a
+Target RejectNegative Alias(misa=,sm_89)
+
+Enum
+Name(ptx_version) Type(enum ptx_version)
+Known PTX ISA versions (for use with the -mptx= option):
+
+EnumValue
+Enum(ptx_version) String(3.1) Value(PTX_VERSION_3_1)
+
+EnumValue
+Enum(ptx_version) String(4.1) Value(PTX_VERSION_4_1)
+
+EnumValue
+Enum(ptx_version) String(4.2) Value(PTX_VERSION_4_2)
+
+EnumValue
+Enum(ptx_version) String(5.0) Value(PTX_VERSION_5_0)
+
+EnumValue
+Enum(ptx_version) String(6.0) Value(PTX_VERSION_6_0)
+
+EnumValue
+Enum(ptx_version) String(6.3) Value(PTX_VERSION_6_3)
+
+EnumValue
+Enum(ptx_version) String(7.0) Value(PTX_VERSION_7_0)
+
+EnumValue
+Enum(ptx_version) String(7.3) Value(PTX_VERSION_7_3)
+
+EnumValue
+Enum(ptx_version) String(7.8) Value(PTX_VERSION_7_8)
+
+EnumValue
+Enum(ptx_version) String(_) Value(PTX_VERSION_default)
+
+mptx=
+Target RejectNegative Negative(mptx=) ToLower Joined Enum(ptx_version) Var(ptx_version_option) Init(PTX_VERSION_unset)
+Specify the PTX ISA version to use.
+
+minit-regs=
+Target Undocumented Var(nvptx_init_regs) IntegerRange(0, 3) Joined UInteger Init(3)
+Initialize ptx registers.
+
+mptx-comment
+Target Var(nvptx_comment) Init(1) Undocumented
+
+malias
+Target Var(nvptx_alias) Init(0) Undocumented
+
+mexperimental
+Target Var(nvptx_experimental) Init(0) Undocumented
+
+mfake-exceptions
+Target Var(fake_exceptions) Init(0) Undocumented
+; With '-mfake-exceptions' enabled, the user-visible behavior in presence of
+; exception handling constructs changes such that the compile-time
+; 'sorry, unimplemented: exception handling not supported' is skipped, code
+; generation proceeds, and instead, exception handling constructs 'abort' at
+; run time.  (..., or don't, if they're in dead code.)
+
+mfake-ptx-alloca
+Target Var(nvptx_fake_ptx_alloca) Init(0) Undocumented
+; With '-mfake-ptx-alloca' enabled, the user-visible behavior changes only
+; for configurations where PTX 'alloca' is not available.  Rather than a
+; compile-time 'sorry, unimplemented: dynamic stack allocation not supported'
+; in presence of dynamic stack allocation, with '-mfake-ptx-alloca' enabled,
+; compilation, assembly, and linking succeeds, as does execution, in case that
+; 'alloca' is not attempted (if only used in error code paths, for example),
+; and a run-time failure only in case that 'alloca' is actually attempted.
+; 
+; This is meant to be used in scenarios where large volumes of code are
+; compiled, a small fraction of which runs into dynamic stack allocation, but
+; these parts are not important for specific use cases, and we'd thus like the
+; build to succeed, and error out just upon actual, very rare use of 'alloca'.

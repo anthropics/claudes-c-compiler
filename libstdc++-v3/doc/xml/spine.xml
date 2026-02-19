@@ -1,0 +1,75 @@
+<set xmlns="http://docbook.org/ns/docbook" version="5.0"
+     xml:id="set-index"
+     xreflabel="The GNU C++ Library">
+<title>The GNU C++ Library</title>
+<?dbhtml filename="index.html"?>
+
+<info>
+  <keywordset>
+    <keyword>ISO C++</keyword>
+    <keyword>runtime</keyword>
+    <keyword>library</keyword>
+  </keywordset>
+  <abstract xml:id="contents">
+    <title>Short Contents</title>
+
+    <para>
+      Copyright (C) 2008-2026
+      <link xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="https://www.fsf.org">FSF
+      </link>
+    </para>
+
+    <para>
+      Permission is granted to copy, distribute and/or modify this
+      document under the terms of the GNU Free Documentation
+      License, Version 1.2 or any later version published by the
+      Free Software Foundation; with no Invariant Sections, with no
+      Front-Cover Texts, and with no Back-Cover Texts.
+    </para>
+
+    <para>
+      This is the top level of the libstdc++ documentation set.  The
+      documentation is divided into the following three sections.
+    </para>
+
+    <para>
+      <itemizedlist>
+
+	<listitem>
+	  <para>
+	    <link linkend="manual">Manual</link>
+	  </para>
+	</listitem>
+
+	<listitem>
+	  <para>
+	    <link linkend="faq">Frequently Asked Questions</link>
+	  </para>
+	</listitem>
+
+	<listitem>
+	  <para>
+	    <link linkend="api">API and Source Documentation</link>
+	  </para>
+	</listitem>
+
+      </itemizedlist>
+    </para>
+
+  </abstract>
+</info>
+
+
+<!-- User Manual -->
+<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="manual/spine.xml" parse="xml">
+</xi:include>
+
+<!-- Source Level Documentation-->
+<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="api.xml" parse="xml">
+</xi:include>
+
+<!-- FAQ -->
+<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="faq.xml" parse="xml">
+</xi:include>
+
+</set>

@@ -1,0 +1,112 @@
+<authorgroup xmlns="http://docbook.org/ns/docbook" version="5.0">
+
+<!--
+  <author>
+    <firstname>Benjamin</firstname>
+    <surname>Kosnik</surname>
+
+    <affiliation>
+      <shortaffil>Red Hat</shortaffil>
+      <orgname>Red Hat, Inc.</orgname>
+      <address>
+	<email>libstdc++@gcc.gnu.org</email>
+      </address>
+    </affiliation>
+
+    <personblurb>
+      <para>
+      </para>
+    </personblurb>
+  </author>
+-->
+
+  <author><personname><firstname>Paolo</firstname><surname>Carlini</surname></personname><personblurb>
+      <para>
+	TR1, LWG Active, Closed, Defects lists.
+      </para>
+    </personblurb></author>
+
+  <author><personname><firstname>Phil</firstname><surname>Edwards</surname></personname><personblurb>
+      <para>
+	Originating author, started HOWTO and FAQ, worked on sections
+	Demangling, Macros, Strings, Iterators, Backwards
+	Compatibility, SGI Extensions, Configure, Build, Install.
+      </para>
+    </personblurb></author>
+
+  <author><personname><firstname>Doug</firstname><surname>Gregor</surname></personname><personblurb>
+      <para>
+	Debug Mode, TR1 function objects
+      </para>
+    </personblurb></author>
+
+  <author><personname><firstname>Benjamin</firstname><surname>Kosnik</surname></personname><personblurb>
+      <para>
+	Allocators, ABI, API evolution and deprecation history,
+	Backwards Compatibility, Thread, Debug Support, Locales,
+	Facets, Parallel Mode, Headers, Namespaces, Construction and
+	Structure, Using Exceptions, DocBook conversion and layout.
+      </para>
+    </personblurb></author>
+
+
+  <author><personname><firstname>Dhruv</firstname><surname>Matani</surname></personname><personblurb>
+      <para>
+	bitmap_allocator
+      </para>
+    </personblurb></author>
+
+  <author><personname><firstname>Jason</firstname><surname>Merrill</surname></personname><personblurb>
+      <para>
+	License, __verbose_terminate_handler
+      </para>
+    </personblurb></author>
+
+  <author><personname><firstname>Mark</firstname><surname>Mitchell</surname></personname><personblurb>
+      <para>
+	Porting
+      </para>
+    </personblurb></author>
+
+  <author><personname><firstname>Nathan</firstname><surname>Myers</surname></personname><personblurb>
+      <para>
+	Referenced counted string, C++1998 implementation status.
+      </para>
+    </personblurb></author>
+
+  <author><personname><firstname>Felix</firstname><surname>Natter</surname></personname><personblurb>
+      <para>
+	Namespace composition, Backwards Compatibility.
+      </para>
+    </personblurb></author>
+
+
+  <author><personname><firstname>Stefan</firstname><surname>Olsson</surname></personname><personblurb>
+      <para>
+	mt_allocator
+      </para>
+    </personblurb></author>
+
+  <author><personname><firstname>Johannes</firstname><surname>Singler</surname></personname><personblurb>
+      <para>
+	Parallel mode
+      </para>
+    </personblurb></author>
+
+  <author><personname><firstname>Ami</firstname><surname>Tavory</surname></personname><personblurb>
+      <para>
+	Policy Based Data Structures, Associative Containers, Unordered
+	Containers.
+      </para>
+    </personblurb></author>
+
+  <author><personname><firstname>Jonathan</firstname><surname>Wakely</surname></personname><personblurb>
+      <para>
+	Allocators, ABI History, API Evolution and Deprecation History,
+	Experimental Library Extensions, Implementation Status,
+	Running the Testsuite, Shared Library Versioning, Using Macros,
+	Using Exceptions, shared_ptr, markup editing and styling.
+      </para>
+    </personblurb></author>
+
+</authorgroup>

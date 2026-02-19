@@ -1,0 +1,107 @@
+; Options for the Ada front end.
+; Copyright (C) 2003-2024 Free Software Foundation, Inc.
+;
+; This file is part of GCC.
+;
+; GCC is free software; you can redistribute it and/or modify it under
+; the terms of the GNU General Public License as published by the Free
+; Software Foundation; either version 3, or (at your option) any later
+; version.
+; 
+; GCC is distributed in the hope that it will be useful, but WITHOUT ANY
+; WARRANTY; without even the implied warranty of MERCHANTABILITY or
+; FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+; for more details.
+; 
+; You should have received a copy of the GNU General Public License
+; along with GCC; see the file COPYING3.  If not see
+; <http://www.gnu.org/licenses/>.
+
+; See the GCC internals manual for a description of this file's format.
+
+; Please try to keep this file in ASCII collating order.
+
+Language
+Ada
+
+Language
+AdaWhy
+
+Language
+AdaSCIL
+
+-all-warnings
+Ada AdaWhy AdaSCIL Alias(Wall)
+
+-include-barrier
+Ada AdaWhy AdaSCIL Alias(I, -)
+
+-include-directory
+Ada AdaWhy AdaSCIL Separate Alias(I)
+
+-include-directory=
+Ada AdaWhy AdaSCIL Joined Alias(I)
+
+-no-standard-includes
+Ada AdaWhy AdaSCIL Alias(nostdinc)
+
+-no-standard-libraries
+Ada AdaWhy AdaSCIL Alias(nostdlib)
+
+I
+Ada AdaWhy AdaSCIL Joined Separate
+; Documented in C but it should be: -I <dir>.	Add <dir> to the end of the main source path
+
+Wall
+Ada AdaWhy AdaSCIL
+Enable most warning messages.
+
+fdump-scos
+Ada RejectNegative Var(flag_dump_scos) Init(0)
+Dump Source Coverage Obligations.
+
+k8
+Driver
+Synonym of -gnatk8.
+
+nostdinc
+Ada AdaWhy AdaSCIL RejectNegative
+; Documented in C but it should be: Do not look for source files in standard path
+
+nostdlib
+Ada AdaWhy AdaSCIL
+Do not look for object files in standard path.
+
+fRTS=
+Ada AdaWhy AdaSCIL Joined RejectNegative
+Select the runtime.
+
+fshort-enums
+Ada AdaWhy AdaSCIL
+Use the narrowest integer type possible for enumeration types.
+
+fsigned-char
+Ada AdaWhy AdaSCIL
+Make \"char\" signed by default.
+
+funsigned-char
+Ada AdaWhy AdaSCIL
+Make \"char\" unsigned by default.
+
+gant
+Ada AdaWhy AdaSCIL Driver Joined Undocumented RejectNegative
+Catch typos.
+
+gnatO
+Ada AdaWhy AdaSCIL Driver Separate RejectNegative
+Set name of output ALI file (internal switch).
+
+gnat
+Ada AdaWhy AdaSCIL Driver Joined RejectNegative
+-gnat<options>	Specify options to GNAT.
+
+fbuiltin-printf
+Ada Undocumented
+Ignored.
+
+; This comment is to ensure we retain the blank line above.

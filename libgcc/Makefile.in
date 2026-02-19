@@ -1,0 +1,1225 @@
+# Makefile.in
+
+# Copyright (C) 2005-2026 Free Software Foundation, Inc.
+#
+# This file is part of GCC.
+#
+# GCC is free software; you can redistribute it and/or modify it under the
+# terms of the GNU Library General Public License as published by the Free
+# Software Foundation; either version 3 of the License, or (at your option)
+# any later version.
+#
+# GCC is distributed in the hope that it will be useful, but WITHOUT ANY
+# WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+# FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
+# more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with GCC; see the file COPYING3.  If not see
+# <http://www.gnu.org/licenses/>.
+#
+
+libgcc_topdir = @libgcc_topdir@
+host_subdir = @host_subdir@
+
+gcc_objdir = $(MULTIBUILDTOP)../../$(host_subdir)/gcc
+
+srcdir = @srcdir@
+
+prefix = @prefix@
+
+exec_prefix = @exec_prefix@
+libdir = @libdir@
+shlib_slibdir = @slibdir@
+
+SHELL = @SHELL@
+
+cpu_type = @cpu_type@
+enable_shared = @enable_shared@
+enable_gcov = @enable_gcov@
+double_type_size = @double_type_size@
+long_double_type_size = @long_double_type_size@
+decimal_float = @decimal_float@
+enable_vtable_verify = @enable_vtable_verify@
+enable_decimal_float = @enable_decimal_float@
+fixed_point = @fixed_point@
+with_aix_soname = @with_aix_soname@
+solaris_ld_v2_maps = @solaris_ld_v2_maps@
+enable_execute_stack = @enable_execute_stack@
+unwind_header = @unwind_header@
+md_unwind_def_header = @md_unwind_def_header@
+md_unwind_header = @md_unwind_header@
+sfp_machine_header = @sfp_machine_header@
+thread_header = @thread_header@
+
+host_noncanonical = @host_noncanonical@
+real_host_noncanonical = @real_host_noncanonical@
+target_noncanonical = @target_noncanonical@
+
+# List of extra object files that should be compiled for this target machine.
+# The rules for compiling them should be in the t-* file for the machine.
+EXTRA_PARTS = @extra_parts@
+
+FORCE_EXPLICIT_EH_REGISTRY = @force_explicit_eh_registry@
+
+extra-parts = libgcc-extra-parts
+
+# Multilib support variables.
+MULTISRCTOP =
+MULTIBUILDTOP =
+MULTIDIRS =
+MULTISUBDIR =
+MULTIDO = true
+MULTICLEAN = true
+
+INSTALL = @INSTALL@
+INSTALL_PROGRAM = @INSTALL_PROGRAM@
+INSTALL_DATA = @INSTALL_DATA@
+mkinstalldirs = $(SHELL) $(libgcc_topdir)/mkinstalldirs
+INSTALL_PARTS = $(EXTRA_PARTS)
+
+objext = .o
+
+AR = @AR@
+AR_FLAGS = rc
+
+CC = @CC@
+CFLAGS = @CFLAGS@
+RANLIB = @RANLIB@
+LN_S = @LN_S@
+WERROR = @WERROR@
+
+PWD_COMMAND = $${PWDCMD-pwd}
+
+# Flags to pass to a recursive make.
+FLAGS_TO_PASS = \
+	"AR=$(AR)" \
+	"AR_FLAGS=$(AR_FLAGS)" \
+	"CC=$(CC)" \
+	"CFLAGS=$(CFLAGS)" \
+	"DESTDIR=$(DESTDIR)" \
+	"EXTRA_OFILES=$(EXTRA_OFILES)" \
+	"HDEFINES=$(HDEFINES)" \
+	"INSTALL=$(INSTALL)" \
+	"INSTALL_DATA=$(INSTALL_DATA)" \
+	"INSTALL_PROGRAM=$(INSTALL_PROGRAM)" \
+	"LDFLAGS=$(LDFLAGS)" \
+	"LOADLIBES=$(LOADLIBES)" \
+	"RANLIB=$(RANLIB)" \
+	"SHELL=$(SHELL)" \
+	"prefix=$(prefix)" \
+	"exec_prefix=$(exec_prefix)" \
+	"libdir=$(libdir)" \
+	"libsubdir=$(libsubdir)" \
+	"tooldir=$(tooldir)"
+
+# Dependencies for "all" are set later in the file.
+all: all-multi
+	# Now that we have built all the objects, we need to copy
+	# them back to the GCC directory.  Too many things (other
+	# in-tree libraries, and DejaGNU) know about the layout
+	# of the build tree, for now.
+	$(MAKE) install-leaf DESTDIR=$(gcc_objdir) \
+	  slibdir= libsubdir= MULTIOSDIR=$(MULTIDIR)
+
+.PHONY: all-multi
+all-multi:
+	# If this is the top-level multilib, build all the other
+	# multilibs.
+	@: $(MAKE) ; exec $(MULTIDO) $(FLAGS_TO_PASS) multi-do DO=all
+
+.PHONY: check installcheck
+check:
+installcheck:
+
+.PHONY: all clean
+
+clean:
+	-rm -f libgcc_tm.h libgcc.map
+	-rm -f libgcc_tm.stamp stmp-ldirs
+	-rm -f *$(objext)
+	-rm -f *.dep
+	-rm -f *.a
+	-rm -f libunwind$(SHLIB_EXT)
+	-rm -f libgcc_s*
+	@$(MULTICLEAN) multi-clean DO=clean
+distclean: clean
+	@$(MULTICLEAN) multi-clean DO=distclean
+	-rm -f auto-target.h
+	-rm -f stamp-h
+	-rm -f *~ Makefile config.cache config.status multilib.out
+	-rm -f config.log
+maintainer-clean realclean: distclean
+
+Makefile: $(srcdir)/Makefile.in config.status
+	CONFIG_FILES=Makefile CONFIG_HEADERS= $(SHELL) ./config.status
+
+# Depending on Makefile makes sure that config.status has been re-run
+# if needed.  This prevents problems with parallel builds.
+auto-target.h: stamp-h ; @true
+stamp-h: $(srcdir)/config.in config.status Makefile
+	CONFIG_FILES= CONFIG_HEADERS=auto-target.h:$(srcdir)/config.in $(SHELL) ./config.status
+
+config.status: $(srcdir)/configure $(srcdir)/config.host
+	$(SHELL) ./config.status --recheck
+
+AUTOCONF = autoconf
+configure_deps = \
+	$(srcdir)/../config/enable.m4 \
+	$(srcdir)/../config/tls.m4 \
+	$(srcdir)/../config/toolexeclibdir.m4 \
+	$(srcdir)/../config/acx.m4 \
+	$(srcdir)/../config/no-executables.m4 \
+	$(srcdir)/../config/lib-ld.m4 \
+	$(srcdir)/../config/override.m4 \
+	$(srcdir)/../config/picflag.m4 \
+	$(srcdir)/../config/dfp.m4 \
+	$(srcdir)/../config/unwind_ipinfo.m4 \
+	$(srcdir)/../config/gthr.m4 \
+	$(srcdir)/../config/sjlj.m4 \
+	$(srcdir)/../config/cet.m4
+
+$(srcdir)/configure: @MAINT@ $(srcdir)/configure.ac $(configure_deps)
+	cd $(srcdir) && $(AUTOCONF)
+
+include $(gcc_objdir)/libgcc.mvars
+
+# Flags to pass to recursive makes.
+
+AR_FOR_TARGET = $(AR)
+AR_FLAGS_FOR_TARGET =
+AR_CREATE_FOR_TARGET = $(AR_FOR_TARGET) $(AR_FLAGS_FOR_TARGET) rc
+AR_EXTRACT_FOR_TARGET = $(AR_FOR_TARGET) $(AR_FLAGS_FOR_TARGET) x
+AWK = @AWK@
+GCC_FOR_TARGET = $(CC)
+LIPO = @LIPO@
+LIPO_FOR_TARGET = $(LIPO)
+NM = @NM@
+NM_FOR_TARGET = $(NM)
+RANLIB_FOR_TARGET = $(RANLIB)
+STRIP = @STRIP@
+STRIP_FOR_TARGET = $(STRIP)
+
+# Directory in which the compiler finds libraries etc.
+libsubdir = $(libdir)/gcc/$(real_host_noncanonical)/$(version)@accel_dir_suffix@
+# Used to install the shared libgcc.
+slibdir = @slibdir@
+# Maybe used for DLLs on Windows targets.
+toolexecdir = @toolexecdir@
+toolexeclibdir = @toolexeclibdir@
+
+export AR_FOR_TARGET
+export AR_CREATE_FOR_TARGET
+export AR_FLAGS_FOR_TARGET
+export AR_EXTRACT_FOR_TARGET
+export AWK
+export DESTDIR
+export GCC_FOR_TARGET
+export INCLUDES
+export INSTALL_DATA
+export LIB1ASMSRC
+export LIBGCC2_CFLAGS
+export LIPO_FOR_TARGET
+export NM_FOR_TARGET
+export STRIP_FOR_TARGET
+export RANLIB_FOR_TARGET
+export libsubdir
+export slibdir
+export toolexecdir
+export toolexeclibdir
+
+version := $(shell @get_gcc_base_ver@ $(srcdir)/../gcc/BASE-VER)
+
+ifeq ($(decimal_float),yes)
+ifeq ($(enable_decimal_float),bid)
+DECNUMINC = -I$(srcdir)/config/$(cpu_type) -I$(srcdir)/config/libbid \
+	    -DENABLE_DECIMAL_BID_FORMAT
+else
+DECNUMINC = -I$(srcdir)/../libdecnumber/$(enable_decimal_float) \
+	    -I$(srcdir)/../libdecnumber
+endif
+else
+DECNUMINC =
+endif
+
+# Options to use when compiling libgcc2.a.
+#
+LIBGCC2_DEBUG_CFLAGS = -g
+LIBGCC2_CFLAGS = -O2 $(LIBGCC2_INCLUDES) $(GCC_CFLAGS) $(HOST_LIBGCC2_CFLAGS) \
+		 $(LIBGCC2_DEBUG_CFLAGS) -DIN_LIBGCC2 \
+		 -fbuilding-libgcc -fno-stack-protector \
+		 $(INHIBIT_LIBC_CFLAGS)
+
+# Additional options to use when compiling libgcc2.a.
+# Some targets override this to -isystem include
+LIBGCC2_INCLUDES =
+
+# Additional target-dependent options for compiling libgcc2.a.
+HOST_LIBGCC2_CFLAGS =
+
+PICFLAG = @PICFLAG@
+
+CET_FLAGS = @CET_FLAGS@
+
+USE_TM_CLONE_REGISTRY = @use_tm_clone_registry@
+
+# Defined in libgcc2.c, included only in the static library.
+LIB2FUNCS_ST = _eprintf __gcc_bcmp
+
+# List of functions not to build from libgcc2.c.
+LIB2FUNCS_EXCLUDE =
+
+# List of extra C and assembler files to add to static and shared libgcc2.
+# Assembler files should have names ending in `.S'.
+LIB2ADD = 
+
+# List of extra C and assembler files to add to static libgcc2.
+# Assembler files should have names ending in `.S'.
+LIB2ADD_ST =
+
+# Specify the directories to be searched for header files.
+# Both . and srcdir are used, in that order,
+# so that *config.h will be found in the compilation
+# subdirectory rather than in the source directory.
+# -I$(@D) and -I$(srcdir)/$(@D) cause the subdirectory of the file
+# currently being compiled, in both source trees, to be examined as well.
+INCLUDES = -I. -I$(@D) -I$(gcc_objdir) \
+	   -I$(srcdir) -I$(srcdir)/$(@D) -I$(srcdir)/../gcc \
+	   -I$(srcdir)/../include $(DECNUMINC)
+
+# Forcibly remove any profiling-related flags.  There is no point
+# in supporting profiled bootstrap in this library.
+override CFLAGS := $(filter-out -fprofile-generate -fprofile-use,$(CFLAGS))
+
+# CFLAGS first is not perfect; normally setting CFLAGS should override any
+# options in LIBGCC2_CFLAGS.  But LIBGCC2_CFLAGS may contain -g0, and CFLAGS
+# will usually contain -g, so for the moment CFLAGS goes first.  We must
+# include CFLAGS - that's where multilib options live.
+INTERNAL_CFLAGS = $(CFLAGS) $(LIBGCC2_CFLAGS) $(HOST_LIBGCC2_CFLAGS) \
+		  $(INCLUDES) @set_have_cc_tls@ @set_use_emutls@
+
+NO_PIE_CFLAGS = @NO_PIE_CFLAGS@
+
+# Options to use when compiling crtbegin/end.
+CRTSTUFF_CFLAGS = -O2 $(GCC_CFLAGS) $(INCLUDES) $(MULTILIB_CFLAGS) -g0 \
+  $(NO_PIE_CFLAGS) -finhibit-size-directive -fno-inline -fno-exceptions \
+  -fno-zero-initialized-in-bss -fno-toplevel-reorder -fno-tree-vectorize \
+  -fbuilding-libgcc -fno-stack-protector $(FORCE_EXPLICIT_EH_REGISTRY) \
+  $(INHIBIT_LIBC_CFLAGS) $(USE_TM_CLONE_REGISTRY)
+
+# Extra flags to use when compiling crt{begin,end}.o.
+CRTSTUFF_T_CFLAGS =
+
+MULTIDIR := $(shell $(CC) $(CFLAGS) -print-multi-directory)
+MULTIOSDIR := $(shell $(CC) $(CFLAGS) -print-multi-os-directory)
+
+MULTIOSSUBDIR := $(shell if test "$(MULTIOSDIR)" != .; then echo /$(MULTIOSDIR); fi)
+inst_libdir = $(libsubdir)$(MULTISUBDIR)
+inst_slibdir = $(slibdir)$(MULTIOSSUBDIR)
+
+gcc_compile_bare = $(CC) $(INTERNAL_CFLAGS) $(CFLAGS-$(<F))
+compile_deps = -MT $@ -MD -MP -MF $(basename $@).dep
+gcc_compile = $(gcc_compile_bare) -o $@ $(compile_deps)
+gcc_s_compile = $(gcc_compile) -DSHARED
+
+objects = $(filter %$(objext),$^)
+
+# Collect any host-specific information from Makefile fragments.
+
+LIBGCC_VER_GNU_PREFIX = __
+LIBGCC_VER_FIXEDPOINT_GNU_PREFIX = __
+LIBGCC_VER_SYMBOLS_PREFIX =
+
+FPBIT_FUNCS = _pack_sf _unpack_sf _addsub_sf _mul_sf _div_sf \
+    _fpcmp_parts_sf _compare_sf _eq_sf _ne_sf _gt_sf _ge_sf \
+    _lt_sf _le_sf _unord_sf _si_to_sf _sf_to_si _negate_sf _make_sf \
+    _sf_to_df _sf_to_tf _thenan_sf _sf_to_usi _usi_to_sf
+
+DPBIT_FUNCS = _pack_df _unpack_df _addsub_df _mul_df _div_df \
+    _fpcmp_parts_df _compare_df _eq_df _ne_df _gt_df _ge_df \
+    _lt_df _le_df _unord_df _si_to_df _df_to_si _negate_df _make_df \
+    _df_to_sf _df_to_tf _thenan_df _df_to_usi _usi_to_df
+
+TPBIT_FUNCS = _pack_tf _unpack_tf _addsub_tf _mul_tf _div_tf \
+    _fpcmp_parts_tf _compare_tf _eq_tf _ne_tf _gt_tf _ge_tf \
+    _lt_tf _le_tf _unord_tf _si_to_tf _tf_to_si _negate_tf _make_tf \
+    _tf_to_df _tf_to_sf _thenan_tf _tf_to_usi _usi_to_tf
+
+# Additional sources to handle exceptions; overridden by targets as needed.
+LIB2ADDEH = $(srcdir)/unwind-dw2.c $(srcdir)/unwind-dw2-fde.c \
+  $(srcdir)/unwind-sjlj.c $(srcdir)/unwind-c.c
+LIB2ADDEHSTATIC = $(LIB2ADDEH)
+LIB2ADDEHSHARED = $(LIB2ADDEH)
+
+# nm flags to list global symbols in libgcc object files.
+SHLIB_NM_FLAGS = -pg
+
+# Don't build libunwind by default.
+LIBUNWIND =
+SHLIBUNWIND_LINK =
+SHLIBUNWIND_INSTALL =
+
+
+# Create links to files specified in config.host.
+LIBGCC_LINKS = enable-execute-stack.c \
+               unwind.h md-unwind-def.h md-unwind-support.h \
+               sfp-machine.h gthr-default.h
+
+enable-execute-stack.c: $(srcdir)/$(enable_execute_stack)
+	-$(LN_S) $< $@
+unwind.h: $(srcdir)/$(unwind_header)
+	-$(LN_S) $< $@
+md-unwind-def.h: $(srcdir)/config/$(md_unwind_def_header)
+	-$(LN_S) $< $@
+md-unwind-support.h: $(srcdir)/config/$(md_unwind_header)
+	-$(LN_S) $< $@
+sfp-machine.h: $(srcdir)/config/$(sfp_machine_header)
+	-$(LN_S) $< $@
+gthr-default.h: $(srcdir)/$(thread_header)
+	-$(LN_S) $< $@
+
+tmake_file = @tmake_file@
+-include $(tmake_file)
+
+# Collect target defines and headers from config.host.
+libgcc_tm_defines = @tm_defines@
+libgcc_tm_file = @tm_file@
+libgcc_tm.h: libgcc_tm.stamp; @true
+libgcc_tm.stamp:
+	DEFINES='$(libgcc_tm_defines)' HEADERS='$(libgcc_tm_file)' \
+		$(srcdir)/mkheader.sh > tmp-libgcc_tm.h
+	$(SHELL) $(srcdir)/../move-if-change tmp-libgcc_tm.h libgcc_tm.h
+	echo timestamp > $@
+
+# Only handle shared libraries if both:
+#   - the user requested them
+#   - we know how to build them
+ifeq ($(SHLIB_LINK),)
+  enable_shared := no
+endif
+
+ifeq ($(enable_shared),yes)
+  iterator = $(patsubst %,$(srcdir)/shared-object.mk,$(iter-items))
+
+  install-shared = install-shared
+
+  ifneq ($(LIBUNWIND),)
+    install-libunwind = install-libunwind
+  endif
+endif
+
+# For -fvisibility=hidden.  We need both a -fvisibility=hidden on
+# the command line, and a #define to prevent libgcc2.h etc from
+# overriding that with #pragmas.
+vis_hide = @vis_hide@
+
+ifneq (,$(vis_hide))
+
+# If we have -fvisibility=hidden, then we need to generate hide
+# lists for object files implemented in assembly.
+ASM_HIDDEN_OP = @asm_hidden_op@
+
+define gen-hide-list
+$(NM) -pg $< | \
+  $(AWK) 'NF == 3 && $$2 !~ /^[UN]$$/ && $$3 !~ /.*_compat/ \
+         && $$3 !~ /.*@.*/ \
+	 { print "\t$(ASM_HIDDEN_OP)", $$3 }' > $@T
+mv -f $@T $@
+endef
+else
+gen-hide-list = echo > $@
+endif
+
+ifneq ($(enable_shared),yes)
+iterator = $(patsubst %,$(srcdir)/static-object.mk,$(iter-items))
+endif
+
+LIB2ADD += enable-execute-stack.c
+
+# Control Flow Redundancy hardening out-of-line checker.
+LIB2ADD += $(srcdir)/hardcfr.c
+
+# Stack scrubbing infrastructure.
+@HAVE_STRUB_SUPPORT@LIB2ADD += $(srcdir)/strub.c
+
+# While emutls.c has nothing to do with EH, it is in LIB2ADDEH*
+# instead of LIB2ADD because that's the way to be sure on some targets
+# (e.g. *-*-darwin*) only one copy of it is linked.
+LIB2ADDEH += $(srcdir)/emutls.c
+LIB2ADDEHSTATIC += $(srcdir)/emutls.c
+LIB2ADDEHSHARED += $(srcdir)/emutls.c
+
+# Library members defined in libgcc2.c.
+lib2funcs = _muldi3 _negdi2 _lshrdi3 _ashldi3 _ashrdi3 _cmpdi2 _ucmpdi2	   \
+	    _clear_cache _trampoline __main _absvsi2 \
+	    _absvdi2 _addvsi3 _addvdi3 _subvsi3 _subvdi3 _mulvsi3 _mulvdi3 \
+	    _negvsi2 _negvdi2 _ctors _ffssi2 _ffsdi2 _clz _clzsi2 _clzdi2  \
+	    _ctzsi2 _ctzdi2 _popcount_tab _popcountsi2 _popcountdi2	   \
+	    _paritysi2 _paritydi2 _powisf2 _powidf2 _powixf2 _powitf2	   \
+	    _mulhc3 _mulsc3 _muldc3 _mulxc3 _multc3 _divhc3 _divsc3	   \
+	    _divdc3 _divxc3 _divtc3 _bswapsi2 _bswapdi2 _clrsbsi2	   \
+	    _clrsbdi2 _mulbitint3
+
+# The floating-point conversion routines that involve a single-word integer.
+# XX stands for the integer mode.
+swfloatfuncs = $(patsubst %,_fixuns%XX,sf df xf)
+
+# Likewise double-word routines.
+dwfloatfuncs = $(patsubst %,_fix%XX,sf df xf tf) \
+	       $(patsubst %,_fixuns%XX,sf df xf tf) \
+	       $(patsubst %,_floatXX%,sf df xf tf) \
+	       $(patsubst %,_floatunXX%,sf df xf tf)
+
+ifeq ($(LIB2_SIDITI_CONV_FUNCS),)
+  lib2funcs += $(subst XX,si,$(swfloatfuncs))
+  lib2funcs += $(subst XX,di,$(dwfloatfuncs))
+endif
+
+# These might cause a divide overflow trap and so are compiled with
+# unwinder info.
+LIB2_DIVMOD_FUNCS = _divdi3 _moddi3 _divmoddi4 \
+		    _udivdi3 _umoddi3 _udivmoddi4 _udiv_w_sdiv \
+		    _divmodbitint4
+
+# Remove any objects from lib2funcs and LIB2_DIVMOD_FUNCS that are
+# defined as optimized assembly code in LIB1ASMFUNCS or as C code
+# in LIB2FUNCS_EXCLUDE.
+lib2funcs := $(filter-out $(LIB2FUNCS_EXCLUDE) $(LIB1ASMFUNCS),$(lib2funcs))
+LIB2_DIVMOD_FUNCS := $(filter-out $(LIB2FUNCS_EXCLUDE) $(LIB1ASMFUNCS), \
+		       $(LIB2_DIVMOD_FUNCS))
+
+LIB2FUNCS_ST := $(filter-out $(LIB2FUNCS_EXCLUDE),$(LIB2FUNCS_ST))
+
+# Build "libgcc1" (assembly) components.
+
+lib1asmfuncs-o = $(patsubst %,%$(objext),$(LIB1ASMFUNCS))
+$(lib1asmfuncs-o): %$(objext): $(srcdir)/config/$(LIB1ASMSRC) %.vis
+	$(gcc_compile) -DL$* -xassembler-with-cpp -c $< -include $*.vis
+$(patsubst %,%.vis,$(LIB1ASMFUNCS)): %.vis: %_s$(objext)
+	$(gen-hide-list)
+libgcc-objects += $(lib1asmfuncs-o)
+
+lib1asmfuncs-s-o = $(patsubst %,%_s$(objext),$(LIB1ASMFUNCS))
+$(lib1asmfuncs-s-o): %_s$(objext): $(srcdir)/config/$(LIB1ASMSRC)
+	$(gcc_s_compile) -DL$* -xassembler-with-cpp -c $<
+ifeq ($(enable_shared),yes)
+
+libgcc-s-objects += $(lib1asmfuncs-s-o)
+
+endif
+
+# Build lib2funcs.  For the static library also include LIB2FUNCS_ST.
+lib2funcs-o = $(patsubst %,%$(objext),$(lib2funcs) $(LIB2FUNCS_ST))
+$(lib2funcs-o): %$(objext): $(srcdir)/libgcc2.c
+	$(gcc_compile) -DL$* -c $< $(vis_hide)
+libgcc-objects += $(lib2funcs-o)
+
+ifeq ($(enable_shared),yes)
+lib2funcs-s-o = $(patsubst %,%_s$(objext),$(lib2funcs))
+$(lib2funcs-s-o): %_s$(objext): $(srcdir)/libgcc2.c
+	$(gcc_s_compile) -DL$* -c $<
+libgcc-s-objects += $(lib2funcs-s-o)
+endif
+
+ifneq ($(LIB2_SIDITI_CONV_FUNCS),)
+# Build libgcc2.c for each conversion function, with a specific
+# L<func> definition and LIBGCC2_UNITS_PER_WORD setting.  The DImode
+# functions are built with a wordsize of 4; the TImode functions are
+# built with the same labels, but a wordsize of 8.
+
+sifuncs := $(filter-out $(LIB2FUNCS_EXCLUDE),$(subst XX,si,$(swfloatfuncs)))
+difuncs := $(filter-out $(LIB2FUNCS_EXCLUDE),$(subst XX,di,$(dwfloatfuncs)))
+tifuncs := $(filter-out $(LIB2FUNCS_EXCLUDE),$(subst XX,ti,$(dwfloatfuncs)))
+
+iter-items := $(sifuncs) $(difuncs) $(tifuncs)
+iter-labels := $(sifuncs) $(difuncs) $(difuncs)
+iter-sizes := $(patsubst %,4,$(sifuncs) $(difuncs)) $(patsubst %,8,$(tifuncs))
+
+-include $(patsubst %,$(srcdir)/siditi-object.mk,$(iter-items))
+
+libgcc-objects += $(patsubst %,%$(objext),$(sifuncs) $(difuncs) $(tifuncs))
+ifeq ($(enable_shared),yes)
+libgcc-s-objects += $(patsubst %,%_s$(objext),$(sifuncs) $(difuncs) $(tifuncs))
+endif
+endif
+
+ifeq ($(LIB2_DIVMOD_EXCEPTION_FLAGS),)
+# Provide default flags for compiling divmod functions, if they haven't been
+# set already by a target-specific Makefile fragment.
+LIB2_DIVMOD_EXCEPTION_FLAGS := -fexceptions -fnon-call-exceptions
+endif
+
+# Build LIB2_DIVMOD_FUNCS.
+lib2-divmod-o = $(patsubst %,%$(objext),$(LIB2_DIVMOD_FUNCS))
+$(lib2-divmod-o): %$(objext): $(srcdir)/libgcc2.c
+	$(gcc_compile) -DL$* -c $< \
+	  $(LIB2_DIVMOD_EXCEPTION_FLAGS) $(vis_hide)
+libgcc-objects += $(lib2-divmod-o)
+
+ifeq ($(enable_shared),yes)
+lib2-divmod-s-o = $(patsubst %,%_s$(objext),$(LIB2_DIVMOD_FUNCS))
+$(lib2-divmod-s-o): %_s$(objext): $(srcdir)/libgcc2.c
+	$(gcc_s_compile) -DL$* -c $< \
+	  $(LIB2_DIVMOD_EXCEPTION_FLAGS)
+libgcc-s-objects += $(lib2-divmod-s-o)
+endif
+
+ifeq ($(TPBIT),)
+# _sf_to_tf and _df_to_tf require tp-bit.c being compiled in.
+FPBIT_FUNCS := $(filter-out _sf_to_tf,$(FPBIT_FUNCS))
+DPBIT_FUNCS := $(filter-out _df_to_tf,$(DPBIT_FUNCS))
+endif
+
+FPBIT_FUNCS := $(filter-out $(LIB2FUNCS_EXCLUDE),$(FPBIT_FUNCS))
+DPBIT_FUNCS := $(filter-out $(LIB2FUNCS_EXCLUDE),$(DPBIT_FUNCS))
+TPBIT_FUNCS := $(filter-out $(LIB2FUNCS_EXCLUDE),$(TPBIT_FUNCS))
+
+fpbit-src := $(srcdir)/fp-bit.c
+
+# Build FPBIT.
+ifneq ($(FPBIT),)
+fpbit-o = $(patsubst %,%$(objext),$(FPBIT_FUNCS))
+$(fpbit-o): %$(objext): $(fpbit-src)
+	$(gcc_compile) -DFINE_GRAINED_LIBRARIES -DL$* -DFLOAT $(FPBIT_CFLAGS) -c $< $(vis_hide)
+libgcc-objects += $(fpbit-o)
+
+ifeq ($(enable_shared),yes)
+fpbit-s-o = $(patsubst %,%_s$(objext),$(FPBIT_FUNCS))
+$(fpbit-s-o): %_s$(objext): $(fpbit-src)
+	$(gcc_s_compile) -DFINE_GRAINED_LIBRARIES -DL$* -DFLOAT $(FPBIT_CFLAGS)  -c $<
+libgcc-s-objects += $(fpbit-s-o)
+endif
+endif
+
+# Build DPBIT.
+ifneq ($(DPBIT),)
+dpbit-o = $(patsubst %,%$(objext),$(DPBIT_FUNCS))
+$(dpbit-o): %$(objext): $(fpbit-src)
+	$(gcc_compile) -DFINE_GRAINED_LIBRARIES -DL$* $(DPBIT_CFLAGS) -c $< $(vis_hide)
+libgcc-objects += $(dpbit-o)
+
+ifeq ($(enable_shared),yes)
+dpbit-s-o = $(patsubst %,%_s$(objext),$(DPBIT_FUNCS))
+$(dpbit-s-o): %_s$(objext): $(fpbit-src)
+	$(gcc_s_compile) -DFINE_GRAINED_LIBRARIES -DL$* $(DPBIT_CFLAGS) -c $<
+libgcc-s-objects += $(dpbit-s-o)
+endif
+endif
+
+# Build TPBIT.
+ifneq ($(TPBIT),)
+tpbit-o = $(patsubst %,%$(objext),$(TPBIT_FUNCS))
+$(tpbit-o): %$(objext): $(fpbit-src)
+	$(gcc_compile) -DFINE_GRAINED_LIBRARIES -DL$* -DTFLOAT $(TPBIT_CFLAGS) -c $< $(vis_hide)
+libgcc-objects += $(tpbit-o)
+
+ifeq ($(enable_shared),yes)
+tpbit-s-o = $(patsubst %,%_s$(objext),$(TPBIT_FUNCS))
+$(tpbit-s-o): %_s$(objext): $(fpbit-src)
+	$(gcc_s_compile) -DFINE_GRAINED_LIBRARIES -DL$* -DTFLOAT $(TPBIT_CFLAGS) -c $<
+libgcc-s-objects += $(tpbit-s-o)
+endif
+endif
+
+# Build decimal floating point support.
+ifeq ($(decimal_float),yes)
+
+# If $DFP_ENABLE is set, then we want all data type sizes.
+ifneq ($(DFP_ENABLE),)
+D32PBIT = 1
+D64PBIT = 1
+D128PBIT = 1
+endif
+
+dfp-filenames =
+ifneq ($(D32PBIT)$(D64PBIT)$(D128PBIT),)
+ifeq ($(enable_decimal_float),bid)
+dfp-filenames += bid_decimal_globals bid_decimal_data \
+		 bid_binarydecimal bid_convert_data \
+		 _isinfd32 _isinfd64 _isinfd128 bid64_noncomp \
+		 bid128_noncomp bid128_fma bid_round bid_from_int \
+		 bid64_add bid128_add bid64_div bid128_div \
+		 bid64_mul bid128_mul bid64_compare bid128_compare \
+		 bid128 bid32_to_bid64 bid32_to_bid128 bid64_to_bid128 \
+		 bid64_to_int32 bid64_to_int64 \
+		 bid64_to_uint32 bid64_to_uint64 \
+		 bid128_to_int32 bid128_to_int64 \
+		 bid128_to_uint32 bid128_to_uint64
+else
+dfp-filenames += decContext decNumber decExcept decRound decLibrary decDouble decPacked decQuad decSingle
+endif
+endif
+
+dfp-objects = $(patsubst %,%$(objext),$(dfp-filenames))
+ifeq ($(enable_decimal_float),bid)
+$(dfp-objects): %$(objext): $(srcdir)/config/libbid/%.c
+else
+$(dfp-objects): %$(objext): $(srcdir)/../libdecnumber/%.c
+endif
+	$(gcc_compile) -c $<
+libgcc-objects += $(dfp-objects)
+
+decbits-filenames =
+ifneq ($(enable_decimal_float),bid)
+ifneq ($(D32PBIT),)
+decbits-filenames += decimal32
+endif
+
+ifneq ($(D64PBIT),)
+decbits-filenames += decimal64
+endif
+
+ifneq ($(D128PBIT),)
+decbits-filenames += decimal128
+endif
+endif
+
+decbits-objects = $(patsubst %,%$(objext),$(decbits-filenames))
+ifeq ($(enable_decimal_float),bid)
+$(decbits-objects): %$(objext): $(srcdir)/config/libbid/%.c
+else
+$(decbits-objects): %$(objext): $(srcdir)/../libdecnumber/$(enable_decimal_float)/%.c
+endif
+	$(gcc_compile) -c $<
+libgcc-objects += $(decbits-objects)
+
+# Next build individual support functions.
+D32PBIT_FUNCS = _addsub_sd _div_sd _mul_sd _plus_sd _minus_sd \
+	_eq_sd _ne_sd _lt_sd _gt_sd _le_sd _ge_sd \
+	_sd_to_si _sd_to_di _sd_to_usi _sd_to_udi \
+	_si_to_sd _di_to_sd _usi_to_sd _udi_to_sd \
+	_sd_to_sf _sd_to_df _sd_to_xf _sd_to_tf \
+	_sf_to_sd _df_to_sd _xf_to_sd _tf_to_sd \
+	_sd_to_dd _sd_to_td _unord_sd _conv_sd \
+	_hf_to_sd _sd_to_hf
+
+D64PBIT_FUNCS = _addsub_dd _div_dd _mul_dd _plus_dd _minus_dd \
+	_eq_dd _ne_dd _lt_dd _gt_dd _le_dd _ge_dd \
+	_dd_to_si _dd_to_di _dd_to_usi _dd_to_udi \
+	_si_to_dd _di_to_dd _usi_to_dd _udi_to_dd \
+	_dd_to_sf _dd_to_df _dd_to_xf _dd_to_tf \
+	_sf_to_dd _df_to_dd _xf_to_dd _tf_to_dd \
+	_dd_to_sd _dd_to_td _unord_dd _conv_dd \
+	_hf_to_dd _dd_to_hf
+
+D128PBIT_FUNCS = _addsub_td _div_td _mul_td _plus_td _minus_td \
+	_eq_td _ne_td _lt_td _gt_td _le_td _ge_td \
+	_td_to_si _td_to_di _td_to_usi _td_to_udi \
+	_si_to_td _di_to_td _usi_to_td _udi_to_td \
+	_td_to_sf _td_to_df _td_to_xf _td_to_tf \
+	_sf_to_td _df_to_td _xf_to_td _tf_to_td \
+	_td_to_sd _td_to_dd _unord_td _conv_td \
+	_hf_to_td _td_to_hf
+
+ifeq ($(enable_decimal_float),bid)
+ifneq ($(D32PBIT),)
+D32PBIT_FUNCS:=$(filter-out _plus_sd _minus_sd _conv_sd, $(D32PBIT_FUNCS))
+endif
+
+ifneq ($(D64PBIT),)
+D64PBIT_FUNCS:=$(filter-out _plus_dd _minus_dd _conv_dd, $(D64PBIT_FUNCS))
+endif
+
+ifneq ($(D128PBIT),)
+D128PBIT_FUNCS:=$(filter-out _plus_td _minus_td _conv_td, $(D128PBIT_FUNCS))
+endif
+endif
+
+ifneq ($(D32PBIT),)
+d32pbit-o = $(patsubst %,%$(objext),$(D32PBIT_FUNCS))
+ifeq ($(enable_decimal_float),bid)
+$(d32pbit-o): %$(objext): $(srcdir)/config/libbid/%.c
+else
+$(d32pbit-o): %$(objext): $(srcdir)/dfp-bit.c
+endif
+	$(gcc_compile) -DFINE_GRAINED_LIBRARIES -DL$* -DWIDTH=32 -c $<
+libgcc-objects += $(d32pbit-o)
+endif
+
+ifneq ($(D64PBIT),)
+d64pbit-o = $(patsubst %,%$(objext),$(D64PBIT_FUNCS))
+ifeq ($(enable_decimal_float),bid)
+$(d64pbit-o): %$(objext): $(srcdir)/config/libbid/%.c
+else
+$(d64pbit-o): %$(objext): $(srcdir)/dfp-bit.c
+endif
+	$(gcc_compile) -DFINE_GRAINED_LIBRARIES -DL$* -DWIDTH=64 -c $<
+libgcc-objects += $(d64pbit-o)
+endif
+
+ifneq ($(D128PBIT),)
+d128pbit-o = $(patsubst %,%$(objext),$(D128PBIT_FUNCS))
+ifeq ($(enable_decimal_float),bid)
+$(d128pbit-o): %$(objext): $(srcdir)/config/libbid/%.c
+else
+$(d128pbit-o): %$(objext): $(srcdir)/dfp-bit.c
+endif
+	$(gcc_compile) -DFINE_GRAINED_LIBRARIES -DL$* -DWIDTH=128 -c $<
+libgcc-objects += $(d128pbit-o)
+endif
+
+endif
+
+ifeq ($(SYNC),yes)
+libgcc-sync-size-funcs := $(foreach op, add sub or and xor nand, \
+			    sync_fetch_and_$(op) \
+			    sync_$(op)_and_fetch) \
+			  sync_bool_compare_and_swap \
+			  sync_val_compare_and_swap \
+			  sync_lock_test_and_set
+
+libgcc-sync-size-funcs := $(foreach prefix, $(libgcc-sync-size-funcs), \
+			    $(foreach suffix, 1 2 4 8 16, \
+			      $(prefix)_$(suffix)))
+
+libgcc-sync-size-funcs-o = $(patsubst %,%$(objext),$(libgcc-sync-size-funcs))
+$(libgcc-sync-size-funcs-o): %$(objext): $(srcdir)/sync.c
+	$(gcc_compile) $(SYNC_CFLAGS) \
+	  -DFN=`echo "$*" | sed 's/_[^_]*$$//'` \
+	  -DSIZE=`echo "$*" | sed 's/.*_//'` \
+	  -c $< $(vis_hide)
+libgcc-objects += $(libgcc-sync-size-funcs-o)
+
+libgcc-sync-funcs := sync_synchronize
+
+libgcc-sync-funcs-o = $(patsubst %,%$(objext),$(libgcc-sync-funcs))
+$(libgcc-sync-funcs-o): %$(objext): $(srcdir)/sync.c
+	$(gcc_compile) $(SYNC_CFLAGS) \
+	  -DL$* \
+	  -c $< $(vis_hide)
+libgcc-objects += $(libgcc-sync-funcs-o)
+
+ifeq ($(enable_shared),yes)
+libgcc-sync-size-funcs-s-o = $(patsubst %,%_s$(objext), \
+			       $(libgcc-sync-size-funcs))
+$(libgcc-sync-size-funcs-s-o): %_s$(objext): $(srcdir)/sync.c
+	$(gcc_s_compile) $(SYNC_CFLAGS) \
+	  -DFN=`echo "$*" | sed 's/_[^_]*$$//'` \
+	  -DSIZE=`echo "$*" | sed 's/.*_//'` \
+	  -c $<
+libgcc-s-objects += $(libgcc-sync-size-funcs-s-o)
+
+libgcc-sync-funcs-s-o = $(patsubst %,%_s$(objext),$(libgcc-sync-funcs))
+$(libgcc-sync-funcs-s-o): %_s$(objext): $(srcdir)/sync.c
+	$(gcc_s_compile) $(SYNC_CFLAGS) \
+	  -DL$*	\
+	  -c $<
+libgcc-s-objects += $(libgcc-sync-funcs-s-o)
+endif
+endif
+
+# Build fixed-point support.
+ifeq ($(fixed_point),yes)
+
+# Generate permutations of function name and mode
+fixed-labels := $(shell $(SHELL) $(srcdir)/gen-fixed.sh arith labels)
+fixed-funcs := $(shell $(SHELL) $(srcdir)/gen-fixed.sh arith funcs)
+fixed-modes := $(shell $(SHELL) $(srcdir)/gen-fixed.sh arith modes)
+
+# Generate the rules for each arithmetic function
+iter-items := $(fixed-funcs)
+iter-labels := $(fixed-labels)
+iter-from := $(fixed-modes)
+iter-to := $(fixed-modes)
+-include $(patsubst %,$(srcdir)/fixed-obj.mk,$(iter-items))
+
+# Add arithmetic functions to list of objects to be built
+libgcc-objects += $(patsubst %,%$(objext),$(filter-out $(LIB2FUNCS_EXCLUDE),$(fixed-funcs)))
+ifeq ($(enable_shared),yes)
+libgcc-s-objects += $(patsubst %,%_s$(objext),$(filter-out $(LIB2FUNCS_EXCLUDE),$(fixed-funcs)))
+endif
+
+# Convert from or to fractional
+fixed-conv-funcs := $(shell $(SHELL) $(srcdir)/gen-fixed.sh conv funcs)
+fixed-conv-labels := $(shell $(SHELL) $(srcdir)/gen-fixed.sh conv labels)
+fixed-conv-from := $(shell $(SHELL) $(srcdir)/gen-fixed.sh conv from)
+fixed-conv-to :=  $(shell $(SHELL) $(srcdir)/gen-fixed.sh conv to)
+
+# Generate the make rules for each conversion function
+iter-items := $(fixed-conv-funcs)
+iter-labels := $(fixed-conv-labels)
+iter-from := $(fixed-conv-from)
+iter-to := $(fixed-conv-to)
+-include $(patsubst %,$(srcdir)/fixed-obj.mk,$(iter-items))
+
+# Add conversion functions to list of objects to be built
+libgcc-objects += $(patsubst %,%$(objext),$(filter-out $(LIB2FUNCS_EXCLUDE),$(fixed-conv-funcs)))
+ifeq ($(enable_shared),yes)
+libgcc-s-objects += $(patsubst %,%_s$(objext),$(filter-out $(LIB2FUNCS_EXCLUDE),$(fixed-conv-funcs)))
+endif
+
+endif
+
+# Build LIB2ADD and LIB2ADD_ST.
+ifneq ($(filter-out %.c %.S %.asm,$(LIB2ADD) $(LIB2ADD_ST)),)
+$(error Unsupported files in LIB2ADD or LIB2ADD_ST.)
+endif
+
+libgcc-objects += $(addsuffix $(objext),$(basename $(notdir $(LIB2ADD))))
+libgcc-objects += $(addsuffix $(objext),$(basename $(notdir $(LIB2ADD_ST))))
+
+c_flags :=
+iter-items := $(LIB2ADD) $(LIB2ADD_ST)
+-include $(iterator)
+
+ifeq ($(enable_shared),yes)
+libgcc-s-objects += $(addsuffix _s$(objext),$(basename $(notdir $(LIB2ADD))))
+endif
+
+# Build LIB2ADDEH, LIB2ADDEHSTATIC, and LIB2ADDEHSHARED.  If we don't have
+# libgcc_eh.a, only LIB2ADDEH matters.  If we do, only LIB2ADDEHSTATIC and
+# LIB2ADDEHSHARED matter.  (Usually all three are identical.)
+
+c_flags := -fexceptions
+
+ifeq ($(enable_shared),yes)
+
+libgcc-eh-objects += $(addsuffix $(objext),$(basename $(notdir $(LIB2ADDEHSTATIC))))
+libgcc-s-objects += $(addsuffix _s$(objext),$(basename $(notdir $(LIB2ADDEHSHARED))))
+
+iter-items := $(sort $(LIB2ADDEHSTATIC) $(LIB2ADDEHSHARED))
+-include $(iterator)
+
+else
+# Not shared.  LIB2ADDEH are added to libgcc.a.
+
+libgcc-objects += $(addsuffix $(objext),$(basename $(notdir $(LIB2ADDEH))))
+
+iter-items := $(LIB2ADDEH)
+-include $(iterator)
+
+endif
+
+# Build LIBUNWIND. Use -fno-exceptions so that the unwind library does
+# not generate calls to __gcc_personality_v0.
+
+c_flags := -fno-exceptions
+
+libunwind-objects += $(addsuffix $(objext),$(basename $(notdir $(LIBUNWIND))))
+
+ifeq ($(enable_shared),yes)
+libunwind-s-objects += $(addsuffix _s$(objext),$(basename $(notdir $(LIBUNWIND))))
+endif
+
+iter-items := $(LIBUNWIND)
+-include $(iterator)
+
+# Build libgcov components.
+
+LIBGCOV_MERGE = _gcov_merge_add _gcov_merge_topn			\
+	_gcov_merge_ior _gcov_merge_time_profile
+LIBGCOV_PROFILER = _gcov_interval_profiler				\
+	_gcov_interval_profiler_atomic					\
+	_gcov_pow2_profiler						\
+	_gcov_pow2_profiler_atomic					\
+	_gcov_topn_values_profiler					\
+	_gcov_topn_values_profiler_atomic					\
+	_gcov_average_profiler						\
+	_gcov_average_profiler_atomic					\
+	_gcov_ior_profiler						\
+	_gcov_ior_profiler_atomic					\
+	_gcov_indirect_call_profiler_v4					\
+	_gcov_time_profiler
+LIBGCOV_INTERFACE = _gcov_dump _gcov_fork				\
+	_gcov_execl _gcov_execlp					\
+	_gcov_execle _gcov_execv _gcov_execvp _gcov_execve _gcov_reset  \
+	_gcov_lock_unlock
+LIBGCOV_DRIVER = _gcov _gcov_info_to_gcda
+
+libgcov-merge-objects = $(patsubst %,%$(objext),$(LIBGCOV_MERGE))
+libgcov-profiler-objects = $(patsubst %,%$(objext),$(LIBGCOV_PROFILER))
+libgcov-interface-objects = $(patsubst %,%$(objext),$(LIBGCOV_INTERFACE))
+libgcov-driver-objects = $(patsubst %,%$(objext),$(LIBGCOV_DRIVER))
+libgcov-objects = $(libgcov-merge-objects) $(libgcov-profiler-objects) \
+                 $(libgcov-interface-objects) $(libgcov-driver-objects)
+
+$(libgcov-merge-objects): %$(objext): $(srcdir)/libgcov-merge.c $(srcdir)/gcov.h $(srcdir)/libgcov.h
+	$(gcc_compile) -DL$* -c $(srcdir)/libgcov-merge.c
+$(libgcov-profiler-objects): %$(objext): $(srcdir)/libgcov-profiler.c $(srcdir)/gcov.h $(srcdir)/libgcov.h
+	$(gcc_compile) -DL$* -c $(srcdir)/libgcov-profiler.c
+$(libgcov-interface-objects): %$(objext): $(srcdir)/libgcov-interface.c $(srcdir)/gcov.h $(srcdir)/libgcov.h
+	$(gcc_compile) -DL$* -c $(srcdir)/libgcov-interface.c
+$(libgcov-driver-objects): %$(objext): $(srcdir)/libgcov-driver.c \
+  $(srcdir)/libgcov-driver-system.c $(srcdir)/gcov.h $(srcdir)/libgcov.h
+	$(gcc_compile) -DL$* -c $(srcdir)/libgcov-driver.c
+
+
+# Static libraries.
+libgcc.a: $(libgcc-objects)
+libgcov.a: $(libgcov-objects)
+libunwind.a: $(libunwind-objects)
+libgcc_eh.a: $(libgcc-eh-objects)
+
+libgcc.a libgcov.a libunwind.a libgcc_eh.a:
+	-rm -f $@
+
+	objects="$(objects)";					\
+	if test -z "$$objects"; then				\
+	  echo 'int __libgcc_eh_dummy;' > eh_dummy.c;		\
+	  $(gcc_compile_bare) $(vis_hide) -c eh_dummy.c		\
+	     -o eh_dummy$(objext);				\
+	  objects=eh_dummy$(objext);				\
+	fi;							\
+	$(AR_CREATE_FOR_TARGET) $@ $$objects
+
+	$(RANLIB) $@
+
+all: libgcc.a
+ifeq ($(enable_gcov),yes)
+all: libgcov.a
+endif
+
+ifneq ($(LIBUNWIND),)
+all: libunwind.a
+endif
+
+ifeq ($(enable_shared),yes)
+all: libgcc_eh.a libgcc_s$(SHLIB_EXT)
+ifneq ($(LIBUNWIND),)
+all: libunwind$(SHLIB_EXT)
+libgcc_s$(SHLIB_EXT): libunwind$(SHLIB_EXT)
+endif
+
+# Map-file generation.
+ifneq ($(SHLIB_MKMAP),)
+libgcc.map.in: $(SHLIB_MAPFILES)
+	{ cat $(SHLIB_MAPFILES) \
+	    | sed -e '/^[ 	]*#/d' \
+		  -e 's/^%\(if\|else\|elif\|endif\|define\)/#\1/' \
+	    | $(gcc_compile_bare) -E -xassembler-with-cpp -; \
+	} > tmp-$@
+	mv tmp-$@ $@
+libgcc.map: $(SHLIB_MKMAP) libgcc.map.in $(libgcc-s-objects)
+	{ $(NM) $(SHLIB_NM_FLAGS) $(libgcc-s-objects); echo %%; \
+	  cat libgcc.map.in; \
+	} | $(AWK) -f $(SHLIB_MKMAP) $(SHLIB_MKMAP_OPTS) > tmp-$@
+	mv tmp-$@ $@
+libgcc_s$(SHLIB_EXT): libgcc.map
+mapfile = libgcc.map
+endif
+
+libgcc-std.ver: $(srcdir)/libgcc-std.ver.in
+	sed -e 's/__PFX__/$(LIBGCC_VER_GNU_PREFIX)/g' \
+	    -e 's/__FIXPTPFX__/$(LIBGCC_VER_FIXEDPOINT_GNU_PREFIX)/g' < $< > $@
+
+libgcc_s$(SHLIB_EXT): $(libgcc-s-objects) $(extra-parts) libgcc.a
+	# @multilib_flags@ is still needed because this may use
+	# $(GCC_FOR_TARGET) and $(LIBGCC2_CFLAGS) directly.
+	# @multilib_dir@ is not really necessary, but sometimes it has
+	# more uses than just a directory name.
+	$(mkinstalldirs) $(MULTIDIR)
+	$(subst @multilib_flags@,$(CFLAGS) -B./,$(subst \
+		@multilib_dir@,$(MULTIDIR),$(subst \
+		@shlib_objs@,$(objects) libgcc.a,$(subst \
+		@shlib_base_name@,libgcc_s,$(subst \
+		@shlib_map_file@,$(mapfile),$(subst \
+		@shlib_slibdir_qual@,$(MULTIOSSUBDIR),$(subst \
+		@shlib_slibdir@,$(shlib_slibdir),$(SHLIB_LINK))))))))
+
+libunwind$(SHLIB_EXT): $(libunwind-s-objects) $(extra-parts)
+	# @multilib_flags@ is still needed because this may use
+	# $(GCC_FOR_TARGET) and $(LIBGCC2_CFLAGS) directly.
+	# @multilib_dir@ is not really necessary, but sometimes it has
+	# more uses than just a directory name.
+	$(mkinstalldirs) $(MULTIDIR)
+	$(subst @multilib_flags@,$(CFLAGS) -B./,$(subst \
+		@multilib_dir@,$(MULTIDIR),$(subst \
+		@shlib_objs@,$(objects),$(subst \
+		@shlib_base_name@,libunwind,$(subst \
+		@shlib_slibdir_qual@,$(MULTIOSSUBDIR),$(SHLIBUNWIND_LINK))))))
+
+endif
+
+# Build the standard GCC startfiles and endfiles.
+ALL_CRT_CFLAGS = $(CFLAGS) $(CRTSTUFF_CFLAGS) $(INCLUDES)
+crt_compile = $(CC) $(ALL_CRT_CFLAGS) -o $@ $(compile_deps)
+
+ifeq ($(CUSTOM_CRTSTUFF),)
+# Compile two additional files that are linked with every program
+# linked using GCC on systems using COFF or ELF, for the sake of C++
+# constructors.
+crtbegin$(objext): $(srcdir)/crtstuff.c
+	$(crt_compile) $(CRTSTUFF_T_CFLAGS) -c $< -DCRT_BEGIN
+
+crtend$(objext): $(srcdir)/crtstuff.c
+	$(crt_compile) $(CRTSTUFF_T_CFLAGS) -c $< -DCRT_END
+
+# These are versions of crtbegin and crtend for shared libraries.
+crtbeginS$(objext): $(srcdir)/crtstuff.c
+	$(crt_compile) $(CRTSTUFF_T_CFLAGS_S) -c $< -DCRT_BEGIN -DCRTSTUFFS_O
+
+crtendS$(objext): $(srcdir)/crtstuff.c
+	$(crt_compile) $(CRTSTUFF_T_CFLAGS_S) -c $< -DCRT_END -DCRTSTUFFS_O
+
+# This is a version of crtbegin for -static links.
+crtbeginT$(objext): $(srcdir)/crtstuff.c
+	$(crt_compile) $(CRTSTUFF_T_CFLAGS) -c $< -DCRT_BEGIN -DCRTSTUFFT_O
+
+# crtoffloadbegin and crtoffloadend contain symbols, that mark the begin and
+# the end of tables with addresses, required for offloading.  crtoffloadtable
+# contains the array with addresses of those symbols.
+crtoffloadbegin$(objext): $(srcdir)/offloadstuff.c
+	$(crt_compile) $(CRTSTUFF_T_CFLAGS) -c $< -DCRT_BEGIN
+
+crtoffloadend$(objext): $(srcdir)/offloadstuff.c
+	$(crt_compile) $(CRTSTUFF_T_CFLAGS) -c $< -DCRT_END
+
+crtoffloadtable$(objext): $(srcdir)/offloadstuff.c
+	$(crt_compile) $(CRTSTUFF_T_CFLAGS) -c $< -DCRT_TABLE
+
+crtoffloadtableS$(objext): $(srcdir)/offloadstuff.c
+	$(crt_compile) $(CRTSTUFF_T_CFLAGS_S) -c $< -DCRT_TABLE
+endif
+
+ifeq ($(enable_vtable_verify),yes)
+# These are used in vtable verification; see comments in source files for
+# more details.
+
+# Override -finhibit-size-directive to avoid mismatch between libgcc and libvtv
+# compilations.
+VTV_CFLAGS = $(CRTSTUFF_T_CFLAGS_S) -fno-inhibit-size-directive
+
+vtv_start$(objext): $(srcdir)/vtv_start.c
+	$(crt_compile) $(VTV_CFLAGS) -c $(srcdir)/vtv_start.c
+
+vtv_end$(objext): $(srcdir)/vtv_end.c
+	$(crt_compile) $(VTV_CFLAGS) -c $(srcdir)/vtv_end.c
+
+vtv_start_preinit$(objext): $(srcdir)/vtv_start_preinit.c
+	$(crt_compile) $(VTV_CFLAGS) -c $(srcdir)/vtv_start_preinit.c
+
+vtv_end_preinit$(objext): $(srcdir)/vtv_end_preinit.c
+	$(crt_compile) $(VTV_CFLAGS) -c $(srcdir)/vtv_end_preinit.c
+endif
+
+ifeq ($(CUSTOM_CRTIN),)
+# -x assembler-with-cpp is only needed on case-insensitive filesystem.
+crti$(objext): $(srcdir)/config/$(cpu_type)/crti.S
+	$(crt_compile) -c -x assembler-with-cpp $<
+
+crtn$(objext): $(srcdir)/config/$(cpu_type)/crtn.S
+	$(crt_compile) -c -x assembler-with-cpp $<
+endif
+
+# Build extra startfiles in the libgcc directory.
+.PHONY: libgcc-extra-parts
+libgcc-extra-parts: $(EXTRA_PARTS)
+
+	# Early copyback; see "all" above for the rationale.  The
+	# early copy is necessary so that the gcc -B options find
+	# the right startup files when linking shared libgcc.
+	$(mkinstalldirs) $(gcc_objdir)$(MULTISUBDIR)
+	parts="$(EXTRA_PARTS)";					\
+	for file in $$parts; do					\
+	  rm -f $(gcc_objdir)$(MULTISUBDIR)/$$file;		\
+	  $(INSTALL_DATA) $$file $(gcc_objdir)$(MULTISUBDIR)/;	\
+	  case $$file in 					\
+	    *.a)						\
+	      $(RANLIB) $(gcc_objdir)$(MULTISUBDIR)/$$file ;;	\
+	  esac;							\
+	done
+
+all: $(extra-parts)
+
+$(libgcc-objects) $(libgcc-s-objects) $(libgcc-eh-objects) \
+	$(libgcov-objects) \
+	$(libunwind-objects) $(libunwind-s-objects) \
+	$(EXTRA_PARTS): $(LIBGCC_LINKS) libgcc_tm.h
+
+# Copy unwind.h to the place where gcc will look for it at build-time
+install-unwind_h-forbuild: unwind.h
+	dest=$(gcc_objdir)/include/tmp$$$$-unwind.h; \
+	cp unwind.h $$dest; \
+	chmod a+r $$dest; \
+	sh $(srcdir)/../move-if-change $$dest $(gcc_objdir)/include/unwind.h
+
+# Copy unwind.h to the place where gcc will look at run-time, once installed
+#
+# This is redundant with the internal copy above when using a regular toplevel
+# "install" target, because gcc's install will copy to the destination as well.
+#
+# This is however useful for "install-no-fixincludes" case, when only the gcc
+# internal headers are copied by gcc's install.
+install-unwind_h:
+	$(mkinstalldirs) $(DESTDIR)$(libsubdir)/include
+	$(INSTALL_DATA) unwind.h $(DESTDIR)$(libsubdir)/include
+
+all: install-unwind_h-forbuild
+
+install-gcov_h:
+	$(mkinstalldirs) $(DESTDIR)$(libsubdir)/include
+	$(INSTALL_DATA) $(srcdir)/gcov.h $(DESTDIR)$(libsubdir)/include
+
+# Documentation targets (empty).
+.PHONY: info html dvi pdf install-info install-html install-pdf
+
+info:
+install-info:
+html:
+install-html:
+dvi:
+pdf:
+install-pdf:
+
+# Install rules.  These do not depend on "all", so that they can be invoked
+# recursively from it.
+install-libunwind:
+	$(mkinstalldirs) $(DESTDIR)$(inst_slibdir)
+
+	# NOTE: Maybe this should go into $(inst_libdir), but this
+	# is where the old mklibgcc.in put it.
+	$(INSTALL_DATA) libunwind.a $(DESTDIR)$(inst_slibdir)/
+	chmod 644 $(DESTDIR)$(inst_slibdir)/libunwind.a
+	$(RANLIB) $(DESTDIR)$(inst_slibdir)/libunwind.a
+
+	$(subst @multilib_dir@,$(MULTIDIR),$(subst \
+		@shlib_base_name@,libunwind,$(subst \
+		@shlib_slibdir_qual@,$(MULTIOSSUBDIR),$(SHLIBUNWIND_INSTALL))))
+
+install-shared:
+	$(mkinstalldirs) $(DESTDIR)$(inst_libdir)
+
+	$(INSTALL_DATA) libgcc_eh.a $(DESTDIR)$(inst_libdir)/
+	chmod 644 $(DESTDIR)$(inst_libdir)/libgcc_eh.a
+	$(RANLIB) $(DESTDIR)$(inst_libdir)/libgcc_eh.a
+
+	$(subst @multilib_dir@,$(MULTIDIR),$(subst \
+		@shlib_base_name@,libgcc_s,$(subst \
+		@shlib_slibdir_qual@,$(MULTIOSSUBDIR),$(SHLIB_INSTALL))))
+
+install-leaf: $(install-shared) $(install-libunwind)
+	$(mkinstalldirs) $(DESTDIR)$(inst_libdir)
+
+	$(INSTALL_DATA) libgcc.a $(DESTDIR)$(inst_libdir)/
+	chmod 644 $(DESTDIR)$(inst_libdir)/libgcc.a
+	$(RANLIB) $(DESTDIR)$(inst_libdir)/libgcc.a
+ifeq ($(enable_gcov),yes)
+	$(INSTALL_DATA) libgcov.a $(DESTDIR)$(inst_libdir)/
+	chmod 644 $(DESTDIR)$(inst_libdir)/libgcov.a
+	$(RANLIB) $(DESTDIR)$(inst_libdir)/libgcov.a
+endif
+
+	parts="$(INSTALL_PARTS)";				\
+	for file in $$parts; do					\
+	  rm -f $(DESTDIR)$(inst_libdir)/$$file;		\
+	  $(INSTALL_DATA) $$file $(DESTDIR)$(inst_libdir)/;	\
+	  case $$file in 					\
+	    *.a)						\
+	      $(RANLIB) $(gcc_objdir)$(MULTISUBDIR)/$$file ;;	\
+	  esac;							\
+	done
+
+install: install-leaf install-unwind_h install-gcov_h
+	@: $(MAKE) ; $(MULTIDO) $(FLAGS_TO_PASS) multi-do DO=install
+
+install-strip: install
+
+.PHONY: install install-shared install-libunwind install-strip
+.PHONY: install-unwind_h install-unwind_h-forbuild
+.PHONY: install-gcov_h
+
+# Don't export variables to the environment, in order to not confuse
+# configure.
+.NOEXPORT:
+
+-include $(wildcard *.dep)

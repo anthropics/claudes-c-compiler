@@ -1,0 +1,60 @@
+# Copyright (C) 2003-2026 Free Software Foundation, Inc.
+#
+# This file is part of GCC.
+#
+# GCC is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3, or (at your option)
+# any later version.
+#
+# GCC is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with GCC; see the file COPYING3.  If not see
+# <http://www.gnu.org/licenses/>.
+
+# This harness is for testing builtin support.  Each test has two files:
+#
+#    - foo.c defines the main testing function, main_test().
+#    - foo-lib.c implements the library functions that foo.c is testing.
+#
+# The functions in foo-lib.c will often want to abort on certain inputs.
+# They can use the global variable inside_main to see whether they are
+# being called from the test program or part of the common runtime.
+#
+# In many cases, the library functions will behave as normal at -O0
+# and abort when optimisation is enabled.  Such implementations should
+# go into the lib/ directory so that they can be included by any test
+# that needs them.  They shouldn't call any external functions in case
+# those functions were overridden too.
+
+load_lib torture-options.exp
+load_lib c-torture.exp
+
+torture-init
+set-torture-options $C_TORTURE_OPTIONS {{}} $LTO_TORTURE_OPTIONS
+
+set additional_flags "-fno-tree-dse -fno-tree-loop-distribute-patterns -fno-tracer -fno-ipa-ra -fno-inline-functions"
+if [istarget "powerpc-*-darwin*"] {
+   lappend additional_flags "-Wl,-multiply_defined,suppress"
+}
+if { [istarget *-*-eabi*]
+     || [istarget *-*-elf]
+     || [istarget *-*-mingw*]
+     || [istarget *-*-rtems*] } {
+   lappend additional_flags "-Wl,--allow-multiple-definition"
+}
+
+foreach src [lsort [find $srcdir/$subdir *.c]] {
+    if {![string match *-lib.c $src] && [runtest_file_p $runtests $src]} {
+	c-torture-execute [list $src \
+			        [file root $src]-lib.c \
+			        $srcdir/$subdir/lib/main.c] \
+				$additional_flags
+    }
+}
+
+torture-finish

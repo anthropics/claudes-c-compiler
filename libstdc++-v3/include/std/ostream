@@ -1,0 +1,305 @@
+// Output streams -*- C++ -*-
+
+// Copyright (C) 1997-2026 Free Software Foundation, Inc.
+//
+// This file is part of the GNU ISO C++ Library.  This library is free
+// software; you can redistribute it and/or modify it under the
+// terms of the GNU General Public License as published by the
+// Free Software Foundation; either version 3, or (at your option)
+// any later version.
+
+// This library is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+
+// Under Section 7 of GPL version 3, you are granted additional
+// permissions described in the GCC Runtime Library Exception, version
+// 3.1, as published by the Free Software Foundation.
+
+// You should have received a copy of the GNU General Public License and
+// a copy of the GCC Runtime Library Exception along with this program;
+// see the files COPYING3 and COPYING.RUNTIME respectively.  If not, see
+// <http://www.gnu.org/licenses/>.
+
+/** @file include/ostream
+ *  This is a Standard C++ Library header.
+ */
+
+//
+// ISO C++ 14882: 27.6.2  Output streams
+//
+
+#ifndef _GLIBCXX_OSTREAM
+#define _GLIBCXX_OSTREAM 1
+
+#ifdef _GLIBCXX_SYSHDR
+#pragma GCC system_header
+#endif
+
+#include <bits/requires_hosted.h> // iostreams
+
+#include <bits/ostream.h>
+#if __cplusplus > 202002L
+# include <format>
+#endif
+
+# define __glibcxx_want_print
+#include <bits/version.h> // __glibcxx_syncbuf
+
+namespace std _GLIBCXX_VISIBILITY(default)
+{
+_GLIBCXX_BEGIN_NAMESPACE_VERSION
+
+  // Standard basic_ostream manipulators
+
+  /**
+   *  @brief  Write a newline and flush the stream.
+   *
+   *  This manipulator is often mistakenly used when a simple newline is
+   *  desired, leading to poor buffering performance.  See
+   *  https://gcc.gnu.org/onlinedocs/libstdc++/manual/streambufs.html#io.streambuf.buffering
+   *  for more on this subject.
+  */
+  template<typename _CharT, typename _Traits>
+    inline basic_ostream<_CharT, _Traits>&
+    endl(basic_ostream<_CharT, _Traits>& __os)
+    { return flush(__os.put(__os.widen('\n'))); }
+
+  /**
+   *  @brief  Write a null character into the output sequence.
+   *
+   *  <em>Null character</em> is @c CharT() by definition.  For CharT
+   *  of @c char, this correctly writes the ASCII @c NUL character
+   *  string terminator.
+  */
+  template<typename _CharT, typename _Traits>
+    inline basic_ostream<_CharT, _Traits>&
+    ends(basic_ostream<_CharT, _Traits>& __os)
+    { return __os.put(_CharT()); }
+
+  /**
+   *  @brief  Flushes the output stream.
+   *
+   *  This manipulator simply calls the stream's @c flush() member function.
+  */
+  template<typename _CharT, typename _Traits>
+    inline basic_ostream<_CharT, _Traits>&
+    flush(basic_ostream<_CharT, _Traits>& __os)
+    { return __os.flush(); }
+
+#ifdef __glibcxx_syncbuf // C++ >= 20 && HOSTED && CXX11ABI
+  template<typename _CharT, typename _Traits>
+    class __syncbuf_base : public basic_streambuf<_CharT, _Traits>
+    {
+    public:
+      static bool*
+      _S_get(basic_streambuf<_CharT, _Traits>* __buf [[maybe_unused]]) noexcept
+      {
+#if __cpp_rtti
+	if (auto __p = dynamic_cast<__syncbuf_base*>(__buf))
+	  return &__p->_M_emit_on_sync;
+#endif
+	return nullptr;
+      }
+
+    protected:
+      __syncbuf_base(basic_streambuf<_CharT, _Traits>* __w = nullptr)
+      : _M_wrapped(__w)
+      { }
+
+      basic_streambuf<_CharT, _Traits>* _M_wrapped = nullptr;
+      bool _M_emit_on_sync = false;
+      bool _M_needs_sync = false;
+    };
+
+  template<typename _CharT, typename _Traits>
+    inline basic_ostream<_CharT, _Traits>&
+    emit_on_flush(basic_ostream<_CharT, _Traits>& __os)
+    {
+      if (bool* __flag = __syncbuf_base<_CharT, _Traits>::_S_get(__os.rdbuf()))
+	*__flag = true;
+      return __os;
+    }
+
+  template<typename _CharT, typename _Traits>
+    inline basic_ostream<_CharT, _Traits>&
+    noemit_on_flush(basic_ostream<_CharT, _Traits>& __os)
+    {
+      if (bool* __flag = __syncbuf_base<_CharT, _Traits>::_S_get(__os.rdbuf()))
+	*__flag = false;
+      return __os;
+    }
+
+  template<typename _CharT, typename _Traits>
+    inline basic_ostream<_CharT, _Traits>&
+    flush_emit(basic_ostream<_CharT, _Traits>& __os)
+    {
+      struct _Restore
+      {
+	~_Restore() { *_M_flag = _M_prev; }
+
+	bool _M_prev = false;
+	bool* _M_flag = &_M_prev;
+      } __restore;
+
+      if (bool* __flag = __syncbuf_base<_CharT, _Traits>::_S_get(__os.rdbuf()))
+	{
+	  __restore._M_prev = *__flag;
+	  __restore._M_flag = __flag;
+	  *__flag = true;
+	}
+
+      __os.flush();
+      return __os;
+    }
+#endif // __glibcxx_syncbuf
+
+#if __cpp_lib_print // C++ >= 23
+  inline void
+  vprint_nonunicode(ostream& __os, string_view __fmt, format_args __args)
+  {
+    ostream::sentry __cerb(__os);
+    if (__cerb)
+      {
+	__format::_Str_sink<char> __buf;
+	std::vformat_to(__buf.out(), __os.getloc(), __fmt, __args);
+	auto __out = __buf.view();
+
+	__try
+	  {
+	    std::__ostream_write(__os, __out.data(), __out.size());
+	  }
+	__catch(const __cxxabiv1::__forced_unwind&)
+	  {
+	    __os._M_setstate(ios_base::badbit);
+	    __throw_exception_again;
+	  }
+	__catch(...)
+	  { __os._M_setstate(ios_base::badbit); }
+      }
+  }
+
+  inline void
+  vprint_unicode(ostream& __os, string_view __fmt, format_args __args)
+  {
+#if !defined(_WIN32) || defined(__CYGWIN__)
+    // For most targets we don't need to do anything special to write
+    // Unicode to a terminal.
+    std::vprint_nonunicode(__os, __fmt, __args);
+#else
+    ostream::sentry __cerb(__os);
+    if (__cerb)
+      {
+	__format::_Str_sink<char> __buf;
+	std::vformat_to(__buf.out(), __os.getloc(), __fmt, __args);
+	auto __out = __buf._M_span();
+
+	void* __open_terminal(streambuf*);
+	error_code __write_to_terminal(void*, span<char>);
+	// If stream refers to a terminal, write a Unicode string to it.
+	if (auto __term = __open_terminal(__os.rdbuf()))
+	  {
+#if !defined(_WIN32) || defined(__CYGWIN__)
+	    // For POSIX, __open_terminal(streambuf*) uses fdopen to open a
+	    // new file, so we would need to close it here. This code is not
+	    // actually compiled because it's inside an #ifdef _WIN32 group,
+	    // but just in case that changes in future ...
+	    struct _Guard
+	    {
+	      _Guard(void* __p) : _M_f((FILE*)__p) { }
+	      ~_Guard() { std::fclose(_M_f); }
+	      _Guard(_Guard&&) = delete;
+	      _Guard& operator=(_Guard&&) = delete;
+	      FILE* _M_f;
+	    };
+	    _Guard __g(__term);
+#endif
+
+	    ios_base::iostate __err = ios_base::goodbit;
+	    __try
+	      {
+		if (__os.rdbuf()->pubsync() == -1)
+		  __err = ios::badbit;
+		else if (auto __e = __write_to_terminal(__term, __out))
+		  if (__e != std::make_error_code(errc::illegal_byte_sequence))
+		    __err = ios::badbit;
+	      }
+	    __catch(const __cxxabiv1::__forced_unwind&)
+	      {
+		__os._M_setstate(ios_base::badbit);
+		__throw_exception_again;
+	      }
+	    __catch(...)
+	      { __os._M_setstate(ios_base::badbit); }
+
+	    if (__err)
+	      __os.setstate(__err);
+	    return;
+	  }
+
+	// Otherwise just insert the string as vprint_nonunicode does.
+	__try
+	  {
+	    std::__ostream_write(__os, __out.data(), __out.size());
+	  }
+	__catch(const __cxxabiv1::__forced_unwind&)
+	  {
+	    __os._M_setstate(ios_base::badbit);
+	    __throw_exception_again;
+	  }
+	__catch(...)
+	  { __os._M_setstate(ios_base::badbit); }
+      }
+#endif // _WIN32
+  }
+
+  template<typename... _Args>
+    inline void
+    print(ostream& __os, format_string<_Args...> __fmt, _Args&&... __args)
+    {
+      auto __fmtargs = std::make_format_args(__args...);
+#if defined(_WIN32) && !defined(__CYGWIN__)
+      if constexpr (__unicode::__literal_encoding_is_utf8())
+	std::vprint_unicode(__os, __fmt.get(), __fmtargs);
+      else
+#endif
+	std::vprint_nonunicode(__os, __fmt.get(), __fmtargs);
+    }
+
+  template<typename... _Args>
+    inline void
+    println(ostream& __os, format_string<_Args...> __fmt, _Args&&... __args)
+    {
+      auto __fmtargs = std::make_format_args(__args...);
+      std::string __fmtn;
+      __fmtn.reserve(__fmt.get().size() + 1);
+      __fmtn = __fmt.get();
+      __fmtn += '\n';
+#if defined(_WIN32) && !defined(__CYGWIN__)
+      if constexpr (__unicode::__literal_encoding_is_utf8())
+	std::vprint_unicode(__os, __fmtn, __fmtargs);
+      else
+#endif
+	std::vprint_nonunicode(__os, __fmtn, __fmtargs);
+    }
+
+  // Defined for C++26, supported as an extension to C++23.
+  inline void println(ostream& __os)
+  {
+#if defined(_WIN32) && !defined(__CYGWIN__)
+    if constexpr (__unicode::__literal_encoding_is_utf8())
+      std::vprint_unicode(__os, "\n", std::make_format_args());
+    else
+#endif
+      __os.put('\n');
+  }
+
+#endif // __cpp_lib_print
+
+_GLIBCXX_END_NAMESPACE_VERSION
+} // namespace std
+
+#include <bits/ostream.tcc>
+
+#endif	/* _GLIBCXX_OSTREAM */

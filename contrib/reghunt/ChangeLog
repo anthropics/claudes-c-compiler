@@ -1,0 +1,101 @@
+2023-05-18  Jonathan Wakely  <jwakely@redhat.com>
+
+	PR bootstrap/105831
+	* bin/reg-hunt: Use = operator instead of ==.
+
+2010-06-27  Ralf Wildenhues  <Ralf.Wildenhues@gmx.de>
+
+	* bin/gcc-svn-ids: Fix unportable shell quoting.
+	* date_based/reg_periodic: Likewise.
+	* date_based/reg_search: Likewise.
+
+2009-02-17  Janis Johnson  <janis187@us.ibm.com>
+
+	* examples: New directory.
+	* examples/gcc-svn-env: New.
+	* examples/reg-watch: New.
+	* examples/reg-watch.awk: New.
+	* examples/common.config: New.
+	* examples/testall: New.
+	* examples/28970.config: New.
+	* examples/28970.list: New.
+	* examples/28970.c: New.
+	* examples/28970.log: New.
+	* examples/29106.config: New.
+	* examples/29106.list: New.
+	* examples/29106.test: New.
+	* examples/29106.cc: New.
+	* examples/29106.log: New.
+	* examples/29478.config: New.
+	* examples/29478.list: New.
+	* examples/29478.c: New.
+	* examples/29478.log: New.
+	* examples/29906a.config: New.
+	* examples/29906a.list: New.
+	* examples/29906a.cc: New.
+	* examples/29906a.log: New.
+	* examples/29906b.config: New.
+	* examples/29906b.list: New.
+	* examples/29906b.cc: New.
+	* examples/29906b.log: New.
+	* examples/30643.config: New.
+	* examples/30643.list: New.
+	* examples/30643.c: New.
+	* examples/30643.test: New.
+	* examples/30643.log: New.
+
+	* bin: New directory.
+	* bin/reg-hunt: New.
+	* bin/reg_periodic: New.
+	* bin/gcc-svn-update: New.
+	* bin/gcc-svn-update-fix: New.
+	* bin/gcc-build-simple: New.
+	* bin/gcc-build-full: New.
+	* bin/gcc-cleanup: New.
+	* bin/reg-test: New.
+	* bin/reg-newmid: New.
+	* bin/gcc-test-ice-on-valid-code: New.
+	* bin/gcc-test-ice-on-invalid-code: New.
+	* bin/gcc-test-compiler-hangs: New.
+	* bin/gcc-test-missing-warning: New.
+	* bin/gcc-test-bogus-warning: New.
+	* bin/gcc-test-segfault-on-valid-code: New.
+	* bin/gcc-test-rejects-valid: New.
+	* bin/gcc-test-accepts-invalid: New.
+	* bin/gcc-test-wrong-code: New.
+	* bin/gcc-svn-patchlist: New.
+	* bin/gcc-svn-checkfail: New.
+	* bin/gcc-svn-recordfail: New.
+	* bin/gcc-svn-report: New.
+	* bin/gcc-svn-ids: New.
+
+	* date_based: New directory.
+	* README: Move from here ...
+	* date_based/README: to here.
+	* reg_search: Move from here ...
+	* date_based/reg_search: to here.
+	* reg_periodic: Move from here ...
+	* date_based/reg_periodic: to here.
+	* reg_test_template: Move from here ...
+	* date_based_reg_test_template: to here.
+
+2005-07-14  Ben Elliston  <bje@au.ibm.com>
+
+	* reg_test_template: Typo fix.
+
+2005-01-17  Kazu Hirata  <kazu@cs.umass.edu>
+
+	* reg_periodic, reg_search: Fix the uses of date command.
+
+2003-06-24  Janis Johnson  <janis187@us.ibm.com>
+
+	* reg_search: Replace existing uses of DATE with MADE_DATE and
+	use DATE for the date command.
+	* reg_periodic: Ditto.
+
+2003-03-27  Janis Johnson  <janis187@us.ibm.com> 
+	* README: New file.
+	* reg_search: New file.
+	* reg_periodic: New file.
+	* reg_test_template: New file.
+

@@ -1,0 +1,159 @@
+# Copyright (C) 2013-2026 Free Software Foundation, Inc.
+
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with GCC; see the file COPYING3.  If not see
+# <http://www.gnu.org/licenses/>.
+
+# Return 1 if compilation with -fsanitize=undefined is error-free for trivial
+# code, 0 otherwise.
+
+set orig_ubsan_options_saved 0
+set orig_ubsan_options 0
+
+proc check_effective_target_fsanitize_undefined {} {
+    return [check_runtime fsanitize_undefined {
+	int main (void) { return 0; }
+    } "-fsanitize=undefined"]
+}
+
+#
+# ubsan_link_flags -- compute library path and flags to find libubsan.
+# (originally from g++.exp)
+#
+
+proc ubsan_link_flags { paths needs_cxx } {
+    global srcdir
+    global ld_library_path
+    global shlib_ext
+    global ubsan_saved_library_path
+
+    set gccpath ${paths}
+    set flags ""
+
+    set shlib_ext [get_shlib_extension]
+    set ubsan_saved_library_path $ld_library_path
+
+    # Providing -B instead of -L means that it works for targets that use
+    # spec substitution for handling -static-xxxxx, it also works for targets
+    # the use the startfile paths to provide a runpath for uninstalled test.
+    # Each -B option will produce a -L on the link line (for paths that exist).
+    if { $gccpath != "" } {
+      if { [file exists "${gccpath}/libsanitizer/ubsan/.libs/libubsan.a"]
+	   || [file exists "${gccpath}/libsanitizer/ubsan/.libs/libubsan.${shlib_ext}"] } {
+	  append flags " -B${gccpath}/libsanitizer/ "
+	  append flags " -B${gccpath}/libsanitizer/ubsan/ "
+	  append flags " -B${gccpath}/libsanitizer/ubsan/.libs"
+	  append ld_library_path ":${gccpath}/libsanitizer/ubsan/.libs"
+      }
+      # libasan links to libstdc++, so we must include it for C testcases.
+      if { $needs_cxx && ( [file exists "${gccpath}/libstdc++-v3/src/.libs/libstdc++.a"]
+	   || [file exists "${gccpath}/libstdc++-v3/src/.libs/libstdc++.${shlib_ext}"] ) } {
+	append flags " -B${gccpath}/libstdc++-v3/src/.libs "
+	append ld_library_path ":${gccpath}/libstdc++-v3/src/.libs"
+      }      
+    } else {
+      global tool_root_dir
+
+      set libubsan [lookfor_file ${tool_root_dir} libubsan]
+      if { $libubsan != "" } {
+	  append flags "-L${libubsan} "
+	  append ld_library_path ":${libubsan}"
+      }
+    }
+
+    set_ld_library_path_env_vars
+
+    return "$flags"
+}
+
+#
+# ubsan_init -- called at the start of each subdir of tests
+#
+
+proc ubsan_init { args } {
+    global TEST_ALWAYS_FLAGS
+    global ALWAYS_CXXFLAGS
+    global TOOL_OPTIONS
+    global ubsan_saved_TEST_ALWAYS_FLAGS
+    global ubsan_saved_ALWAYS_CXXFLAGS
+    global orig_ubsan_options_saved
+    global orig_ubsan_options
+    set needs_cxx [lindex $args 0]
+
+    if { $orig_ubsan_options_saved == 0 } {
+	# Save the original environment.
+	if [info exists env(UBSAN_OPTIONS)] {
+	    set orig_ubsan_options "$env(UBSAN_OPTIONS)"
+	    set orig_ubsan_options_saved 1
+	}
+    }
+    setenv UBSAN_OPTIONS color=never
+
+    set link_flags ""
+    if ![is_remote host] {
+	if [info exists TOOL_OPTIONS] {
+	    set link_flags "[ubsan_link_flags [get_multilibs ${TOOL_OPTIONS}] $needs_cxx]"
+	} else {
+	    set link_flags "[ubsan_link_flags [get_multilibs] $needs_cxx]"
+	}
+    }
+
+    if [info exists TEST_ALWAYS_FLAGS] {
+	set ubsan_saved_TEST_ALWAYS_FLAGS $TEST_ALWAYS_FLAGS
+    }
+    if [info exists ALWAYS_CXXFLAGS] {
+	set ubsan_saved_ALWAYS_CXXFLAGS $ALWAYS_CXXFLAGS
+	set ALWAYS_CXXFLAGS [concat "{ldflags=$link_flags}" $ALWAYS_CXXFLAGS]
+    } else {
+	if [info exists TEST_ALWAYS_FLAGS] {
+	    set TEST_ALWAYS_FLAGS "$link_flags $TEST_ALWAYS_FLAGS"
+	} else {
+	    set TEST_ALWAYS_FLAGS "$link_flags"
+	}
+    }
+}
+
+#
+# ubsan_finish -- called at the end of each subdir of tests
+#
+
+proc ubsan_finish { args } {
+    global TEST_ALWAYS_FLAGS
+    global ubsan_saved_TEST_ALWAYS_FLAGS
+    global ubsan_saved_ALWAYS_CXXFLAGS
+    global ubsan_saved_library_path
+    global ld_library_path
+    global orig_ubsan_options_saved
+    global orig_ubsan_options
+
+    if { $orig_ubsan_options_saved } {
+	setenv UBSAN_OPTIONS "$orig_ubsan_options"
+    } elseif [info exists env(UBSAN_OPTIONS)] {
+	unsetenv UBSAN_OPTIONS
+    }
+
+    if [info exists ubsan_saved_ALWAYS_CXXFLAGS ] {
+	set ALWAYS_CXXFLAGS $ubsan_saved_ALWAYS_CXXFLAGS
+    } else {
+	if [info exists ubsan_saved_TEST_ALWAYS_FLAGS] {
+	    set TEST_ALWAYS_FLAGS $ubsan_saved_TEST_ALWAYS_FLAGS
+	} else {
+	    unset TEST_ALWAYS_FLAGS
+	}
+    }
+    if [info exists ubsan_saved_library_path ] {
+	set ld_library_path $ubsan_saved_library_path
+	set_ld_library_path_env_vars
+    }
+    clear_effective_target_cache
+}

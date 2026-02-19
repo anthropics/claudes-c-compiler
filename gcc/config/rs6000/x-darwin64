@@ -1,0 +1,3 @@
+host-ppc64-darwin.o : $(srcdir)/config/rs6000/host-ppc64-darwin.cc
+	$(COMPILE) $<
+	$(POSTCOMPILE)

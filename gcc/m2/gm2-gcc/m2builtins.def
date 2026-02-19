@@ -1,0 +1,128 @@
+(* m2builtins.def definition module for m2builtins.cc.
+
+Copyright (C) 2003-2026 Free Software Foundation, Inc.
+Contributed by Gaius Mulley <gaius.mulley@southwales.ac.uk>.
+
+This file is part of GNU Modula-2.
+
+GNU Modula-2 is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 3, or (at your option)
+any later version.
+
+GNU Modula-2 is distributed in the hope that it will be useful, but
+WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with GNU Modula-2; see the file COPYING3.  If not see
+<http://www.gnu.org/licenses/>.  *)
+
+DEFINITION MODULE FOR "C" m2builtins ;
+
+FROM CDataTypes IMPORT CharStar, ConstCharStar ;
+FROM gcctypes IMPORT location_t, tree ;
+
+
+(*
+   GetBuiltinConst - returns the gcc tree of a built in constant, name.
+                     NIL is returned if the constant is unknown.
+*)
+
+PROCEDURE GetBuiltinConst (name: CharStar) : tree ;
+
+
+(*
+   GetBuiltinConstType - returns the type of a builtin constant, name.
+
+                         0 = unknown constant name
+                         1 = integer
+                         2 = real
+*)
+
+PROCEDURE GetBuiltinConstType (name: CharStar) : CARDINAL ;
+
+
+
+(*
+   GetBuiltinTypeInfoType - returns value:
+                            0    is ident is unknown.
+                            1    if ident is IEC559, LIA1, ISO, IEEE, rounds, underflow,
+                                             exception, extend.
+                            2    if ident is radix, places, exponentmin, exponentmax,
+                                             noofmodes.
+                            3    if ident is large, small.
+*)
+
+PROCEDURE GetBuiltinTypeInfoType (ident: ConstCharStar) : CARDINAL ;
+
+
+(*
+   GetBuiltinTypeInfo - returns a tree value:
+
+                        NULL_TREE        if ident is unknown.
+                        boolean tree     if ident is IEC559, LIA1, ISO, IEEE, rounds, underflow,
+                                         exception, extend.
+                        ZType tree       if ident is radix, places, exponentmin, exponentmax,
+                                         noofmodes.
+                        RType tree       if ident is large, small.
+*)
+
+PROCEDURE GetBuiltinTypeInfo (location: location_t; type: tree; ident: ConstCharStar) : tree ;
+
+
+(*
+   BuiltinExists - returns TRUE if the builtin function, name, exists
+                   for this target architecture.
+*)
+
+PROCEDURE BuiltinExists (name: CharStar) : BOOLEAN ;
+
+
+(*
+   BuildBuiltinTree - returns a tree containing the builtin function, name.
+*)
+
+PROCEDURE BuildBuiltinTree (location: location_t; name: CharStar) : tree ;
+
+
+(*
+   BuiltinMemCopy and BuiltinAlloca - are called by M2GenGCC to implement open arrays.
+*)
+
+PROCEDURE BuiltinMemCopy (location: location_t; dest, src, n: tree) : tree ;
+
+
+(*
+   BuiltinMemSet is called by M2GenGCC to implement the set type.
+*)
+
+PROCEDURE BuiltinMemSet (location: location_t; dest, bytevalue, nbytes: tree) : tree ;
+
+
+(*
+   BuiltInAlloca - given an expression, n, allocate, n, bytes on the stack for the life
+                   of the current function.
+*)
+
+PROCEDURE BuiltInAlloca (location: location_t; n: tree) : tree ;
+
+
+(*
+   BuiltInIsfinite - given an expression, e, return an integer tree of 1 if the
+                     value is finite.  Return an integer tree 0 if the value is
+                     not finite.
+*)
+
+PROCEDURE BuiltInIsfinite (location: location_t; e: tree) : tree ;
+
+
+(*
+   BuiltinStrNCopy - copy at most n characters from src to dest.
+*)
+
+PROCEDURE BuiltinStrNCopy (location: location_t; dest, src, n: tree) : tree ;
+
+
+END m2builtins.

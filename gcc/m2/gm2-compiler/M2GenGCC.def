@@ -1,0 +1,108 @@
+(* M2GenGCC.def convert the quadruples into GCC trees.
+
+Copyright (C) 2001-2026 Free Software Foundation, Inc.
+Contributed by Gaius Mulley <gaius.mulley@southwales.ac.uk>.
+
+This file is part of GNU Modula-2.
+
+GNU Modula-2 is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 3, or (at your option)
+any later version.
+
+GNU Modula-2 is distributed in the hope that it will be useful, but
+WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with GNU Modula-2; see the file COPYING3.  If not see
+<http://www.gnu.org/licenses/>.  *)
+
+DEFINITION MODULE M2GenGCC ;
+
+(*
+    Title      : M2GenGCC
+    Author     : Gaius Mulley
+    System     : UNIX (gm2)
+    Date       : Fri Jul  9 13:05:13 1999
+    Last edit  : Fri Jul  9 13:05:13 1999
+    Description: provides an interface to GCC, essentially convert the
+                 internal quadruples of m2f into a GCC tree structure.
+*)
+
+FROM M2GCCDeclare IMPORT WalkAction ;
+FROM gcctypes IMPORT location_t, tree ;
+FROM M2BasicBlock IMPORT BasicBlock ;
+
+
+(*
+   ConvertQuadsToTree - runs through the quadruple list, Start..End, and converts it into
+                        the GCC tree structure.
+*)
+
+PROCEDURE ConvertQuadsToTree (Start, End: CARDINAL) ;
+
+
+(*
+   ResolveConstantExpressions - resolves constant expressions from the quadruple list.
+                                It returns TRUE if one or more constants were folded.
+                                When a constant symbol value is solved, the call back
+                                p(sym) is invoked.
+*)
+
+PROCEDURE ResolveConstantExpressions (p: WalkAction; bb: BasicBlock) : BOOLEAN ;
+
+
+(*
+   GetHighFromUnbounded - returns a Tree containing the value of
+                          param.HIGH.
+*)
+
+PROCEDURE GetHighFromUnbounded (location: location_t; dim, param: CARDINAL) : tree ;
+
+
+(*
+   StringToChar - if type=Char and str is a string (of size <= 1)
+                  then convert the string into a character constant.
+*)
+
+PROCEDURE StringToChar (t: tree; type, str: CARDINAL) : tree ;
+
+
+(*
+   LValueToGenericPtr - returns a Tree representing symbol, sym.
+                        It coerces a lvalue into an internal pointer type
+*)
+
+PROCEDURE LValueToGenericPtr (location: location_t; sym: CARDINAL) : tree ;
+
+
+(*
+   ZConstToTypedConst - checks whether op1 and op2 are constants and
+                        coerces, t, appropriately.
+*)
+
+PROCEDURE ZConstToTypedConst (t: tree; op1, op2: CARDINAL) : tree ;
+
+
+(*
+   PrepareCopyString - returns two trees:
+                       length    number of bytes to be copied (including the nul if room)
+                       srcTreeType the new string type (with the extra nul character).
+
+                       Pre condition:  destStrType the dest type string.
+                                       src is the original string (without a nul)
+                                       to be copied.
+                       Post condition: TRUE or FALSE is returned.
+                                       if true length and srcTreeType will be assigned
+                                       else length is set to the maximum length to be
+                                            copied and srcTree is set to the max length
+                                            which fits in dest.
+*)
+
+PROCEDURE PrepareCopyString (tokenno: CARDINAL; VAR length, srcTree: tree;
+                             src, destStrType: CARDINAL) : BOOLEAN ;
+
+
+END M2GenGCC.

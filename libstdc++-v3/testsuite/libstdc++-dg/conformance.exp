@@ -1,0 +1,130 @@
+# Functional and regression tests in C++ for libstdc++.
+
+# Copyright (C) 2001-2026 Free Software Foundation, Inc.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; see the file COPYING3.  If not see
+# <http://www.gnu.org/licenses/>.
+
+# libstdc++-v3 testsuite that uses the 'dg.exp' driver.
+
+# Initialization.
+dg-init
+
+
+# Build the support objects.
+v3-build_support
+
+set tests [list]
+
+# If there is a "testsuite_files" file, use it.
+#
+# This is a workaround for problems reported with using:
+#
+#   runtest normal.exp="`cat testsuite_files`"
+#
+# See:
+#  http://gcc.gnu.org/ml/libstdc++/2005-03/msg00278.html
+# for discussion of the problem.
+#
+# If that worked consistently, we could modify "make check" to
+# pass that option, and then remove this code.
+if {[info exists blddir]} {
+    set tests_file "${blddir}/testsuite/testsuite_files"
+}
+if {[info exists tests_file] && [file exists $tests_file]} {
+    set f [open $tests_file]
+    verbose -log "reading test files from $tests_file" 1
+    while { ! [eof $f] } {
+	set t [gets $f]
+	if { [string length "$t"] != 0 } {
+	    lappend tests ${srcdir}/${t}
+	}
+    }
+    close $f
+} else {
+    # Find directories that might have tests.
+    # This list should be consistent with scripts/create_testsuite_files
+    set subdirs [glob "$srcdir/\[0-9\]\[0-9\]*"]
+    lappend subdirs "$srcdir/std"
+    lappend subdirs "$srcdir/abi"
+    lappend subdirs "$srcdir/backward"
+    lappend subdirs "$srcdir/ext"
+    lappend subdirs "$srcdir/performance"
+    lappend subdirs "$srcdir/tr1"
+    lappend subdirs "$srcdir/tr2"
+    lappend subdirs "$srcdir/decimal"
+    lappend subdirs "$srcdir/experimental"
+    lappend subdirs "$srcdir/special_functions"
+    verbose "subdirs are $subdirs"
+
+    # Find all the tests.
+    foreach s $subdirs {
+	set subdir_tests [find $s *.cc]
+	set subdir_tests_c [find $s *.c]
+	foreach e $subdir_tests_c {
+	    lappend subdir_tests $e
+	}
+
+	# Filter out tests that should not be run.
+	foreach t $subdir_tests {
+	    # The DejaGNU "find" procedure sometimes returns a list
+	    # containing an empty string, when it should really return
+	    # an empty list.
+	    if { $t == "" } {
+		continue
+	    }
+	    # Filter out:
+	    # 0. utilities, other parts of the testing infrastructure.
+	    # 1. interactive tests.
+	    # 2. performance tests.
+	    # 3. wchar_t tests, if not supported.
+	    # 4. thread tests, if not supported.
+	    # 5. *_filebuf, if file I/O is not supported.
+	    # 6. simd tests.
+	    if { [string first _xin $t] == -1
+		 && [string first performance $t] == -1
+		 && (${v3-wchar_t} || [string first wchar_t $t] == -1)
+		 && (${v3-threads} || [string first thread $t] == -1)
+		 && ([string first "_filebuf" $t] == -1
+		     || [check_v3_target_fileio])
+		 && [string first "/experimental/simd/" $t] == -1 } {
+		lappend tests $t
+	    }
+	}
+    }
+}
+set tests [lsort $tests]
+
+# Main loop.
+global DEFAULT_CXXFLAGS
+global PCH_CXXFLAGS
+# Modified version of dg-runtest
+v3-dg-runtest $tests "" "$DEFAULT_CXXFLAGS $PCH_CXXFLAGS"
+
+# Finally run simd tests with extra SIMD-relevant flags
+global DEFAULT_VECTCFLAGS
+global EFFECTIVE_TARGETS
+set DEFAULT_VECTCFLAGS ""
+set EFFECTIVE_TARGETS ""
+
+if [check_vect_support_and_set_flags] {
+  lappend DEFAULT_VECTCFLAGS "-O2"
+  lappend DEFAULT_VECTCFLAGS "-Wno-psabi"
+  et-dg-runtest dg-runtest [lsort \
+    [glob -nocomplain $srcdir/experimental/simd/*.cc]] \
+    "$DEFAULT_VECTCFLAGS" "$DEFAULT_CXXFLAGS $PCH_CXXFLAGS"
+}
+
+# All done.
+dg-finish

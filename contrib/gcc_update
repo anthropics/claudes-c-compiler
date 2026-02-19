@@ -1,0 +1,454 @@
+#! /bin/sh
+#
+# Update a local Subversion, Git or Mercurial tree from the GCC
+# repository, with an emphasis on treating generated files correctly, so
+# that autoconf, gperf et al are not required for the ``end'' user.
+#
+# (C) 1998, 1999, 2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2009,
+# 2010, 2011, 2012, 2013, 2014, 2015, 2017 Free Software Foundation
+# Originally by Gerald Pfeifer <gerald@pfeifer.com>, August 1998.
+#
+# This script is Free Software, and it can be copied, distributed and
+# modified as defined in the GNU General Public License.  A copy of
+# its license can be downloaded from http://www.gnu.org/copyleft/gpl.html
+#
+#
+# By default all command-line options are passed to `svn update` or `hg/git
+# pull` in addition to $UPDATE_OPTIONS (defined below). If the first parameter
+# reads --nostdflags, $UPDATE_OPTIONS as well as this parameter itself
+# are omitted.
+#
+# If the first parameter reads --patch, the second parameter is considered
+# a patch file.
+#
+# If the first parameter is --touch, no svn operation will be performed,
+# only generated files that appear to be out of date in the local tree
+# will be touched.
+#
+# If the first parameter is --list, a list of the generated files and
+# their dependencies will be printed; --help prints this message.
+#
+# If the first parameter is --silent, this script prints nothing other
+# than error messages; the second parameter is then interpreted as above.
+#
+# Examples:
+#
+# contrib/gcc_update -r 8712
+# contrib/gcc_update --patch some-patch
+# contrib/gcc_update --touch
+# contrib/gcc_update --list
+
+
+# Default options used when updating (none).
+UPDATE_OPTIONS=""
+
+# Set the locale to C to make this script work for users with foreign
+# locale like e.g. French UTF-8.
+LANG=C
+LC_ALL=C
+export LANG LC_ALL
+
+######## Anything below shouldn't be changed by regular users.
+
+# Arrange for the value of $0 to be available for functions
+self=$0
+
+# This function prints its arguments to standard output unless
+# "silent" is set.
+unset silent
+chat () {
+    if [ -z "$silent" ]; then
+        echo "$@"
+    fi
+}
+
+# This function prints a list of all generated files, along with their
+# dependencies.  Note that only one target is supported per line: the
+# colon is stripped from the output.
+files_and_dependencies () {
+    sed -e 's/ *#.*//' -e '/^$/d' -e 's/://' <<\EOF
+# fixincludes
+fixincludes/configure: fixincludes/configure.ac fixincludes/aclocal.m4
+fixincludes/config.h.in: fixincludes/configure.ac fixincludes/aclocal.m4
+fixincludes/fixincl.x: fixincludes/inclhack.def fixincludes/fixincl.tpl
+# intl library
+intl/plural.c: intl/plural.y
+intl/plural-config.h: intl/plural.y
+intl/configure: intl/configure.ac intl/aclocal.m4
+intl/config.h.in: intl/configure.ac intl/aclocal.m4
+# Now, proceed to gcc automatically generated files
+gcc/configure: gcc/configure.ac
+gcc/cstamp-h.in: gcc/configure.ac
+gcc/config.in: gcc/cstamp-h.in
+gcc/fixinc/fixincl.x: gcc/fixinc/fixincl.tpl gcc/fixinc/inclhack.def
+gcc/config/aarch64/aarch64-tune.md: gcc/config/aarch64/aarch64-cores.def gcc/config/aarch64/gentune.sh
+gcc/config/arm/arm-tune.md: gcc/config/arm/arm-cpus.in gcc/config/arm/parsecpu.awk
+gcc/config/arm/arm-tables.opt: gcc/config/arm/arm-cpus.in gcc/config/arm/parsecpu.awk
+gcc/config/c6x/c6x-tables.opt: gcc/config/c6x/c6x-isas.def gcc/config/c6x/genopt.sh
+gcc/config/c6x/c6x-sched.md: gcc/config/c6x/c6x-sched.md.in gcc/config/c6x/gensched.sh
+gcc/config/c6x/c6x-mult.md: gcc/config/c6x/c6x-mult.md.in gcc/config/c6x/genmult.sh
+gcc/config/loongarch/loongarch-str.h: gcc/config/loongarch/genopts/genstr.sh gcc/config/loongarch/genopts/loongarch-strings
+gcc/config/loongarch/loongarch.opt: gcc/config/loongarch/genopts/genstr.sh gcc/config/loongarch/genopts/loongarch.opt.in
+gcc/config/m68k/m68k-tables.opt: gcc/config/m68k/m68k-devices.def gcc/config/m68k/m68k-isas.def gcc/config/m68k/m68k-microarchs.def gcc/config/m68k/genopt.sh
+gcc/config/mips/mips-tables.opt: gcc/config/mips/mips-cpus.def gcc/config/mips/genopt.sh
+gcc/config/rs6000/rs6000-tables.opt: gcc/config/rs6000/rs6000-cpus.def gcc/config/rs6000/genopt.sh
+gcc/config/rs6000/fusion.md: gcc/config/rs6000/genfusion.pl
+# And then, language-specific files
+gcc/cp/cfns.h: gcc/cp/cfns.gperf
+gcc/cp/std-name-hint.h: gcc/cp/std-name-hint.gperf
+gcc/cp/std-name-hint.gperf: gcc/cp/cxxapi-data.csv
+gcc/m2/configure: gcc/m2/configure.ac
+gcc/m2/gm2config.h.in: gcc/m2/configure.ac
+gcc/m2/gm2-libs/config-host: gcc/m2/gm2-libs/config-host.in
+# testsuite
+# Without this, _Pragma3.c can have a false negative.
+gcc/testsuite/gcc.dg/cpp/_Pragma3.c: gcc/testsuite/gcc.dg/cpp/mi1c.h
+# Similarly, without this, you will see:
+# direct2s.c:35: warning: current file is older than direct2.c
+gcc/testsuite/gcc.dg/cpp/direct2s.c: gcc/testsuite/gcc.dg/cpp/direct2.c
+# lto-plugin
+lto-plugin/aclocal.m4: lto-plugin/configure.ac
+lto-plugin/configure: lto-plugin/configure.ac lto-plugin/aclocal.m4
+lto-plugin/Makefile.in: lto-plugin/Makefile.am lto-plugin/aclocal.m4
+# tools
+c++tools/configure: c++tools/configure.ac
+c++tools/config.h.in: c++tools/configure.ac
+# And libraries, at last
+libbanshee/configure: libbanshee/configure.ac
+libmudflap/configure: libmudflap/configure.ac
+libobjc/configure: libobjc/configure.ac
+zlib/aclocal.m4: zlib/configure.ac zlib/acinclude.m4
+zlib/Makefile.in: zlib/Makefile.am zlib/configure.ac zlib/aclocal.m4
+zlib/configure: zlib/configure.ac zlib/aclocal.m4
+fastjar/aclocal.m4: fastjar/configure.ac
+fastjar/Makefile.in: fastjar/Makefile.am fastjar/configure.ac fastjar/aclocal.m4
+fastjar/configure: fastjar/configure.ac fastjar/aclocal.m4
+boehm-gc/aclocal.m4: boehm-gc/configure.ac
+boehm-gc/Makefile.in: boehm-gc/Makefile.am boehm-gc/configure.ac boehm-gc/aclocal.m4
+boehm-gc/configure: boehm-gc/configure.ac boehm-gc/aclocal.m4
+libada/configure: libada/configure.ac
+libffi/aclocal.m4: libffi/configure.ac libffi/acinclude.m4
+libffi/Makefile.in: libffi/Makefile.am libffi/configure.ac libffi/aclocal.m4
+libffi/configure: libffi/configure.ac libffi/aclocal.m4
+libffi/fficonfig.h.in: libffi/configure.ac libffi/aclocal.m4
+libgfortran/aclocal.m4: libgfortran/configure.ac libgfortran/acinclude.m4
+libgfortran/Makefile.in: libgfortran/Makefile.am libgfortran/configure.ac libgfortran/aclocal.m4
+libgm2/Makefile.in: libgm2/Makefile.am libgm2/configure.ac libgm2/aclocal.m4
+libgm2/aclocal.m4: libgm2/configure.ac
+libgm2/libm2cor/Makefile.in: libgm2/libm2cor/Makefile.am
+libgm2/libm2pim/Makefile.in: libgm2/libm2pim/Makefile.am
+libgm2/libm2iso/Makefile.in: libgm2/libm2iso/Makefile.am
+libgm2/libm2log/Makefile.in: libgm2/libm2log/Makefile.am
+libgm2/libm2min/Makefile.in: libgm2/libm2min/Makefile.am
+libquadmath/configure: libquadmath/configure.ac libquadmath/aclocal.m4
+libquadmath/aclocal.m4: libquadmath/configure.ac libquadmath/acinclude.m4
+libquadmath/Makefile.in: libquadmath/Makefile.am libquadmath/configure.ac libgfortran/aclocal.m4
+libgfortran/configure: libgfortran/configure.ac libgfortran/aclocal.m4
+libcody/configure: libcody/configure.ac libcody/config.m4
+libcpp/aclocal.m4: libcpp/configure.ac
+libcpp/Makefile.in: libcpp/configure.ac libcpp/aclocal.m4
+libcpp/configure: libcpp/configure.ac libcpp/aclocal.m4
+libgomp/aclocal.m4: libgomp/configure.ac libgomp/acinclude.m4
+libgomp/Makefile.am: libgomp/plugin/Makefrag.am
+libgomp/Makefile.in: libgomp/Makefile.am libgomp/aclocal.m4
+libgomp/testsuite/Makefile.in: libgomp/testsuite/Makefile.am libgomp/aclocal.m4
+libgomp/configure.ac: libgomp/plugin/configfrag.ac
+libgomp/configure: libgomp/configure.ac libgomp/aclocal.m4
+libgomp/config.h.in: libgomp/configure.ac libgomp/aclocal.m4
+libgrust/Makefile.in: libgrust/Makefile.am libgrust/aclocal.m4
+libgrust/aclocal.m4: libgrust/configure.ac
+libgrust/configure: libgrust/configure.ac libgrust/aclocal.m4
+libgrust/libformat_parser/Makefile.in: libgrust/libformat_parser/Makefile.am libgrust/aclocal.m4
+libgrust/libproc_macro_internal/Makefile.in: libgrust/libproc_macro_internal/Makefile.am libgrust/aclocal.m4
+libitm/aclocal.m4: libitm/configure.ac libitm/acinclude.m4
+libitm/Makefile.in: libitm/Makefile.am libitm/aclocal.m4
+libitm/testsuite/Makefile.in: libitm/testsuite/Makefile.am libitm/aclocal.m4
+libitm/configure: libitm/configure.ac libitm/aclocal.m4
+libitm/config.h.in: libitm/configure.ac libitm/aclocal.m4
+libatomic/aclocal.m4: libatomic/configure.ac libatomic/acinclude.m4
+libatomic/Makefile.in: libatomic/Makefile.am libatomic/aclocal.m4
+libatomic/testsuite/Makefile.in: libatomic/testsuite/Makefile.am libatomic/aclocal.m4
+libatomic/configure: libatomic/configure.ac libatomic/aclocal.m4
+libatomic/auto-config.h.in: libatomic/configure.ac libatomic/aclocal.m4
+libsanitizer/aclocal.m4: libsanitizer/configure.ac libsanitizer/acinclude.m4
+libsanitizer/Makefile.in: libsanitizer/Makefile.am libsanitizer/aclocal.m4
+libsanitizer/configure: libsanitizer/configure.ac libsanitizer/aclocal.m4
+libsanitizer/asan/Makefile.in: libsanitizer/asan/Makefile.am libsanitizer/aclocal.m4
+libsanitizer/interception/Makefile.in: libsanitizer/interception/Makefile.am libsanitizer/aclocal.m4
+libsanitizer/sanitizer_common/Makefile.in: libsanitizer/sanitizer_common/Makefile.am libsanitizer/aclocal.m4
+libvtv/aclocal.m4: libvtv/configure.ac libvtv/acinclude.m4
+libvtv/Makefile.in: libvtv/Makefile.am libvtv/aclocal.m4
+libvtv/configure: libvtv/configure.ac libvtv/aclocal.m4
+libbacktrace/aclocal.m4: libbacktrace/configure.ac
+libbacktrace/Makefile.in: libbacktrace/Makefile.am libbacktrace/aclocal.m4
+libbacktrace/configure: libbacktrace/configure.ac libbacktrace/aclocal.m4
+libbacktrace/config.h.in: libbacktrace/configure.ac libbacktrace/aclocal.m4
+libphobos/Makefile.in: libphobos/Makefile.am libphobos/configure.ac libphobos/aclocal.m4
+libphobos/aclocal.m4: libphobos/configure.ac libphobos/acinclude.m4
+libphobos/config.h.in: libphobos/configure.ac libphobos/aclocal.m4
+libphobos/configure: libphobos/configure.ac libphobos/aclocal.m4
+libphobos/src/Makefile.in: libphobos/src/Makefile.am libphobos/aclocal.m4
+libphobos/testsuite/Makefile.in: libphobos/testsuite/Makefile.am libphobos/aclocal.m4
+libstdc++-v3/aclocal.m4: libstdc++-v3/configure.ac libstdc++-v3/acinclude.m4
+libstdc++-v3/Makefile.in: libstdc++-v3/Makefile.am libstdc++-v3/aclocal.m4
+libstdc++-v3/configure: libstdc++-v3/configure.ac libstdc++-v3/acinclude.m4
+libstdc++-v3/include/bits/version.h: libstdc++-v3/include/bits/version.def libstdc++-v3/include/bits/version.tpl
+libcc1/aclocal.m4: libcc1/configure.ac
+libcc1/Makefile.in: libcc1/Makefile.am libcc1/configure.ac libcc1/aclocal.m4
+libcc1/configure: libcc1/configure.ac
+# Top level
+Makefile.in: Makefile.tpl Makefile.def
+configure: configure.ac config/acx.m4
+EOF
+}
+
+
+# This function touches generated files such that the ``end'' user does
+# not have to rebuild them.
+touch_files () {
+    rm -f Makefile.$$
+    echo 'all: \' > Makefile.$$
+    files_and_dependencies | sed 's, .*, \\,' >> Makefile.$$
+    echo '; @true' >> Makefile.$$
+    files_and_dependencies | sed 's, ,: ,' >> Makefile.$$
+    files_and_dependencies | sed 's, .*, \\,' >> Makefile.$$
+    echo ':' >> Makefile.$$
+    echo '	@for f in $? $@; do test -f $$f || exit 0; done; \' >> Makefile.$$
+    echo '	echo Touching $@...; \' >> Makefile.$$
+    chat '	echo Touching $@... 1>&2; \' >> Makefile.$$
+    echo '	touch $@' >> Makefile.$$
+    files_and_dependencies | sed 's,[^ ]* ,,;s,$, :,' >> Makefile.$$
+
+    # We would have to explicitly shut off the "Entering... Leaving..."
+    # messages through "--no-print-directory" to handle the case when
+    # we were called from a recursive invocation (i.e. "$(MAKE)" in a
+    # Makefile, not just make).  Passing only "-s" doesn't help then,
+    # because make has helpfully added "-w" to MAKEFLAGS automatically.
+    # Unfortunately we do not require GNU make other than for building
+    # and testing, so let's just grep known text explicitly echoed by
+    # the rule.
+    while ${MAKE-make} -s -f Makefile.$$ all | grep Touching > /dev/null; do
+      sleep 1
+    done 2>&1
+    rm -f Makefile.$$
+}
+
+
+# Whenever we update the tree or install a patch, we may be modifying
+# this script.  By re-execing it, we ensure that the appropriate
+# dependencies and rules will be used.
+touch_files_reexec () {
+    chat "Adjusting file timestamps"
+    exec ${CONFIG_SHELL-/bin/sh} $self ${silent+"--silent"} --touch
+}
+
+# This functions applies a patch to an existing tree.
+apply_patch () {
+    if [ -f "$1" ]; then
+	echo "Applying patch file $1"
+	case $1 in
+	*gz)
+	    gzip -d -c "$1" | patch -p1 ;;
+	*bz2)
+	    bzip2 -d -c "$1" | patch -p1 ;;
+	*)
+	    patch -p1 < "$1";;
+	esac
+    fi
+    touch_files_reexec
+}
+
+# Check whether this indeed looks like a local tree.
+if [ ! -f gcc/reload.cc ]; then
+    echo "This does not seem to be a GCC tree!"
+    exit
+fi
+
+case "$1" in
+--silent)
+    silent=t
+    shift
+    ;;
+esac
+
+case "$1" in
+# First of all, check whether we are going to process a patch.
+--patch)
+    if test "$#" != 2; then
+        echo "$1" expects only one argument >&2
+	exit 1
+    fi
+    apply_patch "${2}"
+    exit $?
+    ;;
+
+--touch)
+    if test "$#" != 1; then
+        echo "$1" does not expect any argument >&2
+	exit 1
+    fi
+    touch_files
+    exit $?
+    ;;
+
+--list)
+    if test "$#" != 1; then
+        echo "$1" does not expect any argument >&2
+	exit 1
+    fi
+    files_and_dependencies | sed 's/ /: /'
+    exit $?
+    ;;
+
+--help)
+    sed -e '1,2d' -e '/^UPDATE_OPTIONS=/{i\
+\
+
+p
+}' \
+	-e '/^$/,$d' -e 's/#//' -e 's/^ //' < $0
+    exit $?
+    ;;
+
+esac
+
+# Check for known version control systems.
+if [ -d .git ] || [ -f .git ]; then
+    GCC_GIT=${GCC_GIT-${GIT-git}}
+    vcs_type="git"
+elif [ -d .hg ]; then
+    GCC_HG=${GCC_HG-${HG-hg}}
+    vcs_type="hg"
+elif [ -d .svn ]; then
+    GCC_SVN=${GCC_SVN-${SVN-svn}}
+    vcs_type="svn"
+else
+    echo "This does not seem to be a GCC GIT/HG/SVN tree!"
+    exit
+fi
+
+# Check command-line options
+if [ x"${1}"x = x"--nostdflags"x ]; then
+    shift
+else
+    set -- $UPDATE_OPTIONS ${1+"$@"}
+fi
+
+case $vcs_type in
+    git)
+	chat "Updating GIT tree"
+
+	$GCC_GIT diff --quiet --exit-code HEAD
+	if [ $? -ne 0 ]; then
+            echo "Attempting to update a dirty git tree!" >&2
+            echo "Commit or stash your changes first and retry." >&2
+            exit 1
+	fi
+
+	$GCC_GIT pull ${silent+-q} --rebase ${1+"$@"}
+	if [ $? -ne 0 ]; then
+            (touch_files_reexec)
+            echo "git pull of full tree failed." >&2
+            exit 1
+	fi
+
+	# Open-coded version of "git gcc-descr" from contrib/gcc-git-customization.sh
+	revision=`$GCC_GIT log -n1 --pretty=tformat:%h`
+	r=`$GCC_GIT describe --all --match 'basepoints/gcc-[0-9]*' HEAD \
+	   | sed -n 's,^\(tags/\)\?basepoints/gcc-\([0-9]\+\)-\([0-9]\+\)-g[0-9a-f]*$,r\2-\3,p;s,^\(tags/\)\?basepoints/gcc-\([0-9]\+\)$,r\2-0,p'`;
+	if test -n "$r"; then
+		o=`$GCC_GIT config --get gcc-config.upstream`;
+		rr=`echo $r | sed -n 's,^r\([0-9]\+\)-[0-9]\+\(-g[0-9a-f]\+\)\?$,\1,p'`;
+		if $GCC_GIT rev-parse --verify --quiet ${o:-origin}/releases/gcc-$rr >/dev/null; then
+			m=releases/gcc-$rr;
+		else
+			m=master;
+		fi;
+		if $GCC_GIT merge-base --is-ancestor HEAD ${o:-origin}/$m; then
+			revision=${r}-g${revision};
+		fi
+	fi
+	branch=`$GCC_GIT name-rev --name-only HEAD || :`
+	;;
+
+    hg)
+	chat "Updating HG tree"
+
+	# Add -q so untracked files aren't listed.
+	if [ `$GCC_HG status -q | wc -l` -gt 0 ]; then
+            echo "Attempting to update a dirty hg tree!" >&2
+            echo "Commit or revert your changes first and retry." >&2
+            exit 1
+	fi
+
+	# Check for mq extension.  mq patches must be popped so tip has
+	# been converted from the SVN tree.
+	if [ -d .hg/patches ] && [ `$GCC_HG qapplied | wc -l` -gt 0 ]; then
+	    # FIXME: Perhaps pop queue instead?  We could do that since we
+	    # know the tree is clean.
+	    echo "Attempting to update hg tree with mq patches applied!" >&2
+	    echo "Pop your patches first and retry." >&2
+	    exit 1
+	fi
+
+	# Update tree, but make sure to only pull the default branch.
+	# Otherwise all branches in the upstream repo are added, even if
+	# only a single one has been cloned.
+	$GCC_HG pull ${silent+-q} -r`$GCC_HG branch` ${1+"$@"}
+	if [ $? -ne 0 ]; then
+            (touch_files_reexec)
+            echo "hg pull of full tree failed." >&2
+            exit 1
+	fi
+
+	# Update tree.  Needs to be done separately from pull so
+	# gcc_update -rREV works.
+	$GCC_HG update ${silent+-q} ${1+"$@"}
+	if [ $? -ne 0 ]; then
+            (touch_files_reexec)
+            echo "hg update of full tree failed." >&2
+            exit 1
+	fi
+
+	# Extract SVN revision corresponding to parents, as stored by
+	# hg convert.  Before hg 1.4.3, there's no template keyword
+	# corresponding to the extra: tag, so need to use hg log --debug
+	# to extract the info.
+	parents=`$GCC_HG parents --template '{rev}'`
+	convert_revision=`$GCC_HG log --debug -r$parents | \
+	    sed -ne "/^extra:.*convert_revision=svn:/ {
+	        s%^[^/]*/%%
+		p
+	    }"`
+	revision=`echo $convert_revision | sed -e 's/.*@//'`
+	branch=`echo $convert_revision | sed -e 's%branches/%%' -e 's/@.*//'`
+	;;
+
+    svn)
+	chat "Updating SVN tree"
+
+	$GCC_SVN ${silent+-q}  --non-interactive update ${1+"$@"}
+	if [ $? -ne 0 ]; then
+	    (touch_files_reexec)
+	    echo "SVN update of full tree failed." >&2
+	    exit 1
+	fi
+
+	revision=`$GCC_SVN info | awk '/Revision:/ { print $2 }'`
+	branch=`$GCC_SVN info | sed -ne "/^URL:/ {
+	    s,.*/trunk,trunk,
+	    s,.*/branches/,,
+	    s,.*/tags/,,
+	    p
+	}"`
+	;;
+esac
+
+rm -f LAST_UPDATED gcc/REVISION
+{
+    date
+    echo "`TZ=UTC date` (revision $revision)"
+} > LAST_UPDATED
+echo "[$branch $revision]" > gcc/REVISION
+
+touch_files_reexec

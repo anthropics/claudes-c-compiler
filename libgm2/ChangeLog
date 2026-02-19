@@ -1,0 +1,1011 @@
+2025-12-29  Rainer Orth  <ro@CeBiTec.Uni-Bielefeld.DE>
+
+	* configure: Regenerate.
+
+2025-11-23  Gaius Mulley  <gaiusmod2@gmail.com>
+
+	PR modula2/122801
+	* configure: Regenerate.
+	* configure.ac (libtool_VERSION): Assign to 21:0:0.
+
+2025-11-03  Sam James  <sam@gentoo.org>
+
+	* configure: Regenerate.
+
+2025-10-24  Gaius Mulley  <gaiusmod2@gmail.com>
+
+	PR modula2/122407
+	* libm2pim/Makefile.am (M2MODS): Add BinDict.mod.
+	(M2DEFS): Add BinDict.def.
+	* libm2pim/Makefile.in: Regenerate.
+
+2025-10-07  Jonathan Wakely  <jwakely@redhat.com>
+
+	* configure.host: Fix spelling in comment.
+
+2025-10-05  Sam James  <sam@gentoo.org>
+
+	* Makefile.in: Regenerate.
+	* aclocal.m4: Regenerate.
+	* configure: Regenerate.
+	* libm2cor/Makefile.in: Regenerate.
+	* libm2iso/Makefile.in: Regenerate.
+	* libm2log/Makefile.in: Regenerate.
+	* libm2min/Makefile.in: Regenerate.
+	* libm2pim/Makefile.in: Regenerate.
+
+2025-09-19  Gaius Mulley  <gaiusmod2@gmail.com>
+
+	* libm2pim/Makefile.am (M2MODS): Add M2Diagnostic.mod.
+	Add M2WIDESET.mod.
+	(M2DEFS): Add M2Diagnostic.def.
+	Add M2WIDESET.def.
+	* libm2pim/Makefile.in: Regenerate.
+
+2025-07-23  Gaius Mulley  <gaiusmod2@gmail.com>
+
+	PR modula2/121164
+	* libm2iso/Makefile.am (libm2iso_la_M2FLAGS): Add -Wall.
+	* libm2iso/Makefile.in: Regenerate.
+	* libm2log/Makefile.am (libm2log_la_M2FLAGS): Add -Wall.
+	* libm2log/Makefile.in: Regenerate.
+	* libm2min/Makefile.am (libm2min_la_M2FLAGS): Add -Wall.
+	* libm2min/Makefile.in: Regenerate.
+	* libm2pim/Makefile.am (libm2pim_la_M2FLAGS): Add -Wall.
+	* libm2pim/Makefile.in: Regenerate.
+
+2025-06-29  Gaius Mulley  <gaiusmod2@gmail.com>
+
+	PR modula2/117203
+	* libm2iso/Makefile.am (M2DEFS): Add IOChanUtils.def.
+	(M2MODS): Add IOChanUtils.mod.
+	* libm2iso/Makefile.in: Regenerate.
+
+2025-06-07  Gaius Mulley  <gaiusmod2@gmail.com>
+
+	PR modula2/119650
+	PR modula2/117203
+	* libm2pim/Makefile.am (M2MODS): Add ARRAYOFCHAR,
+	CHAR.mod, StringFileSysOp.mod and String.mod.
+	(M2DEFS): Add ARRAYOFCHAR, CHAR.mod,
+	StringFileSysOp.mod and String.mod.
+	(libm2pim_la_SOURCES): Add CFileSysOp.c.
+	* libm2pim/Makefile.in: Regenerate.
+	* libm2pim/CFileSysOp.cc: New file.
+
+2025-04-24  Gaius Mulley  <gaiusmod2@gmail.com>
+
+	PR modula2/115276
+	* config.h.in: Regenerate.
+	* configure: Regenerate.
+	* configure.ac (AC_STRUCT_TIMEZONE): Add.
+	(AC_CHECK_MEMBER): Test for struct tm.tm_year.
+	(AC_CHECK_MEMBER): Test for struct tm.tm_mon.
+	(AC_CHECK_MEMBER): Test for struct tm.tm_mday.
+	(AC_CHECK_MEMBER): Test for struct tm.tm_hour.
+	(AC_CHECK_MEMBER): Test for struct tm.tm_min.
+	(AC_CHECK_MEMBER): Test for struct tm.tm_sec.
+	(AC_CHECK_MEMBER): Test for struct tm.tm_year.
+	(AC_CHECK_MEMBER): Test for struct tm.tm_yday.
+	(AC_CHECK_MEMBER): Test for struct tm.tm_wday.
+	(AC_CHECK_MEMBER): Test for struct tm.tm_isdst.
+	(AC_CHECK_MEMBER): Test for struct timeval.tv_sec.
+	(AC_CHECK_MEMBER): Test for struct timeval.tv_sec.
+	(AC_CHECK_MEMBER): Test for struct timeval.tv_usec.
+	* libm2iso/wraptime.cc (InitTimeval): Guard against lack
+	struct timeval and malloc.
+	(InitTimezone): Guard against lack of struct tm.tm_zone
+	and malloc.
+	(KillTimezone): Ditto.
+	(InitTimeval): Guard against lack of struct timeval
+	and malloc.
+	(KillTimeval): Guard against lack of malloc.
+	(settimeofday): Guard against lack of struct tm.tm_zone.
+	(GetFractions): Guard against lack of struct timeval.
+	(localtime_r): Ditto.
+	(GetYear): Guard against lack of struct tm.
+	(GetMonth): Ditto.
+	(GetDay): Ditto.
+	(GetHour): Ditto.
+	(GetMinute): Ditto.
+	(GetSecond): Ditto.
+	(GetSummerTime): Ditto.
+	(GetDST): Guards against lack of struct timezone.
+	(SetTimezone): Ditto.
+	(SetTimeval): Guard against lack of struct tm.
+
+2025-03-28  Gaius Mulley  <gaiusmod2@gmail.com>
+
+	PR modula2/118045
+	* libm2iso/Makefile.am (libm2iso_la_LINK): Add -lm.
+	* libm2log/Makefile.am (libm2log_la_LINK): Ditto.
+	* libm2pim/Makefile.am (libm2pim_la_LINK): Ditto.
+	* libm2iso/Makefile.in: Regenerate.
+	* libm2log/Makefile.in: Regenerate.
+	* libm2pim/Makefile.in: Regenerate.
+
+2025-03-20  Gaius Mulley  <gaiusmod2@gmail.com>
+
+	* libm2iso/ErrnoCategory.cc (IsErrnoHard): Defend against
+	lack of ENOTBLK.
+	(UnAvailable): Ditto.
+	(GetOpenResults): Ditto.
+
+2024-11-20  Gaius Mulley  <gaiusmod2@gmail.com>
+
+	PR modula2/117703
+	* configure: Regenerate.
+	* configure.ac (libtool_VERSION): Bump to 20:0:0.
+
+2024-05-29  Gaius Mulley  <gaiusmod2@gmail.com>
+
+	PR modula2/115276
+	* config.h.in: Regenerate.
+	* configure: Regenerate.
+	* configure.ac: Use AC_HEADER_TIME.
+	* libm2iso/wraptime.cc (InitTM): Check HAVE_SYS_TIME_H
+	before using struct tm to obtain the size.
+
+2024-05-02  Gaius Mulley  <gaiusmod2@gmail.com>
+
+	* Makefile.in: Regenerate.
+	* libm2cor/Makefile.in: Ditto.
+	* libm2iso/Makefile.in: Ditto.
+	* libm2log/Makefile.in: Ditto.
+	* libm2min/Makefile.in: Ditto.
+	* libm2pim/Makefile.in: Ditto.
+	* aclocal.m4: Ditto.
+
+2024-04-02  Jakub Jelinek  <jakub@redhat.com>
+
+	* configure.host: Fix duplicated words; the the -> the.
+
+2024-02-25  Gaius Mulley  <gaiusmod2@gmail.com>
+
+	PR modula2/113749
+	* libm2pim/wrapc.cc: Include fcntl.h.
+	(SeekSet): New function.
+	(SeekEnd): Ditto.
+	(ReadOnly): Ditto.
+	(WriteOnly): Ditto.
+
+2024-02-13  Rainer Orth  <ro@CeBiTec.Uni-Bielefeld.DE>
+
+	* libm2iso/wraptime.cc [HAVE_STRUCT_TIMEZONE && HAVE_GETTIMEOFDAY]
+	(EXPORT(gettimeofday)): Cast tv to struct timeval *.
+	[HAVE_STRUCT_TIMEZONE && HAVE_SETTIMEOFDAY]
+	(EXPORT(settimeofday)): Likewise.
+
+2024-02-12  Rainer Orth  <ro@CeBiTec.Uni-Bielefeld.DE>
+
+	PR modula2/113888
+	* configure.ac (GM2_CHECK_LIB): Rename gettimeofday guard to
+	HAVE_GETTIMEOFDAY.
+	(GM_CHECK_LIB): Check for settimeofday.
+	(GM2_CHECK_LIB): Check for exp10, exp10f, exp10l in libm.
+	(AC_CHECK_DECLS): Check for getenv.
+	* configure, config.h.in: Regenerate.
+	* libm2pim/dtoa.cc: Rename <strings.h>, <string.h> guards to
+	HAVE_STRINGS_H, HAVE_STRING_H.
+	* libm2pim/ldtoa.cc: Likewise.
+
+2024-01-18  Gaius Mulley  <gaiusmod2@gmail.com>
+
+	PR modula2/111956
+	* Makefile.am (TARGET_LONGDOUBLE_ABI): Remove.
+	* Makefile.in: Regenerate.
+	* libm2cor/Makefile.am (TARGET_LONGDOUBLE_ABI): Remove.
+	* libm2cor/Makefile.in: Regenerate.
+	* libm2iso/Makefile.am (TARGET_LONGDOUBLE_ABI): Remove.
+	* libm2iso/Makefile.in: Regenerate.
+	* libm2log/Makefile.am (TARGET_LONGDOUBLE_ABI): Remove.
+	* libm2log/Makefile.in: Regenerate.
+	* libm2min/Makefile.am (TARGET_LONGDOUBLE_ABI): Remove.
+	* libm2min/Makefile.in: Regenerate.
+	* libm2pim/Makefile.am (TARGET_LONGDOUBLE_ABI): Remove.
+	* libm2pim/Makefile.in: Regenerate.
+
+2024-01-05  Gaius Mulley  <gaiusmod2@gmail.com>
+
+	* libm2iso/RTco.cc (initialized): Use bool instead of int.
+
+2023-12-22  Christophe Lyon  <christophe.lyon@linaro.org>
+
+	* Makefile.am: Allow overriding EXEPCT.
+	* Makefile.in: Regenerate.
+
+2023-12-13  Gaius Mulley  <gaiusmod2@gmail.com>
+
+	PR modula2/112921
+	* libm2iso/Makefile.am (M2DEFS): Add ConvStringShort.def,
+	ShortConv.def, ShortMath.def and ShortStr.def.
+	(M2MODS): Add ConvStringShort.mod,
+	ShortConv.mod, ShortMath.mod and ShortStr.mod.
+	* libm2iso/Makefile.in: Regenerate.
+
+2023-12-12  Gaius Mulley  <gaiusmod2@gmail.com>
+
+	* libm2iso/Makefile.am (libm2iso_la_M2FLAGS): Added line breaks.
+	* libm2iso/Makefile.in: Regenerate.
+	* libm2log/Makefile.am (libm2log_la_M2FLAGS): Added line breaks.
+	* libm2log/Makefile.in: Regenerate.
+	* libm2pim/Makefile.am (libm2pim_la_M2FLAGS): Added line breaks.
+	* libm2pim/Makefile.in: Regenerate.
+
+2023-11-30  Gaius Mulley  <gaiusmod2@gmail.com>
+
+	* configure: Regenerate.
+	* configure.ac:(libtool_VERSION): Bump to 19:0:0.
+
+2023-11-13  Gaius Mulley  <gaiusmod2@gmail.com>
+
+	PR modula2/110779
+	* Makefile.in: Regenerate.
+	* aclocal.m4: Regenerate.
+	* config.h.in: Regenerate.
+	* configure: Regenerate.
+	* configure.ac: Remove newline.
+	* libm2cor/Makefile.in: Regenerate.
+	* libm2iso/Makefile.in: Regenerate.
+	* libm2log/Makefile.in: Regenerate.
+	* libm2min/Makefile.in: Regenerate.
+	* libm2pim/Makefile.in: Regenerate.
+	* acinclude.m4: New file.
+	* configure.host: New file.
+
+2023-10-27  Gaius Mulley  <gaiusmod2@gmail.com>
+
+	PR modula2/112110
+	* libm2iso/wrapclock.cc (timezone): Return 0 if unable
+	to get the timezone from the tm struct.
+
+2023-10-27  Gaius Mulley  <gaiusmod2@gmail.com>
+
+	PR modula2/111530
+	* Makefile.in: Regenerate.
+	* aclocal.m4: Regenerate.
+	* config.h.in: Regenerate.
+	* configure: Regenerate.
+	* configure.ac (AC_CHECK_HEADERS): Include getopt.h.
+	(GM2_CHECK_LIB): getopt_long check.
+	(GM2_CHECK_LIB): getopt_long_only check.
+	* libm2cor/Makefile.in: Regenerate.
+	* libm2iso/Makefile.in: Regenerate.
+	* libm2log/Makefile.in: Regenerate.
+	* libm2min/Makefile.in: Regenerate.
+	* libm2pim/Makefile.in: Regenerate.
+	* libm2pim/cgetopt.cc: Re-write using conditional on configure
+	and long function code from libiberty/getopt.c.
+
+2023-10-25  Gaius Mulley  <gaiusmod2@gmail.com>
+
+	PR modula2/111955
+	* libm2pim/wrapc.cc (isnan): Export new function.
+	(isnanf): Export new function.
+	(isnanl): Export new function.
+
+2023-10-22  Iain Sandoe  <iain@sandoe.co.uk>
+
+	* Makefile.am: Handle Darwin rpaths.
+	* Makefile.in: Regenerate.
+	* aclocal.m4: Regenerate.
+	* configure: Regenerate.
+	* configure.ac: Handle Darwin rpaths.
+	* libm2cor/Makefile.am: Handle Darwin rpaths.
+	* libm2cor/Makefile.in: Regenerate.
+	* libm2iso/Makefile.am: Handle Darwin rpaths.
+	* libm2iso/Makefile.in: Regenerate.
+	* libm2log/Makefile.am: Handle Darwin rpaths.
+	* libm2log/Makefile.in: Regenerate.
+	* libm2min/Makefile.am: Handle Darwin rpaths.
+	* libm2min/Makefile.in: Regenerate.
+	* libm2pim/Makefile.am: Handle Darwin rpaths.
+	* libm2pim/Makefile.in: Regenerate.
+
+2023-09-29  Gaius Mulley  <gaiusmod2@gmail.com>
+
+	* libm2iso/wrapclock.cc (longint_t): New declaration.
+	(GetTimespec): Replace types for sec and nano with
+	longint_t.
+	(SetTimespec): Replace types for sec and nano with
+	longint_t.
+
+2023-09-19  Gaius Mulley  <gaiusmod2@gmail.com>
+
+	* Makefile.am (TARGET_LONGDOUBLE_ABI): New variable set to
+	-mabi=ieeelongdouble if the target is powerpc64le.
+	(AM_MAKEFLAGS): Append TARGET_LONGDOUBLE_ABI.
+	* Makefile.in: Rebuild.
+	* libm2cor/Makefile.am (AM_MAKEFLAGS): Add CFLAGS_LONGDOUBLE and
+	TARGET_LONGDOUBLE_ABI.
+	(libm2cor_la_CFLAGS): Add TARGET_LONGDOUBLE_ABI.
+	(libm2cor_la_M2FLAGS): Add TARGET_LONGDOUBLE_ABI.
+	* libm2cor/Makefile.in: Rebuild.
+	* libm2iso/Makefile.am (AM_MAKEFLAGS): Add CFLAGS_LONGDOUBLE and
+	TARGET_LONGDOUBLE_ABI.
+	(libm2iso_la_CFLAGS): Add TARGET_LONGDOUBLE_ABI.
+	(libm2iso_la_M2FLAGS): Add TARGET_LONGDOUBLE_ABI.
+	* libm2iso/Makefile.in: Rebuild.
+	* libm2log/Makefile.am (AM_MAKEFLAGS): Add CFLAGS_LONGDOUBLE and
+	TARGET_LONGDOUBLE_ABI.
+	(libm2log_la_CFLAGS): Add TARGET_LONGDOUBLE_ABI.
+	(libm2log_la_M2FLAGS): Add TARGET_LONGDOUBLE_ABI.
+	* libm2log/Makefile.in: Rebuild.
+	* libm2min/Makefile.am (AM_MAKEFLAGS): Add CFLAGS_LONGDOUBLE and
+	TARGET_LONGDOUBLE_ABI.
+	(libm2min_la_CFLAGS): Add TARGET_LONGDOUBLE_ABI.
+	(libm2min_la_M2FLAGS): Add TARGET_LONGDOUBLE_ABI.
+	* libm2min/Makefile.in: Rebuild.
+	* libm2pim/Makefile.am (AM_MAKEFLAGS): Add CFLAGS_LONGDOUBLE and
+	TARGET_LONGDOUBLE_ABI.
+	(libm2pim_la_CFLAGS): Add TARGET_LONGDOUBLE_ABI.
+	(libm2pim_la_M2FLAGS): Add TARGET_LONGDOUBLE_ABI.
+	* libm2pim/Makefile.in: Rebuild.
+
+2023-09-13  Gaius Mulley  <gaiusmod2@gmail.com>
+
+	* libm2cor/Makefile.am (libm2cor_la_M2FLAGS): Add
+	-Wcase-enum.
+	* libm2cor/Makefile.in: Regenerate.
+	* libm2iso/Makefile.am (libm2iso_la_M2FLAGS): Add
+	-Wcase-enum.
+	* libm2iso/Makefile.in: Regenerate.
+	* libm2log/Makefile.am (libm2log_la_M2FLAGS): Add
+	-Wcase-enum.
+	* libm2log/Makefile.in: Regenerate.
+	* libm2pim/Makefile.am (libm2pim_la_M2FLAGS): Add
+	-Wcase-enum.
+	* libm2pim/Makefile.in: Regenerate.
+
+2023-08-12  Gaius Mulley  <gaiusmod2@gmail.com>
+
+	PR modula2/110779
+	* configure: Regenerate.
+	* configure.ac: Provide special case test for Darwin cross
+	configuration.
+	(GLIBCXX_CONFIGURE): New statement.
+	(GLIBCXX_CHECK_GETTIMEOFDAY): New statement.
+	(GLIBCXX_ENABLE_LIBSTDCXX_TIME): New statement.
+	* libm2iso/wrapclock.cc: New sys/time.h conditional include.
+	(sys/syscall.h): Conditional include.
+	(unistd.h): Conditional include.
+	(GetTimeRealtime): Re-implement.
+	(SetTimeRealtime): Re-implement.
+	(timezone): Re-implement.
+	(istimezone): New function.
+	(daylight): Re-implement.
+	(isdst): Re-implement.
+	(tzname): Re-implement.
+
+2023-08-09  Gaius Mulley  <gaiusmod2@gmail.com>
+
+	PR modula2/110779
+	* config.h.in: Regenerate.
+	* configure: Regenerate.
+	* configure.ac (AC_CACHE_CHECK): Check for tm_gmtoff field in
+	struct tm.
+	(GM2_CHECK_LIB): Check for daylight, timezone and tzname.
+	* libm2iso/wrapclock.cc (timezone): Guard against absence of
+	struct tm and tm_gmtoff.
+	(daylight): Check for daylight.
+	(timezone): Check for timezone.
+	(isdst): Check for isdst.
+	(tzname): Check for tzname.
+	(GetTimeRealtime): Check for struct timespec.
+	(SetTimeRealtime): Check for struct timespec.
+	(InitTimespec): Check for struct timespec.
+	(KillTimespec): Check for struct timespec.
+	(SetTimespec): Check for struct timespec.
+	(GetTimespec): Check for struct timespec.
+
+2023-08-07  Nick Alcock  <nick.alcock@oracle.com>
+
+	* configure: Regenerate.
+
+2023-08-07  Alexander von Gluck IV  <kallisti5@unixzen.com>
+
+	* configure: Regenerate.
+
+2023-08-07  Nick Alcock  <nick.alcock@oracle.com>
+
+	* configure: Regenerate.
+
+2023-08-07  Nick Alcock  <nick.alcock@oracle.com>
+
+	* configure: Regenerate.
+
+2023-08-07  H.J. Lu  <hjl.tools@gmail.com>
+
+	* configure: Regenerate.
+
+2023-08-07  H.J. Lu  <hjl.tools@gmail.com>
+
+	* configure: Regenerate.
+
+2023-08-05  Gaius Mulley  <gaiusmod2@gmail.com>
+
+	PR modula2/110779
+	* config.h.in: Regenerate.
+	* configure: Regenerate.
+	* configure.ac (GM2_CHECK_LIB): Check for clock_gettime
+	and clock_settime.
+	* libm2iso/Makefile.am (M2DEFS): Add wrapclock.def.
+	* libm2iso/Makefile.in: Regenerate.
+	* libm2iso/wraptime.cc: Replace HAVE_TIMEVAL with
+	HAVE_STRUCT_TIMEVAL.
+	* libm2iso/wrapclock.cc: New file.
+
+2023-06-02  Thomas Schwinge  <thomas@codesourcery.com>
+
+	* configure.ac (PERL): Remove.
+	* configure: Regenerate.
+	* Makefile.in: Likewise.
+	* libm2cor/Makefile.in: Likewise.
+	* libm2iso/Makefile.in: Likewise.
+	* libm2log/Makefile.in: Likewise.
+	* libm2min/Makefile.in: Likewise.
+	* libm2pim/Makefile.in: Likewise.
+
+2023-05-16  Gaius Mulley  <gaiusmod2@gmail.com>
+
+	PR modula2/109879
+	* Makefile.in: Regenerate.
+	* aclocal.m4: Regenerate.
+	* libm2cor/Makefile.in: Regenerate.
+	* libm2iso/Makefile.am (M2DEFS): Add TextUtil.def.
+	(M2MODS): Add TextUtil.mod.
+	* libm2iso/Makefile.in: Regenerate.
+	* libm2log/Makefile.in: Regenerate.
+	* libm2min/Makefile.in: Regenerate.
+	* libm2pim/Makefile.in: Regenerate.
+
+2023-05-16  Gaius Mulley  <gaiusmod2@gmail.com>
+
+	PR modula2/108344
+	* libm2cor/KeyBoardLEDs.cc (initialize_module): New function.
+	(SwitchScroll): Call initialize_module.
+	(SwitchNum): Call initialize_module.
+	(SwitchCaps): Call initialize_module.
+	(SwitchLEDs): Call initialize_module.
+	(M2EXPORT): Remove initialization code.
+
+2023-05-13  Gaius Mulley  <gaiusmod2@gmail.com>
+
+	* libm2cor/KeyBoardLEDs.cc (TRUE): Remove.
+	(FALSE): Remove.
+	(init): Replace TRUE with true.
+	* libm2iso/RTco.cc (TRUE): Remove.
+	(FALSE): Remove.
+	(initSem): Replace int with bool.
+	(init): Replace FALSE with false.
+	* libm2pim/sckt.cc (TRUE): Remove.
+	(FALSE): Remove.
+	* libm2pim/wrapc.cc: Replace TRUE with true
+	and FALSE with false.
+	(FALSE): Remove.
+	(TRUE): Remove.
+
+2023-05-08  Thomas Schwinge  <thomas@codesourcery.com>
+
+	* autogen.sh: Remove.
+
+2023-05-08  Thomas Schwinge  <thomas@codesourcery.com>
+
+	* autogen.sh: For 'aclocal', 'autoreconf', remove '-I .',
+	add '-I ..'.
+	* Makefile.am (ACLOCAL_AMFLAGS): Remove '-I .'.
+	* libm2cor/Makefile.am (ACLOCAL_AMFLAGS): Likewise.
+	* libm2iso/Makefile.am (ACLOCAL_AMFLAGS): Likewise.
+	* libm2log/Makefile.am (ACLOCAL_AMFLAGS): Likewise.
+	* libm2min/Makefile.am (ACLOCAL_AMFLAGS): Likewise.
+	* libm2pim/Makefile.am (ACLOCAL_AMFLAGS): Likewise.
+	* aclocal.m4: Regenerate.
+	* Makefile.in: Likewise.
+	* libm2cor/Makefile.in: Likewise.
+	* libm2iso/Makefile.in: Likewise.
+	* libm2log/Makefile.in: Likewise.
+	* libm2min/Makefile.in: Likewise.
+	* libm2pim/Makefile.in: Likewise.
+
+2023-03-22  Gaius Mulley  <gaiusmod2@gmail.com>
+
+	* libm2pim/Makefile.am (M2DEFS): Remove M2LINK.def.
+	* libm2pim/Makefile.in: Rebuild.
+
+2023-03-16  Gaius Mulley  <gaiusmod2@gmail.com>
+
+	* libm2cor/Makefile.am: Remove
+	* libm2cor/Makefile.in: Rebuild.
+	* libm2iso/RTco.cc (newSem): Halt parameters reordered.
+	(currentThread): Ditto.
+	(never): Ditto.
+	(defined): Ditto.
+	(initThread): Ditto.
+	* libm2iso/m2rts.h (m2iso_M2RTS_HaltC): Ditto.
+
+2023-03-15  Gaius Mulley  <gaiusmod2@gmail.com>
+
+	PR modula2/109125
+	* libm2pim/dtoa.cc (TRUE): Remove.
+	(FALSE): Remove.  Replace int with bool.
+	* libm2pim/ldtoa.cc (TRUE): Remove.
+	(FALSE): Remove.  Replace int with bool.
+
+2023-03-14  Gaius Mulley  <gaiusmod2@gmail.com>
+
+	PR modula2/109125
+	* libm2iso/ErrnoCategory.cc (FALSE): Remove.
+	(TRUE): Remove.
+	* libm2iso/wrapsock.c (TRUE): Remove.
+	(FALSE): Remove.
+	* libm2iso/wraptime.cc (TRUE): Remove.
+	(FALSE): Remove.
+	* libm2pim/cgetopt.cc: Replace int for bool for every BOOLEAN
+	parameter in the definition module.
+	* libm2pim/dtoa.cc: Ditto.
+	* libm2pim/ldtoa.cc: Ditto.
+	* libm2pim/termios.cc: Ditto.
+	(doSetUnset): Replace int for bool.
+
+2023-02-27  Gaius Mulley  <gaiusmod2@gmail.com>
+
+	PR modula2/108944
+	* libm2pim/sckt.cc (getLocalIP): Correct parameter order.
+
+2023-02-25  Gaius Mulley  <gaiusmod2@gmail.com>
+
+	PR modula2/108261
+	* libm2cor/KeyBoardLEDs.cc (EXPORT): New define.
+	(M2EXPORT): New define.
+	(M2LIBNAME): New define.
+	(KeyBoardLEDs_SwitchScroll): EXPORT.
+	(KeyBoardLEDs_SwitchNum): EXPORT.
+	(KeyBoardLEDs_SwitchCaps): EXPORT.
+	(KeyBoardLEDs_SwitchLeds): EXPORT.
+	(_M2_KeyBoardLEDs_init): M2EXPORT.
+	(_M2_KeyBoardLEDs_finish): M2EXPORT.
+	(_M2_KeyBoardLEDs_dep): M2EXPORT.
+	* libm2cor/Makefile.am (libm2cor_la_M2FLAGS): Define
+	path names.
+	* libm2cor/Makefile.in: Rebuild.
+	* libm2iso/ErrnoCategory.cc (EXPORT): New define.
+	(M2EXPORT): New define.
+	(M2LIBNAME): New define.
+	(ErrnoCategory_IsErrnoHard): EXPORT.
+	(ErrnoCategory_IsErrnoSoft): EXPORT.
+	(ErrnoCategory_UnAvailable): EXPORT.
+	(ErrnoCategory_GetOpenResults): EXPORT.
+	(_M2_ErrnoCategory_init): M2EXPORT.
+	(_M2_ErrnoCategory_fini): M2EXPORT.
+	(_M2_ErrnoCategory_dep): M2EXPORT.
+	(_M2_ErrnoCategory_ctor): M2EXPORT.
+	* libm2iso/Makefile.am (libm2iso_la_M2FLAGS): Define
+	path names.
+	* libm2iso/Makefile.in: Rebuild.
+	* libm2iso/RTco.cc (EXPORT): New define.
+	(M2EXPORT): New define.
+	(M2LIBNAME): New define.
+	(newSem): Add module libname prefix to HaltC.
+	(currentThread): Remove variable and replace with a function.
+	(never): Add module libname prefix to HaltC.
+	(initThread): Add module libname prefix to HaltC.
+	* libm2iso/m2rts.h (str): New define.
+	(M2RTS_RequestDependant): Change to the mangled name equivalent.
+	(M2RTS_RegisterModule): Change to the mangled name equivalent.
+	(m2iso_M2RTS_RequestDependant): Add libname parameter.
+	(m2iso_M2RTS_RegisterModule): Add libname parameter.
+	(m2pim_M2RTS_RegisterModule): Add libname parameter.
+	(_M2_M2RTS_init): Rename this...
+	(m2iso_M2_M2RTS_init): ...to this.
+	(M2RTS_ConstructModules): Change to the mangled name equivalent.
+	(M2RTS_Terminate): Change to the mangled name equivalent.
+	(M2RTS_DeconstructModules): Change to the mangled name equivalent.
+	(m2iso_M2RTS_ConstructModules): Add libname parameter.
+	(m2iso_M2RTS_Terminate): Add libname parameter.
+	(m2iso_M2RTS_DeconstructModules): Add libname parameter.
+	(M2RTS_HaltC): Rename this...
+	(m2iso_M2RTS_HaltC): ...to this.
+	* libm2iso/wrapsock.c (EXPORT): New define.
+	(IMPORT): New define.
+	(M2EXPORT): New define.
+	(M2LIBNAME): New define.
+	(m2iso_M2RTS_RequestDependant): Add prototype.
+	(wrapsock_clientOpen): EXPORT.
+	(wrapsock_clientOpenIP): EXPORT.
+	(wrapsock_getClientPortNo): EXPORT.
+	(wrapsock_getClientHostname): EXPORT.
+	(wrapsock_getClientSocketFd): EXPORT.
+	(wrapsock_getClientIP): EXPORT.
+	(wrapsock_getPushBackChar): EXPORT.
+	(wrapsock_setPushBackChar): EXPORT.
+	(wrapsock_getSizeOfClientInfo): EXPORT.
+	(_M2_wrapsock_init): M2EXPORT.
+	(_M2_wrapsock_fini): M2EXPORT.
+	(ctor): M2EXPORT.  New function.
+	* libm2iso/wraptime.c: Rename to...
+	* libm2iso/wraptime.cc: ...this.
+	(EXPORT): New define.
+	(M2EXPORT): New define.
+	(M2LIBNAME): New define.
+	(wraptime_InitTimeval): EXPORT.
+	(wraptime_KillTimeval): EXPORT.
+	(wraptime_InitTimezone): EXPORT.
+	(wraptime_KillTimezone): EXPORT.
+	(wraptime_InitTM): EXPORT.
+	(wraptime_KillTM): EXPORT.
+	(wraptime_gettimeofday): EXPORT.
+	(wraptime_settimeofday): EXPORT.
+	(wraptime_GetFractions): EXPORT.
+	(wraptime_localtime_r): EXPORT.
+	(wraptime_GetYear): EXPORT.
+	(wraptime_GetMonth): EXPORT.
+	(wraptime_GetDay): EXPORT.
+	(wraptime_GetHour): EXPORT.
+	(wraptime_GetMinute): EXPORT.
+	(wraptime_GetSecond): EXPORT.
+	(wraptime_GetSummerTime): EXPORT.
+	(wraptime_GetDST): EXPORT.
+	(wraptime_SetTimezone): EXPORT.
+	(wraptime_SetTimeval): EXPORT.
+	(_M2_wraptime_init): M2EXPORT.
+	(_M2_wraptime_fini): M2EXPORT.
+	(ctor): M2EXPORT.  New function.
+	* libm2log/Makefile.am (libm2log_la_M2FLAGS): Define
+	path names.
+	* libm2log/Makefile.in:
+	* libm2min/Makefile.am (libm2min_la_M2FLAGS): Define
+	path names.
+	* libm2min/Makefile.in:
+	* libm2pim/Makefile.am (libm2pim_la_M2FLAGS): Define
+	path names.
+	* libm2pim/Makefile.in:
+	* libm2pim/Selective.cc (EXPORT): New define.
+	(M2EXPORT): New define.
+	(M2LIBNAME): New define.
+	(Selective_Select): EXPORT.
+	(Selective_InitTime): EXPORT.
+	(Selective_GetTime): EXPORT.
+	(Selective_SetTime): EXPORT.
+	(Selective_KillTime): EXPORT.
+	(Selective_InitSet): EXPORT.
+	(Selective_KillSet): EXPORT.
+	(Selective_FdZero): EXPORT.
+	(Selective_FdSet): EXPORT.
+	(Selective_FdClr): EXPORT.
+	(Selective_FdIsSet): EXPORT.
+	(Selective_GetTimeOfDay): EXPORT.
+	(Selective_MaxFdsPlusOne): EXPORT.
+	(Selective_WriteCharRaw): EXPORT.
+	(Selective_ReadCharRaw): EXPORT.
+	(_M2_Selective_init): M2EXPORT.
+	(_M2_Selective_fini): M2EXPORT.
+	(_M2_Selective_dep): M2EXPORT.
+	(_M2_Selective_ctor): M2EXPORT.
+	* libm2pim/SysExceptions.cc (EXPORT): New define.
+	(M2EXPORT): New define.
+	(M2LIBNAME): New define.
+	(SysExceptions_InitExceptionHandlers): EXPORT.
+	(_M2_SysExceptions_init): M2EXPORT.
+	(_M2_SysExceptions_fini): M2EXPORT.
+	(_M2_SysExceptions_dep): M2EXPORT.
+	(_M2_SysExceptions_ctor): M2EXPORT.
+	* libm2pim/UnixArgs.cc (EXPORT): New define.
+	(M2EXPORT): New define.
+	(M2LIBNAME): New define.
+	(UnixArgs_GetArgC): EXPORT.
+	(UnixArgs_GetArgV): EXPORT.
+	(UnixArgs_GetEnvV): EXPORT.
+	(_M2_UnixArgs_init): M2EXPORT.
+	(_M2_UnixArgs_fini): M2EXPORT.
+	(_M2_UnixArgs_dep): M2EXPORT.
+	(_M2_UnixArgs_ctor): M2EXPORT.
+	* libm2pim/cgetopt.cc (EXPORT): New define.
+	(M2EXPORT): New define.
+	(M2LIBNAME): New define.
+	(cgetopt_getopt): EXPORT.
+	(cgetopt_getopt_long): EXPORT.
+	(cgetopt_getopt_long_only): EXPORT.
+	(cgetopt_InitOptions): EXPORT.
+	(cgetopt_KillOptions): EXPORT.
+	(cgetopt_SetOption): EXPORT.
+	(cgetopt_GetLongOptionArray): EXPORT.
+	(_M2_cgetopt_init): M2EXPORT.
+	(_M2_cgetopt_fini): M2EXPORT.
+	(_M2_cgetopt_dep): M2EXPORT.
+	(_M2_cgetopt_ctor): M2EXPORT.
+	* libm2pim/dtoa.cc (EXPORT): New define.
+	(M2EXPORT): New define.
+	(M2LIBNAME): New define.
+	(dtoa_strtod): EXPORT.
+	(dtoa_calcmaxsig): EXPORT.
+	(dtoa_calcdecimal): EXPORT.
+	(dtoa_calcsign): EXPORT.
+	(dtoa_dtoa): EXPORT.
+	(_M2_dtoa_init): M2EXPORT.
+	(_M2_dtoa_fini): M2EXPORT.
+	(_M2_dtoa_dep): M2EXPORT.
+	(_M2_dtoa_ctor): M2EXPORT.
+	* libm2pim/errno.cc (EXPORT): New define.
+	(M2EXPORT): New define.
+	(M2LIBNAME): New define.
+	(errno_geterrno): EXPORT.
+	(_M2_errno_init): M2EXPORT.
+	(_M2_errno_fini): M2EXPORT.
+	(_M2_errno_dep): M2EXPORT.
+	(_M2_errno_ctor): M2EXPORT.
+	* libm2pim/ldtoa.cc (EXPORT): New define.
+	(IMPORT): New define.
+	(M2EXPORT): New define.
+	(M2LIBNAME): New define.
+	(dtoa_calcmaxsig): EXPORT.
+	(dtoa_calcdecimal): EXPORT.
+	(dtoa_calcsign): EXPORT.
+	(ldtoa_strtold): EXPORT.
+	(ldtoa_ldtoa): EXPORT.
+	(_M2_ldtoa_init): M2EXPORT.
+	(_M2_ldtoa_fini): M2EXPORT.
+	(_M2_ldtoa_dep): M2EXPORT.
+	(_M2_ldtoa_ctor): M2EXPORT.
+	* libm2pim/sckt.cc (EXPORT): New define.
+	(M2EXPORT): New define.
+	(M2LIBNAME): New define.
+	(tcpServerEstablishPort): EXPORT.
+	(tcpServerEstablish): EXPORT.
+	(tcpServerAccept): EXPORT.
+	(tcpServerPortNo): EXPORT.
+	(tcpServerSocketFd): EXPORT.
+	(getLocalIP): EXPORT.
+	(tcpServerIP): EXPORT.
+	(tcpServerClientIP): EXPORT.
+	(tcpServerClientPortNo): EXPORT.
+	(tcpClientSocket): EXPORT.
+	(tcpClientSocketIP): EXPORT.
+	(tcpClientConnect): EXPORT.
+	(tcpClientPortNo): EXPORT.
+	(tcpClientSocketFd): EXPORT.
+	(tcpClientIP): EXPORT.
+	(_M2_sckt_init): M2EXPORT.
+	(_M2_sckt_finish): M2EXPORT.
+	(_M2_sckt_dep): M2EXPORT.
+	(_M2_sckt_ctor): M2EXPORT.
+	* libm2pim/termios.cc (EXPORT): New define.
+	(M2EXPORT): New define.
+	(M2LIBNAME): New define.
+	(_M2_termios_init): M2EXPORT.
+	(_M2_termios_fini): M2EXPORT.
+	(_M2_termios_dep): M2EXPORT.
+	(_M2_termios_ctor): M2EXPORT.
+	* libm2pim/wrapc.c (EXPORT): New define.
+	(M2EXPORT): New define.
+	(M2LIBNAME): New define.
+	(wrapc_strtime): EXPORT.
+	(wrapc_filesize): EXPORT.
+	(wrapc_filemtime): EXPORT.
+	(wrapc_fileinode): EXPORT.
+	(wrapc_getrand): EXPORT.
+	(wrapc_getusername): EXPORT.
+	(wrapc_getnameuidgid): EXPORT.
+	(wrapc_signbit): EXPORT.
+	(wrapc_signbitl): EXPORT.
+	(wrapc_signbitf): EXPORT.
+	(wrapc_isfinite): EXPORT.
+	(wrapc_isfinitel): EXPORT.
+	(wrapc_isfinitef): EXPORT.
+	(_M2_wrapc_init): M2EXPORT.
+	(_M2_wrapc_fini): M2EXPORT.
+	(_M2_wrapc_ctor): M2EXPORT.
+	* libm2pim/wrapc.cc: New file.
+
+2023-02-19  Gaius Mulley  <gaiusmod2@gmail.com>
+
+	PR testsuite/108835
+	* libm2iso/RTco.cc: Re-implementation using a single lock
+	mutex and inlined wait/signal implementation within
+	transfer.
+
+2023-02-13  Gaius Mulley  <gaiusmod2@gmail.com>
+
+	* libm2iso/RTco.cc (tprintf): Replace definition.
+
+2023-02-01  Gaius Mulley  <gaiusmod2@gmail.com>
+
+	PR modula2/108612
+	PR modula2/108551
+	* libm2cor/Makefile.am (libm2cor_la_M2FLAGS): Add -Wreturn-type
+	-fcase.
+	* libm2cor/Makefile.in: Rebuild.
+	* libm2iso/Makefile.am (libm2iso_la_M2FLAGS): Add -Wreturn-type
+	-fcase.
+	* libm2iso/Makefile.in: Rebuild.
+	* libm2log/Makefile.am (libm2log_la_M2FLAGS): Add -Wreturn-type
+	-fcase.
+	* libm2log/Makefile.in: Rebuild.
+	* libm2pim/Makefile.am (libm2pim_la_M2FLAGS): Add -Wreturn-type
+	-fcase.
+	* libm2pim/Makefile.in: Rebuild.
+
+2023-01-31  Richard Biener  <rguenther@suse.de>
+
+	PR modula2/108462
+	* libm2cor/Makefile.am: Remove static lib install from
+	install-data-local.
+	* libm2iso/Makefile.am: Likewise.
+	* libm2log/Makefile.am: Likewise.
+	* libm2min/Makefile.am: Likewise.
+	* libm2pim/Makefile.am: Likewise.
+	* libm2cor/Makefile.in: Regenerate.
+	* libm2iso/Makefile.in: Likewise.
+	* libm2log/Makefile.in: Likewise.
+	* libm2min/Makefile.in: Likewise.
+	* libm2pim/Makefile.in: Likewise.
+
+2023-01-31  Gaius Mulley  <gaiusmod2@gmail.com>
+
+	* libm2log/Makefile.am (VPATH): Replace gm2-libs-pim
+	with gm2-libs-log.
+	(libm2log_la_M2FLAGS): Replace gm2-libs-pim with
+	gm2-libs-log.
+	(install-data-local): Replace gm2-libs-pim with
+	gm2-libs-log.
+	* libm2log/Makefile.in: Rebuilt.
+
+2023-01-26  Gaius Mulley  <gaiusmod2@gmail.com>
+
+	* configure.ac (AM_INIT_AUTOMAKE): Specify 1.15.1.
+
+2023-01-24  Co-Authored by: Iain Sandoe  <iain@sandoe.co.uk>
+
+	* libm2cor/Makefile.am (SYSTEM.def): Split path into
+	multiple -I components.
+	* libm2cor/Makefile.in: Rebuild.
+	* libm2min/Makefile.am (SYSTEM.def): Split path into
+	multiple -I components.
+	* libm2min/Makefile.in: Rebuild.
+	* libm2iso/Makefile.am (SYSTEM.def): Split path into
+	multiple -I components.
+	* libm2iso/Makefile.in: Rebuild.
+
+2023-01-23  Richard Biener  <rguenther@suse.de>
+
+	PR modula2/108144
+	* libm2cor/Makefile.am: Revert previous change, instead
+	drop the redundant $(MULTIDIR).
+	* libm2iso/Makefile.am: Likewise.
+	* libm2log/Makefile.am: Likewise.
+	* libm2min/Makefile.am: Likewise.
+	* libm2pim/Makefile.am: Likewise.
+	* libm2cor/Makefile.in: Regenerate.
+	* libm2iso/Makefile.in: Likewise.
+	* libm2log/Makefile.in: Likewise.
+	* libm2min/Makefile.in: Likewise.
+	* libm2pim/Makefile.in: Likewise.
+
+2023-01-23  Richard Biener  <rguenther@suse.de>
+
+	PR modula2/108144
+	* configure.ac: Apply config-ml.pl to the generated Makefiles.
+	Set multilib_arg, use AM_PROG_LIBTOOL.
+	* configure: Regenerate.
+	* Makefile.am (AM_MAKEFLAGS): Do not override MULTI* flags.
+	* Makefile.in: Regenerate.
+	* libm2cor/Makefile.am: Install to $(toolexeclibdir)$(M2LIBDIR)
+	rather than $(inst_libdir)/$(MULTIDIR)$(M2LIBDIR).
+	* libm2iso/Makefile.am: Likewise.
+	* libm2log/Makefile.am: Likewise.
+	* libm2min/Makefile.am: Likewise.
+	* libm2pim/Makefile.am: Likewise.
+	* libm2cor/Makefile.in: Regenerate.
+	* libm2iso/Makefile.in: Likewise.
+	* libm2log/Makefile.in: Likewise.
+	* libm2min/Makefile.in: Likewise.
+	* libm2pim/Makefile.in: Likewise.
+
+2023-01-19  Richard Biener  <rguenther@suse.de>
+
+	PR modula2/108144
+	* configure.ac: Add GCC_BASE_VER.
+	* configure: Re-generate.
+	* Makefile.am: Use @get_gcc_base_ver@ for gcc_version.
+	* libm2cor/Makefile.am: Likewise.  Use gcc_version instead
+	of version.
+	* libm2iso/Makefile.am: Likewise.
+	* libm2log/Makefile.am: Likewise.
+	* libm2min/Makefile.am: Likewise.
+	* libm2pim/Makefile.am: Likewise.
+	* Makefile.in: Re-generate.
+	* libm2cor/Makefile.in: Likewise.
+	* libm2iso/Makefile.in: Likewise.
+	* libm2log/Makefile.in: Likewise.
+	* libm2min/Makefile.in: Likewise.
+	* libm2pim/Makefile.in: Likewise.
+
+2023-01-17  Gaius Mulley  <gaiusmod2@gmail.com>
+
+	* libm2iso/RTco.cc (_M2_RTco_fini): Call M2RTS_HaltC.
+	(newSem): Call M2RTS_HaltC.
+	(currentThread): Call M2RTS_HaltC.
+	(never): Call M2RTS_HaltC.
+	(defined): Call M2RTS_HaltC.
+	(initThread): Call M2RTS_HaltC.
+	(RTco_transfer): Call M2RTS_HaltC.
+	* libm2iso/m2rts.h (M2RTS_Halt): Provide parameter names.
+	(M2RTS_HaltC): New procedure declaration.
+
+2023-01-06  v  <gaiusmod2@gmail.com>
+
+	* configure: Regenerate.
+	* configure.ac (libtool_VERSION): Bump to 18:0:0.
+
+2023-01-04  Iain Sandoe  <iain@sandoe.co.uk>
+
+	PR modula2/108183
+	* libm2cor/KeyBoardLEDs.cc (_M2_KeyBoardLEDs_ctor): Rework to use
+	an extern "C" function with 'constructor' attribute.
+	* libm2iso/ErrnoCategory.cc (_M2_ErrnoCategory_ctor): Likewise.
+	* libm2iso/RTco.cc (_M2_RTco_ctor): Likewise.
+	* libm2pim/Selective.cc (_M2_Selective_ctor): Likewise.
+	* libm2pim/SysExceptions.cc (_M2_SysExceptions_ctor): Likewise.
+	* libm2pim/UnixArgs.cc (_M2_UnixArgs_ctor): Likewise.
+	* libm2pim/cgetopt.cc (_M2_cgetopt_ctor): Likewise.
+	* libm2pim/dtoa.cc (_M2_dtoa_ctor): Likewise.
+	* libm2pim/errno.cc (_M2_errno_ctor): Likewise.
+	* libm2pim/ldtoa.cc (_M2_ldtoa_ctor): Likewise.
+	* libm2pim/sckt.cc (_M2_sckt_ctor): Likewise.
+	* libm2pim/termios.cc (_M2_termios_ctor): Likewise.
+	* libm2pim/wrapc.c: Add a new line to the file end.
+
+2022-12-31  Iain Sandoe  <iain@sandoe.co.uk>
+
+	* configure: Regenerate.
+	* configure.ac: Make a conditional for configurations targeting
+	Darwin.
+	* libm2cor/Makefile.am: Use -undefined,dynamic_lookup on Darwin.
+	* libm2iso/Makefile.am: Likewise.
+	* libm2log/Makefile.am: Likewise.
+	* libm2pim/Makefile.am: Likewise
+	* libm2min/Makefile.am: Likewise
+	* libm2cor/Makefile.in: Regenerate.
+	* libm2iso/Makefile.in: Regenerate.
+	* libm2log/Makefile.in: Regenerate.
+	* libm2min/Makefile.in: Regenerate.
+	* libm2pim/Makefile.in: Regenerate.
+
+2022-12-14  Gaius Mulley  <gaiusmod2@gmail.com>
+
+	* Makefile.am: New file.
+	* autogen.sh: New file.
+	* config.h.in: New file.
+	* configure.ac: New file.
+	* libm2cor/KeyBoardLEDs.cc: New file.
+	* libm2cor/Makefile.am: New file.
+	* libm2iso/ChanConsts.h: New file.
+	* libm2iso/ErrnoCategory.cc: New file.
+	* libm2iso/Makefile.am: New file.
+	* libm2iso/RTco.cc: New file.
+	* libm2iso/m2rts.h: New file.
+	* libm2iso/wrapsock.c: New file.
+	* libm2iso/wraptime.c: New file.
+	* libm2log/Break.c: New file.
+	* libm2log/Makefile.am: New file.
+	* libm2min/Makefile.am: New file.
+	* libm2min/libc.c: New file.
+	* libm2pim/Makefile.am: New file.
+	* libm2pim/Selective.cc: New file.
+	* libm2pim/SysExceptions.cc: New file.
+	* libm2pim/UnixArgs.cc: New file.
+	* libm2pim/cgetopt.cc: New file.
+	* libm2pim/dtoa.cc: New file.
+	* libm2pim/errno.cc: New file.
+	* libm2pim/ldtoa.cc: New file.
+	* libm2pim/sckt.cc: New file.
+	* libm2pim/target.c: New file.
+	* libm2pim/termios.cc: New file.
+	* libm2pim/wrapc.c: New file.
+	* configure: Generated.
+	* libm2log/Makefile.in: Generated.
+	* libm2min/Makefile.in: Generated.
+	* libm2cor/Makefile.in: Generated.
+	* libm2pim/Makefile.in: Generated.
+	* libm2iso/Makefile.in: Generated.
+	* Makefile.in: New file.
+	* aclocal.m4: New file.

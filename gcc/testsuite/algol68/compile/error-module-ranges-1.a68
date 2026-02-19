@@ -1,0 +1,8 @@
+{ Definitions in the def-part of a module text are visible in the
+  postlude-part, but not the other way around.  }
+
+module Foo = def int i;
+                 x := 20 { dg-error "" }
+             postlude
+                 i := 10 { this is ok }
+             fed

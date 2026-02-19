@@ -1,0 +1,1752 @@
+# libstdc++ "tool init file" for DejaGNU
+
+# Copyright (C) 2001-2026 Free Software Foundation, Inc.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; see the file COPYING3.  If not see
+# <http://www.gnu.org/licenses/>.
+
+
+# Define callbacks and load other libraries.  This file is loaded relatively
+# early, and before any other file we write ourselves.  "load_lib" will
+# find anything in the DejaGNU installation tree, or in our lib directory.
+# "load_gcc_lib" will search the core compiler's .exp collection instead.
+#
+# The naming rule is that dg.exp looks for "tool-" and runtest.exp looks
+# for "tool_" when finding callbacks.  Utility routines we define for
+# our callbacks begin with "v3-".
+#
+# libstdc++_* callbacks we don't define, but could:
+# ..._option_help           prints additional --help output
+# ..._option_proc (--foo)   process our own options
+# ..._init (normal.exp)     called once per test file
+# ..._finish                bracketing function for libstdc++_init
+# ...-dg-prune              removing output text, see top of system dg.exp
+#
+# Useful hook:  if ${hostname}_init exists, it will be called, almost
+# the last thing before testing begins.  This can be defined in, e.g.,
+# ~/.dejagnurc or $DEJAGNU.
+
+proc load_gcc_lib { filename } {
+    global srcdir loaded_libs
+
+    load_file $srcdir/../../gcc/testsuite/lib/$filename
+    set loaded_libs($filename) ""
+}
+
+#
+# search_for -- looks for a string match in a file
+#
+proc search_for { file pattern } {
+    set fd [open $file r]
+    while { [gets $fd cur_line]>=0 } {
+	if [string match "*$pattern*" $cur_line] then {
+	    close $fd
+	    return 1
+	}
+    }
+    close $fd
+    return 0
+}
+
+# system routines
+load_lib dg.exp
+load_lib libgloss.exp
+# compiler routines, then ours
+load_gcc_lib target-supports.exp
+load_gcc_lib target-supports-dg.exp
+load_lib prune.exp
+load_lib dg-options.exp
+load_gcc_lib scanasm.exp
+load_gcc_lib scandump.exp
+load_gcc_lib scantree.exp
+load_gcc_lib target-libpath.exp
+load_gcc_lib timeout.exp
+load_gcc_lib timeout-dg.exp
+load_gcc_lib wrapper.exp
+load_gcc_lib target-utils.exp
+load_gcc_lib dg-test-cleanup.exp
+
+# Useful for debugging.  Pass the name of a variable and the verbosity
+# threshold (number of -v's on the command line).
+proc v3track { var n } {
+    upvar $var val
+    verbose "++ $var is $val" $n
+}
+
+# Copy file to the target.
+proc v3-copy-file {src dst} {
+    if { [catch { set symlink [file readlink $src] } x] } then {
+	remote_download target $src $dst
+    } else {
+	if { [regexp "^/" "$symlink"] } then {
+	    remote_download target $symlink $dst
+	} else {
+	    set dirname [file dirname $f]
+	    remote_download target $dirname/$symlink $dst
+	}
+    }
+}
+
+# Called by v3-init below.  "Static" to this file.
+proc v3-copy-files {srcfiles} {
+    foreach f $srcfiles {
+	v3-copy-file $f [file tail $f]
+    }
+}
+
+# Called once, during runtest.exp setup.
+proc libstdc++_init { testfile } {
+    global env
+    global v3-sharedlib v3-libgomp
+    global srcdir blddir objdir tool_root_dir
+    global cc cxx cxxflags cxxpchflags cxxldflags cxxvtvflags
+    global includes
+    global gluefile wrap_flags
+    global ld_library_path
+    global target_triplet
+    global flags_file
+    global tool_timeout
+    global DEFAULT_CXXFLAGS
+    global STATIC_LIBCXXFLAGS
+
+    # We set LC_ALL and LANG to C so that we get the same error
+    # messages as expected.
+    setenv LC_ALL C
+    setenv LANG C
+
+    # LANGUAGE changes the behavior of GNU gettext(3) and causes
+    # std::messages tests to fail.
+    array unset env LANGUAGE
+
+    # Many hosts now default to a non-ASCII C locale, however, so
+    # they can set a charset encoding here if they need.
+    if { [ishost "*-*-cygwin*"] } {
+      setenv LC_ALL C.ASCII
+      setenv LANG C.ASCII
+    }
+
+    set blddir [lookfor_file [get_multilibs] libstdc++-v3]
+    set flags_file "${blddir}/scripts/testsuite_flags"
+    set shlib_ext [get_shlib_extension]
+    v3track flags_file 2
+
+    # If a test doesn't have special options, use DEFAULT_CXXFLAGS.
+    # Use this variable if the behavior
+    #   1) only applies to libstdc++ testing
+    #   2) might need to be negated
+    # In particular, some tests have to be run without precompiled
+    # headers, or without assertions.
+
+    if ![info exists DEFAULT_CXXFLAGS] then {
+	set DEFAULT_CXXFLAGS ""
+	# Host specific goo here.
+	if { [string match "powerpc-ibm-aix*" $target_triplet] } {
+	    append DEFAULT_CXXFLAGS " -Wl,-bmaxdata:0x20000000"
+	}
+    }
+    v3track DEFAULT_CXXFLAGS 2
+
+    # By default, we assume we want to run program images.
+    global dg-do-what-default
+    set dg-do-what-default run
+
+    set ld_library_path_tmp ""
+
+    # Locate libgcc.a so we don't need to account for different values of
+    # SHLIB_EXT on different platforms
+    set gccdir [lookfor_file $tool_root_dir gcc/libgcc.a]
+    if {$gccdir != ""} {
+	set gccdir [file dirname $gccdir]
+	append ld_library_path_tmp ":${gccdir}"
+    }
+    v3track gccdir 3
+
+    # Locate libatomic.
+    set v3-libatomic 0
+    set libatomicdir [lookfor_file $blddir/../libatomic .libs/libatomic.$shlib_ext]
+    if {$libatomicdir != ""} {
+	set v3-libatomic 1
+	set libatomicdir [file dirname $libatomicdir]
+	append ld_library_path_tmp ":${libatomicdir}"
+	verbose -log "libatomic support detected"
+    }
+    v3track libatomicdir 3
+
+    # Locate libgomp. This is only required for parallel mode.
+    set v3-libgomp 0
+    set libgompdir [lookfor_file $blddir/../libgomp .libs/libgomp.$shlib_ext]
+    if {$libgompdir != ""} {
+	set v3-libgomp 1
+	set libgompdir [file dirname $libgompdir]
+	append ld_library_path_tmp ":${libgompdir}"
+	verbose -log "libgomp support detected"
+    }
+    v3track libgompdir 3
+
+    # Locate libvtv. This is only required for --enable-vtable-verify.
+    set v3-libvtv 0
+    set libvtvdir [lookfor_file $blddir/../libvtv .libs/libvtv.$shlib_ext]
+    if {$libvtvdir != ""} {
+	set v3-libvtv 1
+	set libvtvdir [file dirname $libvtvdir]
+	append ld_library_path_tmp ":${libvtvdir}"
+	verbose -log "libvtv support detected"
+    }
+    v3track libvtvdir 3
+
+    # Locate libstdc++ shared library. (ie libstdc++.so.)
+    set v3-sharedlib 0
+    set sharedlibdir [lookfor_file $blddir src/.libs/libstdc++.$shlib_ext]
+    if {$sharedlibdir != ""} {
+	if { ([string match "*-*-gnu*" $target_triplet]
+	      || [string match "*-*-linux*" $target_triplet]
+	      || [string match "*-*-solaris*" $target_triplet])
+	     && [isnative] } then {
+	    set v3-sharedlib 1
+	    verbose -log "shared library support detected"
+	}
+    }
+    v3track v3-sharedlib 3
+
+    set STATIC_LIBCXXFLAGS ""
+    set staticlibdir [lookfor_file $blddir src/.libs/libstdc++.a]
+    if {$staticlibdir != ""} {
+	set staticlibdir [file dirname $staticlibdir]
+	# Some targets use libstdc++.a%s in their specs, so they need a
+	# -B option for uninstalled testing.
+	set STATIC_LIBCXXFLAGS " -B${staticlibdir} "
+    }
+
+    # Compute what needs to be added to the existing LD_LIBRARY_PATH.
+    if {$gccdir != ""} {
+	set compiler ${gccdir}/xg++
+	set ld_library_path ${ld_library_path_tmp}
+	append ld_library_path ":${blddir}/src/.libs"
+
+	if { [is_remote host] == 0 && [which $compiler] != 0 } {
+	  foreach i "[exec $compiler --print-multi-lib]" {
+	    set mldir ""
+	    regexp -- "\[a-z0-9=_/\.-\]*;" $i mldir
+	    set mldir [string trimright $mldir "\;@"]
+	    if { "$mldir" == "." } {
+	      continue
+	    }
+	    if { [llength [glob -nocomplain ${gccdir}/${mldir}/libgcc_s*.so.*]] >= 1 } {
+	      append ld_library_path ":${gccdir}/${mldir}"
+	    }
+	  }
+	}
+
+	set_ld_library_path_env_vars
+	if [info exists env(LD_LIBRARY_PATH)] {
+	  verbose -log "LD_LIBRARY_PATH = $env(LD_LIBRARY_PATH)"
+	}
+    } else {
+	set compiler [transform "g++"]
+    }
+
+    # Set the default timeout for v3 tests.
+    # You can override this in ~/.dejagnurc or a .exp file named by $DEJAGNU.
+    if {![info exists tool_timeout]} {
+      set tool_timeout 360
+    }
+
+    # Default settings.
+    set cxx [transform "g++"]
+    set cxxflags "-fmessage-length=0 -fno-show-column"
+    set cxxpchflags ""
+    set cxxvtvflags ""
+    set cxxldflags ""
+    set cc [transform "gcc"]
+    # Locate testsuite_hooks.h and other testsuite headers.
+    set includes "-I${srcdir}/util"
+    # Adapt the defaults for special circumstances.
+    if [is_remote host] {
+	# A remote host does not, in general, have access to the
+	# $srcdir so we copy the testsuite headers into the current
+	# directory, and then add that to the search path.
+	foreach src [glob "${srcdir}/util/*.h" \
+			  "${srcdir}/util/*.cc" \
+			  "${srcdir}/util/*.tcc" \
+			  "${srcdir}/util/*.hpp" \
+			  "${srcdir}/util/*/*.h" \
+			  "${srcdir}/util/*/*.cc" \
+			  "${srcdir}/util/*/*.tcc" \
+			  "${srcdir}/util/*/*.hpp" \
+			  "${srcdir}/util/*/*/*.h" \
+			  "${srcdir}/util/*/*/*.cc" \
+			  "${srcdir}/util/*/*/*.tcc" \
+			  "${srcdir}/util/*/*/*.hpp" \
+			  "${srcdir}/util/*/*/*/*.h" \
+			  "${srcdir}/util/*/*/*/*.cc" \
+			  "${srcdir}/util/*/*/*/*.tcc" \
+			  "${srcdir}/util/*/*/*/*.hpp" \
+			  "${srcdir}/util/*/*/*/*/*.h" \
+			  "${srcdir}/util/*/*/*/*/*.cc" \
+			  "${srcdir}/util/*/*/*/*/*.tcc" \
+			  "${srcdir}/util/*/*/*/*/*.hpp" ] {
+	    # Remove everything up to "util/..."
+	    set dst [string range $src [string length "${srcdir}/"] end]
+	    # Create the directory containing the file.
+	    set dir [file dirname $dst]
+	    remote_exec host "mkdir" [list "-p" "$dir"]
+	    # Download the file.
+	    set result [remote_download host $src $dst]
+	    if { $result == "" } {
+		verbose -log "Unable to download ${srcdir}/${src} to host."
+		return "untested"
+	    }
+	}
+	set includes "-Iutil"
+    } elseif { [file exists $flags_file] } {
+	# If we find a testsuite_flags file, we're testing in the build dir.
+	set cxx [exec sh $flags_file --build-cxx]
+	set cxxflags [exec sh $flags_file --cxxflags]
+	set cxxpchflags [exec sh $flags_file --cxxpchflags]
+	set cxxvtvflags [exec sh $flags_file --cxxvtvflags]
+	set cxxldflags [exec sh $flags_file --cxxldflags]
+	set cc [exec sh $flags_file --build-cc]
+	set includes [exec sh $flags_file --build-includes]
+    }
+    append cxxflags " "
+    append cxxflags [getenv CXXFLAGS]
+
+    if ![regexp ".*-O" $cxxflags] {
+	append cxxflags " -g -O2"
+    }
+
+    v3track cxxflags 2
+
+    # Should be as good as -fdiagnostics-color=never, but more compatible
+    setenv GCC_COLORS ""
+    # Always use MO files built by this test harness.
+    set ccflags "$cxxflags -DLOCALEDIR=\".\""
+    set cxxflags "$cxxflags -DLOCALEDIR=\".\""
+
+    # If a PCH file is available, use it.  We must delay performing
+    # this check until $cxx and such have been initialized because we
+    # perform a test compilation.  (Ideally, gcc --print-file-name would
+    # list PCH files, but it does not.)
+    if { $cxxpchflags != "" } {
+	set src "config[pid].cc"
+	set f [open $src "w"]
+	puts $f "int main () {}"
+	close $f
+
+	# Fixme: "additional_flags=$cxxpchflags" fails, but would be
+	# useful as then the requested variant of the pre-build PCH
+	# files could be tested to see if it works.
+	set lines [v3_target_compile $src "config[pid].o" object \
+		   "additional_flags=-include additional_flags=bits/stdc++.h"]
+	if { $lines != "" } {
+	    verbose -log "Requested PCH file: $cxxpchflags"
+	    verbose -log "is not working, and will not be used."
+	    set cxxpchflags ""
+	}
+	file delete $src
+     }
+    v3track cxxpchflags 2
+
+    global PCH_CXXFLAGS
+    if ![info exists PCH_CXXFLAGS] then {
+	set PCH_CXXFLAGS $cxxpchflags
+	v3track PCH_CXXFLAGS 2
+    }
+
+    libstdc++_maybe_build_wrapper "${objdir}/testglue.o" "-fexceptions"
+}
+
+# Callback for cleanup routines.
+proc libstdc++_exit { } {
+    global gluefile;
+
+    if [info exists gluefile] {
+	file_on_build delete $gluefile;
+	unset gluefile;
+    }
+}
+
+# Callback from system dg-test.
+proc libstdc++-dg-test { prog do_what extra_tool_flags } {
+    # Set up the compiler flags, based on what we're going to do.
+    switch $do_what {
+	"preprocess" {
+	    set compile_type "preprocess"
+	    set output_file "[file rootname [file tail $prog]].i"
+	}
+	"compile" {
+	    set compile_type "assembly"
+	    set output_file "[file rootname [file tail $prog]].s"
+	}
+	"assemble" {
+	    set compile_type "object"
+	    set output_file "[file rootname [file tail $prog]].o"
+	}
+	"link" {
+	    set compile_type "executable"
+	    set output_file "./[file rootname [file tail $prog]].exe"
+	}
+	"run" {
+	    set compile_type "executable"
+	    # FIXME: "./" is to cope with "." not being in $PATH.
+	    # Should this be handled elsewhere?
+	    # YES.
+	    set output_file "./[file rootname [file tail $prog]].exe"
+	    # This is the only place where we care if an executable was
+	    # created or not.  If it was, dg.exp will try to run it.
+	    catch { remote_file build delete $output_file }
+	}
+	default {
+	    perror "$do_what: not a valid dg-do keyword"
+	    return ""
+	}
+    }
+
+    # Short-circut a bunch of complicated goo here for the special
+    # case of compiling a test file as a "C" file, not as C++. Why? So
+    # -nostdc++ doesn't trip us up. So all the extra object files
+    # don't trip us up. So automatically linking in libstdc++ doesn't
+    # happen. So CXXFLAGS don't error.
+    set select_compile "v3_target_compile"
+    set options ""
+    if { $extra_tool_flags != "" } {
+	verbose -log "extra_tool_flags are: $extra_tool_flags"
+	if { [string first "-x c" $extra_tool_flags ] != -1 } {
+	    verbose -log "compiling and executing as C, not C++"
+	    set edit_tool_flags $extra_tool_flags
+	    regsub -all ".x c" $edit_tool_flags "" edit_tool_flags
+	    lappend options "additional_flags=$edit_tool_flags"
+	    set select_compile "v3_target_compile_as_c"
+	} else {
+	    lappend options "additional_flags=$extra_tool_flags"
+	}
+    }
+
+    # There is a libstdc++_compile made for us by default (via the tool-
+    # and-target file), but the defaults are lacking in goodness.
+    set comp_output [$select_compile "$prog" "$output_file" "$compile_type" $options];
+
+    set unsupported_message [libstdc++_check_unsupported_p $comp_output]
+    if { $unsupported_message != "" } {
+	set comp_output "::unsupported::$unsupported_message"
+    }
+
+    return [list $comp_output $output_file]
+}
+
+# Override the DejaGnu dg-test in order to clear flags after a test, as
+# is done for compiler tests in gcc-dg.exp.
+
+if { [info procs saved-dg-test] == [list] } {
+    rename dg-test saved-dg-test
+
+    proc dg-test { args } {
+	global additional_prunes
+	global errorInfo
+	global testname_with_flags
+
+	if { [ catch { eval saved-dg-test $args } errmsg ] } {
+	    set saved_info $errorInfo
+	    set additional_prunes ""
+	    if [info exists testname_with_flags] {
+		unset testname_with_flags
+	    }
+	    unset_timeout_vars
+	    error $errmsg $saved_info
+	}
+	set additional_prunes ""
+	unset_timeout_vars
+	if [info exists testname_with_flags] {
+	    unset testname_with_flags
+	}
+    }
+}
+
+# These should be adjusted whenever the compiler's default -std is updated
+# or a newer C++ effective target is added.
+set v3_default_std 20
+set v3_max_std 26
+
+# Find the minimum standard required by a test, if higher than the default_std.
+proc v3-minimum-std { test default_std max_std } {
+    global v3_default_std
+    global v3_max_std
+    for {set s $default_std} {$s <= $v3_max_std} {incr s 3} {
+	if [search_for $test "\{ dg-do * \{ target c++$s"] {
+	    return $s
+	} elseif [search_for $test "\{ dg-require-effective-target c++$s"] {
+	    return $s
+	}
+    }
+    return $default_std
+}
+
+# Allow v3_std_list to be set in configuration files, e.g., ~/.dejagnurc
+if ![info exists v3_std_list] {
+    set v3_std_list { }
+}
+# Allow v3_std_list to be set from the environment.
+if [info exists env(GLIBCXX_TESTSUITE_STDS)] {
+    set v3_std_list [split $env(GLIBCXX_TESTSUITE_STDS) ","]
+}
+
+# Allow adjusting which -std we test with -fmodules.
+if ![info exists v3_modules_std] {
+    set v3_modules_std "$v3_max_std"
+}
+
+# Modified dg-runtest that runs tests in multiple standard modes,
+# unless they specifically specify one standard.
+proc v3-dg-runtest { testcases flags default-extra-flags } {
+    global runtests
+    global v3_default_std
+    global v3_max_std
+    global v3_modules_std
+
+    foreach test $testcases {
+	# If we're only testing specific files and this isn't one of them, skip it.
+	if ![runtest_file_p $runtests $test] {
+	    continue
+	}
+
+	# If the testcase specifies a standard, use that one.
+	# If not, run it under several standards, allowing GNU extensions
+	# unless strict_std is requested.
+	if ![search_for $test "// \{ dg-*options*-std=*++"] {
+	    if [search_for $test "{ dg-add-options strict_std }"] {
+		set std_prefix "-std=c++"
+	    } else {
+		set std_prefix "-std=gnu++"
+	    }
+
+	    # See above for the initial value of this list.
+	    global v3_std_list
+	    if { [llength $v3_std_list] > 0 } {
+		set std_list $v3_std_list
+	    } else {
+		# If the test requires a newer C++ version than which
+		# is tested by default, use that C++ version for that
+		# single test.
+		set min_std [v3-minimum-std $test]
+		if { $min_std > $v3_default_std } {
+		    set std_list $min_std
+		    if { $min_std != $v3_max_std } {
+			# Also test the latest version.
+			lappend std_list "$v3_max_std"
+		    }
+		} else {
+		    # Only run each test once with the default -std option.
+		    # This avoids increasing the run time for most testers.
+		    # Libstdc++ developers can override this with v3_std_list.
+		    set std_list $v3_default_std
+		}
+	    }
+	    set option_list { }
+	    foreach x $std_list {
+		if { $x eq "impcx" } then { set x "26 -fimplicit-constexpr" }
+		if { $x eq "modules" } then { set x "$v3_modules_std -fmodules -flang-info-include-translate" }
+		lappend option_list "${std_prefix}$x"
+	    }
+	} else {
+	    verbose "using -std option specified in [file tail $test]" 2
+	    set option_list { "" }
+	}
+
+	set nshort [file tail [file dirname $test]]/[file tail $test]
+
+	foreach flags_t $option_list {
+	    verbose "Testing $nshort, $flags $flags_t" 1
+	    dg-test $test "$flags $flags_t" ${default-extra-flags}
+	}
+    }
+}
+
+
+# True if the library supports wchar_t.
+set v3-wchar_t 0
+
+# True if the library supports threads.
+set v3-threads 0
+
+# True if the library supports symbol versioning.
+set v3-symver 0
+
+# Called from libstdc++-dg-test above.  Calls back into system's
+# target_compile to actually do the work.
+proc v3_target_compile { source dest type options } {
+    global gluefile
+    global wrap_flags
+    global cxx
+    global cxxflags
+    global cxxvtvflags
+    global cxxldflags
+    global includes
+    global STATIC_LIBCXXFLAGS
+    global tool
+
+    lappend options "additional_flags=-fdiagnostics-plain-output"
+    lappend options "additional_flags=-Wabi=20";
+
+    if { [target_info needs_status_wrapper] != "" && [info exists gluefile] } {
+	lappend options "libs=${gluefile}"
+	lappend options "ldflags=${wrap_flags}"
+    }
+
+    set cxx_final $cxx
+    set cxxlibglossflags  [libgloss_link_flags]
+    set cxx_final [concat $cxx_final $cxxlibglossflags]
+    set cxx_final [concat $cxx_final $STATIC_LIBCXXFLAGS]
+    set cxx_final [concat $cxx_final $cxxflags]
+    set cxx_final [concat $cxx_final $cxxvtvflags]
+    set cxx_final [concat $cxx_final $includes]
+
+    # Flag setting based on type argument.
+    if { $type == "executable" } {
+	# Link the support objects into executables.
+	lappend options "additional_flags=./libtestc++.a $cxxldflags"
+    } else {
+	if { $type == "sharedlib" } {
+	    # Don't link in anything.
+	    set type "executable"
+	}
+    }
+
+    # For Windows and Darwin we might want to create a temporary file.
+    # Note that it needs deleting.
+    set file_to_delete ""
+    # Small adjustment for Windows hosts.
+    if { $dest == "/dev/null"
+	  && [info exists ::env(OS)] && [string match "Windows*" $::env(OS)] } {
+	if { $type == "executable" } {
+	    set dest "x.exe"
+	    set file_to_delete ${dest}
+	} else {
+	    # Windows uses special file named "nul" as a substitute for
+	    # /dev/null
+	    set dest "nul"
+	}
+    }
+
+    # Using /dev/null as the executable name does not work on Darwin when
+    # debug is enabled, since the debug linker does not accept /dev/null as
+    # a valid executable name.
+    if { $dest == "/dev/null" && [istarget *-*-darwin*]
+         && $type == "executable" } {
+	set dest dev-null-[pid].exe
+	set file_to_delete ${dest}
+    }
+
+    lappend options "compiler=$cxx_final"
+    lappend options "timeout=[timeout_value]"
+
+    global v3_additional_files
+    # There will be an empty file at the begining of the list so trim it off.
+    foreach file [split [string trim $v3_additional_files] " "] {
+	global srcdir
+	v3-copy-file "$srcdir/data/$file" $file
+    }
+    set v3_additional_files {}
+
+    set comp_output [target_compile $source $dest $type $options]
+
+    # Strip versioned namespace from the compiler output,
+    # so that dg-error and dg-warning patterns can ignore it:
+    regsub -all "std::__8::" $comp_output "std::" comp_output
+
+    if { $type == "executable" && $file_to_delete != "" } {
+	file delete $file_to_delete
+	if { [istarget *-*-darwin*] && [file exists $file_to_delete.dSYM] } {
+	    file delete -force $file_to_delete.dSYM
+	}
+    }
+    return $comp_output
+}
+
+
+# Called from libstdc++-dg-test above, but only for "C" compilation.
+# Calls back into system's target_compile to actually do the work.
+proc v3_target_compile_as_c { source dest type options } {
+    global gluefile
+    global wrap_flags
+    global includes
+    global flags_file
+    global blddir
+    global cc
+    global cxxflags
+    global STATIC_LIBCXXFLAGS
+    global tool
+
+    if { [target_info needs_status_wrapper] != "" && [info exists gluefile] } {
+	lappend options "libs=${gluefile}"
+	lappend options "ldflags=${wrap_flags}"
+    }
+
+    set tname [target_info name]
+    set cc_final $cc
+    set cxxlibglossflags [libgloss_link_flags]
+    set cc_final [concat $cc_final $cxxlibglossflags]
+    set cc_final [concat $cc_final $STATIC_LIBCXXFLAGS]
+    set cc_final [concat $cc_final $cxxflags]
+    set cc_final [concat $cc_final $includes]
+    regsub -all {\s[-]nostdinc[+][+]} $cc_final "" cc_final
+
+    # This is needed for "C" tests, as this type of test may need the
+    # C++ includes. And if we're not testing in the build directory,
+    # the includes variable is not likely to include the necessary
+    # info.
+    if { ![file exists $flags_file] } {
+	# ??? We need a --print-include-dirs option to GCC, so that
+	# we can avoid these hacks.  The heuristics here will not
+	# work with non-standard --with-includedir= options.
+	set version [remote_exec host ${cc} -dumpversion]
+	# Remove the trailing newline from the output.
+	set version [string trimright [lindex $version 1]]
+	set machine [remote_exec host ${cc} -dumpmachine]
+	set machine [string trimright [lindex $machine 1]]
+	set comp_base_dir [remote_exec host ${cc} --print-prog-name=cc1]
+	set comp_base_dir [lindex $comp_base_dir 1]
+	set comp_base_dir [file dirname [file dirname [file dirname [file dirname [file dirname $comp_base_dir]]]]]
+	# For a cross compiler, the header files will be located in a
+	# machine-specific subdirectory.
+	set crossbase "${comp_base_dir}/${machine}/include/c++/${version}"
+	set crosstarget "${crossbase}/${machine}"
+	set cc_final [concat $cc_final "-I$crossbase -I$crosstarget"]
+	# For a native compiler, the header files will be located at
+	# the top level.
+	set includesbase "${comp_base_dir}/include/c++/${version}"
+	set includestarget "${includesbase}/${machine}"
+	set cc_final [concat $cc_final "-I$includesbase -I$includestarget"]
+
+	set libdir "-L${comp_base_dir}/lib"
+    } else {
+	set libdir "-L${blddir}/libsupc++/.libs"
+	set libdir [concat $libdir "-L${blddir}/src/.libs"]
+    }
+
+    set cc_final [concat $cc_final "$libdir"]
+
+    lappend options "compiler=$cc_final"
+    lappend options "timeout=[timeout_value]"
+
+    set comp_output [target_compile $source $dest $type $options]
+
+    return $comp_output
+}
+
+# Build the support objects linked in with the libstdc++ tests.  In
+# addition, set v3-wchar_t, v3-threads, and v3-symver appropriately.
+proc v3-build_support { } {
+    global env
+    global srcdir
+    global blddir
+    global v3-wchar_t
+    global v3-threads
+    global v3-symver
+    global v3-sharedlib
+
+    # Figure out whether or not the library supports certain features.
+    set v3-wchar_t 0
+    set v3-threads 0
+    set v3-symver 0
+    set v3-modules 0
+    set libtest_objs ""
+
+    set config_src "config.cc"
+    set config_out "config.ii"
+    set f [open $config_src "w"]
+    puts $f "#include <bits/c++config.h>"
+    puts $f "#include <bits/gthr.h>"
+    close $f
+    v3_target_compile $config_src $config_out preprocess "additional_flags=-dN"
+    set file [open $config_out r]
+    set preprocessed [read $file]
+    close $file
+    if { [string first "_GLIBCXX_USE_WCHAR_T" $preprocessed] != -1 } {
+	verbose -log "wchar_t support detected"
+	set v3-wchar_t 1
+    }
+    if { [string first "_GLIBCXX_SYMVER" $preprocessed] != -1 } {
+	verbose -log "symbol versioning support detected"
+	set v3-symver 1
+    }
+    if { [string first "__GTHREADS" $preprocessed] != -1 } {
+	verbose -log "thread support detected"
+	set v3-threads 1
+    }
+
+    # Try to build the MO files that are used by some of the locale
+    # tests.  If we can't build them, that's OK; it just means that
+    # those tests will fail.
+    foreach lang [list "fr" "de"] {
+	catch {
+	    file mkdir "$lang/LC_MESSAGES"
+	    remote_exec "build" "msgfmt" "-o $lang/LC_MESSAGES/libstdc++.mo $srcdir/../po/$lang.po"
+	    if [is_remote host] {
+		remote_exec "host" "mkdir" "-p $lang/LC_MESSAGES"
+		remote_download "host" "$lang/LC_MESSAGES/libstdc++.mo" "$lang/LC_MESSAGES/libstdc++.mo"
+	    }
+	}
+    }
+
+    global v3_std_list
+    global v3_modules_std
+    if { "modules" in $v3_std_list } {
+	verbose -log "modules testing requested"
+	set v3-modules 1
+    }
+
+    # If we're doing modules testing, compile module std, std.compat, and the
+    # bits/stdc++.h header unit.
+    if { ${v3-modules} == 1 } {
+	set std_file "$blddir/include/bits/std.cc"
+	set std_compat_file "$blddir/include/bits/std.compat.cc"
+
+	if { ([v3_target_compile bits/stdc++.h /dev/null object \
+		   [list "additional_flags=-std=gnu++$v3_modules_std -fmodules -g -w -fsearch-include-path"]]
+	      != "") } {
+	    error "could not compile bits/stdc++.h"
+	}
+	if { ([v3_target_compile $std_file std.o object \
+		   [list "additional_flags=-std=gnu++$v3_modules_std -fmodules -g -w"]]
+	      != "") } {
+	    error "could not compile std.cc"
+	}
+	if { ([v3_target_compile $std_compat_file std.compat.o object \
+		   [list "additional_flags=-std=gnu++$v3_modules_std -fmodules -g -w"]]
+	      != "") } {
+	    error "could not compile std.compat.cc"
+	}
+	append libtest_objs "std.o std.compat.o "
+    }
+
+    # Build the support objects.
+    set source_files [list testsuite_abi.cc testsuite_allocator.cc \
+			  testsuite_character.cc testsuite_hooks.cc \
+			  io/verified_cmd_line_input.cc \
+			  io/prog_bar.cc performance/time/elapsed_timer.cc ]
+    foreach f $source_files {
+	set obj [file rootname $f].o
+	set object_file [file tail $obj]
+	# Compile with "-w" so that warnings issued by the compiler
+	# do not prevent compilation.
+	# Disable LTO so that ar/ranlib don't need the LTO plugin.
+	if { [v3_target_compile $srcdir/util/$f $object_file "object" \
+		  [list "incdir=$srcdir" "additional_flags=-w -fno-lto -fno-freestanding"]]
+	     != "" } {
+	    error "could not compile $f"
+	}
+	append libtest_objs "$object_file "
+    }
+
+    # Collect into libtestc++.a
+    if  [info exists env(AR)] {
+	set ar $env(AR)
+    } else {
+	set ar [transform "ar"]
+    }
+    set arargs "-rc ./libtestc++.a ${libtest_objs}"
+    verbose -log "$ar $arargs"
+    set result [lindex [remote_exec host "$ar" "$arargs"] 0]
+    verbose "link result is $result"
+    if { $result == 0 } {
+	if  [info exists env(RANLIB)] {
+	    set ranlib $env(RANLIB)
+	} else {
+	    set ranlib [transform "ranlib"]
+	}
+	set ranlibargs "./libtestc++.a"
+	verbose -log "$ranlib $ranlibargs"
+	set result [lindex [remote_exec host "$ranlib" "$ranlibargs"] 0]
+	if { $result != 0 } {
+	    error "could not link libtestc++.a"
+	}
+    }
+
+    # Build any shared objects needed for regression testing.
+    if { ${v3-sharedlib} == 1 } {
+	set source_files [list testsuite_shared.cc]
+	foreach f $source_files {
+	    set object_file [file rootname $f].so
+	    # Compile with "-w" so that warnings issued by the compiler
+	    # do not prevent compilation.
+	    if { [v3_target_compile $srcdir/util/$f $object_file "sharedlib" \
+	     [list "incdir=$srcdir" "additional_flags=-fno-inline -w -shared -fPIC -DPIC -std=gnu++98 -fno-freestanding"]]
+		 != "" } {
+		error "could not compile $f"
+	    }
+	}
+    }
+}
+
+# Implement an target check for property PROP by invoking
+# the Tcl command ARGS and seeing if it returns true.
+
+proc check_v3_target_prop_cached { prop args } {
+    global et_cache
+
+    set target [current_target_name]
+    if {![info exists et_cache($prop,$target)]} {
+	verbose "check_v3_target_prop_cached $prop: checking $target" 2
+	if {[string is true -strict $args] || [string is false -strict $args]} {
+	    error {check_v3_target_prop_cached condition already evaluated; did you pass [...] instead of the expected {...}?}
+	} else {
+	    set code [catch {uplevel eval $args} result]
+	    if {$code != 0 && $code != 2} {
+		verbose "check_v3_target_prop_cached $prop: evaluation failed for $target" 2
+		return -code $code $result
+	    }
+	    set et_cache($prop,$target) $result
+	}
+    } else {
+	verbose "check_v3_target_prop_cached $prop $target: using cached result" 2
+    }
+
+    set value $et_cache($prop,$target)
+    verbose "check_v3_target_prop_cached $prop: returning $value for $target" 2
+    return $value
+}
+
+proc check_v3_target_fileio { } {
+    return [check_v3_target_prop_cached et_fileio {
+	global tool
+	global srcdir
+
+	# Set up, compile, and execute a C++ test program that tries to use
+	# the file functions
+	set src fileio[pid].cc
+	set exe fileio[pid].x
+	set testfile "cin_unget-1.[pid].txt"
+	v3-copy-file "$srcdir/data/cin_unget-1.txt" "$testfile"
+
+	set f [open $src "w"]
+	puts $f "#include <sys/types.h>"
+	puts $f "#include <sys/stat.h>"
+	puts $f "#include <fcntl.h>"
+	puts $f "#include <unistd.h>"
+	puts $f "#include <errno.h>"
+	puts $f "#include <string.h>"
+	puts $f "using namespace std;"
+	puts $f "int main ()"
+	puts $f "{"
+	puts $f "  int fd  = open (\"$testfile\", O_RDONLY);"
+	puts $f "  int ret = 0;"
+	puts $f "  char buf\[10\];"
+	puts $f "  if (fd == -1)"
+	puts $f "    ret = 1;"
+	puts $f "  else"
+	puts $f "  {"
+	puts $f "    if (lseek (fd, -1, SEEK_CUR) != -1 || errno != EINVAL)"
+	puts $f "      ret = 1;"
+	puts $f "    errno = 0;"
+	puts $f "    if (lseek (fd, 0, SEEK_CUR) != 0"
+	puts $f "        || read (fd, buf, 4) != 4"
+	puts $f "        || memcmp (buf, \"1234\", 4) != 0"
+	puts $f "        || lseek (fd, -2, SEEK_CUR) != 2"
+	puts $f "        || read (fd, buf, 2) != 2"
+	puts $f "        || memcmp (buf, \"34\", 2) != 0)"
+	puts $f "      ret = 1;"
+	puts $f "    close (fd);"
+	puts $f "  }"
+	puts $f "  return ret;"
+	puts $f "}"
+	close $f
+
+	set lines [v3_target_compile $src $exe executable ""]
+	file delete $src
+
+	if [string match "" $lines] {
+	    # No error message, compilation succeeded.
+	    set result [${tool}_load "./$exe" "" ""]
+	    set status [lindex $result 0]
+	    remote_file build delete $exe
+
+	    verbose "check_v3_target_fileio: status is <$status>" 2
+
+	    if { $status == "pass" } {
+		return 1
+	    }
+	} else {
+	    verbose "check_v3_target_fileio: compilation failed" 2
+	}
+	return 0
+    }]
+}
+
+# Eventually we want C90/C99 determining and switching from this.
+proc check_v3_target_c_std { } {
+    return [check_v3_target_prop_cached et_c_std {
+	global tool
+	# Set up, compile, and execute a C++ test program that tries to use
+	# C99 functionality.
+	# For math bits, could use check_effective_target_c99_math.
+	set src c_std[pid].cc
+	set exe c_std[pid].x
+
+	set f [open $src "w"]
+	puts $f "#include <tr1/cmath>"
+	puts $f "#include <cstdlib>"
+	puts $f "int main ()"
+	puts $f "{"
+	puts $f "  float f = 45.55;"
+	puts $f "  int i = std::tr1::isnan(f);"
+	puts $f "  "
+	puts $f "  using std::wctomb;"
+	puts $f "  return i;"
+	puts $f "}"
+	close $f
+
+	set lines [v3_target_compile $src $exe executable ""]
+	file delete $src
+
+	if [string match "" $lines] {
+	    # No error message, compilation succeeded.
+	    set result [${tool}_load "./$exe" "" ""]
+	    set status [lindex $result 0]
+	    remote_file build delete $exe
+
+	    verbose "check_v3_target_c_std: status is <$status>" 2
+
+	    if { $status == "pass" } {
+		return 1
+	    }
+	} else {
+	    verbose "check_v3_target_c_std: compilation failed" 2
+	}
+	return 0
+    }]
+}
+
+proc check_v3_target_sharedlib { } {
+    global v3-sharedlib
+    return ${v3-sharedlib}
+}
+
+proc check_v3_target_time { } {
+    return [check_v3_target_prop_cached et_target_time {
+	global tool
+	# Set up and compile a C++ test program that tries to use
+	# the time function
+	set src time[pid].cc
+
+	set f [open $src "w"]
+	puts $f "#include <time.h>"
+	puts $f "using namespace std;"
+	puts $f "int main ()"
+	puts $f "{"
+	puts $f "  time (0);"
+	puts $f "}"
+	close $f
+
+	set lines [v3_target_compile $src /dev/null executable ""]
+	file delete $src
+
+	if [string match "" $lines] {
+	    # No error message, compilation succeeded.
+	    verbose "check_v3_target_time: compilation succeeded" 2
+	    return 1
+	} else {
+	    verbose "check_v3_target_time: compilation failed" 2
+	    return 0
+	}
+    }]
+}
+
+proc check_v3_target_namedlocale { locale } {
+    set key "et_namedlocale $locale"
+    return [check_v3_target_prop_cached $key {
+	global tool
+	# Set up, compile, and execute a C++ test program that tries to use
+	# the required named locale.
+	set exe nlocale[pid].x
+	set src nlocale[pid].cc
+
+	set f [open $src "w"]
+	puts $f "#include <locale>"
+	puts $f "#include <cstdio>"
+	puts $f "#include <cstring>"
+	puts $f "using namespace std;"
+	puts $f "char *transform_locale(const char *name)"
+	puts $f "{"
+	puts $f "    char *result = new char\[strlen(name)+6\];"
+	puts $f "    strcpy(result, name);"
+	puts $f "#if defined __FreeBSD__ || defined __DragonFly__ || defined __NetBSD__"
+	puts $f "    /* fall-through */"
+	puts $f "#elif defined __GLIBC__"
+	puts $f "    if (strstr(result, \"ISO8859-15\")) {"
+	puts $f "        strcat(result, \"@euro\");"
+	puts $f "    }"
+	puts $f "#endif"
+	puts $f "    return result;"
+	puts $f "}"
+	puts $f "int main ()"
+	puts $f "{"
+	puts $f "  const char *namedloc = transform_locale(\"$locale\");"
+	puts $f "  try"
+	puts $f "  {"
+	puts $f "    locale((const char*)namedloc);"
+	puts $f "    delete\[\] namedloc;"
+	puts $f "    return 0;"
+	puts $f "  }"
+	puts $f "  catch(...)"
+	puts $f "  {"
+	puts $f "    printf(\"locale '%s' not supported\\n\", namedloc);"
+	puts $f "    delete\[\] namedloc;"
+	puts $f "    return 1;"
+	puts $f "  }"
+	puts $f "}"
+	close $f
+
+	set lines [v3_target_compile $src $exe executable ""]
+	file delete $src
+
+	if ![string match "" $lines] {
+	  verbose "check_v3_target_namedlocale: compilation failed" 2
+	  return 0
+	}
+
+	set result [${tool}_load "./$exe" "" ""]
+	set status [lindex $result 0]
+
+	verbose "check_v3_target_namedlocale <$locale>: status is <$status>" 2
+
+	if { $status == "pass" } {
+	    return 1
+	  }
+	return 0
+    }]
+}
+
+# Returns 1 if the tokens in CODE can be preprocessed successfully using FLAGS,
+# returns 0 otherwise.
+proc v3_try_preprocess { name code flags } {
+    global tool
+    global cxxflags
+
+    # Set up and preprocess a C++ translation unit.
+    set src $name[pid].cc
+
+    set f [open $src "w"]
+    puts $f $code
+    close $f
+
+    set cxxflags_saved $cxxflags
+    set cxxflags "$flags"
+
+    set lines [v3_target_compile $src /dev/null preprocess ""]
+    set cxxflags $cxxflags_saved
+    file delete $src
+
+    if [string match "" $lines] {
+	verbose "v3_try_preprocess $name: preprocessing passed" 3
+	# No error message, preprocessing succeeded.
+	return 1
+    }
+    verbose "v3_try_preprocess $name: preprocessing failed" 2
+    return 0
+}
+
+# Return 1 if COND evaluates to true in the preprocessor, 0 otherwise.
+# The <bits/c++config.h> config header is included, and INC, if given,
+# is pasted between it and the condition evaluation, so it can be used
+# for additional #include's.
+proc v3_check_preprocessor_condition { name cond { inc "" } } {
+    global cxxflags
+    global DEFAULT_CXXFLAGS
+
+    set code "
+	#include <bits/c++config.h>
+	$inc
+	#if ! ($cond)
+	#error '$cond' is false
+	#endif
+	"
+    set flags "$cxxflags $DEFAULT_CXXFLAGS -Werror"
+
+    return [v3_try_preprocess name $code $flags]
+}
+
+# Return 1 if libstdc++ defines macro for the current target, 0 otherwise.
+proc check_v3_target_cpp_feature_test { cond } {
+    global cxxflags
+    set cxxflags_saved $cxxflags
+    # Use the latest standard, so that all feature test macros are defined.
+    # We need to do it here, because this check happens before v3-dg-runtest
+    # runs its loop to test multiple times with different -std options.
+    # This should be updated when a new -std is added.
+    set cxxflags "$cxxflags -std=gnu++26"
+    set inc "#include <version>"
+    set result [v3_check_preprocessor_condition cpp_feature_test "$cond" $inc]
+    set cxxflags $cxxflags_saved
+    return $result
+}
+
+# Return 1 if Debug Mode is active, 0 otherwise.
+proc check_v3_target_debug_mode { } {
+    global cxxflags
+    return [check_v3_target_prop_cached et_debug_mode {
+	set code "
+	#include <bits/c++config.h>
+	#if ! defined _GLIBCXX_DEBUG
+	# error no debug mode
+	#endif
+	"
+	return [v3_try_preprocess debug_mode $code $cxxflags]
+    }]
+}
+
+# Define "debug_mode" as an effective-target keyword.
+proc check_effective_target_debug_mode { } {
+    return [check_v3_target_debug_mode]
+}
+
+# Return 1 if normal mode is active, 0 otherwise.
+# i.e. neither Debug Mode nor Parallel Mode is active.
+proc check_v3_target_normal_mode { } {
+    global cxxflags
+    return [check_v3_target_prop_cached et_normal_mode {
+	set code "
+	#if defined _GLIBCXX_DEBUG
+	# error debug mode
+	#endif
+	#if defined _GLIBCXX_PARALLEL
+	# error parallel mode
+	#endif
+	"
+	return [v3_try_preprocess normal_mode $code $cxxflags]
+    }]
+}
+
+# Return 1 if unversioned namespace is in use, 0 otherwise.
+# i.e. the library uses namespace std:: not std::__8:: or similar.
+proc check_v3_target_normal_namespace { } {
+    return [check_v3_target_prop_cached et_normal_namespace {
+	set cond "!_GLIBCXX_INLINE_VERSION"
+	return [v3_check_preprocessor_condition normal_namespace $cond]
+    }]
+}
+
+# Return 1 if the libgomp is being used, 0 otherwise.
+proc check_v3_target_parallel_mode { } {
+    return [check_v3_target_prop_cached et_parallel_mode {
+	global cxxflags
+	global v3-libgomp
+	# If 'make check-parallel' is running then the test succeeds.
+	if { ${v3-libgomp} == 1 && [regexp "libgomp" $cxxflags] } {
+	    return 1
+	}
+	return 0
+    }]
+}
+
+# Return 1 if the C99 stdint facilities are available, 0 otherwise.
+proc check_v3_target_cstdint { } {
+    return [check_v3_target_prop_cached et_cstdint {
+	set cond "defined _GLIBCXX_USE_C99_STDINT"
+	return [v3_check_preprocessor_condition cstdint $cond]
+    }]
+}
+
+# Return 1 if the C99 math facilities are available, 0 otherwise.
+proc check_v3_target_cmath { } {
+    return [check_v3_target_prop_cached et_c99_math {
+	set cond "defined _GLIBCXX_USE_C99_MATH_FUNCS"
+	return [v3_check_preprocessor_condition cmath $cond]
+    }]
+}
+
+proc check_v3_target_thread_fence { } {
+    return [check_v3_target_prop_cached et_thread_fence {
+	global cxxflags
+	global DEFAULT_CXXFLAGS
+
+	# Set up and link a C++11 test program that depends
+	# on the thread fence to be available.
+	set src thread_fence[pid].cc
+
+	set f [open $src "w"]
+	puts $f "
+	int main() {
+	__atomic_thread_fence (__ATOMIC_SEQ_CST);
+	return 0;
+	}"
+	close $f
+
+	set cxxflags_saved $cxxflags
+	set cxxflags "$cxxflags $DEFAULT_CXXFLAGS -Werror -std=gnu++11"
+
+	set lines [v3_target_compile $src /dev/null executable ""]
+	set cxxflags $cxxflags_saved
+	file delete $src
+
+	if [string match "" $lines] {
+	    # No error message, linking succeeded.
+	    return 1
+	} else {
+	    verbose "check_v3_target_thread_fence: compilation failed" 2
+	    return 0
+	}
+    }]
+}
+
+proc check_v3_target_atomic_cmpxchg_word { } {
+    return [check_v3_target_prop_cached et_atomic_cmpxchg_word {
+	global cxxflags
+	global DEFAULT_CXXFLAGS
+
+	# Set up and link a C++11 test program that depends on
+	# atomic-compare-exchange being available for a pointer-sized
+	# integer.  It should be sufficient as gcc can derive all
+	# other operations when a target implements this operation.
+	set src atomic_cmpxchg_word[pid].cc
+
+	set f [open $src "w"]
+	puts $f "
+	__UINTPTR_TYPE__ i, j, k;
+	int main() {
+	__atomic_compare_exchange (&i, &j, &k, 1, __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST);
+	return 0;
+	}"
+	close $f
+
+	set cxxflags_saved $cxxflags
+	set cxxflags "$cxxflags $DEFAULT_CXXFLAGS -Werror -std=gnu++11"
+
+	set lines [v3_target_compile $src /dev/null executable ""]
+	set cxxflags $cxxflags_saved
+	file delete $src
+
+	if [string match "" $lines] {
+	    # No error message, linking succeeded.
+	    return 1
+	} else {
+	    verbose "check_v3_target_atomic_cmpxchg_word: compilation failed" 2
+	    return 0
+	}
+    }]
+}
+
+# Return 1 if atomics_bool and atomic_int are always lock-free, 0 otherwise.
+proc check_v3_target_atomic_builtins { } {
+    return [check_v3_target_prop_cached et_atomic_builtins {
+	set cond "__GCC_ATOMIC_BOOL_LOCK_FREE > 1 && __GCC_ATOMIC_INT_LOCK_FREE > 1"
+	return [v3_check_preprocessor_condition atomic_builtins $cond]
+    }]
+}
+
+# Define "atomic_builtins" as an effective-target keyword.
+proc check_effective_target_atomic_builtins { } {
+    return [check_v3_target_atomic_builtins]
+}
+
+# Return 1 if C++11 [threads] facilities are available via gthreads,
+# 0 otherwise.
+proc check_v3_target_gthreads { } {
+    return [check_v3_target_prop_cached et_gthreads {
+	set cond "defined _GLIBCXX_HAS_GTHREADS"
+	return [v3_check_preprocessor_condition gthreads $cond]
+    }]
+}
+
+# Define "gthreads" as an effective-target keyword.
+proc check_effective_target_gthreads { } {
+    return [check_v3_target_gthreads]
+}
+
+# Return 1 if C++11 timed mutexes are available via gthreads, 0 otherwise.
+proc check_v3_target_gthreads_timed { } {
+    return [check_v3_target_prop_cached et_gthreads_timed {
+	if [check_v3_target_gthreads] {
+	    set cond "_GTHREAD_USE_MUTEX_TIMEDLOCK"
+	    return [v3_check_preprocessor_condition gthreads_timed $cond]
+	} else {
+	    return 0
+	}
+    }]
+}
+
+# Define "gthreads_timed" as an effective-target keyword.
+proc check_effective_target_gthreads_timed { } {
+    return [check_v3_target_gthreads_timed]
+}
+
+# Return 1 if either nanosleep or sleep is available, 0 otherwise.
+proc check_v3_target_sleep { } {
+    return [check_v3_target_prop_cached et_sleep {
+	set cond "defined _GLIBCXX_USE_NANOSLEEP"
+	set cond "$cond || defined _GLIBCXX_USE_WIN32_SLEEP"
+	set cond "$cond || defined _GLIBCXX_HAVE_SLEEP"
+	return [v3_check_preprocessor_condition sleep $cond]
+    }]
+}
+
+# Return 1 if __gthread_yield is available, 0 otherwise.
+proc check_v3_target_sched_yield { } {
+    return [check_v3_target_prop_cached et_sched_yield {
+	set cond "defined _GLIBCXX_USE_SCHED_YIELD"
+	return [v3_check_preprocessor_condition sched_yield $cond]
+    }]
+}
+
+# Return 1 if the [string.conversions] facilities are available, 0 otherwise.
+proc check_v3_target_string_conversions { } {
+    return [check_v3_target_prop_cached et_string_conversions {
+	set cond "_GLIBCXX_USE_C99_STDIO && _GLIBCXX_USE_C99_STDLIB"
+	set cond "$cond && _GLIBCXX_USE_C99_WCHAR"
+	set cond "$cond && !defined _GLIBCXX_HAVE_BROKEN_VSWPRINTF"
+	return [v3_check_preprocessor_condition string_conversions $cond]
+    }]
+}
+
+# Return 1 if a standard-conforming swprintf is available, 0 otherwise.
+proc check_v3_target_swprintf { } {
+    return [check_v3_target_prop_cached et_swprintf {
+	set cond "! defined _GLIBCXX_HAVE_BROKEN_VSWPRINTF"
+	return [v3_check_preprocessor_condition swprintf $cond]
+    }]
+}
+
+# Return 1 if text and binary I/O are the same, 0 otherwise.
+proc check_v3_target_binary_io { } {
+    return [check_v3_target_prop_cached et_binary_io {
+	set cond "! defined _GLIBCXX_HAVE_DOS_BASED_FILESYSTEM"
+	return [v3_check_preprocessor_condition binary_io $cond]
+    }]
+}
+
+# Return 1 if get_nprocs or pthreads_num_processors_np or a suitable sysconf
+# is available, 0 otherwise.
+proc check_v3_target_nprocs { } {
+    return [check_v3_target_prop_cached et_nprocs {
+	set cond "defined _GLIBCXX_USE_GET_NPROCS"
+	set cond "$cond || defined _GLIBCXX_USE_GET_NPROCS_WIN32"
+	set cond "$cond || defined _GLIBCXX_USE_PTHREADS_NUM_PROCESSORS_NP"
+	set cond "$cond || defined _GLIBCXX_USE_SYSCTL_HW_NCPU"
+	set cond "$cond || defined _GLIBCXX_USE_SC_NPROCESSORS_ONLN"
+	set cond "$cond || defined _GLIBCXX_USE_SC_NPROC_ONLN"
+	return [v3_check_preprocessor_condition nprocs $cond]
+    }]
+}
+
+# Return 1 if linking with -static-libstdc++ works, 0 otherwise.
+proc check_v3_target_static_libstdcxx { } {
+    return [check_v3_target_prop_cached et_static_libstdcxx {
+	global cxxflags
+	global DEFAULT_CXXFLAGS
+	# Set up and link a C++0x test program that depends
+	# on static linking
+	set src static-maybe[pid].cc
+
+	set f [open $src "w"]
+	puts $f "#include <iostream>"
+	puts $f "int main() {"
+	puts $f "int i(415);"
+	puts $f "std::cout<< i << std::endl;"
+	puts $f "return 0; }"
+	puts $f ""
+	close $f
+
+	set cxxflags_saved $cxxflags
+	set cxxflags "$cxxflags $DEFAULT_CXXFLAGS -static-libstdc++"
+
+	set lines [v3_target_compile $src /dev/null executable ""]
+	set cxxflags $cxxflags_saved
+	file delete $src
+
+	if [string match "" $lines] {
+	    # No error message, link succeeded.
+	    return 1
+	} else {
+	    verbose "check_v3_target_static_libstdcxx: compilation failed" 2
+	    return 0
+	}
+    }]
+}
+
+proc check_v3_target_little_endian { } {
+    return [check_effective_target_le]
+}
+
+# Return 1 if the Filesystem TS is supported, 0 otherwise.
+# Cache the result.
+proc check_v3_target_filesystem_ts { } {
+    return [check_v3_target_prop_cached et_filesystem_ts {
+	global cxxflags
+	global DEFAULT_CXXFLAGS
+	# Set up and preprocess a C++ test program that depends
+	# on the Filesystem TS feature-test macro being defined.
+	set src filesystem_ts[pid].cc
+
+	set f [open $src "w"]
+	puts $f "#include <experimental/filesystem>"
+	puts $f "#if ! __cpp_lib_experimental_filesystem"
+	puts $f "#  error No Filesystem TS support"
+	puts $f "#endif"
+	close $f
+
+	set cxxflags_saved $cxxflags
+	set cxxflags "$cxxflags $DEFAULT_CXXFLAGS -Werror"
+
+	set lines [v3_target_compile $src /dev/null preprocess ""]
+	set cxxflags $cxxflags_saved
+	file delete $src
+
+	if [string match "" $lines] {
+	    # No error message, preprocessing succeeded.
+	    return 1
+	}
+	return 0
+    }]
+}
+
+# Return 1 if the libstdc++ filesystem create_symlinks implementation
+# is not an always-failing dummy.
+proc check_v3_target_fs_symlinks { } {
+    set inc "#include <testsuite_fs.h>"
+    set cond "!defined NO_SYMLINKS"
+    return [v3_check_preprocessor_condition fs_symlinks $cond $inc]
+}
+
+# Return 1 if the libstdc++ filesystem implementation of space is not an
+# always-failing dummy.
+proc check_v3_target_fs_space { } {
+    set inc "#include <testsuite_fs.h>"
+    set cond "!defined NO_SPACE"
+    return [v3_check_preprocessor_condition fs_space $cond $inc]
+}
+
+# Return 1 if the libstdc++ filesystem implementation of
+# last_write_time is not an always-failing dummy.
+proc check_v3_target_fs_last_write_time { } {
+    set inc "#include <testsuite_fs.h>"
+    set cond "!defined NO_LAST_WRITE_TIME"
+    return [v3_check_preprocessor_condition fs_last_write_time $cond $inc]
+}
+
+# Return 1 if the "cxx11" ABI is in use using the current flags, 0 otherwise.
+# Any flags provided by RUNTESTFLAGS or a target board will be used here.
+# Flags added in the test by dg-options or dg-add-options will not be used.
+proc check_effective_target_cxx11_abi { } {
+    set cond "_GLIBCXX_USE_CXX11_ABI"
+    return [v3_check_preprocessor_condition cxx11_abi $cond]
+}
+
+# Return 1 if std::random_device should be usable using the current flags,
+# 0 otherwise.
+proc check_effective_target_random_device { } {
+    set cond "_GLIBCXX_USE_RANDOM_TR1"
+    return [v3_check_preprocessor_condition random_device $cond]
+}
+
+# Return 1 if tbb parallel backend is available, 0 otherwise.
+proc check_effective_target_tbb_backend { } {
+    return [check_v3_target_prop_cached et_tbb {
+        # Set up and compile a C++ test program that depends on tbb
+        set src tbb_backend[pid].cc
+        set exe tbb_backend[pid].x
+
+        set f [open $src "w"]
+        puts $f "#include <tbb/tbb.h>"
+        puts $f "#if TBB_INTERFACE_VERSION < 10000"
+        puts $f "#  error Intel(R) Threading Building Blocks 2018 is required; older versions are not supported."
+        puts $f "#endif"
+        puts $f "int main ()"
+        puts $f "{"
+        puts $f "  return 0;"
+        puts $f "}"
+        close $f
+
+        set lines [v3_target_compile $src $exe executable "additional_flags=-std=c++17 additional_flags=-ltbb
+                                                           additional_flags=-DTBB_SUPPRESS_DEPRECATED_MESSAGES=1"]
+        file delete $src
+
+        if [string match "" $lines] {
+            # No error message, compilation succeeded.
+            verbose "check_et_tbb_backend: `1'" 2
+            return 1
+        }
+        verbose "check_et_tbb_backend: `0'" 2
+        return 0
+    }]
+}
+
+# Return 1 if futex syscall is available
+proc check_effective_target_futex { } {
+    return [check_v3_target_prop_cached et_futex {
+	set cond "_GLIBCXX_HAVE_LINUX_FUTEX"
+	return [v3_check_preprocessor_condition futex $cond]
+    }]
+}
+
+# Return 1 if float and double have the IEEE binary32 and binary64 formats.
+proc check_effective_target_ieee_floats { } {
+    return [check_v3_target_prop_cached et_ieee_floats {
+	set cond "_GLIBCXX_FLOAT_IS_IEEE_BINARY32 && _GLIBCXX_DOUBLE_IS_IEEE_BINARY64"
+	return [v3_check_preprocessor_condition ieee_floats $cond]
+    }]
+}
+
+# Return 1 if Networking TS net::ip features are available.
+proc check_effective_target_net_ts_ip { } {
+    return [check_v3_target_prop_cached et_net_ts_ip {
+	set cond "__has_include(<netinet/in.h>)"
+	return [v3_check_preprocessor_condition net_ts_ip $cond]
+    }]
+}
+
+# Return 1 if libstdc++ was built as --enable-libstdcxx-allocator=new
+proc check_effective_target_std_allocator_new { } {
+    return [check_v3_target_prop_cached et_std_alloc_new {
+	set cond "_GLIBCXX_USE_ALLOCATOR_NEW"
+	return [v3_check_preprocessor_condition std_alloc_new $cond]
+    }]
+}
+
+# Return 1 if RTTI is enabled by the current test flags.
+proc check_effective_target_rtti { } {
+    return [check_v3_target_prop_cached et_rtti {
+	set cond "__cpp_rtti"
+	return [v3_check_preprocessor_condition rtti $cond]
+    }]
+}
+
+# Return 1 if a hosted implementation is available (i.e. not freestanding).
+proc check_effective_target_hosted { } {
+    return [check_v3_target_prop_cached et_hosted {
+	set cond "_GLIBCXX_HOSTED"
+	return [v3_check_preprocessor_condition hosted $cond]
+    }]
+}
+
+# Return 1 if std::chrono::tzdb is supported.
+proc check_effective_target_tzdb { } {
+    if {![check_effective_target_cxx11_abi]} {
+	return 0
+    }
+    return [check_v3_target_prop_cached et_tzdb {
+	set cond "defined _GLIBCXX_ZONEINFO_DIR || _GLIBCXX_STATIC_TZDATA"
+	return [v3_check_preprocessor_condition tzdb $cond]
+    }]
+}
+
+set additional_prunes ""
+
+if { [info exists env(GCC_RUNTEST_PARALLELIZE_DIR)] \
+     && [info procs runtest_file_p] != [list] \
+     && [info procs gcc_parallelize_saved_runtest_file_p] == [list] } then {
+    global gcc_runtest_parallelize_counter
+    global gcc_runtest_parallelize_counter_minor
+    global gcc_runtest_parallelize_enable
+    global gcc_runtest_parallelize_dir
+    global gcc_runtest_parallelize_last
+
+    set gcc_runtest_parallelize_counter 0
+    set gcc_runtest_parallelize_counter_minor 0
+    set gcc_runtest_parallelize_enable 1
+    set gcc_runtest_parallelize_dir [getenv GCC_RUNTEST_PARALLELIZE_DIR]
+    set gcc_runtest_parallelize_last 0
+
+    proc gcc_parallel_test_run_p { testcase } {
+	global gcc_runtest_parallelize_counter
+	global gcc_runtest_parallelize_counter_minor
+	global gcc_runtest_parallelize_enable
+	global gcc_runtest_parallelize_dir
+	global gcc_runtest_parallelize_last
+
+	if { $gcc_runtest_parallelize_enable == 0 } {
+	    return 1
+	}
+
+	# Only test the filesystem every 10th iteration
+	incr gcc_runtest_parallelize_counter_minor
+	if { $gcc_runtest_parallelize_counter_minor == 10 } {
+	    set gcc_runtest_parallelize_counter_minor 0
+	}
+	if { $gcc_runtest_parallelize_counter_minor != 1 } {
+	    #verbose -log "gcc_parallel_test_run_p $testcase $gcc_runtest_parallelize_counter $gcc_runtest_parallelize_last"
+	    return $gcc_runtest_parallelize_last
+	}
+
+	set path $gcc_runtest_parallelize_dir/$gcc_runtest_parallelize_counter
+
+	if {![catch {open $path {RDWR CREAT EXCL} 0600} fd]} {
+	    close $fd
+	    set gcc_runtest_parallelize_last 1
+	    #verbose -log "gcc_parallel_test_run_p $testcase $gcc_runtest_parallelize_counter 1"
+	    incr gcc_runtest_parallelize_counter
+	    return 1
+	}
+	set gcc_runtest_parallelize_last 0
+	#verbose -log "gcc_parallel_test_run_p $testcase $gcc_runtest_parallelize_counter 0"
+	incr gcc_runtest_parallelize_counter
+	return 0
+    }
+
+    proc gcc_parallel_test_enable { val } {
+	global gcc_runtest_parallelize_enable
+	set gcc_runtest_parallelize_enable $val
+    }
+
+    rename runtest_file_p gcc_parallelize_saved_runtest_file_p
+    proc runtest_file_p { runtests testcase } {
+	if ![gcc_parallelize_saved_runtest_file_p $runtests $testcase] {
+	    return 0
+	}
+	return [gcc_parallel_test_run_p $testcase]
+    }
+
+} else {
+
+    proc gcc_parallel_test_run_p { testcase } {
+	return 1
+    }
+
+    proc gcc_parallel_test_enable { val } {
+    }
+
+}
+
+# Utility functions, invoked via dg-final.
+
+# Compare output file written by test to expected result.
+# With two arguments the comparison is done via 'diff arg1 arg2'.
+# With one argument the comparison is done via 'diff arg1.tst arg1.txt'.
+proc file-io-diff { args } {
+    set nargs [llength $args]
+    if { $nargs < 1 } {
+	error "too few arguments to file-io-diff"
+    }
+    if { $nargs > 2 } {
+	error "too many arguments to file-io-diff"
+    }
+
+    set testcase [testname-for-summary]
+    set description "$testcase file-io-diff $args"
+
+    if { $nargs == 1 } {
+	set file1 [lindex $args 0]
+	set file2 "${file1}.txt"
+	append file1 ".tst"
+    } else {
+	set file1 [lindex $args 0]
+	set file2 [lindex $args 1]
+    }
+
+    if { [catch { exec diff -u $file1 $file2 } msg] } {
+	fail $description
+	verbose -log "'diff':\n$msg"
+    } else {
+	pass $description
+    }
+    return
+}

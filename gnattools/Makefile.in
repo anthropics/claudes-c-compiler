@@ -1,0 +1,300 @@
+# Makefile for gnattools
+#   Copyright 2003, 2004, 2009, 2010 Free Software Foundation, Inc.
+#
+# This file is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+# 
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+# 
+# You should have received a copy of the GNU General Public License
+# along with this program; see the file COPYING3.  If not see
+# <http://www.gnu.org/licenses/>.
+
+# Default target; must be first.
+all: gnattools
+
+# Standard autoconf-set variables.
+SHELL = @SHELL@
+srcdir = @srcdir@
+libdir = @libdir@
+build = @build@
+target = @target@
+host = @host@
+prefix = @prefix@
+INSTALL = @INSTALL@
+INSTALL_DATA = @INSTALL_DATA@
+INSTALL_PROGRAM = @INSTALL_PROGRAM@
+
+# Nonstandard autoconf-set variables.
+LN_S=@LN_S@
+target_noncanonical=@target_noncanonical@
+GNATMAKE=@GNATMAKE@
+GNATBIND=@GNATBIND@
+
+# Variables for the user (or the top level) to override.
+exeext = @EXEEXT@
+objext=.o
+TRACE=no
+ADA_FOR_BUILD=
+ADA_FOR_TARGET=
+LDFLAGS=
+PWD_COMMAND = $${PWDCMD-pwd}
+
+# The tedious process of getting CFLAGS right.
+CFLAGS=-g
+GCC_WARN_CFLAGS = -W -Wall
+WARN_CFLAGS = @warn_cflags@
+
+ADA_CFLAGS=@ADA_CFLAGS@
+
+PICFLAG = @PICFLAG@
+LD_PICFLAG = @LD_PICFLAG@
+
+# Variables for gnattools.
+ADAFLAGS= -gnatpg -gnata
+
+# For finding the GCC build dir, which is used far too much
+GCC_DIR=../gcc
+
+# Full path to top source directory
+ftop_srcdir := $(shell cd $(srcdir)/..;${PWD_COMMAND})
+
+# Absolute srcdir for gcc (why do we want absolute?  I dunno)
+fsrcdir := $(shell cd $(srcdir)/../gcc/; ${PWD_COMMAND})
+
+# Useful "subroutines" for the excess includes
+INCLUDES_FOR_SUBDIR = -iquote . -iquote .. -iquote ../.. \
+		      -iquote $(fsrcdir)/ada -iquote $(fsrcdir)/config \
+		      -iquote $(fsrcdir) -I$(ftop_srcdir)/include
+ADA_INCLUDES_FOR_SUBDIR = -I. -I$(fsrcdir)/ada
+
+CXX_LFLAGS = \
+ -B../../../$(target_noncanonical)/libstdc++-v3/src/.libs \
+ -B../../../$(target_noncanonical)/libstdc++-v3/libsupc++/.libs \
+ -L../../../$(target_noncanonical)/libstdc++-v3/src/.libs \
+ -L../../../$(target_noncanonical)/libstdc++-v3/libsupc++/.libs
+
+# Variables for gnattools, native
+TOOLS_FLAGS_TO_PASS_NATIVE= \
+	"CC=../../xgcc -B../../" \
+	"CXX=../../xg++ -B../../ $(CXX_LFLAGS)" \
+	"CFLAGS=$(CFLAGS) $(WARN_CFLAGS) $(PICFLAG)" \
+	"LDFLAGS=$(LDFLAGS) $(LD_PICFLAG)" \
+	"ADAFLAGS=$(ADAFLAGS)" \
+	"ADA_CFLAGS=$(ADA_CFLAGS)" \
+	"INCLUDES=$(INCLUDES_FOR_SUBDIR)" \
+	"ADA_INCLUDES=-I../rts $(ADA_INCLUDES_FOR_SUBDIR)"\
+	"exeext=$(exeext)" \
+	"fsrcdir=$(fsrcdir)" \
+	"srcdir=$(fsrcdir)" \
+	"GNATMAKE=../../gnatmake" \
+	"GNATLINK=../../gnatlink" \
+	"GNATBIND=../../gnatbind" \
+	"TOOLSCASE=native"
+
+# Variables for regnattools
+TOOLS_FLAGS_TO_PASS_RE= \
+	"CC=../../xgcc -B../../" \
+	"CXX=../../xg++ -B../../ $(CXX_LFLAGS)" \
+	"CFLAGS=$(CFLAGS) $(WARN_CFLAGS) $(PICFLAG)" \
+	"LDFLAGS=$(LDFLAGS) $(LD_PICFLAG)" \
+	"ADAFLAGS=$(ADAFLAGS)" \
+	"ADA_CFLAGS=$(ADA_CFLAGS)" \
+	"INCLUDES=$(INCLUDES_FOR_SUBDIR)" \
+	"ADA_INCLUDES=-I../rts $(ADA_INCLUDES_FOR_SUBDIR)"\
+	"exeext=$(exeext)" \
+	"fsrcdir=$(fsrcdir)" \
+	"srcdir=$(fsrcdir)" \
+	"GNATMAKE=../../gnatmake" \
+	"GNATLINK=../../gnatlink" \
+	"GNATBIND=../../gnatbind" \
+	"TOOLSCASE=cross"
+
+# Variables for gnattools, cross
+# See configure.ac for what "cross" means here.
+GNATMAKE_FOR_HOST = $(GNATMAKE)
+GNATBIND_FOR_HOST = $(GNATBIND)
+GNATLINK_FOR_HOST = $(subst gnatmake,gnatlink,$(GNATMAKE))
+GNATLS_FOR_HOST   = $(subst gnatmake,gnatls,$(GNATMAKE))
+
+# Put the host RTS dir first in the PATH to hide the default runtime
+# files that are among the sources
+RTS_DIR:=$(strip $(subst \,/,$(shell $(GNATLS_FOR_HOST) -v | grep adalib )))
+
+TOOLS_FLAGS_TO_PASS_CROSS= \
+	"CC=$(CC)" \
+	"CXX=$(CXX)" \
+	"CFLAGS=$(CFLAGS) $(WARN_CFLAGS) $(PICFLAG)" \
+	"LDFLAGS=$(LDFLAGS) $(LD_PICFLAG)" \
+	"ADAFLAGS=$(ADAFLAGS)"	\
+	"ADA_CFLAGS=$(ADA_CFLAGS)" \
+	"INCLUDES=$(INCLUDES_FOR_SUBDIR)" \
+	"ADA_INCLUDES=-I$(RTS_DIR)/../adainclude -I$(RTS_DIR) $(ADA_INCLUDES_FOR_SUBDIR)" \
+	"exeext=$(exeext)" \
+	"fsrcdir=$(fsrcdir)" \
+	"srcdir=$(fsrcdir)" \
+	"GNATMAKE=$(GNATMAKE_FOR_HOST)" \
+	"GNATLINK=$(GNATLINK_FOR_HOST)" \
+	"GNATBIND=$(GNATBIND_FOR_HOST)" \
+	"TOOLSCASE=cross" \
+	"LIBGNAT="
+
+# File lists
+# ----------
+
+# File associations set by configure
+EXTRA_GNATTOOLS = @EXTRA_GNATTOOLS@
+TOOLS_TARGET_PAIRS = @TOOLS_TARGET_PAIRS@
+
+# Makefile targets
+# ----------------
+
+.PHONY: gnattools gnattools-native gnattools-cross regnattools
+gnattools: @default_gnattools_target@
+
+# Sanity check
+$(GCC_DIR)/stamp-gnatlib-rts:
+	@if [ ! -f $(GCC_DIR)/stamp-gnatlib-rts ] ; \
+        then \
+          echo "Cannot build gnattools while gnatlib is out of date or unbuilt" ; \
+          false; \
+        else \
+          true; \
+        fi
+
+
+# Build directory for the tools. We first need to copy the generated files,
+# then the target-dependent sources using the same mechanism as for gnatlib.
+
+GENERATED_FILES_FOR_TOOLS = \
+  einfo-entities.ads einfo-entities.adb sdefault.adb seinfo.ads \
+  sinfo-nodes.ads sinfo-nodes.adb snames.ads snames.adb
+
+$(GCC_DIR)/stamp-tools:
+	-rm -rf $(GCC_DIR)/ada/tools
+	-mkdir -p $(GCC_DIR)/ada/tools
+	-(cd $(GCC_DIR)/ada/tools; $(foreach FILE,$(GENERATED_FILES_FOR_TOOLS), \
+			     $(LN_S) ../$(FILE) $(FILE);))
+	-$(foreach PAIR,$(TOOLS_TARGET_PAIRS), \
+	          rm -f $(GCC_DIR)/ada/tools/$(word 1,$(subst <, ,$(PAIR)));\
+	          $(LN_S) $(fsrcdir)/ada/$(word 2,$(subst <, ,$(PAIR))) \
+	                $(GCC_DIR)/ada/tools/$(word 1,$(subst <, ,$(PAIR)));)
+	touch $(GCC_DIR)/stamp-tools
+
+# gnatmake/link tools cannot always be built with gnatmake/link for bootstrap 
+# reasons: gnatmake should be built with a recent compiler, a recent compiler
+# may not generate ALI files compatible with an old gnatmake so it is important
+# to be able to build gnatmake without a version of gnatmake around. Once 
+# everything has been compiled once, gnatmake can be recompiled with itself 
+# (see target regnattools) 
+gnattools-native: $(GCC_DIR)/stamp-tools $(GCC_DIR)/stamp-gnatlib-rts
+	# gnattools1
+	$(MAKE) -C $(GCC_DIR)/ada/tools -f ../Makefile \
+	  $(TOOLS_FLAGS_TO_PASS_NATIVE) \
+	  ../../gnatmake$(exeext) ../../gnatlink$(exeext)
+	# gnattools2
+	$(MAKE) -C $(GCC_DIR)/ada/tools -f ../Makefile \
+	  $(TOOLS_FLAGS_TO_PASS_NATIVE) common-tools
+
+# gnatmake/link can be built with recent gnatmake/link if they are available.
+# This is especially convenient for building cross tools or for rebuilding
+# the tools when the original bootstrap has already be done.
+regnattools: $(GCC_DIR)/stamp-gnatlib-rts
+	# gnattools1-re
+	$(MAKE) -C $(GCC_DIR)/ada/tools -f ../Makefile \
+	  $(TOOLS_FLAGS_TO_PASS_RE) INCLUDES="" \
+	  gnatmake-re gnatlink-re
+	# gnattools2
+	$(MAKE) -C $(GCC_DIR)/ada/tools -f ../Makefile \
+	  $(TOOLS_FLAGS_TO_PASS_NATIVE) common-tools
+
+gnattools-cross: $(GCC_DIR)/stamp-tools
+	# gnattools1-re
+	$(MAKE) -C $(GCC_DIR)/ada/tools -f ../Makefile \
+	  $(TOOLS_FLAGS_TO_PASS_CROSS) INCLUDES="" \
+	  gnatmake-re gnatlink-re
+	# gnattools2
+	$(MAKE) -C $(GCC_DIR)/ada/tools -f ../Makefile \
+	  $(TOOLS_FLAGS_TO_PASS_CROSS) common-tools
+	$(MAKE) -C $(GCC_DIR) gnattools-cross-mv
+
+# Other
+# -----
+
+# Check uninstalled version.
+check:
+
+# Check installed version.
+installcheck:
+
+# Build info (none here).
+info:
+
+# Build DVI (none here).
+dvi:
+
+# Build PDF (none here).
+pdf:
+
+# Build HTML (none here).
+html:
+
+.PHONY: check installcheck info dvi pdf html
+
+# Build TAGS (none here).
+TAGS:
+
+# Installation rules.
+install:
+
+install-strip: install
+
+install-info:
+
+install-pdf:
+
+install-dvi:
+
+install-html:
+
+.PHONY: install install-strip install-info install-pdf install-dvi install-html
+
+# Cleaning rules.
+mostlyclean:
+
+clean:
+
+distclean:
+	$(RM) Makefile config.status config.log config.cache
+
+maintainer-clean:
+
+.PHONY: mostlyclean clean distclean maintainer-clean
+
+# Rules for rebuilding this Makefile.
+Makefile: $(srcdir)/Makefile.in config.status
+	CONFIG_FILES=$@ ; \
+	CONFIG_HEADERS= ; \
+	$(SHELL) ./config.status
+
+config.status: $(srcdir)/configure
+	$(SHELL) ./config.status --recheck
+
+AUTOCONF = autoconf
+configure_deps = \
+	$(srcdir)/configure.ac \
+	$(srcdir)/../config/acx.m4 \
+	$(srcdir)/../config/override.m4
+
+$(srcdir)/configure: @MAINT@ $(configure_deps)
+	cd $(srcdir) && $(AUTOCONF)
+
+# Don't export variables to the environment, in order to not confuse
+# configure.
+.NOEXPORT:
+

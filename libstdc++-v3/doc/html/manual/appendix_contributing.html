@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Appendix A.  Contributing</title><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><meta name="keywords" content="ISO C++, library" /><meta name="keywords" content="ISO C++, runtime, library" /><link rel="home" href="../index.html" title="The GNU C++ Library" /><link rel="up" href="appendix.html" title="Part IV.  Appendices" /><link rel="prev" href="appendix.html" title="Part IV.  Appendices" /><link rel="next" href="source_organization.html" title="Directory Layout and Source Conventions" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">Appendix A. 
+  Contributing
+  
+</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="appendix.html">Prev</a> </td><th width="60%" align="center">Part IV. 
+  Appendices
+</th><td width="20%" align="right"> <a accesskey="n" href="source_organization.html">Next</a></td></tr></table><hr /></div><div class="appendix"><div class="titlepage"><div><div><h1 class="title"><a id="appendix.contrib"></a>
+  Contributing
+  <a id="id-1.3.6.2.1.1.1" class="indexterm"></a>
+</h1></div></div></div><div class="toc"><p><strong>Table of Contents</strong></p><dl class="toc"><dt><span class="section"><a href="appendix_contributing.html#contrib.list">Contributor Checklist</a></span></dt><dd><dl><dt><span class="section"><a href="appendix_contributing.html#list.reading">Reading</a></span></dt><dt><span class="section"><a href="appendix_contributing.html#list.copyright">Assignment</a></span></dt><dt><span class="section"><a href="appendix_contributing.html#list.getting">Getting Sources</a></span></dt><dt><span class="section"><a href="appendix_contributing.html#list.patches">Submitting Patches</a></span></dt></dl></dd><dt><span class="section"><a href="source_organization.html">Directory Layout and Source Conventions</a></span></dt><dt><span class="section"><a href="source_code_style.html">Coding Style</a></span></dt><dd><dl><dt><span class="section"><a href="source_code_style.html#coding_style.bad_identifiers">Bad Identifiers</a></span></dt><dt><span class="section"><a href="source_code_style.html#coding_style.example">By Example</a></span></dt></dl></dd><dt><span class="section"><a href="source_design_notes.html">Design Notes</a></span></dt></dl></div><p>
+  The GNU C++ Library is part of GCC and follows the same development model,
+  so the general rules for
+  <a class="link" href="https://gcc.gnu.org/contribute.html" target="_top">contributing
+  to GCC</a> apply. Active
+  contributors are assigned maintainership responsibility, and given
+  write access to the source repository. First-time contributors
+  should follow this procedure:
+</p><div class="section"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a id="contrib.list"></a>Contributor Checklist</h2></div></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="list.reading"></a>Reading</h3></div></div></div><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem"><p>
+	  Get and read the relevant sections of the C++ language
+	  specification. Copies of the full ISO 14882 standard are
+	  available on line via the ISO mirror site for committee
+	  members. Non-members, or those who have not paid for the
+	  privilege of sitting on the committee and sustained their
+	  two meeting commitment for voting rights, may get a copy of
+	  the standard from their respective national standards
+	  organization. In the USA, this national standards
+	  organization is
+	  <a class="link" href="https://www.ansi.org" target="_top">ANSI</a>.
+	  (And if you've already registered with them you can <a class="link" href="https://webstore.ansi.org/standards/iso/isoiec148822014" target="_top">buy
+	  the standard on-line</a>.)
+	</p></li><li class="listitem"><p>
+	  The library working group bugs, and known defects, can
+	  be obtained here:
+	  <a class="link" href="https://www.open-std.org/jtc1/sc22/wg21/" target="_top">https://www.open-std.org/jtc1/sc22/wg21</a>
+	</p></li><li class="listitem"><p>
+	  Peruse
+	  the <a class="link" href="https://www.gnu.org/prep/standards/" target="_top">GNU
+	  Coding Standards</a>, and chuckle when you hit the part
+	  about <span class="quote">“<span class="quote">Using Languages Other Than C</span>”</span>.
+	</p></li><li class="listitem"><p>
+	  Be familiar with the extensions that preceded these
+	  general GNU rules. These style issues for libstdc++ can be
+	  found in <a class="link" href="source_code_style.html" title="Coding Style">Coding Style</a>.
+      </p></li><li class="listitem"><p>
+	  And last but certainly not least, read the
+	  library-specific information found in
+          <a class="link" href="appendix_porting.html" title="Appendix B.  Porting and Maintenance">Porting and Maintenance</a>.
+      </p></li></ul></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="list.copyright"></a>Assignment</h3></div></div></div><p>
+      See the <a class="link" href="https://gcc.gnu.org/contribute.html#legal" target="_top">legal prerequisites</a> for all GCC contributions.
+    </p><p>
+      Historically, the libstdc++ assignment form added the following
+      question:
+    </p><p>
+      <span class="quote">“<span class="quote">
+	Which Belgian comic book character is better, Tintin or Asterix, and
+	why?
+      </span>”</span>
+    </p><p>
+      While not strictly necessary, humoring the maintainers and answering
+      this question would be appreciated.
+    </p><p>
+      Please contact
+      Jonathan Wakely at <code class="email">&lt;<a class="email" href="mailto:jwakely+assign@redhat.com">jwakely+assign@redhat.com</a>&gt;</code>
+      if you are confused about the assignment or have general licensing
+      questions. When requesting an assignment form from
+      <code class="email">&lt;<a class="email" href="mailto:assign@gnu.org">assign@gnu.org</a>&gt;</code>, please CC the libstdc++
+      maintainer above so that progress can be monitored.
+    </p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="list.getting"></a>Getting Sources</h3></div></div></div><p>
+      <a class="link" href="https://gcc.gnu.org/gitwrite.html" target="_top">Getting write access
+	(look for "Write after approval")</a>
+    </p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="list.patches"></a>Submitting Patches</h3></div></div></div><p>
+      Every patch must have several pieces of information before it can be
+      properly evaluated. Ideally (and to ensure the fastest possible
+      response from the maintainers) it would have all of these pieces:
+    </p><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem"><p>
+	  A description of the bug and how your patch fixes this
+	  bug. For new features a description of the feature and your
+	  implementation.
+	</p></li><li class="listitem"><p>
+	  A ChangeLog entry as part of the Git commit message. Check
+	  some recent commits for format and content. The
+	  <code class="filename">contrib/mklog.py</code> script can be used to
+	  generate a ChangeLog template for commit messages. See
+	  <a class="link" href="https://gcc.gnu.org/gitwrite.html" target="_top">Read-write Git access</a>
+	  for scripts and aliases that are useful here.
+	</p></li><li class="listitem"><p>
+	  A testsuite submission or sample program that will
+	  easily and simply show the existing error or test new
+	  functionality.
+	</p></li><li class="listitem"><p>
+	  The patch itself. If you are using the Git repository use
+	  <span class="command"><strong>git show</strong></span> or <span class="command"><strong>git format-patch</strong></span>
+	  to produce a patch;
+	  otherwise, use <span class="command"><strong>diff -cp OLD NEW</strong></span>. If your
+	  version of diff does not support these options, then get the
+	  latest version of GNU diff.
+	</p></li><li class="listitem"><p>
+	  When you have all these pieces, bundle them up in a
+	  mail message and send it to libstdc++@gcc.gnu.org. All
+	  patches and related discussion should be sent to the
+	  libstdc++ mailing list. In common with the rest of GCC,
+	  patches should also be sent to the gcc-patches mailing list.
+	  So you could send your email To:libstdc++@gcc.gnu.org and
+	  Cc:gcc-patches@gcc.gnu.org for example.
+	</p></li></ul></div></div></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="appendix.html">Prev</a> </td><td width="20%" align="center"><a accesskey="u" href="appendix.html">Up</a></td><td width="40%" align="right"> <a accesskey="n" href="source_organization.html">Next</a></td></tr><tr><td width="40%" align="left" valign="top">Part IV. 
+  Appendices
+ </td><td width="20%" align="center"><a accesskey="h" href="../index.html">Home</a></td><td width="40%" align="right" valign="top"> Directory Layout and Source Conventions</td></tr></table></div></body></html>

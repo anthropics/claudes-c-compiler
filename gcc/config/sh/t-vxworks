@@ -1,0 +1,6 @@
+# Multilibs for VxWorks.
+
+MULTILIB_OPTIONS = mrtp fPIC m2/m3/m4/m4a ml
+# Don't build -fPIC without -mrtp, or -ml without -m3/-m4.
+MULTILIB_EXCEPTIONS = fPIC* ml* mrtp/ml* mrtp/fPIC/ml* *m2/ml*
+MULTILIB_MATCHES = m2=m4-nofpu fPIC=fpic

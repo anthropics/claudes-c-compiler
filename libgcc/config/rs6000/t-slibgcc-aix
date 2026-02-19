@@ -1,0 +1,127 @@
+# Copyright (C) 2002-2026 Free Software Foundation, Inc.
+#
+# This file is part of GCC.
+#
+# GCC is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3, or (at your option)
+# any later version.
+#
+# GCC is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with GCC; see the file COPYING3.  If not see
+# <http://www.gnu.org/licenses/>.
+
+# Build a shared libgcc library according to --with-aix-soname selection:
+# aix-soname=aix:
+#       libgcc_s.a(shr.o)                # traditional (-bnortl)
+#
+# aix-soname=both:
+#       libgcc_s.a(shr.o)                # traditional (-bnortl)
+#       libgcc_s.so.1(shrXX.o,shrXX.imp) # the SONAME (-G)
+#       libgcc_s.so -> libgcc_s.so.1     # the symlink
+#
+# aix-soname=svr4:
+#       libgcc_s.so.1(shrXX.o,shrXX.imp) # the SONAME (-G)
+#       libgcc_s.so -> libgcc_s.so.1     # the symlink
+SHLIB_EXT_aix = .a
+SHLIB_EXT_both = .so
+SHLIB_EXT_svr4 = .so
+SHLIB_EXT = $(SHLIB_EXT_$(with_aix_soname))
+SHLIB_SOVERSION = 1
+SHLIB_SONAME = @shlib_base_name@.so.$(SHLIB_SOVERSION)
+SHLIB_LINK = \
+	if test svr4 != $(with_aix_soname) ; then \
+	  $(CC) $(LIBGCC2_CFLAGS) -shared -Wl,-bnortl -nodefaultlibs \
+	  -Wl,-bE:@shlib_map_file@ -o shr.o \
+	  @multilib_flags@ @shlib_objs@ -lc \
+	  `case @multilib_dir@ in \
+	  *pthread*) \
+	    TARGET_SYSTEM_ROOT=\`$(CC) -print-sysroot\`; \
+	    echo -L$$TARGET_SYSTEM_ROOT/usr/lib/threads -lpthreads -lc_r $$TARGET_SYSTEM_ROOT/usr/lib/libc.a ;; \
+	  *) echo -lc ;; esac` ; \
+	  rm -f tmp-@shlib_base_name@.a ; \
+	  $(AR_CREATE_FOR_TARGET) tmp-@shlib_base_name@.a shr.o ; \
+	  mv tmp-@shlib_base_name@.a @shlib_base_name@.a ; \
+	  rm -f shr.o ; \
+	fi ; \
+	if test aix != $(with_aix_soname) ; then \
+	  case @multilib_dir@ in *64*) shr='shr_64' ;; *) shr='shr' ;; esac ; \
+	  $(CC) $(LIBGCC2_CFLAGS) -shared -Wl,-G -nodefaultlibs \
+	  -Wl,-bE:@shlib_map_file@ -o $$shr.o \
+	  @multilib_flags@ @shlib_objs@ -lc \
+	  `case @multilib_dir@ in \
+	  *pthread*) \
+	    TARGET_SYSTEM_ROOT=\`$(CC) -print-sysroot\`; \
+	    echo -L$$TARGET_SYSTEM_ROOT/usr/lib/threads -lpthreads -lc_r $$TARGET_SYSTEM_ROOT/usr/lib/libc.a ;; \
+	  *) echo -lc ;; esac` ; \
+	  $(STRIP_FOR_TARGET) -X32_64 -e $$shr.o ; \
+	  { echo "\#! $(SHLIB_SONAME)($$shr.o)" ; \
+	    case @multilib_dir@ in *64*) echo '\# 64' ;; *) echo '\# 32' ;; esac ; \
+	    cat @shlib_map_file@ ; \
+	  } > $$shr.imp ; \
+	  rm -f tmp-$(SHLIB_SONAME) ; \
+	  $(AR_CREATE_FOR_TARGET) tmp-$(SHLIB_SONAME) $$shr.imp $$shr.o ; \
+	  mv tmp-$(SHLIB_SONAME) $(SHLIB_SONAME) ; \
+	  rm -f @shlib_base_name@.so ; \
+	  $(LN_S) $(SHLIB_SONAME) @shlib_base_name@.so ; \
+	  rm -f $$shr.imp $$shr.o ; \
+	fi
+SHLIB_INSTALL = \
+	$(mkinstalldirs) $(DESTDIR)$(slibdir)@shlib_slibdir_qual@; \
+	if test svr4 != $(with_aix_soname) ; then \
+	  $(INSTALL_DATA) @shlib_base_name@.a \
+		  $(DESTDIR)$(slibdir)@shlib_slibdir_qual@/ ; \
+	fi ; \
+	if test aix != $(with_aix_soname) ; then \
+	  $(INSTALL_DATA) $(SHLIB_SONAME) \
+		  $(DESTDIR)$(slibdir)@shlib_slibdir_qual@/ ; \
+	  rm -f $(DESTDIR)$(slibdir)@shlib_slibdir_qual@/@shlib_base_name@.so ; \
+	  $(LN_S) $(SHLIB_SONAME) \
+		  $(DESTDIR)$(slibdir)@shlib_slibdir_qual@/@shlib_base_name@.so ; \
+	fi
+SHLIB_LIBS = -lc `case @multilib_dir@ in *pthread*) echo -lpthread ;; esac`
+SHLIB_MKMAP = $(srcdir)/mkmap-flat.awk
+SHLIB_MAPFILES = libgcc-std.ver
+SHLIB_NM_FLAGS = -Bpg -X32_64
+
+# Either 32-bit and 64-bit objects in archives.
+AR_FLAGS_FOR_TARGET = -X32_64
+
+# Build and install AIX-style FAT libraries
+ifeq ($(MULTIBUILDTOP),)
+BITS=$(shell if test -z "`$(CC) -x c -E /dev/null -g3 -o - | grep 64BIT`" ; then \
+    echo '64'; else echo '32'; fi)
+ARX=$(shell echo $(AR) | sed -e 's/-X[^ ]*//g')
+all: all-multi
+ifeq ($(enable_shared),yes)
+	$(ARX) -X$(BITS) x ../ppc$(BITS)/libgcc/libgcc_s.a shr.o
+	$(ARX) -X$(BITS) rc ./libgcc_s.a shr.o
+	rm -f shr.o
+	$(ARX) -X$(BITS) x ../pthread/ppc$(BITS)/libgcc/libgcc_s.a shr.o
+	$(ARX) -X$(BITS) rc ../pthread/libgcc/libgcc_s.a shr.o
+	rm -f shr.o
+endif
+	$(ARX) -X$(BITS) rc libgcc.a \
+	    $(addprefix ../ppc$(BITS)/libgcc/,$(libgcc-objects))
+	$(ARX) -X$(BITS) rc libgcc_eh.a \
+	    $(addprefix ../ppc$(BITS)/libgcc/,$(libgcc-eh-objects))
+	$(ARX) -X$(BITS) rc ../pthread/libgcc/libgcc.a \
+	    $(addprefix ../pthread/ppc$(BITS)/libgcc/,$(libgcc-objects))
+	$(ARX) -X$(BITS) rc ../pthread/libgcc/libgcc_eh.a \
+	    $(addprefix ../pthread/ppc$(BITS)/libgcc/,$(libgcc-eh-objects))
+ifeq ($(enable_gcov),yes)
+	$(ARX) -X$(BITS) rc libgcov.a \
+	    $(addprefix ../ppc$(BITS)/libgcc/,$(libgcov-objects))
+	$(ARX) -X$(BITS) rc ../pthread/libgcc/libgcov.a \
+	    $(addprefix ../pthread/ppc$(BITS)/libgcc/,$(libgcov-objects))
+endif
+	$(MAKE) install-leaf DESTDIR=$(gcc_objdir) \
+	    slibdir= libsubdir= MULTIOSDIR=$(MULTIDIR)
+	cp ../pthread/libgcc/libgcc_s.a ../../gcc/pthread/
+	cp ../pthread/libgcc/libgcc_eh.a ../../gcc/pthread/
+endif

@@ -1,0 +1,576 @@
+------------------------------------------------------------------------------
+--                                                                          --
+--                         GNAT COMPILER COMPONENTS                         --
+--                                                                          --
+--                               S N A M E S                                --
+--                                                                          --
+--                                 B o d y                                  --
+--                                                                          --
+--          Copyright (C) 1992-2026, Free Software Foundation, Inc.         --
+--                                                                          --
+-- GNAT is free software;  you can  redistribute it  and/or modify it under --
+-- terms of the  GNU General Public License as published  by the Free Soft- --
+-- ware  Foundation;  either version 3,  or (at your option) any later ver- --
+-- sion.  GNAT is distributed in the hope that it will be useful, but WITH- --
+-- OUT ANY WARRANTY;  without even the  implied warranty of MERCHANTABILITY --
+-- or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License --
+-- for  more details.  You should have  received  a copy of the GNU General --
+-- Public License  distributed with GNAT; see file COPYING3.  If not, go to --
+-- http://www.gnu.org/licenses for a complete copy of the license.          --
+--                                                                          --
+-- GNAT was originally developed  by the GNAT team at  New York University. --
+-- Extensive contributions were provided by Ada Core Technologies Inc.      --
+--                                                                          --
+------------------------------------------------------------------------------
+
+with Debug; use Debug;
+with Opt;   use Opt;
+with Table;
+with Types; use Types;
+
+package body Snames is
+
+   --  Table used to record convention identifiers
+
+   type Convention_Id_Entry is record
+      Name       : Name_Id;
+      Convention : Convention_Id;
+   end record;
+
+   package Convention_Identifiers is new Table.Table (
+     Table_Component_Type => Convention_Id_Entry,
+     Table_Index_Type     => Int,
+     Table_Low_Bound      => 1,
+     Table_Initial        => 50,
+     Table_Increment      => 200,
+     Table_Name           => "Name_Convention_Identifiers");
+
+   --  Table of names to be set by Initialize. Each name is terminated by a
+   --  single #, and the end of the list is marked by a null entry, i.e. by
+   --  two # marks in succession. Note that the table does not include the
+   --  entries for a-z, since these are initialized by Namet itself.
+
+   Preset_Names : constant String :=
+!! TEMPLATE INSERTION POINT
+     "#";
+
+   ---------------------
+   -- Generated Names --
+   ---------------------
+
+   --  This section lists the various cases of generated names which are
+   --  built from existing names by adding unique leading and/or trailing
+   --  upper case letters. In some cases these names are built recursively,
+   --  in particular names built from types may be built from types which
+   --  themselves have generated names. In this list, xxx represents an
+   --  existing name to which identifying letters are prepended or appended,
+   --  and a trailing n represents a serial number in an external name that
+   --  has some semantic significance (e.g. the n'th index type of an array).
+
+   --    xxxA    access type for formal xxx in entry param record   (Exp_Ch9)
+   --    xxxB    tag table for tagged type xxx                      (Exp_Ch3)
+   --    xxxB    task body procedure for task xxx                   (Exp_Ch9)
+   --    xxxD    dispatch table for tagged type xxx                 (Exp_Ch3)
+   --    xxxD    discriminal for discriminant xxx                   (Sem_Ch3)
+   --    xxxDn   n'th discr check function for rec type xxx         (Exp_Ch3)
+   --    xxxE    elaboration boolean flag for task xxx              (Exp_Ch9)
+   --    xxxE    dispatch table pointer type for tagged type xxx    (Exp_Ch3)
+   --    xxxE    parameters for accept body for entry xxx           (Exp_Ch9)
+   --    xxxFn   n'th primitive of a tagged type (named xxx)        (Exp_Ch3)
+   --    xxxJ    tag table type index for tagged type xxx           (Exp_Ch3)
+   --    xxxM    master Id value for access type xxx                (Exp_Ch3)
+   --    xxxP    tag table pointer type for tagged type xxx         (Exp_Ch3)
+   --    xxxP    parameter record type for entry xxx                (Exp_Ch9)
+   --    xxxPA   access to parameter record type for entry xxx      (Exp_Ch9)
+   --    xxxPn   pointer type for n'th primitive of tagged type xxx (Exp_Ch3)
+   --    xxxR    dispatch table pointer for tagged type xxx         (Exp_Ch3)
+   --    xxxT    tag table type for tagged type xxx                 (Exp_Ch3)
+   --    xxxT    literal table for enumeration type xxx             (Sem_Ch3)
+   --    xxxV    type for task value record for task xxx            (Exp_Ch9)
+   --    xxxX    entry index constant                               (Exp_Ch9)
+   --    xxxY    dispatch table type for tagged type xxx            (Exp_Ch3)
+   --    xxxZ    size variable for task xxx                         (Exp_Ch9)
+
+   --  TSS names
+
+   --    xxxDA   deep adjust routine for type xxx                   (Exp_TSS)
+   --    xxxDF   deep finalize routine for type xxx                 (Exp_TSS)
+   --    xxxDI   deep initialize routine for type xxx               (Exp_TSS)
+   --    xxxEQ   composite equality routine for record type xxx     (Exp_TSS)
+   --    xxxFD   finalize address routine for type xxx              (Exp_TSS)
+   --    xxxFA   PolyORB/DSA From_Any converter for type xxx        (Exp_TSS)
+   --    xxxIP   initialization procedure for type xxx              (Exp_TSS)
+   --    xxxIC   init C++ dispatch tables procedure for type xxx    (Exp_TSS)
+   --    xxxRA   RAS type access routine for type xxx               (Exp_TSS)
+   --    xxxRD   RAS type dereference routine for type xxx          (Exp_TSS)
+   --    xxxRP   Rep to Pos conversion for enumeration type xxx     (Exp_TSS)
+   --    xxxSA   array/slice assignment for controlled comp. arrays (Exp_TSS)
+   --    xxxSI   stream input attribute subprogram for type xxx     (Exp_TSS)
+   --    xxxSO   stream output attribute subprogram for type xxx    (Exp_TSS)
+   --    xxxSR   stream read attribute subprogram for type xxx      (Exp_TSS)
+   --    xxxSW   stream write attribute subprogram for type xxx     (Exp_TSS)
+   --    xxxPI   Put_Image attribute subprogram for type xxx        (Exp_TSS)
+   --    xxxTA   PolyORB/DSA To_Any converter for type xxx          (Exp_TSS)
+   --    xxxTC   PolyORB/DSA Typecode for type xxx                  (Exp_TSS)
+
+   --  Implicit type names
+
+   --    TxxxT   type of literal table for enumeration type xxx     (Sem_Ch3)
+
+   --  (Note: this list is not complete or accurate ???)
+
+   ----------------------
+   -- Get_Attribute_Id --
+   ----------------------
+
+   function Get_Attribute_Id (N : Name_Id) return Attribute_Id is
+   begin
+      case N is
+         when Name_Constant_Indexing =>
+            return Attribute_Constant_Indexing;
+         when Name_CPU =>
+            return Attribute_CPU;
+         when Name_Default_Iterator =>
+            return Attribute_Default_Iterator;
+         when Name_Dispatching_Domain =>
+            return Attribute_Dispatching_Domain;
+         when Name_Implicit_Dereference =>
+            return Attribute_Implicit_Dereference;
+         when Name_Interrupt_Priority =>
+            return Attribute_Interrupt_Priority;
+         when Name_Iterable =>
+            return Attribute_Iterable;
+         when Name_Iterator_Element =>
+            return Attribute_Iterator_Element;
+         when Name_Variable_Indexing =>
+            return Attribute_Variable_Indexing;
+         when First_Attribute_Name .. Last_Attribute_Name =>
+            return Attribute_Id'Val (N - First_Attribute_Name);
+         when others =>
+            raise Program_Error;
+      end case;
+   end Get_Attribute_Id;
+
+   -----------------------
+   -- Get_Convention_Id --
+   -----------------------
+
+   function Get_Convention_Id (N : Name_Id) return Convention_Id is
+   begin
+      case N is
+         when Name_Ada                   => return Convention_Ada;
+         when Name_Ada_Pass_By_Copy      => return Convention_Ada_Pass_By_Copy;
+         when Name_Ada_Pass_By_Reference => return
+                                              Convention_Ada_Pass_By_Reference;
+         when Name_Assembler             => return Convention_Assembler;
+         when Name_C                     => return Convention_C;
+         when Name_C_Variadic_0          => return Convention_C_Variadic_0;
+         when Name_C_Variadic_1          => return Convention_C_Variadic_1;
+         when Name_C_Variadic_2          => return Convention_C_Variadic_2;
+         when Name_C_Variadic_3          => return Convention_C_Variadic_3;
+         when Name_C_Variadic_4          => return Convention_C_Variadic_4;
+         when Name_C_Variadic_5          => return Convention_C_Variadic_5;
+         when Name_C_Variadic_6          => return Convention_C_Variadic_6;
+         when Name_C_Variadic_7          => return Convention_C_Variadic_7;
+         when Name_C_Variadic_8          => return Convention_C_Variadic_8;
+         when Name_C_Variadic_9          => return Convention_C_Variadic_9;
+         when Name_C_Variadic_10         => return Convention_C_Variadic_10;
+         when Name_C_Variadic_11         => return Convention_C_Variadic_11;
+         when Name_C_Variadic_12         => return Convention_C_Variadic_12;
+         when Name_C_Variadic_13         => return Convention_C_Variadic_13;
+         when Name_C_Variadic_14         => return Convention_C_Variadic_14;
+         when Name_C_Variadic_15         => return Convention_C_Variadic_15;
+         when Name_C_Variadic_16         => return Convention_C_Variadic_16;
+         when Name_COBOL                 => return Convention_COBOL;
+         when Name_CPP                   => return Convention_CPP;
+         when Name_Fortran               => return Convention_Fortran;
+         when Name_Intrinsic             => return Convention_Intrinsic;
+         when Name_Stdcall               => return Convention_Stdcall;
+         when Name_Stubbed               => return Convention_Stubbed;
+
+         --  If no direct match, then we must have a convention
+         --  identifier pragma that has specified this name.
+
+         when others                     =>
+            for J in 1 .. Convention_Identifiers.Last loop
+               if N = Convention_Identifiers.Table (J).Name then
+                  return Convention_Identifiers.Table (J).Convention;
+               end if;
+            end loop;
+
+            raise Program_Error;
+      end case;
+   end Get_Convention_Id;
+
+   -------------------------
+   -- Get_Convention_Name --
+   -------------------------
+
+   function Get_Convention_Name (C : Convention_Id) return Name_Id is
+   begin
+      case C is
+         when Convention_Ada                   => return Name_Ada;
+         when Convention_Ada_Pass_By_Copy      => return Name_Ada_Pass_By_Copy;
+         when Convention_Ada_Pass_By_Reference =>
+            return Name_Ada_Pass_By_Reference;
+         when Convention_Assembler             => return Name_Assembler;
+         when Convention_C                     => return Name_C;
+         when Convention_C_Variadic_0          => return Name_C_Variadic_0;
+         when Convention_C_Variadic_1          => return Name_C_Variadic_1;
+         when Convention_C_Variadic_2          => return Name_C_Variadic_2;
+         when Convention_C_Variadic_3          => return Name_C_Variadic_3;
+         when Convention_C_Variadic_4          => return Name_C_Variadic_4;
+         when Convention_C_Variadic_5          => return Name_C_Variadic_5;
+         when Convention_C_Variadic_6          => return Name_C_Variadic_6;
+         when Convention_C_Variadic_7          => return Name_C_Variadic_7;
+         when Convention_C_Variadic_8          => return Name_C_Variadic_8;
+         when Convention_C_Variadic_9          => return Name_C_Variadic_9;
+         when Convention_C_Variadic_10         => return Name_C_Variadic_10;
+         when Convention_C_Variadic_11         => return Name_C_Variadic_11;
+         when Convention_C_Variadic_12         => return Name_C_Variadic_12;
+         when Convention_C_Variadic_13         => return Name_C_Variadic_13;
+         when Convention_C_Variadic_14         => return Name_C_Variadic_14;
+         when Convention_C_Variadic_15         => return Name_C_Variadic_15;
+         when Convention_C_Variadic_16         => return Name_C_Variadic_16;
+         when Convention_COBOL                 => return Name_COBOL;
+         when Convention_CPP                   => return Name_CPP;
+         when Convention_Entry                 => return Name_Entry;
+         when Convention_Fortran               => return Name_Fortran;
+         when Convention_Intrinsic             => return Name_Intrinsic;
+         when Convention_Protected             => return Name_Protected;
+         when Convention_Stdcall               => return Name_Stdcall;
+         when Convention_Stubbed               => return Name_Stubbed;
+      end case;
+   end Get_Convention_Name;
+
+   ---------------------------
+   -- Get_Locking_Policy_Id --
+   ---------------------------
+
+   function Get_Locking_Policy_Id (N : Name_Id) return Locking_Policy_Id is
+   begin
+      return Locking_Policy_Id'Val (N - First_Locking_Policy_Name);
+   end Get_Locking_Policy_Id;
+
+   -------------------
+   -- Get_Pragma_Id --
+   -------------------
+
+   function Get_Pragma_Id (N : Name_Id) return Pragma_Id is
+   begin
+      case N is
+         when Name_CPU                              =>
+            return Pragma_CPU;
+         when Name_Default_Scalar_Storage_Order     =>
+            return Pragma_Default_Scalar_Storage_Order;
+         when Name_Dispatching_Domain               =>
+            return Pragma_Dispatching_Domain;
+         when Name_Fast_Math                        =>
+            return Pragma_Fast_Math;
+         when Name_Interface                        =>
+            return Pragma_Interface;
+         when Name_Interrupt_Priority               =>
+            return Pragma_Interrupt_Priority;
+         when Name_Preelaborable_Initialization     =>
+            return Pragma_Preelaborable_Initialization;
+         when Name_Priority                         =>
+            return Pragma_Priority;
+         when Name_Secondary_Stack_Size             =>
+            return Pragma_Secondary_Stack_Size;
+         when Name_Storage_Size                     =>
+            return Pragma_Storage_Size;
+         when Name_Storage_Unit                     =>
+            return Pragma_Storage_Unit;
+         when Name_Unsigned_Base_Range              =>
+            return Pragma_Unsigned_Base_Range;
+         when First_Pragma_Name .. Last_Pragma_Name =>
+            return Pragma_Id'Val (N - First_Pragma_Name);
+         when others                                =>
+            return Pragma_Unknown;
+      end case;
+   end Get_Pragma_Id;
+
+   ---------------------------
+   -- Get_Queuing_Policy_Id --
+   ---------------------------
+
+   function Get_Queuing_Policy_Id (N : Name_Id) return Queuing_Policy_Id is
+   begin
+      return Queuing_Policy_Id'Val (N - First_Queuing_Policy_Name);
+   end Get_Queuing_Policy_Id;
+
+   ------------------------------------
+   -- Get_Task_Dispatching_Policy_Id --
+   ------------------------------------
+
+   function Get_Task_Dispatching_Policy_Id
+     (N : Name_Id) return Task_Dispatching_Policy_Id
+   is
+   begin
+      return Task_Dispatching_Policy_Id'Val
+        (N - First_Task_Dispatching_Policy_Name);
+   end Get_Task_Dispatching_Policy_Id;
+
+   ----------------
+   -- Initialize --
+   ----------------
+
+   procedure Initialize is
+      P_Index      : Natural;
+      Discard_Name : Name_Id;
+
+   begin
+      P_Index := Preset_Names'First;
+      loop
+         Name_Len := 0;
+         while Preset_Names (P_Index) /= '#' loop
+            Name_Len := Name_Len + 1;
+            Name_Buffer (Name_Len) := Preset_Names (P_Index);
+            P_Index := P_Index + 1;
+         end loop;
+
+         --  We do the Name_Find call to enter the name into the table, but
+         --  we don't need to do anything with the result, since we already
+         --  initialized all the preset names to have the right value (we
+         --  are depending on the order of the names and Preset_Names).
+
+         Discard_Name := Name_Find;
+         P_Index := P_Index + 1;
+         exit when Preset_Names (P_Index) = '#';
+      end loop;
+
+      --  Make sure that number of names in standard table is correct. If this
+      --  check fails, run utility program XSNAMES to construct a new properly
+      --  matching version of the body.
+
+      pragma Assert (Discard_Name = Last_Predefined_Name);
+
+      --  Initialize the convention identifiers table with the standard set of
+      --  synonyms that we recognize for conventions.
+
+      Convention_Identifiers.Init;
+
+      Convention_Identifiers.Append ((Name_Asm,         Convention_Assembler));
+      Convention_Identifiers.Append ((Name_Assembly,    Convention_Assembler));
+
+      Convention_Identifiers.Append ((Name_Default,     Convention_C));
+      Convention_Identifiers.Append ((Name_External,    Convention_C));
+
+      Convention_Identifiers.Append ((Name_C_Plus_Plus, Convention_CPP));
+
+      Convention_Identifiers.Append ((Name_DLL,         Convention_Stdcall));
+      Convention_Identifiers.Append ((Name_Win32,       Convention_Stdcall));
+   end Initialize;
+
+   -----------------------
+   -- Is_Attribute_Name --
+   -----------------------
+
+   function Is_Attribute_Name (N : Name_Id) return Boolean is
+   begin
+      --  Don't consider Name_Elab_Subp_Body to be a valid attribute name
+      --  unless we are working in CodePeer mode.
+
+      return N in First_Attribute_Name .. Last_Attribute_Name
+        and then (CodePeer_Mode or else N /= Name_Elab_Subp_Body);
+   end Is_Attribute_Name;
+
+   ----------------------------------
+   -- Is_Configuration_Pragma_Name --
+   ----------------------------------
+
+   function Is_Configuration_Pragma_Name (N : Name_Id) return Boolean is
+   begin
+      return N in Configuration_Pragma_Names
+        or else N = Name_Default_Scalar_Storage_Order
+        or else N = Name_Fast_Math;
+   end Is_Configuration_Pragma_Name;
+
+   ------------------------
+   -- Is_Convention_Name --
+   ------------------------
+
+   function Is_Convention_Name (N : Name_Id) return Boolean is
+   begin
+      --  Check if this is one of the standard conventions
+
+      if N in First_Convention_Name .. Last_Convention_Name
+        or else N = Name_C
+      then
+         return True;
+
+      --  Otherwise check if it is in convention identifier table
+
+      else
+         for J in 1 .. Convention_Identifiers.Last loop
+            if N = Convention_Identifiers.Table (J).Name then
+               return True;
+            end if;
+         end loop;
+
+         return False;
+      end if;
+   end Is_Convention_Name;
+
+   -----------------------------------------
+   -- Is_Direct_Attribute_Definition_Name --
+   -----------------------------------------
+
+   function Is_Direct_Attribute_Definition_Name (N : Name_Id) return Boolean is
+   begin
+      return
+        Is_Attribute_Name (N) and then N in Name_Constructor | Name_Destructor;
+   end Is_Direct_Attribute_Definition_Name;
+
+   ------------------------------
+   -- Is_Entity_Attribute_Name --
+   ------------------------------
+
+   function Is_Entity_Attribute_Name (N : Name_Id) return Boolean is
+   begin
+      return N in First_Entity_Attribute_Name .. Last_Entity_Attribute_Name;
+   end Is_Entity_Attribute_Name;
+
+   --------------------------------
+   -- Is_Function_Attribute_Name --
+   --------------------------------
+
+   function Is_Function_Attribute_Name (N : Name_Id) return Boolean is
+   begin
+      return N in
+        First_Renamable_Function_Attribute ..
+          Last_Renamable_Function_Attribute;
+   end Is_Function_Attribute_Name;
+
+   ---------------------
+   -- Is_Keyword_Name --
+   ---------------------
+
+   function Is_Keyword_Name (N : Name_Id) return Boolean is
+   begin
+      return Get_Name_Table_Byte (N) /= 0
+        and then (Ada_Version >= Ada_95
+                   or else N not in Ada_95_Reserved_Words)
+        and then (Ada_Version >= Ada_2005
+                   or else N not in Ada_2005_Reserved_Words
+                   or else (Debug_Flag_Dot_DD and then N = Name_Overriding))
+                   --  Accept 'overriding' keywords if -gnatd.D is used,
+                   --  for compatibility with Ada 95 compilers implementing
+                   --  only this Ada 2005 extension.
+        and then (Ada_Version >= Ada_2012
+                   or else N not in Ada_2012_Reserved_Words)
+        and then (Ada_Version >= Ada_With_All_Extensions
+                   or else N not in GNAT_Extensions_Reserved_Words);
+   end Is_Keyword_Name;
+
+   --------------------------------
+   -- Is_Internal_Attribute_Name --
+   --------------------------------
+
+   function Is_Internal_Attribute_Name (N : Name_Id) return Boolean is
+   begin
+      return
+        N in First_Internal_Attribute_Name .. Last_Internal_Attribute_Name;
+   end Is_Internal_Attribute_Name;
+
+   ----------------------------
+   -- Is_Locking_Policy_Name --
+   ----------------------------
+
+   function Is_Locking_Policy_Name (N : Name_Id) return Boolean is
+   begin
+      return N in First_Locking_Policy_Name .. Last_Locking_Policy_Name;
+   end Is_Locking_Policy_Name;
+
+   ------------------------------------------
+   -- Is_Partition_Elaboration_Policy_Name --
+   ------------------------------------------
+
+   function Is_Partition_Elaboration_Policy_Name
+     (N : Name_Id) return Boolean
+   is
+   begin
+      return N in First_Partition_Elaboration_Policy_Name ..
+                  Last_Partition_Elaboration_Policy_Name;
+   end Is_Partition_Elaboration_Policy_Name;
+
+   -----------------------------
+   -- Is_Operator_Symbol_Name --
+   -----------------------------
+
+   function Is_Operator_Symbol_Name (N : Name_Id) return Boolean is
+   begin
+      return N in First_Operator_Name .. Last_Operator_Name;
+   end Is_Operator_Symbol_Name;
+
+   --------------------
+   -- Is_Pragma_Name --
+   --------------------
+
+   function Is_Pragma_Name (N : Name_Id) return Boolean is
+   begin
+      return N in First_Pragma_Name .. Last_Pragma_Name
+        or else N = Name_CPU
+        or else N = Name_Default_Scalar_Storage_Order
+        or else N = Name_Dispatching_Domain
+        or else N = Name_Fast_Math
+        or else N = Name_Interface
+        or else N = Name_Interrupt_Priority
+        or else N = Name_Preelaborable_Initialization
+        or else N = Name_Priority
+        or else N = Name_Secondary_Stack_Size
+        or else N = Name_Storage_Size
+        or else N = Name_Storage_Unit
+        or else N = Name_Unsigned_Base_Range;
+   end Is_Pragma_Name;
+
+   ---------------------------------
+   -- Is_Procedure_Attribute_Name --
+   ---------------------------------
+
+   function Is_Procedure_Attribute_Name (N : Name_Id) return Boolean is
+   begin
+      return N in First_Procedure_Attribute .. Last_Procedure_Attribute;
+   end Is_Procedure_Attribute_Name;
+
+   ----------------------------
+   -- Is_Queuing_Policy_Name --
+   ----------------------------
+
+   function Is_Queuing_Policy_Name (N : Name_Id) return Boolean is
+   begin
+      return N in First_Queuing_Policy_Name .. Last_Queuing_Policy_Name;
+   end Is_Queuing_Policy_Name;
+
+   -------------------------------------
+   -- Is_Task_Dispatching_Policy_Name --
+   -------------------------------------
+
+   function Is_Task_Dispatching_Policy_Name (N : Name_Id) return Boolean is
+   begin
+      return N in First_Task_Dispatching_Policy_Name ..
+                  Last_Task_Dispatching_Policy_Name;
+   end Is_Task_Dispatching_Policy_Name;
+
+   ----------------------------
+   -- Is_Type_Attribute_Name --
+   ----------------------------
+
+   function Is_Type_Attribute_Name (N : Name_Id) return Boolean is
+   begin
+      return N in First_Type_Attribute_Name .. Last_Type_Attribute_Name;
+   end Is_Type_Attribute_Name;
+
+   ----------------------------------
+   -- Record_Convention_Identifier --
+   ----------------------------------
+
+   procedure Record_Convention_Identifier
+     (Id         : Name_Id;
+      Convention : Convention_Id)
+   is
+   begin
+      Convention_Identifiers.Append ((Id, Convention));
+   end Record_Convention_Identifier;
+
+end Snames;

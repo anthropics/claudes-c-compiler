@@ -1,0 +1,60 @@
+/* { dg-require-effective-target vect_int } */
+/* { dg-additional-options "-fno-tree-scev-cprop" } */
+
+#include <stdarg.h>
+#include "tree-vect.h"
+
+#define N 128 
+
+int
+main1 ()
+{
+  int i, j;
+  unsigned short out[N*8], a[N][N];
+   
+ for (i = 0; i < N; i++)
+   {
+    for (j = 0; j < N; j++)
+      {
+        a[i][j] = 8;
+      }
+    out[i*4] = 8;
+    out[i*4 + 1] = 18;
+    out[i*4 + 2] = 28;
+    out[i*4 + 3] = 38;
+   }
+
+  /* check results:  */
+#pragma GCC novector
+ for (i = 0; i < N; i++)
+   {
+#pragma GCC novector
+    for (j = 0; j < N; j++) 
+      {
+        if (a[i][j] != 8)
+           abort ();
+      }
+    if (out[i*4] != 8
+        || out[i*4 + 1] != 18
+        || out[i*4 + 2] != 28
+        || out[i*4 + 3] != 38)
+      abort();
+   }
+
+
+  return 0;
+}
+
+int main (void)
+{
+  check_vect ();
+
+  main1 ();
+
+  return 0;
+}
+
+/* We cannot handle grouped accesses in outer loops.  */
+/* { dg-final { scan-tree-dump-not "OUTER LOOP VECTORIZED" "vect" } } */
+/* { dg-final { scan-tree-dump-times "vectorized 1 loops" 1 "vect"  } } */
+/* { dg-final { scan-tree-dump-times "vectorizing stmts using SLP" 1 "vect"  } } */

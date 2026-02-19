@@ -1,0 +1,5345 @@
+// Copyright (C) 2020-2026 Free Software Foundation, Inc.
+
+// This file is part of GCC.
+
+// GCC is free software; you can redistribute it and/or modify it under
+// the terms of the GNU General Public License as published by the Free
+// Software Foundation; either version 3, or (at your option) any later
+// version.
+
+// GCC is distributed in the hope that it will be useful, but WITHOUT ANY
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or
+// FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+// for more details.
+
+// You should have received a copy of the GNU General Public License
+// along with GCC; see the file COPYING3.  If not see
+// <http://www.gnu.org/licenses/>.
+
+#include "rust-ast-full.h"
+#include "rust-hir-expr.h"
+#include "rust-hir-full.h"
+#include "rust-hir-path.h"
+#include "rust-hir-visitor.h"
+#include "rust-diagnostics.h"
+
+/* Compilation unit used for various HIR-related functions that would make
+ * the headers too long if they were defined inline and don't receive any
+ * benefits from being defined inline because they are virtual. Also used
+ * for various other stuff. */
+
+namespace Rust {
+namespace HIR {
+
+enum indent_mode
+{
+  enter,
+  out,
+  stay
+};
+
+std::string
+indent_spaces (enum indent_mode mode)
+{
+  static int indent = 0;
+  std::string str = "";
+  if (out == mode)
+    indent--;
+  for (int i = 0; i < indent; i++)
+    str += " ";
+  if (enter == mode)
+    indent++;
+
+  return str;
+}
+
+// Gets a string in a certain delim type.
+std::string
+get_string_in_delims (std::string str_input, AST::DelimType delim_type)
+{
+  switch (delim_type)
+    {
+    case AST::DelimType::PARENS:
+      return "(" + str_input + ")";
+    case AST::DelimType::SQUARE:
+      return "[" + str_input + "]";
+    case AST::DelimType::CURLY:
+      return "{" + str_input + "}";
+    default:
+      return "ERROR-MARK-STRING (delims)";
+    }
+  rust_unreachable ();
+}
+
+Crate::Crate (std::vector<std::unique_ptr<Item>> items,
+	      AST::AttrVec inner_attrs, Analysis::NodeMapping mappings)
+  : WithInnerAttrs (std::move (inner_attrs)), items (std::move (items)),
+    mappings (mappings)
+{}
+
+Crate::Crate (Crate const &other)
+  : WithInnerAttrs (other.inner_attrs), mappings (other.mappings)
+{
+  items.reserve (other.items.size ());
+  for (const auto &e : other.items)
+    items.push_back (e->clone_item ());
+}
+
+Crate &
+Crate::operator= (Crate const &other)
+{
+  inner_attrs = other.inner_attrs;
+  mappings = other.mappings;
+
+  items.reserve (other.items.size ());
+  for (const auto &e : other.items)
+    items.push_back (e->clone_item ());
+
+  return *this;
+}
+
+std::string
+Crate::to_debug_string () const
+{
+  std::string str ("HIR::Crate: ");
+
+  // inner attributes
+  str += "\n inner attributes: ";
+  if (inner_attrs.empty ())
+    {
+      str += "none";
+    }
+  else
+    {
+      /* note that this does not print them with "inner attribute" syntax -
+       * just the body */
+      for (const auto &attr : inner_attrs)
+	{
+	  str += "\n  " + attr.as_string ();
+	}
+    }
+
+  // items
+  str += "\n items: ";
+  if (items.empty ())
+    {
+      str += "none";
+    }
+  else
+    {
+      for (const auto &item : items)
+	{
+	  // DEBUG: null pointer check
+	  if (item == nullptr)
+	    {
+	      rust_debug ("something really terrible has gone wrong - "
+			  "null pointer item in crate.");
+	      return "nullptr_POINTER_MARK";
+	    }
+
+	  str += "\n  " + item->to_string ();
+	}
+    }
+
+  return str;
+}
+
+std::string
+Crate::to_string () const
+{
+  std::string str;
+  if (!inner_attrs.empty ())
+    for (const auto &attr : inner_attrs)
+      str += attr.as_string () + "\n";
+
+  if (!items.empty ())
+    for (const auto &item : items)
+      str += item->to_string () + "\n";
+
+  return str;
+}
+
+std::string
+Visibility::to_string () const
+{
+  switch (vis_type)
+    {
+    case PRIVATE:
+      return std::string ("private");
+    case PUBLIC:
+      return std::string ("pub");
+    case RESTRICTED:
+      return std::string ("pub(in ") + path.get_mappings ().as_string ()
+	     + std::string (")");
+    default:
+      rust_unreachable ();
+    }
+}
+
+// Creates a string that reflects the visibility stored.
+std::string
+VisItem::to_string () const
+{
+  // FIXME: can't do formatting on string to make identation occur.
+  std::string str = Item::to_string ();
+
+  if (has_visibility ())
+    {
+      str = visibility.to_string () + " ";
+    }
+
+  return str;
+}
+
+// Creates a string that reflects the outer attributes stored.
+std::string
+Item::to_string () const
+{
+  std::string str;
+
+  if (!outer_attrs.empty ())
+    {
+      for (const auto &attr : outer_attrs)
+	{
+	  str += attr.as_string () + "\n";
+	}
+    }
+
+  return str;
+}
+
+std::string
+Module::to_string () const
+{
+  // get module string for "[vis] mod [name]"
+  std::string str = VisItem::to_string () + "mod " + module_name.as_string ();
+
+  // inner attributes
+  str += "\n inner attributes: ";
+  if (inner_attrs.empty ())
+    {
+      str += "none";
+    }
+  else
+    {
+      /* note that this does not print them with "inner attribute" syntax -
+       * just the body */
+      for (const auto &attr : inner_attrs)
+	{
+	  str += "\n  " + attr.as_string ();
+	}
+    }
+
+  // items
+  str += "\n items: ";
+  if (items.empty ())
+    {
+      str += "none";
+    }
+  else
+    {
+      for (const auto &item : items)
+	{
+	  // DEBUG: null pointer check
+	  if (item == nullptr)
+	    {
+	      rust_debug ("something really terrible has gone wrong - "
+			  "null pointer item in crate.");
+	      return "nullptr_POINTER_MARK";
+	    }
+
+	  str += "\n  " + item->to_string ();
+	}
+    }
+
+  return str + "\n";
+}
+
+std::string
+Item::item_kind_string (Item::ItemKind kind)
+{
+  switch (kind)
+    {
+    case Item::ItemKind::Static:
+      return "static";
+    case Item::ItemKind::Constant:
+      return "constant";
+    case Item::ItemKind::TypeAlias:
+      return "type alias";
+    case Item::ItemKind::Function:
+      return "function";
+    case Item::ItemKind::UseDeclaration:
+      return "use declaration";
+    case Item::ItemKind::ExternBlock:
+      return "extern block";
+    case Item::ItemKind::ExternCrate:
+      return "extern crate";
+    case Item::ItemKind::Struct:
+      return "struct";
+    case Item::ItemKind::Union:
+      return "union";
+    case Item::ItemKind::Enum:
+      return "enum";
+    case Item::ItemKind::EnumItem:
+      return "enum item";
+    case Item::ItemKind::Trait:
+      return "trait";
+    case Item::ItemKind::Impl:
+      return "impl";
+    case Item::ItemKind::Module:
+      return "module";
+    default:
+      rust_unreachable ();
+    }
+}
+
+std::string
+StaticItem::to_string () const
+{
+  std::string str = VisItem::to_string ();
+
+  str += indent_spaces (stay) + "static";
+
+  if (is_mut ())
+    {
+      str += " mut";
+    }
+
+  str += name.as_string ();
+
+  // DEBUG: null pointer check
+  if (type == nullptr)
+    {
+      rust_debug ("something really terrible has gone wrong - null "
+		  "pointer type in static item.");
+      return "nullptr_POINTER_MARK";
+    }
+  str += "\n" + indent_spaces (stay) + "Type: " + type->to_string ();
+
+  // DEBUG: null pointer check
+  if (expr == nullptr)
+    {
+      rust_debug ("something really terrible has gone wrong - null "
+		  "pointer expr in static item.");
+      return "nullptr_POINTER_MARK";
+    }
+  str += "\n" + indent_spaces (stay) + "Expression: " + expr->to_string ();
+
+  return str + "\n";
+}
+
+std::string
+ExternCrate::to_string () const
+{
+  std::string str = VisItem::to_string ();
+
+  str += "extern crate " + referenced_crate;
+
+  if (has_as_clause ())
+    {
+      str += " as " + as_clause_name;
+    }
+
+  return str;
+}
+
+std::string
+TupleStruct::to_string () const
+{
+  std::string str = VisItem::to_string ();
+
+  str += "struct " + struct_name.as_string ();
+
+  // generic params
+  str += "\n Generic params: ";
+  if (generic_params.empty ())
+    {
+      str += "none";
+    }
+  else
+    {
+      for (const auto &param : generic_params)
+	{
+	  // DEBUG: null pointer check
+	  if (param == nullptr)
+	    {
+	      rust_debug (
+		"something really terrible has gone wrong - null pointer "
+		"generic param in enum.");
+	      return "nullptr_POINTER_MARK";
+	    }
+
+	  str += "\n  " + param->to_string ();
+	}
+    }
+
+  // tuple fields
+  str += "\n Tuple fields: ";
+  if (fields.empty ())
+    {
+      str += "none";
+    }
+  else
+    {
+      for (const auto &field : fields)
+	{
+	  str += "\n  " + field.to_string ();
+	}
+    }
+
+  str += "\n Where clause: ";
+  if (has_where_clause ())
+    {
+      str += where_clause.to_string ();
+    }
+  else
+    {
+      str += "none";
+    }
+
+  return str;
+}
+
+std::string
+ConstantItem::to_string () const
+{
+  std::string str = VisItem::to_string ();
+
+  str += "const " + identifier.as_string ();
+
+  // DEBUG: null pointer check
+  if (type == nullptr)
+    {
+      rust_debug ("something really terrible has gone wrong - null "
+		  "pointer type in const item.");
+      return "nullptr_POINTER_MARK";
+    }
+  str += "\n  Type: " + type->to_string ();
+
+  // DEBUG: null pointer check
+  if (const_expr == nullptr)
+    {
+      rust_debug ("something really terrible has gone wrong - null "
+		  "pointer expr in const item.");
+      return "nullptr_POINTER_MARK";
+    }
+  str += "\n  Expression: " + const_expr->to_string ();
+
+  return str + "\n";
+}
+
+std::string
+ImplBlock::to_string () const
+{
+  std::string str = VisItem::to_string ();
+
+  str += "impl ";
+
+  // generic params
+  str += "\n Generic params: ";
+  if (generic_params.empty ())
+    {
+      str += "none";
+    }
+  else
+    {
+      for (const auto &param : generic_params)
+	{
+	  // DEBUG: null pointer check
+	  if (param == nullptr)
+	    {
+	      rust_debug (
+		"something really terrible has gone wrong - null pointer "
+		"generic param in impl.");
+	      return "nullptr_POINTER_MARK";
+	    }
+
+	  str += "\n  " + param->to_string ();
+	}
+    }
+
+  str += "\n Type: " + impl_type->to_string ();
+
+  str += "\n Where clause: ";
+  if (has_where_clause ())
+    {
+      str += where_clause.to_string ();
+    }
+  else
+    {
+      str += "none";
+    }
+
+  // inner attributes
+  str += "\n inner attributes: ";
+  if (inner_attrs.empty ())
+    {
+      str += "none";
+    }
+  else
+    {
+      /* note that this does not print them with "inner attribute" syntax -
+       * just the body */
+      for (const auto &attr : inner_attrs)
+	{
+	  str += "\n  " + attr.as_string ();
+	}
+    }
+
+  str += "\n impl items: ";
+  if (!has_impl_items ())
+    {
+      str += "none";
+    }
+  else
+    {
+      for (const auto &item : impl_items)
+	{
+	  str += "\n  " + item->to_string ();
+	}
+    }
+
+  return str;
+}
+
+std::string
+StructStruct::to_string () const
+{
+  std::string str = VisItem::to_string ();
+
+  str += "struct " + struct_name.as_string ();
+
+  // generic params
+  str += "\n Generic params: ";
+  if (generic_params.empty ())
+    {
+      str += "none";
+    }
+  else
+    {
+      for (const auto &param : generic_params)
+	{
+	  // DEBUG: null pointer check
+	  if (param == nullptr)
+	    {
+	      rust_debug (
+		"something really terrible has gone wrong - null pointer "
+		"generic param in enum.");
+	      return "nullptr_POINTER_MARK";
+	    }
+
+	  str += "\n  " + param->to_string ();
+	}
+    }
+
+  str += "\n Where clause: ";
+  if (has_where_clause ())
+    {
+      str += where_clause.to_string ();
+    }
+  else
+    {
+      str += "none";
+    }
+
+  // struct fields
+  str += "\n Struct fields: ";
+  if (is_unit)
+    {
+      str += "none (unit)";
+    }
+  else if (fields.empty ())
+    {
+      str += "none (non-unit)";
+    }
+  else
+    {
+      for (const auto &field : fields)
+	{
+	  str += "\n  - " + field.to_string ();
+	}
+      str += "\n";
+    }
+
+  return str;
+}
+
+std::string
+UseDeclaration::to_string () const
+{
+  std::string str = VisItem::to_string ();
+
+  // DEBUG: null pointer check
+  if (use_tree == nullptr)
+    {
+      rust_debug (
+	"something really terrible has gone wrong - null pointer use tree in "
+	"use declaration.");
+      return "nullptr_POINTER_MARK";
+    }
+
+  str += "use " + use_tree->to_string ();
+
+  return str;
+}
+
+std::string
+UseTreeGlob::to_string () const
+{
+  switch (glob_type)
+    {
+    case NO_PATH:
+      return "*";
+    case GLOBAL:
+      return "::*";
+    case PATH_PREFIXED:
+      {
+	std::string path_str = path.as_string ();
+	return path_str + "::*";
+      }
+    default:
+      // some kind of error
+      return "ERROR-PATH";
+    }
+  rust_unreachable ();
+}
+
+std::string
+UseTreeList::to_string () const
+{
+  std::string path_str;
+  switch (path_type)
+    {
+    case NO_PATH:
+      path_str = "{";
+      break;
+    case GLOBAL:
+      path_str = "::{";
+      break;
+    case PATH_PREFIXED:
+      {
+	path_str = path.as_string () + "::{";
+	break;
+      }
+    default:
+      // some kind of error
+      return "ERROR-PATH-LIST";
+    }
+
+  if (has_trees ())
+    {
+      auto i = trees.begin ();
+      auto e = trees.end ();
+
+      // DEBUG: null pointer check
+      if (*i == nullptr)
+	{
+	  rust_debug ("something really terrible has gone wrong - null pointer "
+		      "tree in use tree list.");
+	  return "nullptr_POINTER_MARK";
+	}
+
+      for (; i != e; i++)
+	{
+	  path_str += (*i)->to_string ();
+	  if (e != i + 1)
+	    path_str += ", ";
+	}
+    }
+  else
+    {
+      path_str += "none";
+    }
+
+  return path_str + "}";
+}
+
+std::string
+UseTreeRebind::to_string () const
+{
+  std::string path_str = path.as_string ();
+
+  switch (bind_type)
+    {
+    case NONE:
+      // nothing to add, just path
+      break;
+    case IDENTIFIER:
+      path_str += " as " + identifier.as_string ();
+      break;
+    case WILDCARD:
+      path_str += " as _";
+      break;
+    default:
+      // error
+      return "ERROR-PATH-REBIND";
+    }
+
+  return path_str;
+}
+
+std::string
+Enum::to_string () const
+{
+  std::string str = VisItem::to_string ();
+  str += enum_name.as_string ();
+
+  // generic params
+  str += "\n Generic params: ";
+  if (generic_params.empty ())
+    {
+      str += "none";
+    }
+  else
+    {
+      for (const auto &param : generic_params)
+	{
+	  // DEBUG: null pointer check
+	  if (param == nullptr)
+	    {
+	      rust_debug (
+		"something really terrible has gone wrong - null pointer "
+		"generic param in enum.");
+	      return "nullptr_POINTER_MARK";
+	    }
+
+	  str += "\n  " + param->to_string ();
+	}
+    }
+
+  str += "\n Where clause: ";
+  if (has_where_clause ())
+    {
+      str += where_clause.to_string ();
+    }
+  else
+    {
+      str += "none";
+    }
+
+  // items
+  str += "\n Items: ";
+  if (items.empty ())
+    {
+      str += "none";
+    }
+  else
+    {
+      for (const auto &item : items)
+	{
+	  // DEBUG: null pointer check
+	  if (item == nullptr)
+	    {
+	      rust_debug (
+		"something really terrible has gone wrong - null pointer "
+		"enum item in enum.");
+	      return "nullptr_POINTER_MARK";
+	    }
+
+	  str += "\n  " + item->to_string ();
+	}
+    }
+
+  return str;
+}
+
+std::string
+Trait::to_string () const
+{
+  std::string str = VisItem::to_string ();
+
+  if (unsafety == Unsafety::Unsafe)
+    {
+      str += "unsafe ";
+    }
+
+  str += "trait " + name.as_string ();
+
+  // generic params
+  str += "\n Generic params: ";
+  if (generic_params.empty ())
+    {
+      str += "none";
+    }
+  else
+    {
+      for (const auto &param : generic_params)
+	{
+	  // DEBUG: null pointer check
+	  if (param == nullptr)
+	    {
+	      rust_debug (
+		"something really terrible has gone wrong - null pointer "
+		"generic param in trait.");
+	      return "nullptr_POINTER_MARK";
+	    }
+
+	  str += "\n  " + param->to_string ();
+	}
+    }
+
+  str += "\n Type param bounds: ";
+  if (!has_type_param_bounds ())
+    {
+      str += "none";
+    }
+  else
+    {
+      for (const auto &bound : type_param_bounds)
+	{
+	  // DEBUG: null pointer check
+	  if (bound == nullptr)
+	    {
+	      rust_debug (
+		"something really terrible has gone wrong - null pointer "
+		"type param bound in trait.");
+	      return "nullptr_POINTER_MARK";
+	    }
+
+	  str += "\n  " + bound->to_string ();
+	}
+    }
+
+  str += "\n Where clause: ";
+  if (!has_where_clause ())
+    {
+      str += "none";
+    }
+  else
+    {
+      str += where_clause.to_string ();
+    }
+
+  str += "\n Trait items: ";
+  if (!has_trait_items ())
+    {
+      str += "none";
+    }
+  else
+    {
+      for (const auto &item : trait_items)
+	{
+	  // DEBUG: null pointer check
+	  if (item == nullptr)
+	    {
+	      rust_debug (
+		"something really terrible has gone wrong - null pointer "
+		"trait item in trait.");
+	      return "nullptr_POINTER_MARK";
+	    }
+
+	  str += "\n  " + item->to_string ();
+	}
+    }
+
+  return str;
+}
+
+std::string
+Union::to_string () const
+{
+  std::string str = VisItem::to_string ();
+
+  str += "union " + union_name.as_string ();
+
+  // generic params
+  str += "\n Generic params: ";
+  if (generic_params.empty ())
+    {
+      str += "none";
+    }
+  else
+    {
+      for (const auto &param : generic_params)
+	{
+	  // DEBUG: null pointer check
+	  if (param == nullptr)
+	    {
+	      rust_debug (
+		"something really terrible has gone wrong - null pointer "
+		"generic param in union.");
+	      return "nullptr_POINTER_MARK";
+	    }
+
+	  str += "\n  " + param->to_string ();
+	}
+    }
+
+  str += "\n Where clause: ";
+  if (has_where_clause ())
+    {
+      str += where_clause.to_string ();
+    }
+  else
+    {
+      str += "none";
+    }
+
+  // struct fields
+  str += "\n Struct fields (variants): ";
+  if (variants.empty ())
+    {
+      str += "none";
+    }
+  else
+    {
+      for (const auto &field : variants)
+	{
+	  str += "\n  " + field.to_string ();
+	}
+    }
+
+  return str;
+}
+
+std::string
+Function::to_string () const
+{
+  std::string str = VisItem::to_string () + "\n";
+  std::string qstr = qualifiers.to_string ();
+  if ("" != qstr)
+    str += qstr + " ";
+
+  if (has_function_return_type ())
+    {
+      // DEBUG: null pointer check
+      if (return_type == nullptr)
+	{
+	  rust_debug (
+	    "something really terrible has gone wrong - null pointer return "
+	    "type in function.");
+	  return "nullptr_POINTER_MARK";
+	}
+
+      str += return_type->to_string () + " ";
+    }
+  else
+    {
+      str += "void ";
+    }
+
+  str += function_name.as_string ();
+
+  if (has_generics ())
+    {
+      str += "<";
+
+      auto i = generic_params.begin ();
+      auto e = generic_params.end ();
+
+      // DEBUG: null pointer check
+      if (i == e)
+	{
+	  rust_debug ("something really terrible has gone wrong - null pointer "
+		      "generic param in function item.");
+	  return "nullptr_POINTER_MARK";
+	}
+
+      for (; i != e; i++)
+	{
+	  str += (*i)->to_string ();
+	  if (e != i + 1)
+	    str += ", ";
+	}
+      str += ">";
+    }
+
+  if (has_function_params ())
+    {
+      auto i = function_params.begin ();
+      auto e = function_params.end ();
+      str += "(";
+      for (; i != e; i++)
+	{
+	  str += (*i).to_string ();
+	  if (e != i + 1)
+	    str += ", ";
+	}
+      str += ")";
+    }
+  else
+    {
+      str += "()";
+    }
+
+  if (has_where_clause ())
+    {
+      str += " where " + where_clause.to_string ();
+    }
+
+  str += "\n";
+
+  // DEBUG: null pointer check
+  if (function_body == nullptr)
+    {
+      rust_debug (
+	"something really terrible has gone wrong - null pointer function "
+	"body in function.");
+      return "nullptr_POINTER_MARK";
+    }
+  return str + function_body->to_string ();
+}
+
+std::string
+WhereClause::to_string () const
+{
+  // just print where clause items, don't mention "where" or "where clause"
+  std::string str;
+
+  if (where_clause_items.empty ())
+    {
+      str = "none";
+    }
+  else
+    {
+      for (const auto &item : where_clause_items)
+	{
+	  str += "\n  " + item->to_string ();
+	}
+    }
+
+  return str;
+}
+
+std::string
+BlockExpr::to_string () const
+{
+  std::string istr = indent_spaces (enter);
+  std::string str = istr + "BlockExpr:\n" + istr;
+  // get outer attributes
+  str += "{\n" + indent_spaces (stay) + Expr::to_string ();
+
+  // inner attributes
+  str += "\n" + indent_spaces (stay) + "inner attributes: ";
+  if (inner_attrs.empty ())
+    {
+      str += "none";
+    }
+  else
+    {
+      /* note that this does not print them with "inner attribute" syntax -
+       * just the body */
+      for (const auto &attr : inner_attrs)
+	{
+	  str += "\n" + indent_spaces (stay) + attr.as_string ();
+	}
+    }
+
+  // statements
+  str += "\n" + indent_spaces (stay) + "statements: ";
+  if (statements.empty ())
+    {
+      str += "none";
+    }
+  else
+    {
+      for (const auto &stmt : statements)
+	{
+	  // DEBUG: null pointer check
+	  if (stmt == nullptr)
+	    {
+	      rust_debug (
+		"something really terrible has gone wrong - null pointer "
+		"stmt in block expr.");
+	      return "nullptr_POINTER_MARK";
+	    }
+
+	  str += "\n" + indent_spaces (stay) + stmt->to_string ();
+	}
+    }
+
+  // final expression
+  str += "\n" + indent_spaces (stay) + "final expression: ";
+  if (expr == nullptr)
+    {
+      str += "none";
+    }
+  else
+    {
+      str += "\n" + expr->to_string ();
+    }
+
+  str += "\n" + indent_spaces (out) + "}";
+  return str;
+}
+
+std::string
+AnonConst::to_string () const
+{
+  std::string istr = indent_spaces (enter);
+  std::string str = istr + "AnonConst:\n" + istr;
+
+  if (expr.has_value ())
+    str += get_inner_expr ().to_string ();
+  else
+    str += "_";
+
+  str += "\n" + indent_spaces (out);
+
+  return str;
+}
+
+std::string
+ConstBlock::to_string () const
+{
+  std::string istr = indent_spaces (enter);
+
+  std::string str = istr + "ConstBlock:\n" + istr;
+
+  str += get_const_expr ().to_string ();
+
+  str += "\n" + indent_spaces (out);
+
+  return str;
+}
+
+std::string
+TypeAlias::to_string () const
+{
+  std::string str = VisItem::to_string ();
+
+  str += " " + new_type_name.as_string ();
+
+  // generic params
+  str += "\n Generic params: ";
+  if (!has_generics ())
+    {
+      str += "none";
+    }
+  else
+    {
+      auto i = generic_params.begin ();
+      auto e = generic_params.end ();
+
+      for (; i != e; i++)
+	{
+	  str += (*i)->to_string ();
+	  if (e != i + 1)
+	    str += ", ";
+	}
+    }
+
+  str += "\n Where clause: ";
+  if (!has_where_clause ())
+    {
+      str += "none";
+    }
+  else
+    {
+      str += where_clause.to_string ();
+    }
+
+  str += "\n Type: " + existing_type->to_string ();
+
+  return str;
+}
+
+std::string
+ExternBlock::to_string () const
+{
+  std::string str = VisItem::to_string ();
+
+  str += "extern ";
+  str += "\"" + get_string_from_abi (abi) + "\" ";
+
+  // inner attributes
+  str += "\n inner attributes: ";
+  if (inner_attrs.empty ())
+    {
+      str += "none";
+    }
+  else
+    {
+      /* note that this does not print them with "inner attribute" syntax -
+       * just the body */
+      for (const auto &attr : inner_attrs)
+	{
+	  str += "\n  " + attr.as_string ();
+	}
+    }
+
+  str += "\n external items: ";
+  if (!has_extern_items ())
+    {
+      str += "none";
+    }
+  else
+    {
+      for (const auto &item : extern_items)
+	{
+	  str += "\n  " + item->to_string ();
+	}
+    }
+
+  return str;
+}
+
+std::string
+PathInExpression::to_string () const
+{
+  std::string str;
+
+  if (has_opening_scope_resolution)
+    {
+      str = "::";
+    }
+
+  return str + PathPattern::to_string ();
+}
+
+std::string
+ExprStmt::to_string () const
+{
+  std::string str = indent_spaces (enter) + "ExprStmt:\n";
+
+  if (expr == nullptr)
+    {
+      str += "none (this should not happen and is an error)";
+    }
+  else
+    {
+      indent_spaces (enter);
+      str += expr->to_string ();
+      indent_spaces (out);
+    }
+
+  indent_spaces (out);
+  return str;
+}
+
+std::string
+ClosureParam::to_string () const
+{
+  std::string str (pattern->to_string ());
+
+  if (has_type_given ())
+    {
+      str += " : " + type->to_string ();
+    }
+
+  return str;
+}
+
+std::string
+ClosureExpr::to_string () const
+{
+  std::string str ("ClosureExpr:\n Has move: ");
+  if (has_move)
+    {
+      str += "true";
+    }
+  else
+    {
+      str += "false";
+    }
+
+  str += "\n Params: ";
+  if (params.empty ())
+    {
+      str += "none";
+    }
+  else
+    {
+      for (const auto &param : params)
+	{
+	  str += "\n  " + param.to_string ();
+	}
+    }
+
+  str += "\n Return type: "
+	 + (has_return_type () ? return_type->to_string () : "none");
+
+  str += "\n Body: " + expr->to_string ();
+
+  return str;
+}
+
+std::string
+PathPattern::to_string () const
+{
+  if (is_lang_item ())
+    return LangItem::PrettyString (*lang_item);
+
+  std::string str;
+
+  for (const auto &segment : segments)
+    {
+      str += segment.to_string () + "::";
+    }
+
+  // basically a hack - remove last two characters of string (remove final ::)
+  str.erase (str.length () - 2);
+
+  return str;
+}
+
+std::string
+QualifiedPathType::to_string () const
+{
+  std::string str ("<");
+  str += type->to_string ();
+
+  if (has_as_clause ())
+    {
+      str += " as " + trait->to_string ();
+    }
+
+  return str + ">";
+}
+
+std::string
+QualifiedPathInExpression::to_string () const
+{
+  return path_type.to_string () + "::" + PathPattern::to_string ();
+}
+
+std::string
+BorrowExpr::to_string () const
+{
+  std::string str ("&");
+
+  if (is_mut ())
+    {
+      str += "mut ";
+    }
+
+  str += main_or_left_expr->to_string ();
+
+  return str;
+}
+
+std::string
+ReturnExpr::to_string () const
+{
+  std::string str ("return ");
+
+  if (has_return_expr ())
+    {
+      str += return_expr->to_string ();
+    }
+
+  return str;
+}
+
+std::string
+GroupedExpr::to_string () const
+{
+  std::string str ("Grouped expr:");
+
+  // inner attributes
+  str += "\n inner attributes: ";
+  if (inner_attrs.empty ())
+    {
+      str += "none";
+    }
+  else
+    {
+      /* note that this does not print them with "inner attribute" syntax -
+       * just the body */
+      for (const auto &attr : inner_attrs)
+	{
+	  str += "\n  " + attr.as_string ();
+	}
+    }
+
+  str += "\n Expr in parens: " + expr_in_parens->to_string ();
+
+  return str;
+}
+
+std::string
+RangeToExpr::to_string () const
+{
+  return ".." + to->to_string ();
+}
+
+std::string
+ContinueExpr::to_string () const
+{
+  std::string str ("continue ");
+
+  if (has_label ())
+    {
+      str += get_label ().to_string ();
+    }
+
+  return str;
+}
+
+std::string
+NegationExpr::to_string () const
+{
+  std::string str;
+
+  switch (expr_type)
+    {
+    case NegationOperator::NEGATE:
+      str = "-";
+      break;
+    case NegationOperator::NOT:
+      str = "!";
+      break;
+    default:
+      return "ERROR_MARK_STRING - negation expr";
+    }
+
+  str += main_or_left_expr->to_string ();
+
+  return str;
+}
+
+std::string
+RangeFromExpr::to_string () const
+{
+  return from->to_string () + "..";
+}
+
+std::string
+RangeFullExpr::to_string () const
+{
+  return "..";
+}
+
+std::string
+ArrayIndexExpr::to_string () const
+{
+  return array_expr->to_string () + "[" + index_expr->to_string () + "]";
+}
+
+std::string
+AssignmentExpr::to_string () const
+{
+  return main_or_left_expr->to_string () + " = " + right_expr->to_string ();
+}
+
+std::string
+CompoundAssignmentExpr::get_operator_str () const
+{
+  std::string operator_str;
+  operator_str.reserve (1);
+
+  // get operator string
+  switch (expr_type)
+    {
+    case ArithmeticOrLogicalOperator::ADD:
+      operator_str = "+";
+      break;
+    case ArithmeticOrLogicalOperator::SUBTRACT:
+      operator_str = "-";
+      break;
+    case ArithmeticOrLogicalOperator::MULTIPLY:
+      operator_str = "*";
+      break;
+    case ArithmeticOrLogicalOperator::DIVIDE:
+      operator_str = "/";
+      break;
+    case ArithmeticOrLogicalOperator::MODULUS:
+      operator_str = "%";
+      break;
+    case ArithmeticOrLogicalOperator::BITWISE_AND:
+      operator_str = "&";
+      break;
+    case ArithmeticOrLogicalOperator::BITWISE_OR:
+      operator_str = "|";
+      break;
+    case ArithmeticOrLogicalOperator::BITWISE_XOR:
+      operator_str = "^";
+      break;
+    case ArithmeticOrLogicalOperator::LEFT_SHIFT:
+      operator_str = "<<";
+      break;
+    case ArithmeticOrLogicalOperator::RIGHT_SHIFT:
+      operator_str = ">>";
+      break;
+    default:
+      rust_unreachable ();
+      break;
+    }
+
+  operator_str += "=";
+
+  return operator_str;
+}
+
+std::string
+CompoundAssignmentExpr::to_string () const
+{
+  std::string str ("CompoundAssignmentExpr: ");
+  std::string operator_str = get_operator_str ();
+  if (main_or_left_expr == nullptr || right_expr == nullptr)
+    {
+      str += "error. this is probably a parsing failure.";
+    }
+  else
+    {
+      str += "\n left: " + main_or_left_expr->to_string ();
+      str += "\n right: " + right_expr->to_string ();
+      str += "\n operator: " + operator_str;
+    }
+
+  return str;
+}
+
+std::string
+AsyncBlockExpr::to_string () const
+{
+  std::string str = "AsyncBlockExpr: ";
+
+  // get outer attributes
+  str += "\n " + Expr::to_string ();
+
+  str += "\n Has move: ";
+  str += has_move ? "true" : "false";
+
+  return str + "\n" + block_expr->to_string ();
+}
+
+std::string
+ComparisonExpr::to_string () const
+{
+  std::string str (main_or_left_expr->to_string ());
+
+  switch (expr_type)
+    {
+    case ComparisonOperator::EQUAL:
+      str += " == ";
+      break;
+    case ComparisonOperator::NOT_EQUAL:
+      str += " != ";
+      break;
+    case ComparisonOperator::GREATER_THAN:
+      str += " > ";
+      break;
+    case ComparisonOperator::LESS_THAN:
+      str += " < ";
+      break;
+    case ComparisonOperator::GREATER_OR_EQUAL:
+      str += " >= ";
+      break;
+    case ComparisonOperator::LESS_OR_EQUAL:
+      str += " <= ";
+      break;
+    default:
+      return "ERROR_MARK_STRING - comparison expr";
+    }
+
+  str += right_expr->to_string ();
+
+  return str;
+}
+
+std::string
+MethodCallExpr::to_string () const
+{
+  std::string str ("MethodCallExpr: \n Object (receiver) expr: ");
+
+  str += receiver->to_string ();
+
+  str += "\n Method path segment: \n";
+
+  str += method_name.to_string ();
+
+  str += "\n Call params:";
+  if (params.empty ())
+    {
+      str += "none";
+    }
+  else
+    {
+      for (const auto &param : params)
+	{
+	  if (param == nullptr)
+	    {
+	      return "ERROR_MARK_STRING - method call expr param is null";
+	    }
+
+	  str += "\n  " + param->to_string ();
+	}
+    }
+
+  return str;
+}
+
+std::string
+TupleIndexExpr::to_string () const
+{
+  return tuple_expr->to_string () + "." + std::to_string (tuple_index);
+}
+
+std::string
+DereferenceExpr::to_string () const
+{
+  return "*" + main_or_left_expr->to_string ();
+}
+
+std::string
+FieldAccessExpr::to_string () const
+{
+  return receiver->to_string () + "." + field.as_string ();
+}
+
+std::string
+LazyBooleanExpr::to_string () const
+{
+  std::string str (main_or_left_expr->to_string ());
+
+  switch (expr_type)
+    {
+    case LazyBooleanOperator::LOGICAL_OR:
+      str += " || ";
+      break;
+    case LazyBooleanOperator::LOGICAL_AND:
+      str += " && ";
+      break;
+    default:
+      return "ERROR_MARK_STRING - lazy boolean expr out of bounds";
+    }
+
+  str += right_expr->to_string ();
+
+  return str;
+}
+
+std::string
+RangeFromToExpr::to_string () const
+{
+  return from->to_string () + ".." + to->to_string ();
+}
+
+std::string
+RangeToInclExpr::to_string () const
+{
+  return "..=" + to->to_string ();
+}
+
+std::string
+UnsafeBlockExpr::to_string () const
+{
+  std::string istr = indent_spaces (enter);
+  std::string str = istr + "UnsafeBlockExpr:";
+  str += istr + "{";
+
+  // get outer attributes
+  str += "\n" + indent_spaces (stay) + Expr::to_string ();
+
+  return str + "\n" + indent_spaces (out) + "}\n" + expr->to_string ();
+}
+
+std::string
+IfExpr::to_string () const
+{
+  std::string str ("IfExpr: ");
+
+  str += "\n Condition expr: " + condition->to_string ();
+
+  str += "\n If block expr: " + if_block->to_string ();
+
+  return str;
+}
+
+std::string
+IfExprConseqElse::to_string () const
+{
+  std::string str = IfExpr::to_string ();
+
+  str += "\n Else expr: " + else_block->to_string ();
+
+  return str;
+}
+
+std::string
+RangeFromToInclExpr::to_string () const
+{
+  return from->to_string () + "..=" + to->to_string ();
+}
+
+std::string
+ErrorPropagationExpr::to_string () const
+{
+  return main_or_left_expr->to_string () + "?";
+}
+
+std::string
+ArithmeticOrLogicalExpr::get_operator_str () const
+{
+  std::string operator_str;
+  operator_str.reserve (1);
+
+  // get operator string
+  switch (expr_type)
+    {
+    case ArithmeticOrLogicalOperator::ADD:
+      operator_str = "+";
+      break;
+    case ArithmeticOrLogicalOperator::SUBTRACT:
+      operator_str = "-";
+      break;
+    case ArithmeticOrLogicalOperator::MULTIPLY:
+      operator_str = "*";
+      break;
+    case ArithmeticOrLogicalOperator::DIVIDE:
+      operator_str = "/";
+      break;
+    case ArithmeticOrLogicalOperator::MODULUS:
+      operator_str = "%";
+      break;
+    case ArithmeticOrLogicalOperator::BITWISE_AND:
+      operator_str = "&";
+      break;
+    case ArithmeticOrLogicalOperator::BITWISE_OR:
+      operator_str = "|";
+      break;
+    case ArithmeticOrLogicalOperator::BITWISE_XOR:
+      operator_str = "^";
+      break;
+    case ArithmeticOrLogicalOperator::LEFT_SHIFT:
+      operator_str = "<<";
+      break;
+    case ArithmeticOrLogicalOperator::RIGHT_SHIFT:
+      operator_str = ">>";
+      break;
+    default:
+      rust_unreachable ();
+      break;
+    }
+
+  return operator_str;
+}
+
+std::string
+ArithmeticOrLogicalExpr::to_string () const
+{
+  std::string str = main_or_left_expr->to_string () + " ";
+  str += get_operator_str () + " ";
+  str += right_expr->to_string ();
+
+  return "( " + str + " )";
+}
+
+std::string
+CallExpr::to_string () const
+{
+  std::string str = function->to_string () + "(";
+  if (!has_params ())
+    str += "none";
+  else
+    {
+      for (const auto &param : params)
+	{
+	  if (param == nullptr)
+	    {
+	      return "ERROR_MARK_STRING - call expr param is null";
+	    }
+
+	  str += param->to_string () + ",";
+	}
+    }
+  return str + ")";
+}
+
+std::string
+WhileLoopExpr::to_string () const
+{
+  std::string str ("WhileLoopExpr: ");
+
+  str += "\n Label: ";
+  if (!has_loop_label ())
+    {
+      str += "none";
+    }
+  else
+    {
+      str += get_loop_label ().to_string ();
+    }
+
+  str += "\n Conditional expr: " + condition->to_string ();
+
+  str += "\n Loop block: " + loop_block->to_string ();
+
+  return str;
+}
+
+std::string
+WhileLetLoopExpr::to_string () const
+{
+  std::string str ("WhileLetLoopExpr: ");
+
+  str += "\n Label: ";
+  if (!has_loop_label ())
+    {
+      str += "none";
+    }
+  else
+    {
+      str += get_loop_label ().to_string ();
+    }
+
+  str += "\n Match arm patterns: ";
+  if (match_arm_pattern == nullptr)
+    {
+      str += "none";
+    }
+  else
+    {
+      str += "\n  " + match_arm_pattern->to_string ();
+    }
+
+  str += "\n Scrutinee expr: " + condition->to_string ();
+
+  str += "\n Loop block: " + loop_block->to_string ();
+
+  return str;
+}
+
+std::string
+LoopExpr::to_string () const
+{
+  std::string str ("LoopExpr: (infinite loop)");
+
+  str += "\n Label: ";
+  if (!has_loop_label ())
+    {
+      str += "none";
+    }
+  else
+    {
+      str += get_loop_label ().to_string ();
+    }
+
+  str += "\n Loop block: " + loop_block->to_string ();
+
+  return str;
+}
+
+std::string
+ArrayExpr::to_string () const
+{
+  std::string str ("ArrayExpr:");
+
+  // inner attributes
+  str += "\n inner attributes: ";
+  if (inner_attrs.empty ())
+    {
+      str += "none";
+    }
+  else
+    {
+      /* note that this does not print them with "inner attribute" syntax -
+       * just the body */
+      for (const auto &attr : inner_attrs)
+	{
+	  str += "\n  " + attr.as_string ();
+	}
+    }
+
+  str += "\n Array elems: ";
+  if (!has_array_elems ())
+    {
+      str += "none";
+    }
+  else
+    {
+      str += internal_elements->to_string ();
+    }
+
+  return str;
+}
+
+std::string
+AwaitExpr::to_string () const
+{
+  return awaited_expr->to_string () + ".await";
+}
+
+std::string
+BreakExpr::to_string () const
+{
+  std::string str ("break ");
+
+  if (has_label ())
+    {
+      str += get_label ().to_string () + " ";
+    }
+
+  if (has_break_expr ())
+    {
+      str += break_expr->to_string ();
+    }
+
+  return str;
+}
+
+std::string
+LoopLabel::to_string () const
+{
+  return label.to_string () + ": (label) ";
+}
+
+std::string
+MatchArm::to_string () const
+{
+  // outer attributes
+  std::string str = "Outer attributes: ";
+  if (outer_attrs.empty ())
+    {
+      str += "none";
+    }
+  else
+    {
+      /* note that this does not print them with "outer attribute" syntax -
+       * just the body */
+      for (const auto &attr : outer_attrs)
+	{
+	  str += "\n " + attr.as_string ();
+	}
+    }
+
+  str += "\nPatterns: ";
+  if (match_arm_pattern == nullptr)
+    str += "none";
+  else
+    str += "\n " + match_arm_pattern->to_string ();
+
+  str += "\nGuard expr: ";
+  if (!has_match_arm_guard ())
+    {
+      str += "none";
+    }
+  else
+    {
+      str += guard_expr->to_string ();
+    }
+
+  return str;
+}
+
+std::string
+MatchCase::to_debug_string () const
+{
+  std::string str ("MatchCase: (match arm) ");
+
+  str += "\n Match arm matcher: \n" + arm.to_string ();
+  str += "\n Expr: " + expr->to_string ();
+
+  return str;
+}
+
+std::string
+MatchCase::to_string () const
+{
+  std::string str = arm.to_string ();
+  str += " => ";
+  str += expr ? expr->to_string () : "null";
+  return str;
+}
+
+/*std::string
+MatchCaseBlockExpr::to_string () const
+{
+  std::string str = MatchCase::to_string ();
+
+  str += "\n Block expr: " + block_expr->to_string ();
+
+  return str;
+}
+
+std::string
+MatchCaseExpr::to_string () const
+{
+  std::string str = MatchCase::to_string ();
+
+  str += "\n Expr: " + expr->to_string ();
+
+  return str;
+}*/
+
+std::string
+MatchExpr::to_string () const
+{
+  std::string str ("MatchExpr:");
+
+  str += "\n Scrutinee expr: " + branch_value->to_string ();
+
+  // inner attributes
+  str += "\n inner attributes: ";
+  if (inner_attrs.empty ())
+    {
+      str += "none";
+    }
+  else
+    {
+      /* note that this does not print them with "inner attribute" syntax -
+       * just the body */
+      for (const auto &attr : inner_attrs)
+	{
+	  str += "\n  " + attr.as_string ();
+	}
+    }
+
+  // match arms
+  str += "\n Match arms: ";
+  if (match_arms.empty ())
+    {
+      str += "none";
+    }
+  else
+    {
+      for (const auto &arm : match_arms)
+	str += "\n  " + arm.to_string ();
+    }
+
+  return str;
+}
+
+std::string
+TupleExpr::to_string () const
+{
+  std::string str ("TupleExpr:");
+
+  // inner attributes
+  str += "\n inner attributes: ";
+  if (inner_attrs.empty ())
+    {
+      str += "none";
+    }
+  else
+    {
+      /* note that this does not print them with "inner attribute" syntax -
+       * just the body */
+      for (const auto &attr : inner_attrs)
+	{
+	  str += "\n  " + attr.as_string ();
+	}
+    }
+
+  str += "\n Tuple elements: ";
+  if (tuple_elems.empty ())
+    {
+      str += "none";
+    }
+  else
+    {
+      for (const auto &elem : tuple_elems)
+	{
+	  str += "\n  " + elem->to_string ();
+	}
+    }
+
+  return str;
+}
+
+std::string
+FunctionParam::to_string () const
+{
+  return param_name->to_string () + " : " + type->to_string ();
+}
+
+std::string
+FunctionQualifiers::to_string () const
+{
+  std::string str;
+
+  if (is_const ())
+    str += "const ";
+  if (is_async ())
+    str += "async ";
+  if (is_unsafe ())
+    str += "unsafe ";
+
+  if (has_extern)
+    {
+      str += "extern";
+      str += " \"" + get_string_from_abi (abi) + "\"";
+    }
+
+  return str;
+}
+
+std::string
+TraitBound::to_debug_string () const
+{
+  std::string str ("TraitBound:");
+
+  switch (polarity)
+    {
+    case RegularBound:
+      break;
+    case NegativeBound:
+      str += "!";
+      break;
+    case AntiBound:
+      str += "?";
+      break;
+    }
+
+  str += "\n For lifetimes: ";
+  if (!has_for_lifetimes ())
+    {
+      str += "none";
+    }
+  else
+    {
+      for (const auto &lifetime : for_lifetimes)
+	{
+	  str += "\n  " + lifetime.to_string ();
+	}
+    }
+
+  str += "\n Type path: " + type_path.to_string ();
+
+  return str;
+}
+
+std::string
+TraitBound::to_string () const
+{
+  std::string str;
+  switch (polarity)
+    {
+    case RegularBound:
+      break;
+    case NegativeBound:
+      str += "!";
+      break;
+    case AntiBound:
+      str += "?";
+      break;
+    }
+
+  if (has_for_lifetimes ())
+    for (const auto &lifetime : for_lifetimes)
+      str += "\n  " + lifetime.to_string ();
+
+  str += "\n" + type_path.to_string ();
+
+  return str;
+}
+
+std::string
+QualifiedPathInType::to_string () const
+{
+  std::string str = path_type.to_string ();
+
+  str += "::" + associated_segment->to_string ();
+  for (const auto &segment : segments)
+    {
+      str += "::" + segment->to_string ();
+    }
+
+  return str;
+}
+
+std::string
+Lifetime::to_string () const
+{
+  switch (lifetime_type)
+    {
+    case AST::Lifetime::LifetimeType::NAMED:
+      return "'" + lifetime_name;
+    case AST::Lifetime::LifetimeType::STATIC:
+      return "'static";
+    case AST::Lifetime::LifetimeType::WILDCARD:
+      return "'_";
+    default:
+      return "ERROR-MARK-STRING: lifetime type failure";
+    }
+}
+
+std::string
+TypePath::to_string () const
+{
+  std::string str;
+
+  if (has_opening_scope_resolution)
+    {
+      str = "::";
+    }
+
+  for (const auto &segment : segments)
+    {
+      str += segment->to_string () + "::";
+    }
+
+  // kinda hack - remove last 2 '::' characters
+  str.erase (str.length () - 2);
+
+  return str;
+}
+
+std::string
+TypeParam::to_debug_string () const
+{
+  std::string str ("TypeParam: ");
+
+  str += "\n Outer attributes: ";
+  if (outer_attrs.empty ())
+    {
+      str += "\nnone";
+    }
+  else
+    {
+      /* note that this does not print them with "outer attribute" syntax -
+       * just the body */
+      for (const auto &attr : outer_attrs)
+	{
+	  str += "\n " + attr.as_string ();
+	}
+    }
+
+  str += "\n Identifier: " + type_representation.as_string ();
+
+  str += "\n Type param bounds: ";
+  if (!has_type_param_bounds ())
+    {
+      str += "none";
+    }
+  else
+    {
+      for (const auto &bound : type_param_bounds)
+	{
+	  str += "\n  " + bound->to_string ();
+	}
+    }
+
+  str += "\n Type: ";
+  if (!has_type ())
+    {
+      str += "none";
+    }
+  else
+    {
+      str += type.value ()->to_string ();
+    }
+
+  return str;
+}
+
+std::string
+TypeParam::to_string () const
+{
+  std::string str;
+  if (!outer_attrs.empty ())
+    {
+      for (const auto &attr : outer_attrs)
+	{
+	  str += attr.as_string () + "\n";
+	}
+    }
+
+  str += type_representation.as_string ();
+
+  if (!has_type_param_bounds ())
+    {
+      str += ": ";
+      for (size_t i = 0; i < type_param_bounds.size (); ++i)
+	{
+	  if (i > 0)
+	    str += " + ";
+	  str += type_param_bounds[i]->to_string ();
+	}
+    }
+
+  if (has_type ())
+    str += ": " + type.value ()->to_string ();
+
+  return str;
+}
+
+AST::SimplePath
+PathPattern::convert_to_simple_path (bool with_opening_scope_resolution) const
+{
+  rust_assert (kind == Kind::Segmented);
+
+  if (!has_segments ())
+    {
+      return AST::SimplePath::create_empty ();
+    }
+
+  // create vector of reserved size (to minimise reallocations)
+  std::vector<AST::SimplePathSegment> simple_segments;
+  simple_segments.reserve (segments.size ());
+
+  for (const auto &segment : segments)
+    {
+      // return empty path if doesn't meet simple path segment requirements
+      if (segment.has_generic_args () || segment.to_string () == "Self")
+	{
+	  return AST::SimplePath::create_empty ();
+	}
+
+      // create segment and add to vector
+      std::string segment_str = segment.to_string ();
+      simple_segments.emplace_back (std::move (segment_str),
+				    segment.get_locus ());
+    }
+
+  // kind of a HACK to get locus depending on opening scope resolution
+  location_t locus = UNKNOWN_LOCATION;
+  if (with_opening_scope_resolution)
+    {
+      locus = simple_segments[0].get_locus () - 2; // minus 2 chars for ::
+    }
+  else
+    {
+      locus = simple_segments[0].get_locus ();
+    }
+
+  return AST::SimplePath (std::move (simple_segments),
+			  with_opening_scope_resolution, locus);
+}
+
+AST::SimplePath
+TypePath::as_simple_path () const
+{
+  if (segments.empty ())
+    {
+      return AST::SimplePath::create_empty ();
+    }
+
+  // create vector of reserved size (to minimise reallocations)
+  std::vector<AST::SimplePathSegment> simple_segments;
+  simple_segments.reserve (segments.size ());
+
+  for (const auto &segment : segments)
+    {
+      // return empty path if doesn't meet simple path segment requirements
+      if (segment == nullptr || segment->is_error ()
+	  || !segment->is_ident_only () || segment->to_string () == "Self")
+	{
+	  return AST::SimplePath::create_empty ();
+	}
+
+      // create segment and add to vector
+      std::string segment_str = segment->to_string ();
+      simple_segments.emplace_back (std::move (segment_str),
+				    segment->get_locus ());
+    }
+
+  return AST::SimplePath (std::move (simple_segments),
+			  has_opening_scope_resolution, locus);
+}
+
+std::string
+PathExprSegment::to_string () const
+{
+  std::string ident_str = segment_name.to_string ();
+  if (has_generic_args ())
+    {
+      ident_str += "::<" + generic_args.to_string () + ">";
+    }
+
+  return ident_str;
+}
+
+std::string
+GenericArgs::to_string () const
+{
+  std::string args;
+
+  // lifetime args
+  if (!lifetime_args.empty ())
+    {
+      auto i = lifetime_args.begin ();
+      auto e = lifetime_args.end ();
+
+      for (; i != e; i++)
+	{
+	  args += (*i).to_string ();
+	  if (e != i + 1)
+	    args += ", ";
+	}
+    }
+
+  // type args
+  if (!type_args.empty ())
+    {
+      auto i = type_args.begin ();
+      auto e = type_args.end ();
+
+      for (; i != e; i++)
+	{
+	  args += (*i)->to_string ();
+	  if (e != i + 1)
+	    args += ", ";
+	}
+    }
+
+  // binding args
+  if (!binding_args.empty ())
+    {
+      auto i = binding_args.begin ();
+      auto e = binding_args.end ();
+
+      for (; i != e; i++)
+	{
+	  args += (*i).to_string ();
+	  if (e != i + 1)
+	    args += ", ";
+	}
+    }
+
+  return args;
+}
+
+std::string
+GenericArgsBinding::to_string () const
+{
+  return identifier.as_string () + " = " + type->to_string ();
+}
+
+std::string
+RangePattern::to_string () const
+{
+  if (has_ellipsis_syntax)
+    {
+      return lower->to_string () + "..." + upper->to_string ();
+    }
+  else
+    {
+      return lower->to_string () + "..=" + upper->to_string ();
+    }
+}
+
+std::string
+RangePatternBoundLiteral::to_string () const
+{
+  std::string str;
+
+  if (has_minus)
+    {
+      str += "-";
+    }
+
+  str += literal.as_string ();
+
+  return str;
+}
+
+std::string
+SlicePatternItemsNoRest::to_string () const
+{
+  std::string str;
+
+  for (const auto &pattern : patterns)
+    {
+      str += "\n " + pattern->to_string ();
+    }
+
+  return str;
+}
+
+std::string
+SlicePatternItemsHasRest::to_string () const
+{
+  std::string str;
+
+  str += "\n Lower patterns: ";
+  if (lower_patterns.empty ())
+    {
+      str += "none";
+    }
+  else
+    {
+      for (const auto &lower : lower_patterns)
+	{
+	  str += "\n  " + lower->to_string ();
+	}
+    }
+
+  str += "\n Upper patterns: ";
+  if (upper_patterns.empty ())
+    {
+      str += "none";
+    }
+  else
+    {
+      for (const auto &upper : upper_patterns)
+	{
+	  str += "\n  " + upper->to_string ();
+	}
+    }
+
+  return str;
+}
+
+std::string
+SlicePattern::to_string () const
+{
+  return "SlicePattern: " + items->to_string ();
+}
+
+std::string
+AltPattern::to_string () const
+{
+  std::string str ("AltPattern: ");
+
+  for (const auto &pattern : alts)
+    {
+      str += "\n " + pattern->to_string ();
+    }
+
+  return str;
+}
+
+std::string
+TuplePatternItemsNoRest::to_string () const
+{
+  std::string str;
+
+  for (const auto &pattern : patterns)
+    {
+      str += "\n " + pattern->to_string ();
+    }
+
+  return str;
+}
+
+std::string
+TuplePatternItemsHasRest::to_string () const
+{
+  std::string str;
+
+  str += "\n Lower patterns: ";
+  if (lower_patterns.empty ())
+    {
+      str += "none";
+    }
+  else
+    {
+      for (const auto &lower : lower_patterns)
+	{
+	  str += "\n  " + lower->to_string ();
+	}
+    }
+
+  str += "\n Upper patterns: ";
+  if (upper_patterns.empty ())
+    {
+      str += "none";
+    }
+  else
+    {
+      for (const auto &upper : upper_patterns)
+	{
+	  str += "\n  " + upper->to_string ();
+	}
+    }
+
+  return str;
+}
+
+std::string
+TuplePattern::to_string () const
+{
+  return items->to_string ();
+}
+
+std::string
+StructPatternField::to_string () const
+{
+  // outer attributes
+  std::string str ("Outer attributes: ");
+  if (outer_attrs.empty ())
+    {
+      str += "none";
+    }
+  else
+    {
+      /* note that this does not print them with "outer attribute" syntax -
+       * just the body */
+      for (const auto &attr : outer_attrs)
+	{
+	  str += "\n    " + attr.as_string ();
+	}
+    }
+
+  str += "\n   item type: ";
+  switch (get_item_type ())
+    {
+    case ItemType::TUPLE_PAT:
+      str += "TUPLE_PAT";
+      break;
+    case ItemType::IDENT_PAT:
+      str += "IDENT_PAT";
+      break;
+    case ItemType::IDENT:
+      str += "IDENT";
+      break;
+    default:
+      str += "UNKNOWN";
+      break;
+    }
+
+  return str;
+}
+
+std::string
+StructPatternFieldIdent::to_string () const
+{
+  std::string str = StructPatternField::to_string ();
+
+  str += "\n";
+
+  if (has_ref)
+    {
+      str += "ref ";
+    }
+
+  if (is_mut ())
+    {
+      str += "mut ";
+    }
+
+  str += ident.as_string ();
+
+  return str;
+}
+
+std::string
+StructPatternFieldTuplePat::to_string () const
+{
+  std::string str = StructPatternField::to_string ();
+
+  str += "\n";
+
+  str += std::to_string (index) + " : " + tuple_pattern->to_string ();
+
+  return str;
+}
+
+std::string
+StructPatternFieldIdentPat::to_string () const
+{
+  std::string str = StructPatternField::to_string ();
+
+  str += "\n";
+
+  str += ident.as_string () + " : " + ident_pattern->to_string ();
+
+  return str;
+}
+
+std::string
+StructPatternElements::to_string () const
+{
+  std::string str ("\n  Fields: ");
+
+  if (!has_struct_pattern_fields ())
+    {
+      str += "none";
+    }
+  else
+    {
+      for (const auto &field : fields)
+	{
+	  str += "\n   " + field->to_string ();
+	}
+    }
+
+  return str;
+}
+
+std::string
+StructPattern::to_string () const
+{
+  std::string str ("StructPattern: \n Path: ");
+
+  str += path.to_string ();
+
+  str += "\n Struct pattern elems: ";
+  if (!has_struct_pattern_elems ())
+    {
+      str += "none";
+    }
+  else
+    {
+      str += elems.to_string ();
+    }
+
+  return str;
+}
+
+std::string
+LiteralPattern::to_string () const
+{
+  return (has_minus ? "-" : "") + lit.as_string ();
+}
+
+std::string
+ReferencePattern::to_string () const
+{
+  std::string str ("&");
+
+  if (is_mut ())
+    {
+      str += "mut ";
+    }
+
+  str += pattern->to_string ();
+
+  return str;
+}
+
+std::string
+IdentifierPattern::to_string () const
+{
+  std::string str;
+
+  if (is_ref)
+    {
+      str += "ref ";
+    }
+
+  if (is_mut ())
+    {
+      str += "mut ";
+    }
+
+  str += variable_ident.as_string ();
+
+  if (has_subpattern ())
+    {
+      str += " @ " + subpattern->to_string ();
+    }
+
+  return str;
+}
+
+std::string
+TupleStructItemsNoRest::to_string () const
+{
+  std::string str;
+
+  for (const auto &pattern : patterns)
+    {
+      str += "\n  " + pattern->to_string ();
+    }
+
+  return str;
+}
+
+std::string
+TupleStructItemsHasRest::to_string () const
+{
+  std::string str ("\n  Lower patterns: ");
+
+  if (lower_patterns.empty ())
+    {
+      str += "none";
+    }
+  else
+    {
+      for (const auto &lower : lower_patterns)
+	{
+	  str += "\n   " + lower->to_string ();
+	}
+    }
+
+  str += "\n  Upper patterns: ";
+  if (upper_patterns.empty ())
+    {
+      str += "none";
+    }
+  else
+    {
+      for (const auto &upper : upper_patterns)
+	{
+	  str += "\n   " + upper->to_string ();
+	}
+    }
+
+  return str;
+}
+
+std::string
+TupleStructPattern::to_string () const
+{
+  std::string str ("TupleStructPattern: \n Path: ");
+
+  str += path.to_string ();
+
+  str += "\n Tuple struct items: " + items->to_string ();
+
+  return str;
+}
+
+std::string
+LetStmt::to_string () const
+{
+  // outer attributes
+  std::string str = "Outer attributes: ";
+  if (outer_attrs.empty ())
+    {
+      str += "none";
+    }
+  else
+    {
+      /* note that this does not print them with "outer attribute" syntax -
+       * just the body */
+      indent_spaces (enter);
+      for (const auto &attr : outer_attrs)
+	{
+	  str += "\n" + indent_spaces (stay) + attr.as_string ();
+	}
+      indent_spaces (out);
+    }
+
+  str += "\n" + indent_spaces (stay) + "let " + variables_pattern->to_string ();
+
+  if (has_type ())
+    {
+      str += " : " + get_type ().to_string ();
+    }
+
+  if (has_init_expr ())
+    {
+      str += " = " + get_init_expr ().to_string ();
+    }
+
+  return str;
+}
+
+// Used to get outer attributes for expressions.
+std::string
+Expr::to_string () const
+{
+  // outer attributes
+  std::string str = "outer attributes: ";
+  if (outer_attrs.empty ())
+    {
+      str += "none";
+    }
+  else
+    {
+      /* note that this does not print them with "outer attribute" syntax -
+       * just the body */
+      for (const auto &attr : outer_attrs)
+	{
+	  str += "\n  " + attr.as_string ();
+	}
+    }
+
+  return str;
+}
+
+// hopefully definition here will prevent circular dependency issue
+std::unique_ptr<TraitBound>
+TypePath::to_trait_bound (bool in_parens) const
+{
+  // If already in parentheses, don't convert to trait bound
+  // This ensures (TypePath) stays as ParenthesisedType in the parser
+  if (in_parens)
+    return nullptr;
+
+  // create clone FIXME is this required? or is copy constructor automatically
+  // called?
+  TypePath copy (*this);
+  return std::make_unique<TraitBound> (mappings, std::move (copy),
+				       copy.get_locus (), in_parens);
+}
+
+std::string
+InferredType::to_string () const
+{
+  return "_ (inferred)";
+}
+
+std::string
+TypeCastExpr::to_string () const
+{
+  return main_or_left_expr->to_string () + " as "
+	 + type_to_convert_to->to_string ();
+}
+
+std::string
+ImplTraitType::to_string () const
+{
+  std::string str ("ImplTraitType: \n TypeParamBounds: ");
+
+  if (type_param_bounds.empty ())
+    {
+      str += "none";
+    }
+  else
+    {
+      for (const auto &bound : type_param_bounds)
+	{
+	  str += "\n  " + bound->to_string ();
+	}
+    }
+
+  return str;
+}
+
+std::string
+ReferenceType::to_string () const
+{
+  std::string str ("&");
+
+  if (has_lifetime ())
+    {
+      str += get_lifetime ().to_string () + " ";
+    }
+
+  if (is_mut ())
+    {
+      str += "mut ";
+    }
+
+  str += type->to_string ();
+
+  return str;
+}
+
+std::string
+RawPointerType::to_string () const
+{
+  return std::string ("*") + (is_mut () ? "mut " : "const ")
+	 + type->to_string ();
+}
+
+std::string
+TraitObjectType::to_string () const
+{
+  std::string str ("TraitObjectType: \n Has dyn dispatch: ");
+
+  if (has_dyn)
+    {
+      str += "true";
+    }
+  else
+    {
+      str += "false";
+    }
+
+  str += "\n TypeParamBounds: ";
+  if (type_param_bounds.empty ())
+    {
+      str += "none";
+    }
+  else
+    {
+      for (const auto &bound : type_param_bounds)
+	{
+	  str += "\n  " + bound->to_string ();
+	}
+    }
+
+  return str;
+}
+
+std::string
+BareFunctionType::to_string () const
+{
+  std::string str ("BareFunctionType: \n For lifetimes: ");
+
+  if (!has_for_lifetimes ())
+    {
+      str += "none";
+    }
+  else
+    {
+      for (const auto &for_lifetime : for_lifetimes)
+	{
+	  str += "\n  " + for_lifetime.to_string ();
+	}
+    }
+
+  str += "\n Qualifiers: " + function_qualifiers.to_string ();
+
+  str += "\n Params: ";
+  if (params.empty ())
+    {
+      str += "none";
+    }
+  else
+    {
+      for (const auto &param : params)
+	{
+	  str += "\n  " + param.to_string ();
+	}
+    }
+
+  str += "\n Is variadic: ";
+  if (is_variadic)
+    {
+      str += "true";
+    }
+  else
+    {
+      str += "false";
+    }
+
+  str += "\n Return type: ";
+  if (!has_return_type ())
+    {
+      str += "none (void)";
+    }
+  else
+    {
+      str += return_type->to_string ();
+    }
+
+  return str;
+}
+
+std::string
+TypePathSegmentGeneric::to_string () const
+{
+  return TypePathSegment::to_string () + "<" + generic_args.to_string () + ">";
+}
+
+std::string
+TypePathFunction::to_string () const
+{
+  std::string str ("(");
+
+  if (has_inputs ())
+    {
+      auto i = inputs.begin ();
+      auto e = inputs.end ();
+
+      for (; i != e; i++)
+	{
+	  str += (*i)->to_string ();
+	  if (e != i + 1)
+	    str += ", ";
+	}
+    }
+
+  str += ")";
+
+  if (has_return_type ())
+    {
+      str += " -> " + return_type->to_string ();
+    }
+
+  return str;
+}
+
+std::string
+TypePathSegmentFunction::to_string () const
+{
+  return TypePathSegment::to_string () + function_path.to_string ();
+}
+
+std::string
+ArrayType::to_string () const
+{
+  return "[" + elem_type->to_string () + "; " + size->to_string () + "]";
+}
+
+std::string
+SliceType::to_string () const
+{
+  return "[" + elem_type->to_string () + "]";
+}
+
+std::string
+TupleType::to_string () const
+{
+  std::string str ("(");
+
+  if (!is_unit_type ())
+    {
+      auto i = elems.begin ();
+      auto e = elems.end ();
+
+      for (; i != e; i++)
+	{
+	  str += (*i)->to_string ();
+	  if (e != i + 1)
+	    str += ", ";
+	}
+    }
+
+  str += ")";
+
+  return str;
+}
+
+std::string
+StructExpr::to_string () const
+{
+  std::string str = ExprWithoutBlock::to_string ();
+  indent_spaces (enter);
+  str += "\n" + indent_spaces (stay) + "StructExpr:";
+  indent_spaces (enter);
+  str += "\n" + indent_spaces (stay) + "PathInExpr:\n";
+  str += indent_spaces (stay) + struct_name.to_string ();
+  indent_spaces (out);
+  indent_spaces (out);
+  return str;
+}
+
+std::string
+StructExprStruct::to_string () const
+{
+  std::string str ("StructExprStruct (or subclass): ");
+
+  str += "\n Path: " + struct_name.to_string ();
+
+  // inner attributes
+  str += "\n inner attributes: ";
+  if (inner_attrs.empty ())
+    {
+      str += "none";
+    }
+  else
+    {
+      /* note that this does not print them with "inner attribute" syntax -
+       * just the body */
+      for (const auto &attr : inner_attrs)
+	{
+	  str += "\n  " + attr.as_string ();
+	}
+    }
+
+  return str;
+}
+
+std::string
+StructBase::to_string () const
+{
+  if (base_struct != nullptr)
+    {
+      return base_struct->to_string ();
+    }
+  else
+    {
+      return "ERROR_MARK_STRING - invalid struct base had as string applied";
+    }
+}
+
+std::string
+StructExprFieldWithVal::to_string () const
+{
+  // used to get value string
+  return value->to_string ();
+}
+
+std::string
+StructExprFieldIdentifierValue::to_string () const
+{
+  return field_name.as_string () + " : " + StructExprFieldWithVal::to_string ();
+}
+
+std::string
+StructExprFieldIndexValue::to_string () const
+{
+  return std::to_string (index) + " : " + StructExprFieldWithVal::to_string ();
+}
+
+std::string
+StructExprStructFields::to_string () const
+{
+  std::string str = StructExprStruct::to_string ();
+
+  str += "\n Fields: ";
+  if (fields.empty ())
+    {
+      str += "none";
+    }
+  else
+    {
+      for (const auto &field : fields)
+	{
+	  str += "\n  " + field->to_string ();
+	}
+    }
+
+  str += "\n Struct base: ";
+  if (!has_struct_base ())
+    {
+      str += "none";
+    }
+  else
+    {
+      str += (*struct_base)->to_string ();
+    }
+
+  return str;
+}
+
+std::string
+EnumItem::to_string () const
+{
+  std::string str = Item::to_string ();
+  str += variant_name.as_string ();
+  str += " ";
+  switch (get_enum_item_kind ())
+    {
+    case Named:
+      str += "[Named variant]";
+      break;
+    case Tuple:
+      str += "[Tuple variant]";
+      break;
+    case Struct:
+      str += "[Struct variant]";
+      break;
+    case Discriminant:
+      str += "[Discriminant variant]";
+      break;
+    }
+
+  return str;
+}
+
+std::string
+EnumItemTuple::to_string () const
+{
+  std::string str = EnumItem::to_string ();
+
+  // add tuple opening parens
+  str += "(";
+
+  // tuple fields
+  if (has_tuple_fields ())
+    {
+      auto i = tuple_fields.begin ();
+      auto e = tuple_fields.end ();
+
+      for (; i != e; i++)
+	{
+	  str += (*i).to_string ();
+	  if (e != i + 1)
+	    str += ", ";
+	}
+    }
+
+  // add tuple closing parens
+  str += ")";
+
+  return str;
+}
+
+std::string
+TupleField::to_string () const
+{
+  // outer attributes
+  std::string str = "outer attributes: ";
+  if (outer_attrs.empty ())
+    {
+      str += "none";
+    }
+  else
+    {
+      /* note that this does not print them with "outer attribute" syntax -
+       * just the body */
+      for (const auto &attr : outer_attrs)
+	{
+	  str += "\n  " + attr.as_string ();
+	}
+    }
+
+  if (has_visibility ())
+    {
+      str += "\n" + visibility.to_string ();
+    }
+
+  str += " " + field_type->to_string ();
+
+  return str;
+}
+
+std::string
+EnumItemStruct::to_string () const
+{
+  std::string str = EnumItem::to_string ();
+
+  // add struct opening parens
+  str += "{";
+
+  // tuple fields
+  if (has_struct_fields ())
+    {
+      auto i = struct_fields.begin ();
+      auto e = struct_fields.end ();
+
+      for (; i != e; i++)
+	{
+	  str += (*i).to_string ();
+	  if (e != i + 1)
+	    str += ", ";
+	}
+    }
+
+  // add struct closing parens
+  str += "}";
+
+  return str;
+}
+
+std::string
+StructField::to_string () const
+{
+  // outer attributes
+  std::string str = "outer attributes: ";
+  if (outer_attrs.empty ())
+    {
+      str += "none";
+    }
+  else
+    {
+      /* note that this does not print them with "outer attribute" syntax -
+       * just the body */
+      for (const auto &attr : outer_attrs)
+	{
+	  str += "\n  " + attr.as_string ();
+	}
+    }
+
+  if (has_visibility ())
+    {
+      str += "\n" + visibility.to_string ();
+    }
+
+  str += " " + field_name.as_string () + " : " + field_type->to_string ();
+
+  return str;
+}
+
+std::string
+EnumItemDiscriminant::to_string () const
+{
+  std::string str = EnumItem::to_string ();
+
+  // add equal and expression
+  str += " = " + expression->to_string ();
+
+  return str;
+}
+
+std::string
+ExternalItem::to_string () const
+{
+  // outer attributes
+  std::string str = "outer attributes: ";
+  if (outer_attrs.empty ())
+    {
+      str += "none";
+    }
+  else
+    {
+      /* note that this does not print them with "outer attribute" syntax -
+       * just the body */
+      for (const auto &attr : outer_attrs)
+	{
+	  str += "\n  " + attr.as_string ();
+	}
+    }
+
+  // start visibility on new line and with a space
+  str += "\n" + visibility.to_string () + " ";
+
+  return str;
+}
+
+std::string
+ExternalStaticItem::to_string () const
+{
+  std::string str = ExternalItem::to_string ();
+
+  str += "static ";
+
+  if (is_mut ())
+    {
+      str += "mut ";
+    }
+
+  // add name
+  str += get_item_name ().as_string ();
+
+  // add type on new line
+  str += "\n Type: " + item_type->to_string ();
+
+  return str;
+}
+
+std::string
+ExternalFunctionItem::to_string () const
+{
+  std::string str = ExternalItem::to_string ();
+
+  str += "fn ";
+
+  // add name
+  str += get_item_name ().as_string ();
+
+  // generic params
+  str += "\n Generic params: ";
+  if (generic_params.empty ())
+    {
+      str += "none";
+    }
+  else
+    {
+      for (const auto &param : generic_params)
+	{
+	  // DEBUG: null pointer check
+	  if (param == nullptr)
+	    {
+	      rust_debug (
+		"something really terrible has gone wrong - null pointer "
+		"generic param in external function item.");
+	      return "nullptr_POINTER_MARK";
+	    }
+
+	  str += "\n  " + param->to_string ();
+	}
+    }
+
+  // function params
+  str += "\n Function params: ";
+  if (function_params.empty ())
+    {
+      str += "none";
+    }
+  else
+    {
+      for (const auto &param : function_params)
+	{
+	  str += "\n  " + param.to_string ();
+	}
+      if (has_variadics)
+	{
+	  str += "\n  .. (variadic)";
+	}
+    }
+
+  // add type on new line)
+  str += "\n (return) Type: "
+	 + (has_return_type () ? return_type->to_string () : "()");
+
+  // where clause
+  str += "\n Where clause: ";
+  if (has_where_clause ())
+    {
+      str += where_clause.to_string ();
+    }
+  else
+    {
+      str += "none";
+    }
+
+  return str;
+}
+
+std::string
+ExternalTypeItem::to_string () const
+{
+  std::string str = ExternalItem::to_string ();
+
+  str += "type ";
+
+  // add name
+  str += get_item_name ().as_string ();
+
+  return str;
+}
+
+std::string
+NamedFunctionParam::to_string () const
+{
+  std::string str = name.as_string ();
+
+  str += "\n Type: " + param_type->to_string ();
+
+  return str;
+}
+
+/*std::string TraitItem::to_string() const {
+    // outer attributes
+    std::string str = "outer attributes: ";
+    if (outer_attrs.empty()) {
+	str += "none";
+    } else {
+	// note that this does not print them with "outer attribute" syntax -
+just the body for (const auto& attr : outer_attrs) { str += "\n  " +
+attr.to_string();
+	}
+    }
+
+    return str;
+}*/
+
+std::string
+TraitItemFunc::to_string () const
+{
+  std::string str = "outer attributes: ";
+  if (outer_attrs.empty ())
+    {
+      str += "none";
+    }
+  else
+    {
+      /* note that this does not print them with "outer attribute" syntax -
+       * just the body */
+      for (const auto &attr : outer_attrs)
+	{
+	  str += "\n  " + attr.as_string ();
+	}
+    }
+
+  str += "\n" + decl.to_string ();
+
+  str += "\n Definition (block expr): ";
+  if (has_definition ())
+    {
+      str += block_expr->to_string ();
+    }
+  else
+    {
+      str += "none";
+    }
+
+  return str;
+}
+
+std::string
+TraitFunctionDecl::to_string () const
+{
+  std::string str
+    = qualifiers.to_string () + "fn " + function_name.as_string ();
+
+  // generic params
+  str += "\n Generic params: ";
+  if (generic_params.empty ())
+    {
+      str += "none";
+    }
+  else
+    {
+      for (const auto &param : generic_params)
+	{
+	  // DEBUG: null pointer check
+	  if (param == nullptr)
+	    {
+	      rust_debug (
+		"something really terrible has gone wrong - null pointer "
+		"generic param in trait function decl.");
+	      return "nullptr_POINTER_MARK";
+	    }
+
+	  str += "\n  " + param->to_string ();
+	}
+    }
+
+  str += "\n Function params: ";
+  if (is_method ())
+    {
+      str += get_self_unchecked ().to_string () + (has_params () ? ", " : "");
+    }
+
+  if (has_params ())
+    {
+      for (const auto &param : function_params)
+	{
+	  str += "\n  " + param.to_string ();
+	}
+    }
+  else if (!is_method ())
+    {
+      str += "none";
+    }
+
+  str += "\n Return type: ";
+  if (has_return_type ())
+    {
+      str += return_type->to_string ();
+    }
+  else
+    {
+      str += "none (void)";
+    }
+
+  str += "\n Where clause: ";
+  if (has_where_clause ())
+    {
+      str += where_clause.to_string ();
+    }
+  else
+    {
+      str += "none";
+    }
+
+  return str;
+}
+
+std::string
+TraitItemConst::to_string () const
+{
+  std::string str = "outer attributes: ";
+  if (outer_attrs.empty ())
+    {
+      str += "none";
+    }
+  else
+    {
+      /* note that this does not print them with "outer attribute" syntax -
+       * just the body */
+      for (const auto &attr : outer_attrs)
+	{
+	  str += "\n  " + attr.as_string ();
+	}
+    }
+
+  str += "\nconst " + name.as_string () + " : " + type->to_string ();
+
+  if (has_expression ())
+    {
+      str += " = " + expr->to_string ();
+    }
+
+  return str;
+}
+
+std::string
+TraitItemType::to_string () const
+{
+  std::string str = "outer attributes: ";
+  if (outer_attrs.empty ())
+    {
+      str += "none";
+    }
+  else
+    {
+      /* note that this does not print them with "outer attribute" syntax -
+       * just the body */
+      for (const auto &attr : outer_attrs)
+	{
+	  str += "\n  " + attr.as_string ();
+	}
+    }
+
+  str += "\ntype " + name.as_string ();
+
+  if (has_generics ())
+    {
+      str += "<";
+      for (size_t i = 0; i < generic_params.size (); i++)
+	{
+	  if (i > 0)
+	    str += ", ";
+	  str += generic_params[i]->to_string ();
+	}
+      str += ">";
+    }
+
+  str += "\n Type param bounds: ";
+  if (!has_type_param_bounds ())
+    {
+      str += "none";
+    }
+  else
+    {
+      for (const auto &bound : type_param_bounds)
+	{
+	  // DEBUG: null pointer check
+	  if (bound == nullptr)
+	    {
+	      rust_debug (
+		"something really terrible has gone wrong - null pointer "
+		"type param bound in trait item type.");
+	      return "nullptr_POINTER_MARK";
+	    }
+
+	  str += "\n  " + bound->to_string ();
+	}
+    }
+
+  return str;
+}
+
+std::string
+SelfParam::to_string () const
+{
+  if (has_type ())
+    {
+      // type (i.e. not ref, no lifetime)
+      std::string str;
+
+      if (is_mut ())
+	{
+	  str += "mut ";
+	}
+
+      str += "self : ";
+
+      str += type->to_string ();
+
+      return str;
+    }
+  else if (has_lifetime ())
+    {
+      // ref and lifetime
+      std::string str = "&" + get_lifetime ().to_string () + " ";
+
+      if (is_mut ())
+	{
+	  str += "mut ";
+	}
+
+      str += "self";
+
+      return str;
+    }
+  else if (is_ref ())
+    {
+      // ref with no lifetime
+      std::string str = "&";
+
+      if (is_mut ())
+	{
+	  str += " mut ";
+	}
+
+      str += "self";
+
+      return str;
+    }
+  else
+    {
+      // no ref, no type
+      std::string str;
+
+      if (is_mut ())
+	{
+	  str += "mut ";
+	}
+
+      str += "self";
+
+      return str;
+    }
+}
+
+std::string
+ArrayElemsCopied::to_string () const
+{
+  return elem_to_copy->to_string () + "; " + num_copies->to_string ();
+}
+
+std::string
+LifetimeWhereClauseItem::to_string () const
+{
+  std::string str ("Lifetime: ");
+
+  str += lifetime.to_string ();
+
+  str += "\nLifetime bounds: ";
+
+  for (const auto &bound : lifetime_bounds)
+    {
+      str += "\n " + bound.to_string ();
+    }
+
+  return str;
+}
+
+std::string
+TypeBoundWhereClauseItem::to_string () const
+{
+  std::string str ("For lifetimes: ");
+
+  if (!has_for_lifetimes ())
+    {
+      str += "none";
+    }
+  else
+    {
+      for (const auto &for_lifetime : for_lifetimes)
+	{
+	  str += "\n " + for_lifetime.to_string ();
+	}
+    }
+
+  str += "\nType: " + bound_type->to_string ();
+
+  str += "\nType param bounds bounds: ";
+
+  for (const auto &bound : type_param_bounds)
+    {
+      // debug null pointer check
+      if (bound == nullptr)
+	{
+	  return "nullptr_POINTER_MARK - type param bounds";
+	}
+
+      str += "\n " + bound->to_string ();
+    }
+
+  return str;
+}
+
+std::string
+ArrayElemsValues::to_string () const
+{
+  std::string str;
+
+  for (const auto &expr : values)
+    {
+      // DEBUG: null pointer check
+      if (expr == nullptr)
+	{
+	  rust_debug ("something really terrible has gone wrong - null pointer "
+		      "expr in array elems values.");
+	  return "nullptr_POINTER_MARK";
+	}
+
+      str += "\n  " + expr->to_string ();
+    }
+
+  return str;
+}
+
+std::string
+MaybeNamedParam::to_string () const
+{
+  std::string str;
+
+  switch (param_kind)
+    {
+    case UNNAMED:
+      break;
+    case IDENTIFIER:
+      str = name.as_string () + " : ";
+      break;
+    case WILDCARD:
+      str = "_ : ";
+      break;
+    default:
+      return "ERROR_MARK_STRING - maybe named param unrecognised param kind";
+    }
+
+  str += param_type->to_string ();
+
+  return str;
+}
+
+std::string
+enum_to_str (MaybeNamedParam::ParamKind pk)
+{
+  switch (pk)
+    {
+    case MaybeNamedParam::ParamKind::UNNAMED:
+      return "UNNAMED";
+    case MaybeNamedParam::ParamKind::IDENTIFIER:
+      return "IDENTIFIER";
+    case MaybeNamedParam::ParamKind::WILDCARD:
+      return "WILDCARD";
+    }
+  gcc_unreachable ();
+}
+
+std::string
+enum_to_str (UseTreeRebind::NewBindType nbt)
+{
+  switch (nbt)
+    {
+    case UseTreeRebind::NewBindType::NONE:
+      return "NONE";
+    case UseTreeRebind::NewBindType::IDENTIFIER:
+      return "IDENTIFIER";
+    case UseTreeRebind::NewBindType::WILDCARD:
+      return "WILDCARD";
+    }
+  gcc_unreachable ();
+}
+
+/* Override that calls the function recursively on all items contained within
+ * the module. */
+void
+Module::add_crate_name (std::vector<std::string> &names) const
+{
+  /* TODO: test whether module has been 'cfg'-ed out to determine whether to
+   * exclude it from search */
+
+  for (const auto &item : items)
+    item->add_crate_name (names);
+}
+
+/* All accept_vis method below */
+
+void
+Lifetime::accept_vis (HIRFullVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+LifetimeParam::accept_vis (HIRFullVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+PathInExpression::accept_vis (HIRFullVisitor &vis)
+{
+  vis.visit (*this);
+}
+void
+PathInExpression::accept_vis (HIRExpressionVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+TypePathSegment::accept_vis (HIRFullVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+TypePathSegmentGeneric::accept_vis (HIRFullVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+TypePathSegmentFunction::accept_vis (HIRFullVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+TypePath::accept_vis (HIRFullVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+QualifiedPathInExpression::accept_vis (HIRFullVisitor &vis)
+{
+  vis.visit (*this);
+}
+void
+QualifiedPathInExpression::accept_vis (HIRExpressionVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+QualifiedPathInType::accept_vis (HIRFullVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+LiteralExpr::accept_vis (HIRFullVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+LiteralExpr::accept_vis (HIRExpressionVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+BorrowExpr::accept_vis (HIRFullVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+InlineAsm::accept_vis (HIRExpressionVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+InlineAsm::accept_vis (HIRFullVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+LlvmInlineAsm::accept_vis (HIRFullVisitor &vis)
+{
+  vis.visit (*this);
+}
+void
+LlvmInlineAsm::accept_vis (HIRExpressionVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+BorrowExpr::accept_vis (HIRExpressionVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+DereferenceExpr::accept_vis (HIRFullVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+DereferenceExpr::accept_vis (HIRExpressionVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+ErrorPropagationExpr::accept_vis (HIRFullVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+ErrorPropagationExpr::accept_vis (HIRExpressionVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+NegationExpr::accept_vis (HIRFullVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+NegationExpr::accept_vis (HIRExpressionVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+ArithmeticOrLogicalExpr::accept_vis (HIRFullVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+ArithmeticOrLogicalExpr::accept_vis (HIRExpressionVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+ComparisonExpr::accept_vis (HIRFullVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+ComparisonExpr::accept_vis (HIRExpressionVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+LazyBooleanExpr::accept_vis (HIRFullVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+LazyBooleanExpr::accept_vis (HIRExpressionVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+TypeCastExpr::accept_vis (HIRFullVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+TypeCastExpr::accept_vis (HIRExpressionVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+AssignmentExpr::accept_vis (HIRFullVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+AssignmentExpr::accept_vis (HIRExpressionVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+CompoundAssignmentExpr::accept_vis (HIRFullVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+CompoundAssignmentExpr::accept_vis (HIRExpressionVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+GroupedExpr::accept_vis (HIRFullVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+GroupedExpr::accept_vis (HIRExpressionVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+ArrayElemsValues::accept_vis (HIRFullVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+ArrayElemsCopied::accept_vis (HIRFullVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+ArrayExpr::accept_vis (HIRFullVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+ArrayIndexExpr::accept_vis (HIRFullVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+TupleExpr::accept_vis (HIRFullVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+TupleIndexExpr::accept_vis (HIRFullVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+StructExprStruct::accept_vis (HIRFullVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+StructExprFieldIndexValue::accept_vis (HIRFullVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+StructExprStructFields::accept_vis (HIRFullVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+StructExprStructBase::accept_vis (HIRFullVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+StructExprStructBase::accept_vis (HIRExpressionVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+CallExpr::accept_vis (HIRFullVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+MethodCallExpr::accept_vis (HIRFullVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+FieldAccessExpr::accept_vis (HIRFullVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+ClosureExpr::accept_vis (HIRFullVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+BlockExpr::accept_vis (HIRFullVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+AnonConst::accept_vis (HIRFullVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+ConstBlock::accept_vis (HIRFullVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+ContinueExpr::accept_vis (HIRFullVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+BreakExpr::accept_vis (HIRFullVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+RangeFromToExpr::accept_vis (HIRFullVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+RangeFromExpr::accept_vis (HIRFullVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+RangeToExpr::accept_vis (HIRFullVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+RangeFullExpr::accept_vis (HIRFullVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+RangeFromToInclExpr::accept_vis (HIRFullVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+RangeToInclExpr::accept_vis (HIRFullVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+ReturnExpr::accept_vis (HIRFullVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+UnsafeBlockExpr::accept_vis (HIRFullVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+LoopExpr::accept_vis (HIRFullVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+WhileLoopExpr::accept_vis (HIRFullVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+WhileLetLoopExpr::accept_vis (HIRFullVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+IfExpr::accept_vis (HIRFullVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+IfExprConseqElse::accept_vis (HIRFullVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+MatchExpr::accept_vis (HIRFullVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+AwaitExpr::accept_vis (HIRFullVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+AsyncBlockExpr::accept_vis (HIRFullVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+TypeParam::accept_vis (HIRFullVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+LifetimeWhereClauseItem::accept_vis (HIRFullVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+TypeBoundWhereClauseItem::accept_vis (HIRFullVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+Module::accept_vis (HIRFullVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+Module::accept_vis (HIRStmtVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+Module::accept_vis (HIRVisItemVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+ExternCrate::accept_vis (HIRFullVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+UseTreeGlob::accept_vis (HIRFullVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+UseTreeList::accept_vis (HIRFullVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+UseTreeRebind::accept_vis (HIRFullVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+UseDeclaration::accept_vis (HIRFullVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+Function::accept_vis (HIRFullVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+TypeAlias::accept_vis (HIRFullVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+StructStruct::accept_vis (HIRFullVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+TupleStruct::accept_vis (HIRFullVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+EnumItem::accept_vis (HIRFullVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+EnumItemTuple::accept_vis (HIRFullVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+EnumItemStruct::accept_vis (HIRFullVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+EnumItemDiscriminant::accept_vis (HIRFullVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+Enum::accept_vis (HIRFullVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+Union::accept_vis (HIRFullVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+ConstantItem::accept_vis (HIRFullVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+StaticItem::accept_vis (HIRFullVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+TraitItemFunc::accept_vis (HIRFullVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+TraitItemConst::accept_vis (HIRFullVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+TraitItemType::accept_vis (HIRFullVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+Trait::accept_vis (HIRFullVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+ImplBlock::accept_vis (HIRFullVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+ExternalStaticItem::accept_vis (HIRFullVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+ExternalFunctionItem::accept_vis (HIRFullVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+ExternalTypeItem::accept_vis (HIRFullVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+ExternBlock::accept_vis (HIRFullVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+LiteralPattern::accept_vis (HIRFullVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+IdentifierPattern::accept_vis (HIRFullVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+WildcardPattern::accept_vis (HIRFullVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+RangePatternBoundLiteral::accept_vis (HIRFullVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+RangePatternBoundPath::accept_vis (HIRFullVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+RangePatternBoundQualPath::accept_vis (HIRFullVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+RangePattern::accept_vis (HIRFullVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+ReferencePattern::accept_vis (HIRFullVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+StructPatternFieldTuplePat::accept_vis (HIRFullVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+StructPatternFieldIdentPat::accept_vis (HIRFullVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+StructPatternFieldIdent::accept_vis (HIRFullVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+StructPattern::accept_vis (HIRFullVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+TupleStructItemsNoRest::accept_vis (HIRFullVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+TupleStructItemsHasRest::accept_vis (HIRFullVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+TupleStructPattern::accept_vis (HIRFullVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+TuplePatternItemsNoRest::accept_vis (HIRFullVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+TuplePatternItemsHasRest::accept_vis (HIRFullVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+TuplePattern::accept_vis (HIRFullVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+SlicePatternItemsNoRest::accept_vis (HIRFullVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+SlicePatternItemsHasRest::accept_vis (HIRFullVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+SlicePattern::accept_vis (HIRFullVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+AltPattern::accept_vis (HIRFullVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+EmptyStmt::accept_vis (HIRFullVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+LetStmt::accept_vis (HIRFullVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+ExprStmt::accept_vis (HIRFullVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+TraitBound::accept_vis (HIRFullVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+ImplTraitType::accept_vis (HIRFullVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+TraitObjectType::accept_vis (HIRFullVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+ParenthesisedType::accept_vis (HIRFullVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+TupleType::accept_vis (HIRFullVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+NeverType::accept_vis (HIRFullVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+RawPointerType::accept_vis (HIRFullVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+ReferenceType::accept_vis (HIRFullVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+ArrayType::accept_vis (HIRFullVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+SliceType::accept_vis (HIRFullVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+InferredType::accept_vis (HIRFullVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+BareFunctionType::accept_vis (HIRFullVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+NeverType::accept_vis (HIRTypeVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+ParenthesisedType::accept_vis (HIRTypeVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+EmptyStmt::accept_vis (HIRStmtVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+WildcardPattern::accept_vis (HIRPatternVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+TraitItemType::accept_vis (HIRTraitItemVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+TraitItemConst::accept_vis (HIRTraitItemVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+TraitItemFunc::accept_vis (HIRTraitItemVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+ExternalFunctionItem::accept_vis (HIRExternalItemVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+ExternalTypeItem::accept_vis (HIRExternalItemVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+ExternalStaticItem::accept_vis (HIRExternalItemVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+EnumItemDiscriminant::accept_vis (HIRStmtVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+EnumItemStruct::accept_vis (HIRStmtVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+EnumItemTuple::accept_vis (HIRStmtVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+EnumItem::accept_vis (HIRStmtVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+StructExprStructFields::accept_vis (HIRExpressionVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+StructExprFieldIndexValue::accept_vis (HIRExpressionVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+StructExprFieldIdentifierValue::accept_vis (HIRFullVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+StructExprFieldIdentifierValue::accept_vis (HIRExpressionVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+StructExprFieldIdentifier::accept_vis (HIRFullVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+StructExprFieldIdentifier::accept_vis (HIRExpressionVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+StructExprStruct::accept_vis (HIRExpressionVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+TupleType::accept_vis (HIRTypeVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+SliceType::accept_vis (HIRTypeVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+ArrayType::accept_vis (HIRTypeVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+BareFunctionType::accept_vis (HIRTypeVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+TraitObjectType::accept_vis (HIRTypeVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+RawPointerType::accept_vis (HIRTypeVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+ReferenceType::accept_vis (HIRTypeVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+ImplTraitType::accept_vis (HIRTypeVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+InferredType::accept_vis (HIRTypeVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+LetStmt::accept_vis (HIRStmtVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+TupleStructPattern::accept_vis (HIRPatternVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+IdentifierPattern::accept_vis (HIRPatternVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+ReferencePattern::accept_vis (HIRPatternVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+LiteralPattern::accept_vis (HIRPatternVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+StructPattern::accept_vis (HIRPatternVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+TuplePattern::accept_vis (HIRPatternVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+SlicePattern::accept_vis (HIRPatternVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+AltPattern::accept_vis (HIRPatternVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+RangePattern::accept_vis (HIRPatternVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+TypePath::accept_vis (HIRTypeVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+QualifiedPathInType::accept_vis (HIRTypeVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+ExprStmt::accept_vis (HIRStmtVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+TupleExpr::accept_vis (HIRExpressionVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+MatchExpr::accept_vis (HIRExpressionVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+BreakExpr::accept_vis (HIRExpressionVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+AwaitExpr::accept_vis (HIRExpressionVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+ArrayExpr::accept_vis (HIRExpressionVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+LoopExpr::accept_vis (HIRExpressionVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+WhileLetLoopExpr::accept_vis (HIRExpressionVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+WhileLoopExpr::accept_vis (HIRExpressionVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+CallExpr::accept_vis (HIRExpressionVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+RangeFromToInclExpr::accept_vis (HIRExpressionVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+IfExprConseqElse::accept_vis (HIRExpressionVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+IfExpr::accept_vis (HIRExpressionVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+ClosureExpr::accept_vis (HIRExpressionVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+UnsafeBlockExpr::accept_vis (HIRExpressionVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+RangeToInclExpr::accept_vis (HIRExpressionVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+RangeFromToExpr::accept_vis (HIRExpressionVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+FieldAccessExpr::accept_vis (HIRExpressionVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+TupleIndexExpr::accept_vis (HIRExpressionVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+MethodCallExpr::accept_vis (HIRExpressionVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+AsyncBlockExpr::accept_vis (HIRExpressionVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+ArrayIndexExpr::accept_vis (HIRExpressionVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+RangeFullExpr::accept_vis (HIRExpressionVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+RangeFromExpr::accept_vis (HIRExpressionVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+ContinueExpr::accept_vis (HIRExpressionVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+RangeToExpr::accept_vis (HIRExpressionVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+ReturnExpr::accept_vis (HIRExpressionVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+QualifiedPathInExpression::accept_vis (HIRPatternVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+PathInExpression::accept_vis (HIRPatternVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+ExternBlock::accept_vis (HIRStmtVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+ExternBlock::accept_vis (HIRVisItemVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+TypeAlias::accept_vis (HIRStmtVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+TypeAlias::accept_vis (HIRVisItemVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+TypeAlias::accept_vis (HIRImplVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+BlockExpr::accept_vis (HIRExpressionVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+AnonConst::accept_vis (HIRExpressionVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+ConstBlock::accept_vis (HIRExpressionVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+Function::accept_vis (HIRStmtVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+Function::accept_vis (HIRVisItemVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+Function::accept_vis (HIRImplVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+Union::accept_vis (HIRStmtVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+Union::accept_vis (HIRVisItemVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+Trait::accept_vis (HIRStmtVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+Trait::accept_vis (HIRVisItemVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+Enum::accept_vis (HIRStmtVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+Enum::accept_vis (HIRVisItemVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+UseDeclaration::accept_vis (HIRStmtVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+UseDeclaration::accept_vis (HIRVisItemVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+StructStruct::accept_vis (HIRStmtVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+StructStruct::accept_vis (HIRVisItemVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+ImplBlock::accept_vis (HIRStmtVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+ImplBlock::accept_vis (HIRVisItemVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+ConstantItem::accept_vis (HIRStmtVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+ConstantItem::accept_vis (HIRVisItemVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+ConstantItem::accept_vis (HIRImplVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+TupleStruct::accept_vis (HIRStmtVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+TupleStruct::accept_vis (HIRVisItemVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+ExternCrate::accept_vis (HIRStmtVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+ExternCrate::accept_vis (HIRVisItemVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+StaticItem::accept_vis (HIRStmtVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+void
+StaticItem::accept_vis (HIRVisItemVisitor &vis)
+{
+  vis.visit (*this);
+}
+
+} // namespace HIR
+} // namespace Rust

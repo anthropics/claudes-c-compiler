@@ -1,0 +1,137 @@
+; Options for the LTO front end.
+; Copyright (C) 2008-2026 Free Software Foundation, Inc.
+;
+; This file is part of GCC.
+;
+; GCC is free software; you can redistribute it and/or modify it under
+; the terms of the GNU General Public License as published by the Free
+; Software Foundation; either version 3, or (at your option) any later
+; version.
+; 
+; GCC is distributed in the hope that it will be useful, but WITHOUT ANY
+; WARRANTY; without even the implied warranty of MERCHANTABILITY or
+; FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+; for more details.
+; 
+; You should have received a copy of the GNU General Public License
+; along with GCC; see the file COPYING3.  If not see
+; <http://www.gnu.org/licenses/>.
+
+; See the GCC internals manual for a description of this file's format.
+
+; Please try to keep this file in ASCII collating order.
+
+Language
+LTO
+
+Enum
+Name(lto_linker_output) Type(enum lto_linker_output) UnknownError(unknown linker output %qs)
+
+EnumValue
+Enum(lto_linker_output) String(unknown) Value(LTO_LINKER_OUTPUT_UNKNOWN)
+
+EnumValue
+Enum(lto_linker_output) String(rel) Value(LTO_LINKER_OUTPUT_REL)
+
+EnumValue
+Enum(lto_linker_output) String(nolto-rel) Value(LTO_LINKER_OUTPUT_NOLTOREL)
+
+EnumValue
+Enum(lto_linker_output) String(dyn) Value(LTO_LINKER_OUTPUT_DYN)
+
+EnumValue
+Enum(lto_linker_output) String(pie) Value(LTO_LINKER_OUTPUT_PIE)
+
+EnumValue
+Enum(lto_linker_output) String(exec) Value(LTO_LINKER_OUTPUT_EXEC)
+
+flinker-output=
+LTO Driver Joined RejectNegative Enum(lto_linker_output) Var(flag_lto_linker_output) Init(LTO_LINKER_OUTPUT_UNKNOWN)
+Set linker output type (used internally during LTO optimization).
+
+fltrans
+LTO Var(flag_ltrans)
+Run the link-time optimizer in local transformation (LTRANS) mode.
+
+fltrans-output-list=
+LTO Joined Var(ltrans_output_list)
+Specify a file to which a list of files output by LTRANS is written.
+
+fresolution=
+LTO Joined
+The resolution file.
+
+fwpa
+LTO Driver
+Run the link-time optimizer in whole program analysis (WPA) mode.
+
+fwpa=
+LTO Driver RejectNegative Joined Var(flag_wpa)
+Whole program analysis (WPA) mode with number of parallel jobs specified.
+
+
+Language
+LTODump
+
+list
+LTODump Var(flag_lto_dump_list)
+Call the dump function for variables and function in IL.
+
+demangle
+LTODump Var(flag_lto_dump_demangle)
+Dump the demangled output.
+
+defined-only
+LTODump Var(flag_lto_dump_defined)
+Dump only the defined symbols.
+
+print-value
+LTODump Var(flag_lto_print_value)
+Print the initial values of the variables.
+
+name-sort
+LTODump Var(flag_lto_name_sort)
+Sort the symbols alphabetically.
+
+size-sort
+LTODump Var(flag_lto_size_sort)
+Sort the symbols according to size.
+
+reverse-sort
+LTODump Var(flag_lto_reverse_sort)
+Display the symbols in reverse order.
+
+symbol=
+LTODump RejectNegative Joined Var(flag_lto_dump_symbol)
+
+objects
+LTODump Var(flag_lto_dump_objects)
+Dump the details of LTO objects.
+
+type-stats
+LTODump Var(flag_lto_dump_type_stats)
+Dump the statistics of tree types.
+
+tree-stats
+LTODump Var(flag_lto_tree_stats)
+Dump the statistics of trees.
+
+gimple-stats
+LTODump Var(flag_lto_gimple_stats)
+Dump the statistics of gimple statements.
+
+dump-level=
+LTODump RejectNegative Joined Var(flag_dump_level)
+
+dump-body=
+LTODump RejectNegative Joined Var(flag_dump_body)
+
+help
+LTODump Var(flag_lto_dump_tool_help)
+Dump the dump tool command line options.
+
+callgraph
+LTODump Var(flag_dump_callgraph)
+Dump the symtab callgraph.
+
+; This comment is to ensure we retain the blank line above.

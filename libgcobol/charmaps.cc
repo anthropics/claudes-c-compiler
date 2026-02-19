@@ -1,0 +1,1765 @@
+// This file is included in both the libgcobol and gcc/cobol compilations
+/*
+ * Copyright (c) 2021-2026 Symas Corporation
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are
+ * met:
+ *
+ * * Redistributions of source code must retain the above copyright
+ *   notice, this list of conditions and the following disclaimer.
+ * * Redistributions in binary form must reproduce the above
+ *   copyright notice, this list of conditions and the following disclaimer
+ *   in the documentation and/or other materials provided with the
+ *   distribution.
+ * * Neither the name of the Symas Corporation nor the names of its
+ *   contributors may be used to endorse or promote products derived from
+ *   this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+ * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+ * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+ * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+ * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+ * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
+
+#include <iconv.h>
+
+#include <cctype>
+#include <clocale>
+#include <cstdio>
+#include <cstring>
+#include <ctime>
+
+#include <algorithm>
+#include <unordered_map>
+#include <vector>
+#include <langinfo.h>
+
+#include "ec.h"
+#include "common-defs.h"
+#include "io.h"
+#include "gcobolio.h"
+#include "valconv.h"
+#include "charmaps.h"
+#include "encodings.h"
+
+// These values are in the ASCII space.
+int __gg__decimal_point        = '.'  ;
+int __gg__decimal_separator    = ','  ;
+int __gg__quote_character      = '"'  ;
+int __gg__low_value_character  = 0x00 ;
+int __gg__high_value_character = 0xFF ;
+cbl_char_t __gg__working_init  = NOT_A_CHARACTER;
+cbl_char_t __gg__local_init    = NOT_A_CHARACTER;
+uint32_t   __gg__wsclear       = NOT_A_CHARACTER;
+std::vector<std::string> __gg__currency_signs(256) ;
+int __gg__default_currency_sign;
+char *__gg__ct_currency_signs[256];  // Compile-time currency signs
+
+cbl_encoding_t __gg__console_encoding  = no_encoding_e    ;
+cbl_encoding_t __gg__display_encoding  = no_encoding_e;
+cbl_encoding_t __gg__national_encoding = no_encoding_e;
+
+// First: single-byte-coded (SBC) character sets:
+
+// 7-bit ASCII is a subset of the various ISO/IEC 8859 code pages.
+// 8859 is a subset of code page 1252.
+// CP1252 is informally, and improperly, known as the "ANSI" code set.  In
+// modern usage, when somebody says "8859-1", they almost invariably are
+// referring to a CP1252 code set.
+
+// EBCDIC is also an SBC character set.  IBM's original "international EBCDIC"
+// code set was Code Page 37, which did not have a Euro sign.  Code Page 1140
+// is the same as CP37, but with the Euro sign replacing the "universal
+// currency symbol" at position 0x9F.  The table below maps the 256 values of
+// CodePage 1140 to the 256 values of CodePage 1252 in a way that allows for
+// "round trip" conversion without any loss.
+
+// See https://en.wikipedia.org/w/index.php?title=Code_page_37&oldid=1082467670,
+
+// The modern world increasingly uses UTF-8, which is in conflict with ordinary
+// COBOL's inherently single-byte nature.  In UTF-8, the encoding for a Euro
+// sign is three bytes (U+20AC encodes to E2 A2 AC).  In single-byte CP1252, the
+// Euro is encoded as 0x80.
+
+// So, we are going to assume that internally, the generated COBOL executable
+// operates in code page 1252 or [hopefully some day] code page 1140.
+
+// We will convert output, as in DISPLAY <something> from the internal character
+// set to the running machine's locale (for now, that locale will be assumed to
+// be 1252/8859 if it isn't UTF-8).
+
+// And we will take some pains to figure out if the source code file was done
+// as UTF-8; if not, we will assume 1252/8859-1
+
+#define UNICODE_REPLACEMENT 0xFFFD  // This a white question mark in a black diamond
+#define ASCII_REPLACEMENT 0x87     // In CP1252, 0x87 is a double-dagger
+
+// This table is the default one-to-one mapping that's used, for example, when
+// starting with ASCII and doing ASCII comparisons:
+
+const unsigned short
+__gg__one_to_one_values[256] =
+    {
+    0x00,0x01,0x02,0x03,0x04,0x05,0x06,0x07,0x08,0x09,0x0A,0x0B,0x0C,0x0D,0x0E,0x0F,
+    0x10,0x11,0x12,0x13,0x14,0x15,0x16,0x17,0x18,0x19,0x1A,0x1B,0x1C,0x1D,0x1E,0x1F,
+    0x20,0x21,0x22,0x23,0x24,0x25,0x26,0x27,0x28,0x29,0x2A,0x2B,0x2C,0x2D,0x2E,0x2F,
+    0x30,0x31,0x32,0x33,0x34,0x35,0x36,0x37,0x38,0x39,0x3A,0x3B,0x3C,0x3D,0x3E,0x3F,
+    0x40,0x41,0x42,0x43,0x44,0x45,0x46,0x47,0x48,0x49,0x4A,0x4B,0x4C,0x4D,0x4E,0x4F,
+    0x50,0x51,0x52,0x53,0x54,0x55,0x56,0x57,0x58,0x59,0x5A,0x5B,0x5C,0x5D,0x5E,0x5F,
+    0x60,0x61,0x62,0x63,0x64,0x65,0x66,0x67,0x68,0x69,0x6A,0x6B,0x6C,0x6D,0x6E,0x6F,
+    0x70,0x71,0x72,0x73,0x74,0x75,0x76,0x77,0x78,0x79,0x7A,0x7B,0x7C,0x7D,0x7E,0x7F,
+    0x80,0x81,0x82,0x83,0x84,0x85,0x86,0x87,0x88,0x89,0x8A,0x8B,0x8C,0x8D,0x8E,0x8F,
+    0x90,0x91,0x92,0x93,0x94,0x95,0x96,0x97,0x98,0x99,0x9A,0x9B,0x9C,0x9D,0x9E,0x9F,
+    0xA0,0xA1,0xA2,0xA3,0xA4,0xA5,0xA6,0xA7,0xA8,0xA9,0xAA,0xAB,0xAC,0xAD,0xAE,0xAF,
+    0xB0,0xB1,0xB2,0xB3,0xB4,0xB5,0xB6,0xB7,0xB8,0xB9,0xBA,0xBB,0xBC,0xBD,0xBE,0xBF,
+    0xC0,0xC1,0xC2,0xC3,0xC4,0xC5,0xC6,0xC7,0xC8,0xC9,0xCA,0xCB,0xCC,0xCD,0xCE,0xCF,
+    0xD0,0xD1,0xD2,0xD3,0xD4,0xD5,0xD6,0xD7,0xD8,0xD9,0xDA,0xDB,0xDC,0xDD,0xDE,0xDF,
+    0xE0,0xE1,0xE2,0xE3,0xE4,0xE5,0xE6,0xE7,0xE8,0xE9,0xEA,0xEB,0xEC,0xED,0xEE,0xEF,
+    0xF0,0xF1,0xF2,0xF3,0xF4,0xF5,0xF6,0xF7,0xF8,0xF9,0xFA,0xFB,0xFC,0xFD,0xFE,0xFF
+    };
+
+// This table can be used for converting EBCDIC values to CP1252.
+
+// There is an unfortunate caveat, one that undoubtedly will have unintended
+// consequences.  But COBOL has has the concept of a HIGH-VALUE, a character
+// that theoretically tests alphanumercially greater than all other characters.
+// In the CP1252 code page, the default HIGH-VALUE (it can be changed by the
+// ALPHABET clause is 0xFF, which is displayed as the character 'ÿ').  In the
+// EBCDIC code page 1140, that character is an EO control code.
+
+// So. In order that the default HIGH-VALUE once and always is 0xFF, these
+// two tables have been modified slightly so that 0xFF always maps to 0xFF
+
+// Programmers who use the ALPHABET clause to change the HIGH-VALUE are on their
+// own.
+
+const unsigned short
+__gg__cp1140_to_cp1252_values[256] =
+    {
+    0x00, 0x01, 0x02, 0x03, 0x9C, 0x09, 0x86, 0x7F, 0x97, 0x8D, 0x8E, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F,
+    0x10, 0x11, 0x12, 0x13, 0x9D, 0x85, 0x08, 0x87, 0x18, 0x19, 0x92, 0x8F, 0x1C, 0x1D, 0x1E, 0x1F,
+    0xA4, 0x81, 0x82, 0x83, 0x84, 0x0A, 0x17, 0x1B, 0x88, 0x89, 0x8A, 0x8B, 0x8C, 0x05, 0x06, 0x07,
+    0x90, 0x91, 0x16, 0x93, 0x94, 0x95, 0x96, 0x04, 0x98, 0x99, 0x9A, 0x9B, 0x14, 0x15, 0x9E, 0x1A,
+    0x20, 0xA0, 0xE2, 0xE4, 0xE0, 0xE1, 0xE3, 0xE5, 0xE7, 0xF1, 0xA2, 0x2E, 0x3C, 0x28, 0x2B, 0x7C,
+    0x26, 0xE9, 0xEA, 0xEB, 0xE8, 0xED, 0xEE, 0xEF, 0xEC, 0xDF, 0x21, 0x24, 0x2A, 0x29, 0x3B, 0xAC,
+    0x2D, 0x2F, 0xC2, 0xC4, 0xC0, 0xC1, 0xC3, 0xC5, 0xC7, 0xD1, 0xA6, 0x2C, 0x25, 0x5F, 0x3E, 0x3F,
+    0xF8, 0xC9, 0xCA, 0xCB, 0xC8, 0xCD, 0xCE, 0xCF, 0xCC, 0x60, 0x3A, 0x23, 0x40, 0x27, 0x3D, 0x22,
+    0xD8, 0x61, 0x62, 0x63, 0x64, 0x65, 0x66, 0x67, 0x68, 0x69, 0xAB, 0xBB, 0xF0, 0xFD, 0xFE, 0xB1,
+    0xB0, 0x6A, 0x6B, 0x6C, 0x6D, 0x6E, 0x6F, 0x70, 0x71, 0x72, 0xAA, 0xBA, 0xE6, 0xB8, 0xC6, 0x80,
+    0xB5, 0x7E, 0x73, 0x74, 0x75, 0x76, 0x77, 0x78, 0x79, 0x7A, 0xA1, 0xBF, 0xD0, 0xDD, 0xDE, 0xAE,
+    0x5E, 0xA3, 0xA5, 0xB7, 0xA9, 0xA7, 0xB6, 0xBC, 0xBD, 0xBE, 0x5B, 0x5D, 0xAF, 0xA8, 0xB4, 0xD7,
+    0x7B, 0x41, 0x42, 0x43, 0x44, 0x45, 0x46, 0x47, 0x48, 0x49, 0xAD, 0xF4, 0xF6, 0xF2, 0xF3, 0xF5,
+    0x7D, 0x4A, 0x4B, 0x4C, 0x4D, 0x4E, 0x4F, 0x50, 0x51, 0x52, 0xB9, 0xFB, 0xFC, 0xF9, 0xFA, 0xFF,
+    0x5C, 0xF7, 0x53, 0x54, 0x55, 0x56, 0x57, 0x58, 0x59, 0x5A, 0xB2, 0xD4, 0xD6, 0xD2, 0xD3, 0xD5,
+    0x30, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37, 0x38, 0x39, 0xB3, 0xDB, 0xDC, 0xD9, 0xDA, /*0x9F*/ 0xFF,
+    };
+
+// This table is the mirror image of cp1140_to_cp1252_values, except for the
+// above-mentioned 0xFF
+const unsigned short
+__gg__cp1252_to_cp1140_values[256] =
+    {
+    0x00, 0x01, 0x02, 0x03, 0x37, 0x2D, 0x2E, 0x2F, 0x16, 0x05, 0x25, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F,
+    0x10, 0x11, 0x12, 0x13, 0x3C, 0x3D, 0x32, 0x26, 0x18, 0x19, 0x3F, 0x27, 0x1C, 0x1D, 0x1E, 0x1F,
+    0x40, 0x5A, 0x7F, 0x7B, 0x5B, 0x6C, 0x50, 0x7D, 0x4D, 0x5D, 0x5C, 0x4E, 0x6B, 0x60, 0x4B, 0x61,
+    0xF0, 0xF1, 0xF2, 0xF3, 0xF4, 0xF5, 0xF6, 0xF7, 0xF8, 0xF9, 0x7A, 0x5E, 0x4C, 0x7E, 0x6E, 0x6F,
+    0x7C, 0xC1, 0xC2, 0xC3, 0xC4, 0xC5, 0xC6, 0xC7, 0xC8, 0xC9, 0xD1, 0xD2, 0xD3, 0xD4, 0xD5, 0xD6,
+    0xD7, 0xD8, 0xD9, 0xE2, 0xE3, 0xE4, 0xE5, 0xE6, 0xE7, 0xE8, 0xE9, 0xBA, 0xE0, 0xBB, 0xB0, 0x6D,
+    0x79, 0x81, 0x82, 0x83, 0x84, 0x85, 0x86, 0x87, 0x88, 0x89, 0x91, 0x92, 0x93, 0x94, 0x95, 0x96,
+    0x97, 0x98, 0x99, 0xA2, 0xA3, 0xA4, 0xA5, 0xA6, 0xA7, 0xA8, 0xA9, 0xC0, 0x4F, 0xD0, 0xA1, 0x07,
+    0x9F, 0x21, 0x22, 0x23, 0x24, 0x15, 0x06, 0x17, 0x28, 0x29, 0x2A, 0x2B, 0x2C, 0x09, 0x0A, 0x1B,
+    0x30, 0x31, 0x1A, 0x33, 0x34, 0x35, 0x36, 0x08, 0x38, 0x39, 0x3A, 0x3B, 0x04, 0x14, 0x3E, 0xFF,
+    0x41, 0xAA, 0x4A, 0xB1, 0x20, 0xB2, 0x6A, 0xB5, 0xBD, 0xB4, 0x9A, 0x8A, 0x5F, 0xCA, 0xAF, 0xBC,
+    0x90, 0x8F, 0xEA, 0xFA, 0xBE, 0xA0, 0xB6, 0xB3, 0x9D, 0xDA, 0x9B, 0x8B, 0xB7, 0xB8, 0xB9, 0xAB,
+    0x64, 0x65, 0x62, 0x66, 0x63, 0x67, 0x9E, 0x68, 0x74, 0x71, 0x72, 0x73, 0x78, 0x75, 0x76, 0x77,
+    0xAC, 0x69, 0xED, 0xEE, 0xEB, 0xEF, 0xEC, 0xBF, 0x80, 0xFD, 0xFE, 0xFB, 0xFC, 0xAD, 0xAE, 0x59,
+    0x44, 0x45, 0x42, 0x46, 0x43, 0x47, 0x9C, 0x48, 0x54, 0x51, 0x52, 0x53, 0x58, 0x55, 0x56, 0x57,
+    0x8C, 0x49, 0xCD, 0xCE, 0xCB, 0xCF, 0xCC, 0xE1, 0x70, 0xDD, 0xDE, 0xDB, 0xDC, 0x8D, 0x8E, /*0xDF*/ 0xFF,
+    };
+
+// This is the EBCDIC collating sequence when the internal character set is CP1252.  It's actually
+// a copy of __gg__cp1252_to_cp1140_values, but modified so that 0xFF maps to 0xFF.
+// Doing this meant swapping the CP1252 upper-Y-umlaut with lower-Y-umlaut.
+const unsigned short
+__gg__cp1252_to_ebcdic_collation[256] =
+    {
+    0x00, 0x01, 0x02, 0x03, 0x37, 0x2d, 0x2e, 0x2f, 0x16, 0x05, 0x25, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f,
+    0x10, 0x11, 0x12, 0x13, 0x3c, 0x3d, 0x32, 0x26, 0x18, 0x19, 0x3f, 0x27, 0x1c, 0x1d, 0x1e, 0x1f,
+    0x40, 0x5a, 0x7f, 0x7b, 0x5b, 0x6c, 0x50, 0x7d, 0x4d, 0x5d, 0x5c, 0x4e, 0x6b, 0x60, 0x4b, 0x61,
+    0xf0, 0xf1, 0xf2, 0xf3, 0xf4, 0xf5, 0xf6, 0xf7, 0xf8, 0xf9, 0x7a, 0x5e, 0x4c, 0x7e, 0x6e, 0x6f,
+    0x7c, 0xc1, 0xc2, 0xc3, 0xc4, 0xc5, 0xc6, 0xc7, 0xc8, 0xc9, 0xd1, 0xd2, 0xd3, 0xd4, 0xd5, 0xd6,
+    0xd7, 0xd8, 0xd9, 0xe2, 0xe3, 0xe4, 0xe5, 0xe6, 0xe7, 0xe8, 0xe9, 0xba, 0xe0, 0xbb, 0xb0, 0x6d,
+    0x79, 0x81, 0x82, 0x83, 0x84, 0x85, 0x86, 0x87, 0x88, 0x89, 0x91, 0x92, 0x93, 0x94, 0x95, 0x96,
+    0x97, 0x98, 0x99, 0xa2, 0xa3, 0xa4, 0xa5, 0xa6, 0xa7, 0xa8, 0xa9, 0xc0, 0x4f, 0xd0, 0xa1, 0x07,
+    0x9f, 0x21, 0x22, 0x23, 0x24, 0x15, 0x06, 0x17, 0x28, 0x29, 0x2a, 0x2b, 0x2c, 0x09, 0x0a, 0x1b,
+    0x30, 0x31, 0x1a, 0x33, 0x34, 0x35, 0x36, 0x08, 0x38, 0x39, 0x3a, 0x3b, 0x04, 0x14, 0x3e, 0xdf,
+    0x41, 0xaa, 0x4a, 0xb1, 0x20, 0xb2, 0x6a, 0xb5, 0xbd, 0xb4, 0x9a, 0x8a, 0x5f, 0xca, 0xaf, 0xbc,
+    0x90, 0x8f, 0xea, 0xfa, 0xbe, 0xa0, 0xb6, 0xb3, 0x9d, 0xda, 0x9b, 0x8b, 0xb7, 0xb8, 0xb9, 0xab,
+    0x64, 0x65, 0x62, 0x66, 0x63, 0x67, 0x9e, 0x68, 0x74, 0x71, 0x72, 0x73, 0x78, 0x75, 0x76, 0x77,
+    0xac, 0x69, 0xed, 0xee, 0xeb, 0xef, 0xec, 0xbf, 0x80, 0xfd, 0xfe, 0xfb, 0xfc, 0xad, 0xae, 0x59,
+    0x44, 0x45, 0x42, 0x46, 0x43, 0x47, 0x9c, 0x48, 0x54, 0x51, 0x52, 0x53, 0x58, 0x55, 0x56, 0x57,
+    0x8c, 0x49, 0xcd, 0xce, 0xcb, 0xcf, 0xcc, 0xe1, 0x70, 0xdd, 0xde, 0xdb, 0xdc, 0x8d, 0x8e, 0xff,
+    };
+
+// When using the EBCDIC internal character set, but if told to use the ASCII collating sequence,
+// this table can be used.  It's based on the __gg__cp1140_to_cp1252_values, but with the two
+// characters at locations DF and FF swapped so that the HIGH-VALUE 0xFF maps to 0xFF.
+const unsigned short
+__gg__ebcdic_to_cp1252_collation[256] =
+    {
+    0x00, 0x01, 0x02, 0x03, 0x9C, 0x09, 0x86, 0x7F, 0x97, 0x8D, 0x8E, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F,
+    0x10, 0x11, 0x12, 0x13, 0x9D, 0x85, 0x08, 0x87, 0x18, 0x19, 0x92, 0x8F, 0x1C, 0x1D, 0x1E, 0x1F,
+    0xA4, 0x81, 0x82, 0x83, 0x84, 0x0A, 0x17, 0x1B, 0x88, 0x89, 0x8A, 0x8B, 0x8C, 0x05, 0x06, 0x07,
+    0x90, 0x91, 0x16, 0x93, 0x94, 0x95, 0x96, 0x04, 0x98, 0x99, 0x9A, 0x9B, 0x14, 0x15, 0x9E, 0x1A,
+    0x20, 0xA0, 0xE2, 0xE4, 0xE0, 0xE1, 0xE3, 0xE5, 0xE7, 0xF1, 0xA2, 0x2E, 0x3C, 0x28, 0x2B, 0x7C,
+    0x26, 0xE9, 0xEA, 0xEB, 0xE8, 0xED, 0xEE, 0xEF, 0xEC, 0xDF, 0x21, 0x24, 0x2A, 0x29, 0x3B, 0xAC,
+    0x2D, 0x2F, 0xC2, 0xC4, 0xC0, 0xC1, 0xC3, 0xC5, 0xC7, 0xD1, 0xA6, 0x2C, 0x25, 0x5F, 0x3E, 0x3F,
+    0xF8, 0xC9, 0xCA, 0xCB, 0xC8, 0xCD, 0xCE, 0xCF, 0xCC, 0x60, 0x3A, 0x23, 0x40, 0x27, 0x3D, 0x22,
+    0xD8, 0x61, 0x62, 0x63, 0x64, 0x65, 0x66, 0x67, 0x68, 0x69, 0xAB, 0xBB, 0xF0, 0xFD, 0xFE, 0xB1,
+    0xB0, 0x6A, 0x6B, 0x6C, 0x6D, 0x6E, 0x6F, 0x70, 0x71, 0x72, 0xAA, 0xBA, 0xE6, 0xB8, 0xC6, 0x80,
+    0xB5, 0x7E, 0x73, 0x74, 0x75, 0x76, 0x77, 0x78, 0x79, 0x7A, 0xA1, 0xBF, 0xD0, 0xDD, 0xDE, 0xAE,
+    0x5E, 0xA3, 0xA5, 0xB7, 0xA9, 0xA7, 0xB6, 0xBC, 0xBD, 0xBE, 0x5B, 0x5D, 0xAF, 0xA8, 0xB4, 0xD7,
+    0x7B, 0x41, 0x42, 0x43, 0x44, 0x45, 0x46, 0x47, 0x48, 0x49, 0xAD, 0xF4, 0xF6, 0xF2, 0xF3, 0xF5,
+    0x7D, 0x4A, 0x4B, 0x4C, 0x4D, 0x4E, 0x4F, 0x50, 0x51, 0x52, 0xB9, 0xFB, 0xFC, 0xF9, 0xFA, 0xDF,
+    0x5C, 0xF7, 0x53, 0x54, 0x55, 0x56, 0x57, 0x58, 0x59, 0x5A, 0xB2, 0xD4, 0xD6, 0xD2, 0xD3, 0xD5,
+    0x30, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37, 0x38, 0x39, 0xB3, 0xDB, 0xDC, 0xD9, 0xDA, 0xFF,
+    };
+
+static encodings_t encodings[] = {
+  { false, iconv_437_e, "437" },
+  { false, iconv_500_e, "500" },
+  { false, iconv_500V1_e, "500V1" },
+  { false, iconv_850_e, "850" },
+  { false, iconv_851_e, "851" },
+  { false, iconv_852_e, "852" },
+  { false, iconv_855_e, "855" },
+  { false, iconv_856_e, "856" },
+  { false, iconv_857_e, "857" },
+  { false, iconv_858_e, "858" },
+  { false, iconv_860_e, "860" },
+  { false, iconv_861_e, "861" },
+  { false, iconv_862_e, "862" },
+  { false, iconv_863_e, "863" },
+  { false, iconv_864_e, "864" },
+  { false, iconv_865_e, "865" },
+  { false, iconv_866_e, "866" },
+  { false, iconv_866NAV_e, "866NAV" },
+  { false, iconv_869_e, "869" },
+  { false, iconv_874_e, "874" },
+  { false, iconv_904_e, "904" },
+  { false, iconv_1026_e, "1026" },
+  { false, iconv_1046_e, "1046" },
+  { false, iconv_1047_e, "1047" },
+  { false, iconv_8859_1_e, "8859_1" },
+  { false, iconv_8859_2_e, "8859_2" },
+  { false, iconv_8859_3_e, "8859_3" },
+  { false, iconv_8859_4_e, "8859_4" },
+  { false, iconv_8859_5_e, "8859_5" },
+  { false, iconv_8859_6_e, "8859_6" },
+  { false, iconv_8859_7_e, "8859_7" },
+  { false, iconv_8859_8_e, "8859_8" },
+  { false, iconv_8859_9_e, "8859_9" },
+  { false, iconv_10646_1_1993_e, "10646-1:1993" },
+  { false, iconv_10646_1_1993_e, "UCS4/ 10646-1:1993/UCS4/" },
+  { false, iconv_ANSI_X3_4_1968_e, "ANSI_X3.4-1968" },
+  { false, iconv_ANSI_X3_4_1986_e, "ANSI_X3.4-1986" },
+  { false, iconv_ANSI_X3_4_e, "ANSI_X3.4" },
+  { false, iconv_ANSI_X3_110_1983_e, "ANSI_X3.110-1983" },
+  { false, iconv_ANSI_X3_110_e, "ANSI_X3.110" },
+  { false, iconv_ARABIC_e, "ARABIC" },
+  { false, iconv_ARABIC7_e, "ARABIC7" },
+  { false, iconv_ARMSCII_8_e, "ARMSCII-8" },
+  { false, iconv_ARMSCII8_e, "ARMSCII8" },
+  {  true, iconv_ASCII_e, "ASCII" },
+  { false, iconv_ASMO_708_e, "ASMO-708" },
+  { false, iconv_ASMO_449_e, "ASMO_449" },
+  { false, iconv_BALTIC_e, "BALTIC" },
+  { false, iconv_BIG_5_e, "BIG-5" },
+  { false, iconv_BIG_FIVE_e, "BIG-FIVE" },
+  { false, iconv_BIG5_HKSCS_e, "BIG5-HKSCS" },
+  { false, iconv_BIG5_e, "BIG5" },
+  { false, iconv_BIG5HKSCS_e, "BIG5HKSCS" },
+  { false, iconv_BIGFIVE_e, "BIGFIVE" },
+  { false, iconv_BRF_e, "BRF" },
+  { false, iconv_BS_4730_e, "BS_4730" },
+  { false, iconv_CA_e, "CA" },
+  { false, iconv_CN_BIG5_e, "CN-BIG5" },
+  { false, iconv_CN_GB_e, "CN-GB" },
+  { false, iconv_CN_e, "CN" },
+  { false, iconv_CP_AR_e, "CP-AR" },
+  { false, iconv_CP_GR_e, "CP-GR" },
+  { false, iconv_CP_HU_e, "CP-HU" },
+  { false, iconv_CP037_e, "CP037" },
+  { false, iconv_CP038_e, "CP038" },
+  { false, iconv_CP273_e, "CP273" },
+  { false, iconv_CP274_e, "CP274" },
+  { false, iconv_CP275_e, "CP275" },
+  { false, iconv_CP278_e, "CP278" },
+  { false, iconv_CP280_e, "CP280" },
+  { false, iconv_CP281_e, "CP281" },
+  { false, iconv_CP282_e, "CP282" },
+  { false, iconv_CP284_e, "CP284" },
+  { false, iconv_CP285_e, "CP285" },
+  { false, iconv_CP290_e, "CP290" },
+  { false, iconv_CP297_e, "CP297" },
+  { false, iconv_CP367_e, "CP367" },
+  { false, iconv_CP420_e, "CP420" },
+  { false, iconv_CP423_e, "CP423" },
+  { false, iconv_CP424_e, "CP424" },
+  { false, iconv_CP437_e, "CP437" },
+  { false, iconv_CP500_e, "CP500" },
+  { false, iconv_CP737_e, "CP737" },
+  { false, iconv_CP770_e, "CP770" },
+  { false, iconv_CP771_e, "CP771" },
+  { false, iconv_CP772_e, "CP772" },
+  { false, iconv_CP773_e, "CP773" },
+  { false, iconv_CP774_e, "CP774" },
+  { false, iconv_CP775_e, "CP775" },
+  { false, iconv_CP803_e, "CP803" },
+  { false, iconv_CP813_e, "CP813" },
+  { false, iconv_CP819_e, "CP819" },
+  { false, iconv_CP850_e, "CP850" },
+  { false, iconv_CP851_e, "CP851" },
+  { false, iconv_CP852_e, "CP852" },
+  { false, iconv_CP855_e, "CP855" },
+  { false, iconv_CP856_e, "CP856" },
+  { false, iconv_CP857_e, "CP857" },
+  { false, iconv_CP858_e, "CP858" },
+  { false, iconv_CP860_e, "CP860" },
+  { false, iconv_CP861_e, "CP861" },
+  { false, iconv_CP862_e, "CP862" },
+  { false, iconv_CP863_e, "CP863" },
+  { false, iconv_CP864_e, "CP864" },
+  { false, iconv_CP865_e, "CP865" },
+  { false, iconv_CP866_e, "CP866" },
+  { false, iconv_CP866NAV_e, "CP866NAV" },
+  { false, iconv_CP868_e, "CP868" },
+  { false, iconv_CP869_e, "CP869" },
+  { false, iconv_CP870_e, "CP870" },
+  { false, iconv_CP871_e, "CP871" },
+  { false, iconv_CP874_e, "CP874" },
+  { false, iconv_CP875_e, "CP875" },
+  { false, iconv_CP880_e, "CP880" },
+  { false, iconv_CP891_e, "CP891" },
+  { false, iconv_CP901_e, "CP901" },
+  { false, iconv_CP902_e, "CP902" },
+  { false, iconv_CP903_e, "CP903" },
+  { false, iconv_CP904_e, "CP904" },
+  { false, iconv_CP905_e, "CP905" },
+  { false, iconv_CP912_e, "CP912" },
+  { false, iconv_CP915_e, "CP915" },
+  { false, iconv_CP916_e, "CP916" },
+  { false, iconv_CP918_e, "CP918" },
+  { false, iconv_CP920_e, "CP920" },
+  { false, iconv_CP921_e, "CP921" },
+  { false, iconv_CP922_e, "CP922" },
+  { false, iconv_CP930_e, "CP930" },
+  { false, iconv_CP932_e, "CP932" },
+  { false, iconv_CP933_e, "CP933" },
+  { false, iconv_CP935_e, "CP935" },
+  { false, iconv_CP936_e, "CP936" },
+  { false, iconv_CP937_e, "CP937" },
+  { false, iconv_CP939_e, "CP939" },
+  { false, iconv_CP949_e, "CP949" },
+  { false, iconv_CP950_e, "CP950" },
+  { false, iconv_CP1004_e, "CP1004" },
+  { false, iconv_CP1008_e, "CP1008" },
+  { false, iconv_CP1025_e, "CP1025" },
+  { false, iconv_CP1026_e, "CP1026" },
+  { false, iconv_CP1046_e, "CP1046" },
+  { false, iconv_CP1047_e, "CP1047" },
+  { false, iconv_CP1070_e, "CP1070" },
+  { false, iconv_CP1079_e, "CP1079" },
+  { false, iconv_CP1081_e, "CP1081" },
+  { false, iconv_CP1084_e, "CP1084" },
+  { false, iconv_CP1089_e, "CP1089" },
+  { false, iconv_CP1097_e, "CP1097" },
+  { false, iconv_CP1112_e, "CP1112" },
+  { false, iconv_CP1122_e, "CP1122" },
+  { false, iconv_CP1123_e, "CP1123" },
+  { false, iconv_CP1124_e, "CP1124" },
+  { false, iconv_CP1125_e, "CP1125" },
+  { false, iconv_CP1129_e, "CP1129" },
+  { false, iconv_CP1130_e, "CP1130" },
+  { false, iconv_CP1132_e, "CP1132" },
+  { false, iconv_CP1133_e, "CP1133" },
+  { false, iconv_CP1137_e, "CP1137" },
+  {  true, iconv_CP1140_e, "CP1140" },
+  { false, iconv_CP1141_e, "CP1141" },
+  { false, iconv_CP1142_e, "CP1142" },
+  { false, iconv_CP1143_e, "CP1143" },
+  { false, iconv_CP1144_e, "CP1144" },
+  { false, iconv_CP1145_e, "CP1145" },
+  { false, iconv_CP1146_e, "CP1146" },
+  { false, iconv_CP1147_e, "CP1147" },
+  { false, iconv_CP1148_e, "CP1148" },
+  { false, iconv_CP1149_e, "CP1149" },
+  { false, iconv_CP1153_e, "CP1153" },
+  { false, iconv_CP1154_e, "CP1154" },
+  { false, iconv_CP1155_e, "CP1155" },
+  { false, iconv_CP1156_e, "CP1156" },
+  { false, iconv_CP1157_e, "CP1157" },
+  { false, iconv_CP1158_e, "CP1158" },
+  { false, iconv_CP1160_e, "CP1160" },
+  { false, iconv_CP1161_e, "CP1161" },
+  { false, iconv_CP1162_e, "CP1162" },
+  { false, iconv_CP1163_e, "CP1163" },
+  { false, iconv_CP1164_e, "CP1164" },
+  { false, iconv_CP1166_e, "CP1166" },
+  { false, iconv_CP1167_e, "CP1167" },
+  { false, iconv_CP1250_e, "CP1250" },
+  { false, iconv_CP1251_e, "CP1251" },
+  { true,  iconv_CP1252_e, "CP1252" },
+  { false, iconv_CP1253_e, "CP1253" },
+  { false, iconv_CP1254_e, "CP1254" },
+  { false, iconv_CP1255_e, "CP1255" },
+  { false, iconv_CP1256_e, "CP1256" },
+  { false, iconv_CP1257_e, "CP1257" },
+  { false, iconv_CP1258_e, "CP1258" },
+  { false, iconv_CP1282_e, "CP1282" },
+  { false, iconv_CP1361_e, "CP1361" },
+  { false, iconv_CP1364_e, "CP1364" },
+  { false, iconv_CP1371_e, "CP1371" },
+  { false, iconv_CP1388_e, "CP1388" },
+  { false, iconv_CP1390_e, "CP1390" },
+  { false, iconv_CP1399_e, "CP1399" },
+  { false, iconv_CP4517_e, "CP4517" },
+  { false, iconv_CP4899_e, "CP4899" },
+  { false, iconv_CP4909_e, "CP4909" },
+  { false, iconv_CP4971_e, "CP4971" },
+  { false, iconv_CP5347_e, "CP5347" },
+  { false, iconv_CP9030_e, "CP9030" },
+  { false, iconv_CP9066_e, "CP9066" },
+  { false, iconv_CP9448_e, "CP9448" },
+  { false, iconv_CP10007_e, "CP10007" },
+  { false, iconv_CP12712_e, "CP12712" },
+  { false, iconv_CP16804_e, "CP16804" },
+  { false, iconv_CPIBM861_e, "CPIBM861" },
+  { false, iconv_CSA7_1_e, "CSA7-1" },
+  { false, iconv_CSA7_2_e, "CSA7-2" },
+  { false, iconv_CSASCII_e, "CSASCII" },
+  { false, iconv_CSA_T500_1983_e, "CSA_T500-1983" },
+  { false, iconv_CSA_T500_e, "CSA_T500" },
+  { false, iconv_CSA_Z243_4_1985_1_e, "CSA_Z243.4-1985-1" },
+  { false, iconv_CSA_Z243_4_1985_2_e, "CSA_Z243.4-1985-2" },
+  { false, iconv_CSA_Z243_419851_e, "CSA_Z243.419851" },
+  { false, iconv_CSA_Z243_419852_e, "CSA_Z243.419852" },
+  { false, iconv_CSDECMCS_e, "CSDECMCS" },
+  { false, iconv_CSEBCDICATDE_e, "CSEBCDICATDE" },
+  { false, iconv_CSEBCDICATDEA_e, "CSEBCDICATDEA" },
+  { false, iconv_CSEBCDICCAFR_e, "CSEBCDICCAFR" },
+  { false, iconv_CSEBCDICDKNO_e, "CSEBCDICDKNO" },
+  { false, iconv_CSEBCDICDKNOA_e, "CSEBCDICDKNOA" },
+  { false, iconv_CSEBCDICES_e, "CSEBCDICES" },
+  { false, iconv_CSEBCDICESA_e, "CSEBCDICESA" },
+  { false, iconv_CSEBCDICESS_e, "CSEBCDICESS" },
+  { false, iconv_CSEBCDICFISE_e, "CSEBCDICFISE" },
+  { false, iconv_CSEBCDICFISEA_e, "CSEBCDICFISEA" },
+  { false, iconv_CSEBCDICFR_e, "CSEBCDICFR" },
+  { false, iconv_CSEBCDICIT_e, "CSEBCDICIT" },
+  { false, iconv_CSEBCDICPT_e, "CSEBCDICPT" },
+  { false, iconv_CSEBCDICUK_e, "CSEBCDICUK" },
+  { false, iconv_CSEBCDICUS_e, "CSEBCDICUS" },
+  { false, iconv_CSEUCKR_e, "CSEUCKR" },
+  { false, iconv_CSEUCPKDFMTJAPANESE_e, "CSEUCPKDFMTJAPANESE" },
+  { false, iconv_CSGB2312_e, "CSGB2312" },
+  { false, iconv_CSHPROMAN8_e, "CSHPROMAN8" },
+  { false, iconv_CSIBM037_e, "CSIBM037" },
+  { false, iconv_CSIBM038_e, "CSIBM038" },
+  { false, iconv_CSIBM273_e, "CSIBM273" },
+  { false, iconv_CSIBM274_e, "CSIBM274" },
+  { false, iconv_CSIBM275_e, "CSIBM275" },
+  { false, iconv_CSIBM277_e, "CSIBM277" },
+  { false, iconv_CSIBM278_e, "CSIBM278" },
+  { false, iconv_CSIBM280_e, "CSIBM280" },
+  { false, iconv_CSIBM281_e, "CSIBM281" },
+  { false, iconv_CSIBM284_e, "CSIBM284" },
+  { false, iconv_CSIBM285_e, "CSIBM285" },
+  { false, iconv_CSIBM290_e, "CSIBM290" },
+  { false, iconv_CSIBM297_e, "CSIBM297" },
+  { false, iconv_CSIBM420_e, "CSIBM420" },
+  { false, iconv_CSIBM423_e, "CSIBM423" },
+  { false, iconv_CSIBM424_e, "CSIBM424" },
+  { false, iconv_CSIBM500_e, "CSIBM500" },
+  { false, iconv_CSIBM803_e, "CSIBM803" },
+  { false, iconv_CSIBM851_e, "CSIBM851" },
+  { false, iconv_CSIBM855_e, "CSIBM855" },
+  { false, iconv_CSIBM856_e, "CSIBM856" },
+  { false, iconv_CSIBM857_e, "CSIBM857" },
+  { false, iconv_CSIBM860_e, "CSIBM860" },
+  { false, iconv_CSIBM863_e, "CSIBM863" },
+  { false, iconv_CSIBM864_e, "CSIBM864" },
+  { false, iconv_CSIBM865_e, "CSIBM865" },
+  { false, iconv_CSIBM866_e, "CSIBM866" },
+  { false, iconv_CSIBM868_e, "CSIBM868" },
+  { false, iconv_CSIBM869_e, "CSIBM869" },
+  { false, iconv_CSIBM870_e, "CSIBM870" },
+  { false, iconv_CSIBM871_e, "CSIBM871" },
+  { false, iconv_CSIBM880_e, "CSIBM880" },
+  { false, iconv_CSIBM891_e, "CSIBM891" },
+  { false, iconv_CSIBM901_e, "CSIBM901" },
+  { false, iconv_CSIBM902_e, "CSIBM902" },
+  { false, iconv_CSIBM903_e, "CSIBM903" },
+  { false, iconv_CSIBM904_e, "CSIBM904" },
+  { false, iconv_CSIBM905_e, "CSIBM905" },
+  { false, iconv_CSIBM918_e, "CSIBM918" },
+  { false, iconv_CSIBM921_e, "CSIBM921" },
+  { false, iconv_CSIBM922_e, "CSIBM922" },
+  { false, iconv_CSIBM930_e, "CSIBM930" },
+  { false, iconv_CSIBM932_e, "CSIBM932" },
+  { false, iconv_CSIBM933_e, "CSIBM933" },
+  { false, iconv_CSIBM935_e, "CSIBM935" },
+  { false, iconv_CSIBM937_e, "CSIBM937" },
+  { false, iconv_CSIBM939_e, "CSIBM939" },
+  { false, iconv_CSIBM943_e, "CSIBM943" },
+  { false, iconv_CSIBM1008_e, "CSIBM1008" },
+  { false, iconv_CSIBM1025_e, "CSIBM1025" },
+  { false, iconv_CSIBM1026_e, "CSIBM1026" },
+  { false, iconv_CSIBM1097_e, "CSIBM1097" },
+  { false, iconv_CSIBM1112_e, "CSIBM1112" },
+  { false, iconv_CSIBM1122_e, "CSIBM1122" },
+  { false, iconv_CSIBM1123_e, "CSIBM1123" },
+  { false, iconv_CSIBM1124_e, "CSIBM1124" },
+  { false, iconv_CSIBM1129_e, "CSIBM1129" },
+  { false, iconv_CSIBM1130_e, "CSIBM1130" },
+  { false, iconv_CSIBM1132_e, "CSIBM1132" },
+  { false, iconv_CSIBM1133_e, "CSIBM1133" },
+  { false, iconv_CSIBM1137_e, "CSIBM1137" },
+  { false, iconv_CSIBM1140_e, "CSIBM1140" },
+  { false, iconv_CSIBM1141_e, "CSIBM1141" },
+  { false, iconv_CSIBM1142_e, "CSIBM1142" },
+  { false, iconv_CSIBM1143_e, "CSIBM1143" },
+  { false, iconv_CSIBM1144_e, "CSIBM1144" },
+  { false, iconv_CSIBM1145_e, "CSIBM1145" },
+  { false, iconv_CSIBM1146_e, "CSIBM1146" },
+  { false, iconv_CSIBM1147_e, "CSIBM1147" },
+  { false, iconv_CSIBM1148_e, "CSIBM1148" },
+  { false, iconv_CSIBM1149_e, "CSIBM1149" },
+  { false, iconv_CSIBM1153_e, "CSIBM1153" },
+  { false, iconv_CSIBM1154_e, "CSIBM1154" },
+  { false, iconv_CSIBM1155_e, "CSIBM1155" },
+  { false, iconv_CSIBM1156_e, "CSIBM1156" },
+  { false, iconv_CSIBM1157_e, "CSIBM1157" },
+  { false, iconv_CSIBM1158_e, "CSIBM1158" },
+  { false, iconv_CSIBM1160_e, "CSIBM1160" },
+  { false, iconv_CSIBM1161_e, "CSIBM1161" },
+  { false, iconv_CSIBM1163_e, "CSIBM1163" },
+  { false, iconv_CSIBM1164_e, "CSIBM1164" },
+  { false, iconv_CSIBM1166_e, "CSIBM1166" },
+  { false, iconv_CSIBM1167_e, "CSIBM1167" },
+  { false, iconv_CSIBM1364_e, "CSIBM1364" },
+  { false, iconv_CSIBM1371_e, "CSIBM1371" },
+  { false, iconv_CSIBM1388_e, "CSIBM1388" },
+  { false, iconv_CSIBM1390_e, "CSIBM1390" },
+  { false, iconv_CSIBM1399_e, "CSIBM1399" },
+  { false, iconv_CSIBM4517_e, "CSIBM4517" },
+  { false, iconv_CSIBM4899_e, "CSIBM4899" },
+  { false, iconv_CSIBM4909_e, "CSIBM4909" },
+  { false, iconv_CSIBM4971_e, "CSIBM4971" },
+  { false, iconv_CSIBM5347_e, "CSIBM5347" },
+  { false, iconv_CSIBM9030_e, "CSIBM9030" },
+  { false, iconv_CSIBM9066_e, "CSIBM9066" },
+  { false, iconv_CSIBM9448_e, "CSIBM9448" },
+  { false, iconv_CSIBM12712_e, "CSIBM12712" },
+  { false, iconv_CSIBM16804_e, "CSIBM16804" },
+  { false, iconv_CSIBM11621162_e, "CSIBM11621162" },
+  { false, iconv_CSISO4UNITEDKINGDOM_e, "CSISO4UNITEDKINGDOM" },
+  { false, iconv_CSISO10SWEDISH_e, "CSISO10SWEDISH" },
+  { false, iconv_CSISO11SWEDISHFORNAMES_e, "CSISO11SWEDISHFORNAMES" },
+  { false, iconv_CSISO14JISC6220RO_e, "CSISO14JISC6220RO" },
+  { false, iconv_CSISO15ITALIAN_e, "CSISO15ITALIAN" },
+  { false, iconv_CSISO16PORTUGESE_e, "CSISO16PORTUGESE" },
+  { false, iconv_CSISO17SPANISH_e, "CSISO17SPANISH" },
+  { false, iconv_CSISO18GREEK7OLD_e, "CSISO18GREEK7OLD" },
+  { false, iconv_CSISO19LATINGREEK_e, "CSISO19LATINGREEK" },
+  { false, iconv_CSISO21GERMAN_e, "CSISO21GERMAN" },
+  { false, iconv_CSISO25FRENCH_e, "CSISO25FRENCH" },
+  { false, iconv_CSISO27LATINGREEK1_e, "CSISO27LATINGREEK1" },
+  { false, iconv_CSISO49INIS_e, "CSISO49INIS" },
+  { false, iconv_CSISO50INIS8_e, "CSISO50INIS8" },
+  { false, iconv_CSISO51INISCYRILLIC_e, "CSISO51INISCYRILLIC" },
+  { false, iconv_CSISO58GB1988_e, "CSISO58GB1988" },
+  { false, iconv_CSISO60DANISHNORWEGIAN_e, "CSISO60DANISHNORWEGIAN" },
+  { false, iconv_CSISO60NORWEGIAN1_e, "CSISO60NORWEGIAN1" },
+  { false, iconv_CSISO61NORWEGIAN2_e, "CSISO61NORWEGIAN2" },
+  { false, iconv_CSISO69FRENCH_e, "CSISO69FRENCH" },
+  { false, iconv_CSISO84PORTUGUESE2_e, "CSISO84PORTUGUESE2" },
+  { false, iconv_CSISO85SPANISH2_e, "CSISO85SPANISH2" },
+  { false, iconv_CSISO86HUNGARIAN_e, "CSISO86HUNGARIAN" },
+  { false, iconv_CSISO88GREEK7_e, "CSISO88GREEK7" },
+  { false, iconv_CSISO89ASMO449_e, "CSISO89ASMO449" },
+  { false, iconv_CSISO90_e, "CSISO90" },
+  { false, iconv_CSISO92JISC62991984B_e, "CSISO92JISC62991984B" },
+  { false, iconv_CSISO99NAPLPS_e, "CSISO99NAPLPS" },
+  { false, iconv_CSISO103T618BIT_e, "CSISO103T618BIT" },
+  { false, iconv_CSISO111ECMACYRILLIC_e, "CSISO111ECMACYRILLIC" },
+  { false, iconv_CSISO121CANADIAN1_e, "CSISO121CANADIAN1" },
+  { false, iconv_CSISO122CANADIAN2_e, "CSISO122CANADIAN2" },
+  { false, iconv_CSISO139CSN369103_e, "CSISO139CSN369103" },
+  { false, iconv_CSISO141JUSIB1002_e, "CSISO141JUSIB1002" },
+  { false, iconv_CSISO143IECP271_e, "CSISO143IECP271" },
+  { false, iconv_CSISO150_e, "CSISO150" },
+  { false, iconv_CSISO150GREEKCCITT_e, "CSISO150GREEKCCITT" },
+  { false, iconv_CSISO151CUBA_e, "CSISO151CUBA" },
+  { false, iconv_CSISO153GOST1976874_e, "CSISO153GOST1976874" },
+  { false, iconv_CSISO646DANISH_e, "CSISO646DANISH" },
+  { false, iconv_CSISO2022CN_e, "CSISO2022CN" },
+  { false, iconv_CSISO2022JP_e, "CSISO2022JP" },
+  { false, iconv_CSISO2022JP2_e, "CSISO2022JP2" },
+  { false, iconv_CSISO2022KR_e, "CSISO2022KR" },
+  { false, iconv_CSISO2033_e, "CSISO2033" },
+  { false, iconv_CSISO5427CYRILLIC_e, "CSISO5427CYRILLIC" },
+  { false, iconv_CSISO5427CYRILLIC1981_e, "CSISO5427CYRILLIC1981" },
+  { false, iconv_CSISO5428GREEK_e, "CSISO5428GREEK" },
+  { false, iconv_CSISO10367BOX_e, "CSISO10367BOX" },
+  { false, iconv_CSISOLATIN1_e, "CSISOLATIN1" },
+  { false, iconv_CSISOLATIN2_e, "CSISOLATIN2" },
+  { false, iconv_CSISOLATIN3_e, "CSISOLATIN3" },
+  { false, iconv_CSISOLATIN4_e, "CSISOLATIN4" },
+  { false, iconv_CSISOLATIN5_e, "CSISOLATIN5" },
+  { false, iconv_CSISOLATIN6_e, "CSISOLATIN6" },
+  { false, iconv_CSISOLATINARABIC_e, "CSISOLATINARABIC" },
+  { false, iconv_CSISOLATINCYRILLIC_e, "CSISOLATINCYRILLIC" },
+  { false, iconv_CSISOLATINGREEK_e, "CSISOLATINGREEK" },
+  { false, iconv_CSISOLATINHEBREW_e, "CSISOLATINHEBREW" },
+  { false, iconv_CSKOI8R_e, "CSKOI8R" },
+  { false, iconv_CSKSC5636_e, "CSKSC5636" },
+  { false, iconv_CSMACINTOSH_e, "CSMACINTOSH" },
+  { false, iconv_CSNATSDANO_e, "CSNATSDANO" },
+  { false, iconv_CSNATSSEFI_e, "CSNATSSEFI" },
+  { false, iconv_CSN_369103_e, "CSN_369103" },
+  { false, iconv_CSPC8CODEPAGE437_e, "CSPC8CODEPAGE437" },
+  { false, iconv_CSPC775BALTIC_e, "CSPC775BALTIC" },
+  { false, iconv_CSPC850MULTILINGUAL_e, "CSPC850MULTILINGUAL" },
+  { false, iconv_CSPC858MULTILINGUAL_e, "CSPC858MULTILINGUAL" },
+  { false, iconv_CSPC862LATINHEBREW_e, "CSPC862LATINHEBREW" },
+  { false, iconv_CSPCP852_e, "CSPCP852" },
+  { false, iconv_CSSHIFTJIS_e, "CSSHIFTJIS" },
+  { false, iconv_CSUCS4_e, "CSUCS4" },
+  { false, iconv_CSUNICODE_e, "CSUNICODE" },
+  { false, iconv_CSWINDOWS31J_e, "CSWINDOWS31J" },
+  { false, iconv_CUBA_e, "CUBA" },
+  { false, iconv_CWI_2_e, "CWI-2" },
+  { false, iconv_CWI_e, "CWI" },
+  { false, iconv_CYRILLIC_e, "CYRILLIC" },
+  { false, iconv_DE_e, "DE" },
+  { false, iconv_DEC_MCS_e, "DEC-MCS" },
+  { false, iconv_DEC_e, "DEC" },
+  { false, iconv_DECMCS_e, "DECMCS" },
+  { false, iconv_DIN_66003_e, "DIN_66003" },
+  { false, iconv_DK_e, "DK" },
+  { false, iconv_DS2089_e, "DS2089" },
+  { false, iconv_DS_2089_e, "DS_2089" },
+  { false, iconv_E13B_e, "E13B" },
+  { false, iconv_EBCDIC_AT_DE_A_e, "EBCDIC-AT-DE-A" },
+  { false, iconv_EBCDIC_AT_DE_e, "EBCDIC-AT-DE" },
+  { false, iconv_EBCDIC_BE_e, "EBCDIC-BE" },
+  { false, iconv_EBCDIC_BR_e, "EBCDIC-BR" },
+  { false, iconv_EBCDIC_CA_FR_e, "EBCDIC-CA-FR" },
+  { false, iconv_EBCDIC_CP_AR1_e, "EBCDIC-CP-AR1" },
+  { false, iconv_EBCDIC_CP_AR2_e, "EBCDIC-CP-AR2" },
+  { false, iconv_EBCDIC_CP_BE_e, "EBCDIC-CP-BE" },
+  { false, iconv_EBCDIC_CP_CA_e, "EBCDIC-CP-CA" },
+  { false, iconv_EBCDIC_CP_CH_e, "EBCDIC-CP-CH" },
+  { false, iconv_EBCDIC_CP_DK_e, "EBCDIC-CP-DK" },
+  { false, iconv_EBCDIC_CP_ES_e, "EBCDIC-CP-ES" },
+  { false, iconv_EBCDIC_CP_FI_e, "EBCDIC-CP-FI" },
+  { false, iconv_EBCDIC_CP_FR_e, "EBCDIC-CP-FR" },
+  { false, iconv_EBCDIC_CP_GB_e, "EBCDIC-CP-GB" },
+  { false, iconv_EBCDIC_CP_GR_e, "EBCDIC-CP-GR" },
+  { false, iconv_EBCDIC_CP_HE_e, "EBCDIC-CP-HE" },
+  { false, iconv_EBCDIC_CP_IS_e, "EBCDIC-CP-IS" },
+  { false, iconv_EBCDIC_CP_IT_e, "EBCDIC-CP-IT" },
+  { false, iconv_EBCDIC_CP_NL_e, "EBCDIC-CP-NL" },
+  { false, iconv_EBCDIC_CP_NO_e, "EBCDIC-CP-NO" },
+  { false, iconv_EBCDIC_CP_ROECE_e, "EBCDIC-CP-ROECE" },
+  { false, iconv_EBCDIC_CP_SE_e, "EBCDIC-CP-SE" },
+  { false, iconv_EBCDIC_CP_TR_e, "EBCDIC-CP-TR" },
+  { false, iconv_EBCDIC_CP_US_e, "EBCDIC-CP-US" },
+  { false, iconv_EBCDIC_CP_WT_e, "EBCDIC-CP-WT" },
+  { false, iconv_EBCDIC_CP_YU_e, "EBCDIC-CP-YU" },
+  { false, iconv_EBCDIC_CYRILLIC_e, "EBCDIC-CYRILLIC" },
+  { false, iconv_EBCDIC_DK_NO_A_e, "EBCDIC-DK-NO-A" },
+  { false, iconv_EBCDIC_DK_NO_e, "EBCDIC-DK-NO" },
+  { false, iconv_EBCDIC_ES_A_e, "EBCDIC-ES-A" },
+  { false, iconv_EBCDIC_ES_S_e, "EBCDIC-ES-S" },
+  { false, iconv_EBCDIC_ES_e, "EBCDIC-ES" },
+  { false, iconv_EBCDIC_FI_SE_A_e, "EBCDIC-FI-SE-A" },
+  { false, iconv_EBCDIC_FI_SE_e, "EBCDIC-FI-SE" },
+  { false, iconv_EBCDIC_FR_e, "EBCDIC-FR" },
+  { false, iconv_EBCDIC_GREEK_e, "EBCDIC-GREEK" },
+  { false, iconv_EBCDIC_INT_e, "EBCDIC-INT" },
+  { false, iconv_EBCDIC_INT1_e, "EBCDIC-INT1" },
+  { false, iconv_EBCDIC_IS_FRISS_e, "EBCDIC-IS-FRISS" },
+  { false, iconv_EBCDIC_IT_e, "EBCDIC-IT" },
+  { false, iconv_EBCDIC_JP_E_e, "EBCDIC-JP-E" },
+  { false, iconv_EBCDIC_JP_KANA_e, "EBCDIC-JP-KANA" },
+  { false, iconv_EBCDIC_PT_e, "EBCDIC-PT" },
+  { false, iconv_EBCDIC_UK_e, "EBCDIC-UK" },
+  { false, iconv_EBCDIC_US_e, "EBCDIC-US" },
+  { false, iconv_EBCDICATDE_e, "EBCDICATDE" },
+  { false, iconv_EBCDICATDEA_e, "EBCDICATDEA" },
+  { false, iconv_EBCDICCAFR_e, "EBCDICCAFR" },
+  { false, iconv_EBCDICDKNO_e, "EBCDICDKNO" },
+  { false, iconv_EBCDICDKNOA_e, "EBCDICDKNOA" },
+  { false, iconv_EBCDICES_e, "EBCDICES" },
+  { false, iconv_EBCDICESA_e, "EBCDICESA" },
+  { false, iconv_EBCDICESS_e, "EBCDICESS" },
+  { false, iconv_EBCDICFISE_e, "EBCDICFISE" },
+  { false, iconv_EBCDICFISEA_e, "EBCDICFISEA" },
+  { false, iconv_EBCDICFR_e, "EBCDICFR" },
+  { false, iconv_EBCDICISFRISS_e, "EBCDICISFRISS" },
+  { false, iconv_EBCDICIT_e, "EBCDICIT" },
+  { false, iconv_EBCDICPT_e, "EBCDICPT" },
+  { false, iconv_EBCDICUK_e, "EBCDICUK" },
+  { false, iconv_EBCDICUS_e, "EBCDICUS" },
+  { false, iconv_ECMA_114_e, "ECMA-114" },
+  { false, iconv_ECMA_118_e, "ECMA-118" },
+  { false, iconv_ECMA_128_e, "ECMA-128" },
+  { false, iconv_ECMA_CYRILLIC_e, "ECMA-CYRILLIC" },
+  { false, iconv_ECMACYRILLIC_e, "ECMACYRILLIC" },
+  { false, iconv_ELOT_928_e, "ELOT_928" },
+  { false, iconv_ES_e, "ES" },
+  { false, iconv_ES2_e, "ES2" },
+  { false, iconv_EUC_CN_e, "EUC-CN" },
+  { false, iconv_EUC_JISX0213_e, "EUC-JISX0213" },
+  { false, iconv_EUC_JP_MS_e, "EUC-JP-MS" },
+  { false, iconv_EUC_JP_e, "EUC-JP" },
+  { false, iconv_EUC_KR_e, "EUC-KR" },
+  { false, iconv_EUC_TW_e, "EUC-TW" },
+  { false, iconv_EUCCN_e, "EUCCN" },
+  { false, iconv_EUCJP_MS_e, "EUCJP-MS" },
+  { false, iconv_EUCJP_OPEN_e, "EUCJP-OPEN" },
+  { false, iconv_EUCJP_WIN_e, "EUCJP-WIN" },
+  { false, iconv_EUCJP_e, "EUCJP" },
+  { false, iconv_EUCKR_e, "EUCKR" },
+  { false, iconv_EUCTW_e, "EUCTW" },
+  { false, iconv_FI_e, "FI" },
+  { false, iconv_FR_e, "FR" },
+  { false, iconv_GB_e, "GB" },
+  { false, iconv_GB2312_e, "GB2312" },
+  { false, iconv_GB13000_e, "GB13000" },
+  { false, iconv_GB18030_e, "GB18030" },
+  { false, iconv_GBK_e, "GBK" },
+  { false, iconv_GB_1988_80_e, "GB_1988-80" },
+  { false, iconv_GB_198880_e, "GB_198880" },
+  { false, iconv_GEORGIAN_ACADEMY_e, "GEORGIAN-ACADEMY" },
+  { false, iconv_GEORGIAN_PS_e, "GEORGIAN-PS" },
+  { false, iconv_GOST_19768_74_e, "GOST_19768-74" },
+  { false, iconv_GOST_19768_e, "GOST_19768" },
+  { false, iconv_GOST_1976874_e, "GOST_1976874" },
+  { false, iconv_GREEK_CCITT_e, "GREEK-CCITT" },
+  { false, iconv_GREEK_e, "GREEK" },
+  { false, iconv_GREEK7_OLD_e, "GREEK7-OLD" },
+  { false, iconv_GREEK7_e, "GREEK7" },
+  { false, iconv_GREEK7OLD_e, "GREEK7OLD" },
+  { false, iconv_GREEK8_e, "GREEK8" },
+  { false, iconv_GREEKCCITT_e, "GREEKCCITT" },
+  { false, iconv_HEBREW_e, "HEBREW" },
+  { false, iconv_HP_GREEK8_e, "HP-GREEK8" },
+  { false, iconv_HP_ROMAN8_e, "HP-ROMAN8" },
+  { false, iconv_HP_ROMAN9_e, "HP-ROMAN9" },
+  { false, iconv_HP_THAI8_e, "HP-THAI8" },
+  { false, iconv_HP_TURKISH8_e, "HP-TURKISH8" },
+  { false, iconv_HPGREEK8_e, "HPGREEK8" },
+  { false, iconv_HPROMAN8_e, "HPROMAN8" },
+  { false, iconv_HPROMAN9_e, "HPROMAN9" },
+  { false, iconv_HPTHAI8_e, "HPTHAI8" },
+  { false, iconv_HPTURKISH8_e, "HPTURKISH8" },
+  { false, iconv_HU_e, "HU" },
+  { false, iconv_IBM_803_e, "IBM-803" },
+  { false, iconv_IBM_856_e, "IBM-856" },
+  { false, iconv_IBM_901_e, "IBM-901" },
+  { false, iconv_IBM_902_e, "IBM-902" },
+  { false, iconv_IBM_921_e, "IBM-921" },
+  { false, iconv_IBM_922_e, "IBM-922" },
+  { false, iconv_IBM_930_e, "IBM-930" },
+  { false, iconv_IBM_932_e, "IBM-932" },
+  { false, iconv_IBM_933_e, "IBM-933" },
+  { false, iconv_IBM_935_e, "IBM-935" },
+  { false, iconv_IBM_937_e, "IBM-937" },
+  { false, iconv_IBM_939_e, "IBM-939" },
+  { false, iconv_IBM_943_e, "IBM-943" },
+  { false, iconv_IBM_1008_e, "IBM-1008" },
+  { false, iconv_IBM_1025_e, "IBM-1025" },
+  { false, iconv_IBM_1046_e, "IBM-1046" },
+  { false, iconv_IBM_1047_e, "IBM-1047" },
+  { false, iconv_IBM_1097_e, "IBM-1097" },
+  { false, iconv_IBM_1112_e, "IBM-1112" },
+  { false, iconv_IBM_1122_e, "IBM-1122" },
+  { false, iconv_IBM_1123_e, "IBM-1123" },
+  { false, iconv_IBM_1124_e, "IBM-1124" },
+  { false, iconv_IBM_1129_e, "IBM-1129" },
+  { false, iconv_IBM_1130_e, "IBM-1130" },
+  { false, iconv_IBM_1132_e, "IBM-1132" },
+  { false, iconv_IBM_1133_e, "IBM-1133" },
+  { false, iconv_IBM_1137_e, "IBM-1137" },
+  { false, iconv_IBM_1140_e, "IBM-1140" },
+  { false, iconv_IBM_1141_e, "IBM-1141" },
+  { false, iconv_IBM_1142_e, "IBM-1142" },
+  { false, iconv_IBM_1143_e, "IBM-1143" },
+  { false, iconv_IBM_1144_e, "IBM-1144" },
+  { false, iconv_IBM_1145_e, "IBM-1145" },
+  { false, iconv_IBM_1146_e, "IBM-1146" },
+  { false, iconv_IBM_1147_e, "IBM-1147" },
+  { false, iconv_IBM_1148_e, "IBM-1148" },
+  { false, iconv_IBM_1149_e, "IBM-1149" },
+  { false, iconv_IBM_1153_e, "IBM-1153" },
+  { false, iconv_IBM_1154_e, "IBM-1154" },
+  { false, iconv_IBM_1155_e, "IBM-1155" },
+  { false, iconv_IBM_1156_e, "IBM-1156" },
+  { false, iconv_IBM_1157_e, "IBM-1157" },
+  { false, iconv_IBM_1158_e, "IBM-1158" },
+  { false, iconv_IBM_1160_e, "IBM-1160" },
+  { false, iconv_IBM_1161_e, "IBM-1161" },
+  { false, iconv_IBM_1162_e, "IBM-1162" },
+  { false, iconv_IBM_1163_e, "IBM-1163" },
+  { false, iconv_IBM_1164_e, "IBM-1164" },
+  { false, iconv_IBM_1166_e, "IBM-1166" },
+  { false, iconv_IBM_1167_e, "IBM-1167" },
+  { false, iconv_IBM_1364_e, "IBM-1364" },
+  { false, iconv_IBM_1371_e, "IBM-1371" },
+  { false, iconv_IBM_1388_e, "IBM-1388" },
+  { false, iconv_IBM_1390_e, "IBM-1390" },
+  { false, iconv_IBM_1399_e, "IBM-1399" },
+  { false, iconv_IBM_4517_e, "IBM-4517" },
+  { false, iconv_IBM_4899_e, "IBM-4899" },
+  { false, iconv_IBM_4909_e, "IBM-4909" },
+  { false, iconv_IBM_4971_e, "IBM-4971" },
+  { false, iconv_IBM_5347_e, "IBM-5347" },
+  { false, iconv_IBM_9030_e, "IBM-9030" },
+  { false, iconv_IBM_9066_e, "IBM-9066" },
+  { false, iconv_IBM_9448_e, "IBM-9448" },
+  { false, iconv_IBM_12712_e, "IBM-12712" },
+  { false, iconv_IBM_16804_e, "IBM-16804" },
+  { false, iconv_IBM037_e, "IBM037" },
+  { false, iconv_IBM038_e, "IBM038" },
+  { false, iconv_IBM256_e, "IBM256" },
+  { false, iconv_IBM273_e, "IBM273" },
+  { false, iconv_IBM274_e, "IBM274" },
+  { false, iconv_IBM275_e, "IBM275" },
+  { false, iconv_IBM277_e, "IBM277" },
+  { false, iconv_IBM278_e, "IBM278" },
+  { false, iconv_IBM280_e, "IBM280" },
+  { false, iconv_IBM281_e, "IBM281" },
+  { false, iconv_IBM284_e, "IBM284" },
+  { false, iconv_IBM285_e, "IBM285" },
+  { false, iconv_IBM290_e, "IBM290" },
+  { false, iconv_IBM297_e, "IBM297" },
+  { false, iconv_IBM367_e, "IBM367" },
+  { false, iconv_IBM420_e, "IBM420" },
+  { false, iconv_IBM423_e, "IBM423" },
+  { false, iconv_IBM424_e, "IBM424" },
+  { false, iconv_IBM437_e, "IBM437" },
+  { false, iconv_IBM500_e, "IBM500" },
+  { false, iconv_IBM775_e, "IBM775" },
+  { false, iconv_IBM803_e, "IBM803" },
+  { false, iconv_IBM813_e, "IBM813" },
+  { false, iconv_IBM819_e, "IBM819" },
+  { false, iconv_IBM848_e, "IBM848" },
+  { false, iconv_IBM850_e, "IBM850" },
+  { false, iconv_IBM851_e, "IBM851" },
+  { false, iconv_IBM852_e, "IBM852" },
+  { false, iconv_IBM855_e, "IBM855" },
+  { false, iconv_IBM856_e, "IBM856" },
+  { false, iconv_IBM857_e, "IBM857" },
+  { false, iconv_IBM858_e, "IBM858" },
+  { false, iconv_IBM860_e, "IBM860" },
+  { false, iconv_IBM861_e, "IBM861" },
+  { false, iconv_IBM862_e, "IBM862" },
+  { false, iconv_IBM863_e, "IBM863" },
+  { false, iconv_IBM864_e, "IBM864" },
+  { false, iconv_IBM865_e, "IBM865" },
+  { false, iconv_IBM866_e, "IBM866" },
+  { false, iconv_IBM866NAV_e, "IBM866NAV" },
+  { false, iconv_IBM868_e, "IBM868" },
+  { false, iconv_IBM869_e, "IBM869" },
+  { false, iconv_IBM870_e, "IBM870" },
+  { false, iconv_IBM871_e, "IBM871" },
+  { false, iconv_IBM874_e, "IBM874" },
+  { false, iconv_IBM875_e, "IBM875" },
+  { false, iconv_IBM880_e, "IBM880" },
+  { false, iconv_IBM891_e, "IBM891" },
+  { false, iconv_IBM901_e, "IBM901" },
+  { false, iconv_IBM902_e, "IBM902" },
+  { false, iconv_IBM903_e, "IBM903" },
+  { false, iconv_IBM904_e, "IBM904" },
+  { false, iconv_IBM905_e, "IBM905" },
+  { false, iconv_IBM912_e, "IBM912" },
+  { false, iconv_IBM915_e, "IBM915" },
+  { false, iconv_IBM916_e, "IBM916" },
+  { false, iconv_IBM918_e, "IBM918" },
+  { false, iconv_IBM920_e, "IBM920" },
+  { false, iconv_IBM921_e, "IBM921" },
+  { false, iconv_IBM922_e, "IBM922" },
+  { false, iconv_IBM930_e, "IBM930" },
+  { false, iconv_IBM932_e, "IBM932" },
+  { false, iconv_IBM933_e, "IBM933" },
+  { false, iconv_IBM935_e, "IBM935" },
+  { false, iconv_IBM937_e, "IBM937" },
+  { false, iconv_IBM939_e, "IBM939" },
+  { false, iconv_IBM943_e, "IBM943" },
+  { false, iconv_IBM1004_e, "IBM1004" },
+  { false, iconv_IBM1008_e, "IBM1008" },
+  { false, iconv_IBM1025_e, "IBM1025" },
+  { false, iconv_IBM1026_e, "IBM1026" },
+  { false, iconv_IBM1046_e, "IBM1046" },
+  { false, iconv_IBM1047_e, "IBM1047" },
+  { false, iconv_IBM1089_e, "IBM1089" },
+  { false, iconv_IBM1097_e, "IBM1097" },
+  { false, iconv_IBM1112_e, "IBM1112" },
+  { false, iconv_IBM1122_e, "IBM1122" },
+  { false, iconv_IBM1123_e, "IBM1123" },
+  { false, iconv_IBM1124_e, "IBM1124" },
+  { false, iconv_IBM1129_e, "IBM1129" },
+  { false, iconv_IBM1130_e, "IBM1130" },
+  { false, iconv_IBM1132_e, "IBM1132" },
+  { false, iconv_IBM1133_e, "IBM1133" },
+  { false, iconv_IBM1137_e, "IBM1137" },
+  { false, iconv_IBM1140_e, "IBM1140" },
+  { false, iconv_IBM1141_e, "IBM1141" },
+  { false, iconv_IBM1142_e, "IBM1142" },
+  { false, iconv_IBM1143_e, "IBM1143" },
+  { false, iconv_IBM1144_e, "IBM1144" },
+  { false, iconv_IBM1145_e, "IBM1145" },
+  { false, iconv_IBM1146_e, "IBM1146" },
+  { false, iconv_IBM1147_e, "IBM1147" },
+  { false, iconv_IBM1148_e, "IBM1148" },
+  { false, iconv_IBM1149_e, "IBM1149" },
+  { false, iconv_IBM1153_e, "IBM1153" },
+  { false, iconv_IBM1154_e, "IBM1154" },
+  { false, iconv_IBM1155_e, "IBM1155" },
+  { false, iconv_IBM1156_e, "IBM1156" },
+  { false, iconv_IBM1157_e, "IBM1157" },
+  { false, iconv_IBM1158_e, "IBM1158" },
+  { false, iconv_IBM1160_e, "IBM1160" },
+  { false, iconv_IBM1161_e, "IBM1161" },
+  { false, iconv_IBM1162_e, "IBM1162" },
+  { false, iconv_IBM1163_e, "IBM1163" },
+  { false, iconv_IBM1164_e, "IBM1164" },
+  { false, iconv_IBM1166_e, "IBM1166" },
+  { false, iconv_IBM1167_e, "IBM1167" },
+  { false, iconv_IBM1364_e, "IBM1364" },
+  { false, iconv_IBM1371_e, "IBM1371" },
+  { false, iconv_IBM1388_e, "IBM1388" },
+  { false, iconv_IBM1390_e, "IBM1390" },
+  { false, iconv_IBM1399_e, "IBM1399" },
+  { false, iconv_IBM4517_e, "IBM4517" },
+  { false, iconv_IBM4899_e, "IBM4899" },
+  { false, iconv_IBM4909_e, "IBM4909" },
+  { false, iconv_IBM4971_e, "IBM4971" },
+  { false, iconv_IBM5347_e, "IBM5347" },
+  { false, iconv_IBM9030_e, "IBM9030" },
+  { false, iconv_IBM9066_e, "IBM9066" },
+  { false, iconv_IBM9448_e, "IBM9448" },
+  { false, iconv_IBM12712_e, "IBM12712" },
+  { false, iconv_IBM16804_e, "IBM16804" },
+  { false, iconv_IEC_P27_1_e, "IEC_P27-1" },
+  { false, iconv_IEC_P271_e, "IEC_P271" },
+  { false, iconv_INIS_8_e, "INIS-8" },
+  { false, iconv_INIS_CYRILLIC_e, "INIS-CYRILLIC" },
+  { false, iconv_INIS_e, "INIS" },
+  { false, iconv_INIS8_e, "INIS8" },
+  { false, iconv_INISCYRILLIC_e, "INISCYRILLIC" },
+  { false, iconv_ISIRI_3342_e, "ISIRI-3342" },
+  { false, iconv_ISIRI3342_e, "ISIRI3342" },
+  { false, iconv_ISO_2022_CN_EXT_e, "ISO-2022-CN-EXT" },
+  { false, iconv_ISO_2022_CN_e, "ISO-2022-CN" },
+  { false, iconv_ISO_2022_JP_2_e, "ISO-2022-JP-2" },
+  { false, iconv_ISO_2022_JP_3_e, "ISO-2022-JP-3" },
+  { false, iconv_ISO_2022_JP_e, "ISO-2022-JP" },
+  { false, iconv_ISO_2022_KR_e, "ISO-2022-KR" },
+  { false, iconv_ISO_8859_1_e, "ISO-8859-1" },
+  { false, iconv_ISO_8859_2_e, "ISO-8859-2" },
+  { false, iconv_ISO_8859_3_e, "ISO-8859-3" },
+  { false, iconv_ISO_8859_4_e, "ISO-8859-4" },
+  { false, iconv_ISO_8859_5_e, "ISO-8859-5" },
+  { false, iconv_ISO_8859_6_e, "ISO-8859-6" },
+  { false, iconv_ISO_8859_7_e, "ISO-8859-7" },
+  { false, iconv_ISO_8859_8_e, "ISO-8859-8" },
+  { false, iconv_ISO_8859_9_e, "ISO-8859-9" },
+  { false, iconv_ISO_8859_9E_e, "ISO-8859-9E" },
+  { false, iconv_ISO_8859_10_e, "ISO-8859-10" },
+  { false, iconv_ISO_8859_11_e, "ISO-8859-11" },
+  { false, iconv_ISO_8859_13_e, "ISO-8859-13" },
+  { false, iconv_ISO_8859_14_e, "ISO-8859-14" },
+  { false, iconv_ISO_8859_15_e, "ISO-8859-15" },
+  { false, iconv_ISO_8859_16_e, "ISO-8859-16" },
+  {  true, iconv_ISO_10646_e, "ISO-10646" },
+  {  true, iconv_ISO_10646_e, "UCS2/ ISO-10646/UCS2/" },
+  {  true, iconv_ISO_10646_e, "UCS4/ ISO-10646/UCS4/" },
+  {  true, iconv_ISO_10646_e, "UTF-8/ ISO-10646/UTF-8/" },
+  {  true, iconv_ISO_10646_e, "UTF8/ ISO-10646/UTF8/" },
+  { false, iconv_ISO_CELTIC_e, "ISO-CELTIC" },
+  { false, iconv_ISO_IR_4_e, "ISO-IR-4" },
+  { false, iconv_ISO_IR_6_e, "ISO-IR-6" },
+  { false, iconv_ISO_IR_8_1_e, "ISO-IR-8-1" },
+  { false, iconv_ISO_IR_9_1_e, "ISO-IR-9-1" },
+  { false, iconv_ISO_IR_10_e, "ISO-IR-10" },
+  { false, iconv_ISO_IR_11_e, "ISO-IR-11" },
+  { false, iconv_ISO_IR_14_e, "ISO-IR-14" },
+  { false, iconv_ISO_IR_15_e, "ISO-IR-15" },
+  { false, iconv_ISO_IR_16_e, "ISO-IR-16" },
+  { false, iconv_ISO_IR_17_e, "ISO-IR-17" },
+  { false, iconv_ISO_IR_18_e, "ISO-IR-18" },
+  { false, iconv_ISO_IR_19_e, "ISO-IR-19" },
+  { false, iconv_ISO_IR_21_e, "ISO-IR-21" },
+  { false, iconv_ISO_IR_25_e, "ISO-IR-25" },
+  { false, iconv_ISO_IR_27_e, "ISO-IR-27" },
+  { false, iconv_ISO_IR_37_e, "ISO-IR-37" },
+  { false, iconv_ISO_IR_49_e, "ISO-IR-49" },
+  { false, iconv_ISO_IR_50_e, "ISO-IR-50" },
+  { false, iconv_ISO_IR_51_e, "ISO-IR-51" },
+  { false, iconv_ISO_IR_54_e, "ISO-IR-54" },
+  { false, iconv_ISO_IR_55_e, "ISO-IR-55" },
+  { false, iconv_ISO_IR_57_e, "ISO-IR-57" },
+  { false, iconv_ISO_IR_60_e, "ISO-IR-60" },
+  { false, iconv_ISO_IR_61_e, "ISO-IR-61" },
+  { false, iconv_ISO_IR_69_e, "ISO-IR-69" },
+  { false, iconv_ISO_IR_84_e, "ISO-IR-84" },
+  { false, iconv_ISO_IR_85_e, "ISO-IR-85" },
+  { false, iconv_ISO_IR_86_e, "ISO-IR-86" },
+  { false, iconv_ISO_IR_88_e, "ISO-IR-88" },
+  { false, iconv_ISO_IR_89_e, "ISO-IR-89" },
+  { false, iconv_ISO_IR_90_e, "ISO-IR-90" },
+  { false, iconv_ISO_IR_92_e, "ISO-IR-92" },
+  { false, iconv_ISO_IR_98_e, "ISO-IR-98" },
+  { false, iconv_ISO_IR_99_e, "ISO-IR-99" },
+  { false, iconv_ISO_IR_100_e, "ISO-IR-100" },
+  { false, iconv_ISO_IR_101_e, "ISO-IR-101" },
+  { false, iconv_ISO_IR_103_e, "ISO-IR-103" },
+  { false, iconv_ISO_IR_109_e, "ISO-IR-109" },
+  { false, iconv_ISO_IR_110_e, "ISO-IR-110" },
+  { false, iconv_ISO_IR_111_e, "ISO-IR-111" },
+  { false, iconv_ISO_IR_121_e, "ISO-IR-121" },
+  { false, iconv_ISO_IR_122_e, "ISO-IR-122" },
+  { false, iconv_ISO_IR_126_e, "ISO-IR-126" },
+  { false, iconv_ISO_IR_127_e, "ISO-IR-127" },
+  { false, iconv_ISO_IR_138_e, "ISO-IR-138" },
+  { false, iconv_ISO_IR_139_e, "ISO-IR-139" },
+  { false, iconv_ISO_IR_141_e, "ISO-IR-141" },
+  { false, iconv_ISO_IR_143_e, "ISO-IR-143" },
+  { false, iconv_ISO_IR_144_e, "ISO-IR-144" },
+  { false, iconv_ISO_IR_148_e, "ISO-IR-148" },
+  { false, iconv_ISO_IR_150_e, "ISO-IR-150" },
+  { false, iconv_ISO_IR_151_e, "ISO-IR-151" },
+  { false, iconv_ISO_IR_153_e, "ISO-IR-153" },
+  { false, iconv_ISO_IR_155_e, "ISO-IR-155" },
+  { false, iconv_ISO_IR_156_e, "ISO-IR-156" },
+  { false, iconv_ISO_IR_157_e, "ISO-IR-157" },
+  { false, iconv_ISO_IR_166_e, "ISO-IR-166" },
+  { false, iconv_ISO_IR_179_e, "ISO-IR-179" },
+  { false, iconv_ISO_IR_193_e, "ISO-IR-193" },
+  { false, iconv_ISO_IR_197_e, "ISO-IR-197" },
+  { false, iconv_ISO_IR_199_e, "ISO-IR-199" },
+  { false, iconv_ISO_IR_203_e, "ISO-IR-203" },
+  { false, iconv_ISO_IR_209_e, "ISO-IR-209" },
+  { false, iconv_ISO_IR_226_e, "ISO-IR-226" },
+  { false, iconv_ISO_e, "TR_11548-1/ ISO/TR_11548-1/" },
+  { false, iconv_ISO646_CA_e, "ISO646-CA" },
+  { false, iconv_ISO646_CA2_e, "ISO646-CA2" },
+  { false, iconv_ISO646_CN_e, "ISO646-CN" },
+  { false, iconv_ISO646_CU_e, "ISO646-CU" },
+  { false, iconv_ISO646_DE_e, "ISO646-DE" },
+  { false, iconv_ISO646_DK_e, "ISO646-DK" },
+  { false, iconv_ISO646_ES_e, "ISO646-ES" },
+  { false, iconv_ISO646_ES2_e, "ISO646-ES2" },
+  { false, iconv_ISO646_FI_e, "ISO646-FI" },
+  { false, iconv_ISO646_FR_e, "ISO646-FR" },
+  { false, iconv_ISO646_FR1_e, "ISO646-FR1" },
+  { false, iconv_ISO646_GB_e, "ISO646-GB" },
+  { false, iconv_ISO646_HU_e, "ISO646-HU" },
+  { false, iconv_ISO646_IT_e, "ISO646-IT" },
+  { false, iconv_ISO646_JP_OCR_B_e, "ISO646-JP-OCR-B" },
+  { false, iconv_ISO646_JP_e, "ISO646-JP" },
+  { false, iconv_ISO646_KR_e, "ISO646-KR" },
+  { false, iconv_ISO646_NO_e, "ISO646-NO" },
+  { false, iconv_ISO646_NO2_e, "ISO646-NO2" },
+  { false, iconv_ISO646_PT_e, "ISO646-PT" },
+  { false, iconv_ISO646_PT2_e, "ISO646-PT2" },
+  { false, iconv_ISO646_SE_e, "ISO646-SE" },
+  { false, iconv_ISO646_SE2_e, "ISO646-SE2" },
+  { false, iconv_ISO646_US_e, "ISO646-US" },
+  { false, iconv_ISO646_YU_e, "ISO646-YU" },
+  { false, iconv_ISO2022CN_e, "ISO2022CN" },
+  { false, iconv_ISO2022CNEXT_e, "ISO2022CNEXT" },
+  { false, iconv_ISO2022JP_e, "ISO2022JP" },
+  { false, iconv_ISO2022JP2_e, "ISO2022JP2" },
+  { false, iconv_ISO2022KR_e, "ISO2022KR" },
+  { false, iconv_ISO6937_e, "ISO6937" },
+  { false, iconv_ISO8859_1_e, "ISO8859-1" },
+  { false, iconv_ISO8859_2_e, "ISO8859-2" },
+  { false, iconv_ISO8859_3_e, "ISO8859-3" },
+  { false, iconv_ISO8859_4_e, "ISO8859-4" },
+  { false, iconv_ISO8859_5_e, "ISO8859-5" },
+  { false, iconv_ISO8859_6_e, "ISO8859-6" },
+  { false, iconv_ISO8859_7_e, "ISO8859-7" },
+  { false, iconv_ISO8859_8_e, "ISO8859-8" },
+  { false, iconv_ISO8859_9_e, "ISO8859-9" },
+  { false, iconv_ISO8859_9E_e, "ISO8859-9E" },
+  { false, iconv_ISO8859_10_e, "ISO8859-10" },
+  { false, iconv_ISO8859_11_e, "ISO8859-11" },
+  { false, iconv_ISO8859_13_e, "ISO8859-13" },
+  { false, iconv_ISO8859_14_e, "ISO8859-14" },
+  { false, iconv_ISO8859_15_e, "ISO8859-15" },
+  { false, iconv_ISO8859_16_e, "ISO8859-16" },
+  { false, iconv_ISO11548_1_e, "ISO11548-1" },
+  { false, iconv_ISO88591_e, "ISO88591" },
+  { false, iconv_ISO88592_e, "ISO88592" },
+  { false, iconv_ISO88593_e, "ISO88593" },
+  { false, iconv_ISO88594_e, "ISO88594" },
+  { false, iconv_ISO88595_e, "ISO88595" },
+  { false, iconv_ISO88596_e, "ISO88596" },
+  { false, iconv_ISO88597_e, "ISO88597" },
+  { false, iconv_ISO88598_e, "ISO88598" },
+  { false, iconv_ISO88599_e, "ISO88599" },
+  { false, iconv_ISO88599E_e, "ISO88599E" },
+  { false, iconv_ISO885910_e, "ISO885910" },
+  { false, iconv_ISO885911_e, "ISO885911" },
+  { false, iconv_ISO885913_e, "ISO885913" },
+  { false, iconv_ISO885914_e, "ISO885914" },
+  { false, iconv_ISO885915_e, "ISO885915" },
+  { false, iconv_ISO885916_e, "ISO885916" },
+  { false, iconv_ISO_646_IRV_1991_e, "ISO_646.IRV:1991" },
+  { false, iconv_ISO_2033_1983_e, "ISO_2033-1983" },
+  { false, iconv_ISO_2033_e, "ISO_2033" },
+  { false, iconv_ISO_5427_EXT_e, "ISO_5427-EXT" },
+  { false, iconv_ISO_5427_e, "ISO_5427" },
+  { false, iconv_ISO_5427_1981_e, "ISO_5427:1981" },
+  { false, iconv_ISO_5427EXT_e, "ISO_5427EXT" },
+  { false, iconv_ISO_5428_e, "ISO_5428" },
+  { false, iconv_ISO_5428_1980_e, "ISO_5428:1980" },
+  { false, iconv_ISO_6937_2_e, "ISO_6937-2" },
+  { false, iconv_ISO_6937_2_1983_e, "ISO_6937-2:1983" },
+  { false, iconv_ISO_6937_e, "ISO_6937" },
+  { false, iconv_ISO_6937_1992_e, "ISO_6937:1992" },
+  { false, iconv_ISO_8859_1_e, "ISO_8859-1" },
+  { false, iconv_ISO_8859_1_1987_e, "ISO_8859-1:1987" },
+  { false, iconv_ISO_8859_2_e, "ISO_8859-2" },
+  { false, iconv_ISO_8859_2_1987_e, "ISO_8859-2:1987" },
+  { false, iconv_ISO_8859_3_e, "ISO_8859-3" },
+  { false, iconv_ISO_8859_3_1988_e, "ISO_8859-3:1988" },
+  { false, iconv_ISO_8859_4_e, "ISO_8859-4" },
+  { false, iconv_ISO_8859_4_1988_e, "ISO_8859-4:1988" },
+  { false, iconv_ISO_8859_5_e, "ISO_8859-5" },
+  { false, iconv_ISO_8859_5_1988_e, "ISO_8859-5:1988" },
+  { false, iconv_ISO_8859_6_e, "ISO_8859-6" },
+  { false, iconv_ISO_8859_6_1987_e, "ISO_8859-6:1987" },
+  { false, iconv_ISO_8859_7_e, "ISO_8859-7" },
+  { false, iconv_ISO_8859_7_1987_e, "ISO_8859-7:1987" },
+  { false, iconv_ISO_8859_7_2003_e, "ISO_8859-7:2003" },
+  { false, iconv_ISO_8859_8_e, "ISO_8859-8" },
+  { false, iconv_ISO_8859_8_1988_e, "ISO_8859-8:1988" },
+  { false, iconv_ISO_8859_9_e, "ISO_8859-9" },
+  { false, iconv_ISO_8859_9_1989_e, "ISO_8859-9:1989" },
+  { false, iconv_ISO_8859_9E_e, "ISO_8859-9E" },
+  { false, iconv_ISO_8859_10_e, "ISO_8859-10" },
+  { false, iconv_ISO_8859_10_1992_e, "ISO_8859-10:1992" },
+  { false, iconv_ISO_8859_14_e, "ISO_8859-14" },
+  { false, iconv_ISO_8859_14_1998_e, "ISO_8859-14:1998" },
+  { false, iconv_ISO_8859_15_e, "ISO_8859-15" },
+  { false, iconv_ISO_8859_15_1998_e, "ISO_8859-15:1998" },
+  { false, iconv_ISO_8859_16_e, "ISO_8859-16" },
+  { false, iconv_ISO_8859_16_2001_e, "ISO_8859-16:2001" },
+  { false, iconv_ISO_9036_e, "ISO_9036" },
+  { false, iconv_ISO_10367_BOX_e, "ISO_10367-BOX" },
+  { false, iconv_ISO_10367BOX_e, "ISO_10367BOX" },
+  { false, iconv_ISO_11548_1_e, "ISO_11548-1" },
+  { false, iconv_ISO_69372_e, "ISO_69372" },
+  { false, iconv_IT_e, "IT" },
+  { false, iconv_JIS_C6220_1969_RO_e, "JIS_C6220-1969-RO" },
+  { false, iconv_JIS_C6229_1984_B_e, "JIS_C6229-1984-B" },
+  { false, iconv_JIS_C62201969RO_e, "JIS_C62201969RO" },
+  { false, iconv_JIS_C62291984B_e, "JIS_C62291984B" },
+  { false, iconv_JOHAB_e, "JOHAB" },
+  { false, iconv_JP_OCR_B_e, "JP-OCR-B" },
+  { false, iconv_JP_e, "JP" },
+  { false, iconv_JS_e, "JS" },
+  { false, iconv_JUS_I_B1_002_e, "JUS_I.B1.002" },
+  { false, iconv_KOI_7_e, "KOI-7" },
+  { false, iconv_KOI_8_e, "KOI-8" },
+  { false, iconv_KOI8_R_e, "KOI8-R" },
+  { false, iconv_KOI8_RU_e, "KOI8-RU" },
+  { false, iconv_KOI8_T_e, "KOI8-T" },
+  { false, iconv_KOI8_U_e, "KOI8-U" },
+  { false, iconv_KOI8_e, "KOI8" },
+  { false, iconv_KOI8R_e, "KOI8R" },
+  { false, iconv_KOI8U_e, "KOI8U" },
+  { false, iconv_KSC5636_e, "KSC5636" },
+  { false, iconv_L1_e, "L1" },
+  { false, iconv_L2_e, "L2" },
+  { false, iconv_L3_e, "L3" },
+  { false, iconv_L4_e, "L4" },
+  { false, iconv_L5_e, "L5" },
+  { false, iconv_L6_e, "L6" },
+  { false, iconv_L7_e, "L7" },
+  { false, iconv_L8_e, "L8" },
+  { false, iconv_L10_e, "L10" },
+  { false, iconv_LATIN_9_e, "LATIN-9" },
+  { false, iconv_LATIN_GREEK_1_e, "LATIN-GREEK-1" },
+  { false, iconv_LATIN_GREEK_e, "LATIN-GREEK" },
+  { false, iconv_LATIN1_e, "LATIN1" },
+  { false, iconv_LATIN2_e, "LATIN2" },
+  { false, iconv_LATIN3_e, "LATIN3" },
+  { false, iconv_LATIN4_e, "LATIN4" },
+  { false, iconv_LATIN5_e, "LATIN5" },
+  { false, iconv_LATIN6_e, "LATIN6" },
+  { false, iconv_LATIN7_e, "LATIN7" },
+  { false, iconv_LATIN8_e, "LATIN8" },
+  { false, iconv_LATIN9_e, "LATIN9" },
+  { false, iconv_LATIN10_e, "LATIN10" },
+  { false, iconv_LATINGREEK_e, "LATINGREEK" },
+  { false, iconv_LATINGREEK1_e, "LATINGREEK1" },
+  { false, iconv_MAC_CENTRALEUROPE_e, "MAC-CENTRALEUROPE" },
+  { false, iconv_MAC_CYRILLIC_e, "MAC-CYRILLIC" },
+  { false, iconv_MAC_IS_e, "MAC-IS" },
+  { false, iconv_MAC_SAMI_e, "MAC-SAMI" },
+  { false, iconv_MAC_UK_e, "MAC-UK" },
+  { false, iconv_MAC_e, "MAC" },
+  { false, iconv_MACCYRILLIC_e, "MACCYRILLIC" },
+  { false, iconv_MACINTOSH_e, "MACINTOSH" },
+  { false, iconv_MACIS_e, "MACIS" },
+  { false, iconv_MACUK_e, "MACUK" },
+  { false, iconv_MACUKRAINIAN_e, "MACUKRAINIAN" },
+  { false, iconv_MIK_e, "MIK" },
+  { false, iconv_MS_ANSI_e, "MS-ANSI" },
+  { false, iconv_MS_ARAB_e, "MS-ARAB" },
+  { false, iconv_MS_CYRL_e, "MS-CYRL" },
+  { false, iconv_MS_EE_e, "MS-EE" },
+  { false, iconv_MS_GREEK_e, "MS-GREEK" },
+  { false, iconv_MS_HEBR_e, "MS-HEBR" },
+  { false, iconv_MS_MAC_CYRILLIC_e, "MS-MAC-CYRILLIC" },
+  { false, iconv_MS_TURK_e, "MS-TURK" },
+  { false, iconv_MS932_e, "MS932" },
+  { false, iconv_MS936_e, "MS936" },
+  { false, iconv_MSCP949_e, "MSCP949" },
+  { false, iconv_MSCP1361_e, "MSCP1361" },
+  { false, iconv_MSMACCYRILLIC_e, "MSMACCYRILLIC" },
+  { false, iconv_MSZ_7795_3_e, "MSZ_7795.3" },
+  { false, iconv_MS_KANJI_e, "MS_KANJI" },
+  { false, iconv_NAPLPS_e, "NAPLPS" },
+  { false, iconv_NATS_DANO_e, "NATS-DANO" },
+  { false, iconv_NATS_SEFI_e, "NATS-SEFI" },
+  { false, iconv_NATSDANO_e, "NATSDANO" },
+  { false, iconv_NATSSEFI_e, "NATSSEFI" },
+  { false, iconv_NC_NC0010_e, "NC_NC0010" },
+  { false, iconv_NC_NC00_10_e, "NC_NC00-10" },
+  { false, iconv_NC_NC00_10_81_e, "NC_NC00-10:81" },
+  { false, iconv_NF_Z_62_010_e, "NF_Z_62-010" },
+  { false, iconv_NF_Z_62_010__1973__e, "NF_Z_62-010_(1973)" },
+  { false, iconv_NF_Z_62_010_1973_e, "NF_Z_62-010_1973" },
+  { false, iconv_NF_Z_62010_e, "NF_Z_62010" },
+  { false, iconv_NF_Z_62010_1973_e, "NF_Z_62010_1973" },
+  { false, iconv_NO_e, "NO" },
+  { false, iconv_NO2_e, "NO2" },
+  { false, iconv_NS_4551_1_e, "NS_4551-1" },
+  { false, iconv_NS_4551_2_e, "NS_4551-2" },
+  { false, iconv_NS_45511_e, "NS_45511" },
+  { false, iconv_NS_45512_e, "NS_45512" },
+  { false, iconv_OS2LATIN1_e, "OS2LATIN1" },
+  { false, iconv_OSF00010001_e, "OSF00010001" },
+  { false, iconv_OSF00010002_e, "OSF00010002" },
+  { false, iconv_OSF00010003_e, "OSF00010003" },
+  { false, iconv_OSF00010004_e, "OSF00010004" },
+  { false, iconv_OSF00010005_e, "OSF00010005" },
+  { false, iconv_OSF00010006_e, "OSF00010006" },
+  { false, iconv_OSF00010007_e, "OSF00010007" },
+  { false, iconv_OSF00010008_e, "OSF00010008" },
+  { false, iconv_OSF00010009_e, "OSF00010009" },
+  { false, iconv_OSF0001000A_e, "OSF0001000A" },
+  { false, iconv_OSF00010020_e, "OSF00010020" },
+  { false, iconv_OSF00010100_e, "OSF00010100" },
+  { false, iconv_OSF00010101_e, "OSF00010101" },
+  { false, iconv_OSF00010102_e, "OSF00010102" },
+  { false, iconv_OSF00010104_e, "OSF00010104" },
+  { false, iconv_OSF00010105_e, "OSF00010105" },
+  { false, iconv_OSF00010106_e, "OSF00010106" },
+  { false, iconv_OSF00030010_e, "OSF00030010" },
+  { false, iconv_OSF0004000A_e, "OSF0004000A" },
+  { false, iconv_OSF0005000A_e, "OSF0005000A" },
+  { false, iconv_OSF05010001_e, "OSF05010001" },
+  { false, iconv_OSF100201A4_e, "OSF100201A4" },
+  { false, iconv_OSF100201A8_e, "OSF100201A8" },
+  { false, iconv_OSF100201B5_e, "OSF100201B5" },
+  { false, iconv_OSF100201F4_e, "OSF100201F4" },
+  { false, iconv_OSF100203B5_e, "OSF100203B5" },
+  { false, iconv_OSF1002011C_e, "OSF1002011C" },
+  { false, iconv_OSF1002011D_e, "OSF1002011D" },
+  { false, iconv_OSF1002035D_e, "OSF1002035D" },
+  { false, iconv_OSF1002035E_e, "OSF1002035E" },
+  { false, iconv_OSF1002035F_e, "OSF1002035F" },
+  { false, iconv_OSF1002036B_e, "OSF1002036B" },
+  { false, iconv_OSF1002037B_e, "OSF1002037B" },
+  { false, iconv_OSF10010001_e, "OSF10010001" },
+  { false, iconv_OSF10010004_e, "OSF10010004" },
+  { false, iconv_OSF10010006_e, "OSF10010006" },
+  { false, iconv_OSF10020025_e, "OSF10020025" },
+  { false, iconv_OSF10020111_e, "OSF10020111" },
+  { false, iconv_OSF10020115_e, "OSF10020115" },
+  { false, iconv_OSF10020116_e, "OSF10020116" },
+  { false, iconv_OSF10020118_e, "OSF10020118" },
+  { false, iconv_OSF10020122_e, "OSF10020122" },
+  { false, iconv_OSF10020129_e, "OSF10020129" },
+  { false, iconv_OSF10020352_e, "OSF10020352" },
+  { false, iconv_OSF10020354_e, "OSF10020354" },
+  { false, iconv_OSF10020357_e, "OSF10020357" },
+  { false, iconv_OSF10020359_e, "OSF10020359" },
+  { false, iconv_OSF10020360_e, "OSF10020360" },
+  { false, iconv_OSF10020364_e, "OSF10020364" },
+  { false, iconv_OSF10020365_e, "OSF10020365" },
+  { false, iconv_OSF10020366_e, "OSF10020366" },
+  { false, iconv_OSF10020367_e, "OSF10020367" },
+  { false, iconv_OSF10020370_e, "OSF10020370" },
+  { false, iconv_OSF10020387_e, "OSF10020387" },
+  { false, iconv_OSF10020388_e, "OSF10020388" },
+  { false, iconv_OSF10020396_e, "OSF10020396" },
+  { false, iconv_OSF10020402_e, "OSF10020402" },
+  { false, iconv_OSF10020417_e, "OSF10020417" },
+  { false, iconv_PT_e, "PT" },
+  { false, iconv_PT2_e, "PT2" },
+  { false, iconv_PT154_e, "PT154" },
+  { false, iconv_R8_e, "R8" },
+  { false, iconv_R9_e, "R9" },
+  { false, iconv_RK1048_e, "RK1048" },
+  { false, iconv_ROMAN8_e, "ROMAN8" },
+  { false, iconv_ROMAN9_e, "ROMAN9" },
+  { false, iconv_RUSCII_e, "RUSCII" },
+  { false, iconv_SE_e, "SE" },
+  { false, iconv_SE2_e, "SE2" },
+  { false, iconv_SEN_850200_B_e, "SEN_850200_B" },
+  { false, iconv_SEN_850200_C_e, "SEN_850200_C" },
+  { false, iconv_SHIFT_JIS_e, "SHIFT-JIS" },
+  { false, iconv_SHIFTJISX0213_e, "SHIFTJISX0213" },
+  { false, iconv_SHIFT_JIS_e, "SHIFT_JIS" },
+  { false, iconv_SHIFT_JISX0213_e, "SHIFT_JISX0213" },
+  { false, iconv_SJIS_OPEN_e, "SJIS-OPEN" },
+  { false, iconv_SJIS_WIN_e, "SJIS-WIN" },
+  { false, iconv_SJIS_e, "SJIS" },
+  { false, iconv_SS636127_e, "SS636127" },
+  { false, iconv_STRK1048_2002_e, "STRK1048-2002" },
+  { false, iconv_ST_SEV_358_88_e, "ST_SEV_358-88" },
+  { false, iconv_T_61_8BIT_e, "T.61-8BIT" },
+  { false, iconv_T_61_e, "T.61" },
+  { false, iconv_T_618BIT_e, "T.618BIT" },
+  { false, iconv_TCVN_5712_e, "TCVN-5712" },
+  { false, iconv_TCVN_e, "TCVN" },
+  { false, iconv_TCVN5712_1_e, "TCVN5712-1" },
+  { false, iconv_TCVN5712_1_1993_e, "TCVN5712-1:1993" },
+  { false, iconv_THAI8_e, "THAI8" },
+  { false, iconv_TIS_620_e, "TIS-620" },
+  { false, iconv_TIS620_0_e, "TIS620-0" },
+  { false, iconv_TIS620_2529_1_e, "TIS620.2529-1" },
+  { false, iconv_TIS620_2533_0_e, "TIS620.2533-0" },
+  { false, iconv_TIS620_e, "TIS620" },
+  { false, iconv_TS_5881_e, "TS-5881" },
+  { false, iconv_TSCII_e, "TSCII" },
+  { false, iconv_TURKISH8_e, "TURKISH8" },
+  { false, iconv_UCS_2_e, "UCS-2" },
+  { false, iconv_UCS_2BE_e, "UCS-2BE" },
+  { false, iconv_UCS_2LE_e, "UCS-2LE" },
+  { false, iconv_UCS_4_e, "UCS-4" },
+  { false, iconv_UCS_4BE_e, "UCS-4BE" },
+  { false, iconv_UCS_4LE_e, "UCS-4LE" },
+  { false, iconv_UCS2_e, "UCS2" },
+  { false, iconv_UCS4_e, "UCS4" },
+  { false, iconv_UHC_e, "UHC" },
+  { false, iconv_UJIS_e, "UJIS" },
+  { false, iconv_UK_e, "UK" },
+  { false, iconv_UNICODE_e, "UNICODE" },
+  { false, iconv_UNICODEBIG_e, "UNICODEBIG" },
+  { false, iconv_UNICODELITTLE_e, "UNICODELITTLE" },
+  { false, iconv_US_ASCII_e, "US-ASCII" },
+  { false, iconv_US_e, "US" },
+  { false, iconv_UTF_7_e, "UTF-7" },
+  // Is UTF-8 supported??  "supported" means "recognized by parser_alphabet",
+  // but UTF-8 is not a valid runtime encoding.
+  { false, iconv_UTF_8_e, "UTF-8" },
+  { false, iconv_UTF_16_e, "UTF-16" },
+  { false, iconv_UTF_16BE_e, "UTF-16BE" },
+  { false, iconv_UTF_16LE_e, "UTF-16LE" },
+  { false, iconv_UTF_32_e, "UTF-32" },
+  { false, iconv_UTF_32BE_e, "UTF-32BE" },
+  { false, iconv_UTF_32LE_e, "UTF-32LE" },
+  { false, iconv_UTF7_e, "UTF7" },
+  { false, iconv_UTF8_e, "UTF8" },
+  { false, iconv_UTF16_e, "UTF16" },
+  { false, iconv_UTF16BE_e, "UTF16BE" },
+  { false, iconv_UTF16LE_e, "UTF16LE" },
+  { false, iconv_UTF32_e, "UTF32" },
+  { false, iconv_UTF32BE_e, "UTF32BE" },
+  { false, iconv_UTF32LE_e, "UTF32LE" },
+  { false, iconv_VISCII_e, "VISCII" },
+  { false, iconv_WCHAR_T_e, "WCHAR_T" },
+  { false, iconv_WIN_SAMI_2_e, "WIN-SAMI-2" },
+  { false, iconv_WINBALTRIM_e, "WINBALTRIM" },
+  { false, iconv_WINDOWS_31J_e, "WINDOWS-31J" },
+  { false, iconv_WINDOWS_874_e, "WINDOWS-874" },
+  { false, iconv_WINDOWS_936_e, "WINDOWS-936" },
+  { false, iconv_WINDOWS_1250_e, "WINDOWS-1250" },
+  { false, iconv_WINDOWS_1251_e, "WINDOWS-1251" },
+  { false, iconv_WINDOWS_1252_e, "WINDOWS-1252" },
+  { false, iconv_WINDOWS_1253_e, "WINDOWS-1253" },
+  { false, iconv_WINDOWS_1254_e, "WINDOWS-1254" },
+  { false, iconv_WINDOWS_1255_e, "WINDOWS-1255" },
+  { false, iconv_WINDOWS_1256_e, "WINDOWS-1256" },
+  { false, iconv_WINDOWS_1257_e, "WINDOWS-1257" },
+  { false, iconv_WINDOWS_1258_e, "WINDOWS-1258" },
+  { false, iconv_WINSAMI2_e, "WINSAMI2" },
+  { false, iconv_WS2_e, "WS2" },
+  { false, iconv_YU_e, "YU" },
+};
+
+/*
+ * Because this variable is static, the contructor runs before main and is
+ * guaranted to run.
+ */
+static class rt_encoding_t
+  {
+  const char *ctype, *lc_ctype;
+  public:
+  rt_encoding_t() : ctype( setlocale(LC_CTYPE, "") )
+    {
+    lc_ctype =  nl_langinfo(CODESET);
+    // Let's learn what the computer is using for the console:
+    // We need to establish the codeset used by the system console:
+  __gg__console_encoding = use_locale();
+    }
+  cbl_encoding_t use_locale() const
+    {
+    auto encoding = strstr(ctype, "UTF-8") ?
+      iconv_UTF_8_e : __gg__encoding_iconv_type(lc_ctype);
+    return encoding;
+    }
+  } rt_encoding;
+
+static const encodings_t *
+encoding_descr( cbl_encoding_t encoding ) {
+  static encodings_t *eoencodings = encodings + COUNT_OF(encodings);
+
+  auto p = std::find_if( encodings, eoencodings,
+                         [encoding]( const encodings_t& elem ) {
+                           return encoding == elem.type;
+                         } );
+  return p < eoencodings? p : nullptr;
+}
+
+static const encodings_t *
+encoding_descr( const char name[] ) {
+  static encodings_t *eoencodings = encodings + COUNT_OF(encodings);
+
+  char *slashless = strdup(name);
+  assert(slashless);
+  char *pslash = strchr(slashless, '/');
+  if( pslash )
+    {
+    *pslash = '\0';
+    }
+
+  auto p = std::find_if( encodings, eoencodings,
+                         [slashless]( const encodings_t& elem ) {
+                           return strcasecmp(slashless, elem.name) == 0;
+                         } );
+  free(slashless);
+
+  return p < eoencodings? p : nullptr;
+}
+
+const encodings_t *
+__gg__encoding_iconv_descr( const char name[] ) {
+  return encoding_descr(name);
+}
+
+const encodings_t *
+__gg__encoding_iconv_descr( cbl_encoding_t encoding ) {
+  return encoding_descr(encoding);
+}
+
+const char *
+__gg__encoding_iconv_name( cbl_encoding_t encoding ) {
+  auto p = encoding_descr(encoding);
+  return p? p->name : nullptr;
+}
+
+bool
+__gg__encoding_iconv_valid( cbl_encoding_t encoding ) {
+  auto p = encoding_descr(encoding);
+  return p? p->supported : false;
+}
+
+cbl_encoding_t
+__gg__encoding_iconv_type( const char *name ) {
+  auto p = encoding_descr(name);
+  return p? p->type : no_encoding_e;
+}
+
+char *
+__gg__iconverter( cbl_encoding_t from,
+                  cbl_encoding_t to,
+            const void *str_,
+                  size_t length,
+                  size_t *outlength_p,
+                  size_t *iconv_retval_p )
+  {
+  const char *str = static_cast<const char *>(str_);
+
+  // Attempts to convert 'length' bytes 'str' in 'from' encoding to
+  // the 'to' encoding.
+
+  // The return value points to a static memory area in this function, the
+  // caller has to respect that and make copies before doing something that
+  // will call this routine again.  Note that __gg__get_charmap, and
+  // charmap_t::mapped_character can call this routine.
+
+  // The routine optionally returns the number of bytes generated, the number
+  // of bytes eaten by iconv, and the actual return value from the iconv call.
+
+  // Let's consider the possibility of each input character needing four output
+  // characters.  We increase it by one to leave room for the terminating NUL,
+  // which itself might be four bytes of 0x00. The static area keeps growing
+  // as necessary.
+
+  // Get charmap first, because we might need it in the event of a conversion
+  // error, and we have to avoid problems with recursion clobbering the return
+  // buffer, because __gg__get_charmap can call us:
+  charmap_t *charmap_to = __gg__get_charmap(to);
+
+  static size_t retsize = 1;
+  static char *retval = static_cast<char *>(malloc(retsize));
+
+  size_t needed = 4*(length+1);
+  if( retsize < needed )
+    {
+    retsize = needed;
+    retval = static_cast<char *>(realloc(retval, retsize));
+    }
+
+  size_t outlength;
+  size_t iconv_retval;
+
+  if( from == to )
+    {
+    // There is no need to actually convert.  Simulate a successful iconv()
+    // call:
+
+    memcpy(retval, str, length);
+    outlength = length;
+    iconv_retval = 0;
+    }
+  else
+    {
+    // We attempt to minimize overhead by using a map to call
+    // iconv_open but once for each from/to pairing.
+
+    iconv_t cd;
+
+    static std::unordered_map<uint32_t, iconv_t> pairings;
+    uint32_t pairing = static_cast<uint32_t>(from) << 16;
+    pairing += static_cast<uint32_t>(to);
+    std::unordered_map<uint32_t, iconv_t>::const_iterator it =
+          pairings.find(pairing);
+    if( it == pairings.end() )
+      {
+      // This pairing is new to us.
+      assert(to   > custom_encoding_e);
+      assert(from > custom_encoding_e);
+      cd = iconv_open(__gg__encoding_iconv_name(to),
+                      __gg__encoding_iconv_name(from));
+      pairings[pairing] = cd;
+      }
+    else
+      {
+      // We've seen this pairing before.
+      cd = it->second;
+      }
+
+    char *inbuf  = const_cast<char *>(str);
+    char *outbuf = retval;
+    size_t inbytesleft  = length;
+    size_t outbytesleft = retsize;
+
+    /* It's time for some COBOL magic.  The default HIGH-VALUE in COBOL is
+       0xFF.  CP1252, UTF-16, and UTF32 all happily interconvert 0xFF, 0x00FF,
+       and 0x000000FF.  But CP1140 is a pain.
+
+       A CP1252 0xFF becomes a CP1140 DF, which converts back to 0xFF
+       CP1140 DF becomes FF, 00ff and 000000FF.
+
+       So, we need to intervene when the source, or dest, is ebcdic.  */
+
+    char *inbuf_cpy = nullptr;
+    if( __gg__high_value_character == DEGENERATE_HIGH_VALUE )
+      {
+      const charmap_t *map_from = __gg__get_charmap(from);
+      if( map_from->is_like_ebcdic() )
+        {
+        inbuf_cpy = static_cast<char *>(malloc(length));
+        assert(inbuf_cpy);
+        memcpy(inbuf_cpy, inbuf, length);
+        inbuf = inbuf_cpy;
+        for(size_t i=0; i<length; i++)
+          {
+          if( (unsigned char)inbuf[i] == (unsigned char)0xFF )
+            {
+            inbuf[i] = (char)0xDF;
+            }
+          }
+        }
+      }
+
+    // When the caller supplies iconv_retval_p, we only try to convert once,
+    // because they are telling us they will handle errors.
+
+    // Otherwise, we just keep trying to convert, replacing unconvertable
+    // characters with a replacement.
+
+    iconv_retval = 1; // This primes the pump:
+    for(;;)
+      {
+      iconv_retval = iconv( cd,
+                            &inbuf, &inbytesleft,
+                            &outbuf, &outbytesleft);
+      if( iconv_retval_p || iconv_retval == 0 )
+        {
+        // Either there was no conversion error, or else our caller wants
+        // to know about the error
+        break;
+        }
+      // Arriving here means that there has been a conversion error.
+      if( charmap_to->stride() >= 2 )
+        {
+        // Put in the value for the U+FFFD Replacement Character
+        charmap_to->putch(REPLACEMENT_CHARACTER, outbuf, size_t(0));
+        outbuf += charmap_to->stride();
+        outbytesleft -= charmap_to->stride();
+        }
+      else if( charmap_to->is_like_utf8() )
+        {
+        // Put in the UTF-8 bytes for the U+FFFD Replacement Character
+        *outbuf++ = static_cast<char>(0xEF);
+        *outbuf++ = static_cast<char>(0xBF);
+        *outbuf++ = static_cast<char>(0xBD);
+        outbytesleft -= 3;
+        }
+      else
+        {
+        // This is some kind of single-byte-coded character set.  We just use
+        // a question mark as the replacement character.
+        *outbuf++ = charmap_to->mapped_character(ascii_query);
+        outbytesleft -= 1;
+        }
+      // skip past the byte that caused the conversion error:
+      inbuf += 1;
+      inbytesleft -= 1;
+      // Raise the run-time error:
+#ifdef IN_TARGET_LIBS
+      exception_raise(ec_data_conversion_e);
+      // And then loop around and try it again.
+#endif
+      }
+
+    free(inbuf_cpy);
+    // Calculate the number of bytes generated:
+    outlength = retsize - outbytesleft;
+
+    if( __gg__high_value_character == DEGENERATE_HIGH_VALUE )
+      {
+      const charmap_t *map_to = __gg__get_charmap(to);
+      if( map_to->is_like_ebcdic() )
+        {
+        for(size_t i=0; i<length; i++)
+          {
+          if( (unsigned char)retval[i] == (unsigned char)0xDF )
+            {
+            retval[i] = (char)0xFF;
+            }
+          }
+        }
+      }
+    }
+  // For the convenience of those who call this routine, we are sticking a
+  // terminating NUL on the end of the generated string.  Keeping in mind that
+  // a NUL isn't always a single byte, we are going to lay down four of them.
+  retval[outlength+0] = '\0';
+  retval[outlength+1] = '\0';
+  retval[outlength+2] = '\0';
+  retval[outlength+3] = '\0';
+
+  if( outlength_p )
+    {
+    *outlength_p = outlength;
+    }
+  if( iconv_retval_p )
+    {
+    *iconv_retval_p = iconv_retval;
+    }
+
+  return retval;
+  }
+
+char *
+__gg__miconverter( cbl_encoding_t from,
+                   cbl_encoding_t to,
+             const void *str_,
+                   size_t length,
+                   size_t *outlength_p,
+                   size_t *iconv_retval_p )
+  {
+  const char *converted = __gg__iconverter(from,
+                                           to,
+                                           str_,
+                                           length,
+                                           outlength_p,
+                                           iconv_retval_p);
+  char *retval = static_cast<char *>(malloc(*outlength_p + 4));
+  assert(retval);
+  memcpy(retval, converted, *outlength_p);
+  // Tack on four zeros to be a NUL in any encoding.
+  memset(retval + *outlength_p, 0, 4);
+  return retval;
+  }
+
+static
+std::unordered_map<cbl_encoding_t, charmap_t *>map_of_encodings;
+
+charmap_t *
+__gg__get_charmap(cbl_encoding_t encoding)
+  {
+  // In various places in the runtime, there will be need of charmap_t for
+  // various encodings.  By using this routine, the overhead of creating and
+  // using them is kept low.
+
+  // Sometimes the encoding is custom_encoding_e, like when initializing a
+  // FldPointer.  But we still need to have *something*, because of the need
+  // to handle certain figurative constants.  An example is
+  //      01 FOO pointer value NULL
+  // where the encoding is irrelevant. So, in that case we force it to be
+  // something.
+
+  if( encoding == custom_encoding_e)
+    {
+    encoding = DEFAULT_SOURCE_ENCODING;
+    }
+
+  charmap_t *retval;
+  std::unordered_map<cbl_encoding_t, charmap_t *>::const_iterator it
+                          = map_of_encodings.find(encoding);
+  if( it != map_of_encodings.end() )
+    {
+    retval = it->second;
+    }
+  else
+    {
+    retval = new charmap_t(encoding);
+    map_of_encodings[encoding] = retval;
+    }
+  return retval;
+  }
+

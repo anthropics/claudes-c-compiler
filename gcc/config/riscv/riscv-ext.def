@@ -1,0 +1,2091 @@
+/* RISC-V extension definition file for RISC-V.
+   Copyright (C) 2025-2026 Free Software Foundation, Inc.
+
+This file is part of GCC.
+
+GCC is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 3, or (at your option)
+any later version.
+
+GCC is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with GCC; see the file COPYING3.  If not see
+<http://www.gnu.org/licenses/>.
+
+Please run `make riscv-regen` in build folder to make sure updated anything.
+
+Format of DEFINE_RISCV_EXT:
+  NAME:
+    The name of the extension, e.g. "i".
+  UPPERCASE_NAME:
+    The name of the extension in uppercase, e.g. "ZBA", this used
+    for generate TARGET_<ext-name> marco and MASK_<ext-name> macro.
+    For those extension only named with single letter, it should also come with
+    'RV', e.g. 'v' should use 'RVV' here.
+    Some of old extension like 'i' and 'm' are not follow the rule.
+  FULL_NAME:
+    The full name of the extension, e.g. "Base integer extension".
+  DESC:
+    A short description of the extension, this will used during generating
+    documentation, GNU Texinfo format can be used this field.
+  URL:
+    A URL for the extension.
+  DEP_EXTS:
+    A list of dependent extensions, this is a list of strings or
+    a list of tuples.  The first element of the tuple is the name
+    of the extension and the second element is a function that
+    takes a subset_list and returns true if the extension should be added as
+    a dependent extension, `c` and `zca` are examples of this.
+  SUPPORTED_VERSIONS:
+    A list of tuples, each tuple contains the major version number, minor
+    version number and the class of the specification.  The version number is a
+    list of integers, e.g. {2, 0} for version 2.0.  The class is
+    a string, e.g. "ISA_SPEC_CLASS_20191213", the class of the
+    specification is not required for any new extension.
+  FLAG_GROUP:
+    The group of the extension, this is used to group extensions
+    together.  The group is a string, e.g. "base", "zi", "zm", "za", "zf",
+    "zc", "zb", "zk" and "zi".
+    This should be auto generated in theory in some day...
+  BITMASK_GROUP_ID:
+    The group id of the extension for the __riscv_feature_bits.
+    this field should sync with riscv-c-api-doc, and keep BITMASK_NOT_YET_ALLOCATED
+    if not got allocated.
+    https://github.com/riscv-non-isa/riscv-c-api-doc/blob/main/src/c-api.adoc#extension-bitmask-definitions
+  BITMASK_BIT_POSITION:
+    The bit position of the extension for the __riscv_feature_bits.
+    this field should sync with riscv-c-api-doc, and keep BITMASK_NOT_YET_ALLOCATED
+    if not got allocated.
+    https://github.com/riscv-non-isa/riscv-c-api-doc/blob/main/src/c-api.adoc#extension-bitmask-definitions
+  EXTRA_EXTENSION_FLAGS:
+    Extra flags for the extension, this is a bitmask of the
+    extra flags.  The extra flags are:
+    - EXT_FLAG_MACRO: Set this flag if this extension is just a macro of set of
+       extensions, and not define any new instrcutions, new CSRs or new
+       behaviors, the example is `b` extension is just a macro of `zba`, `zbb`
+       and `zbs`.
+*/
+
+DEFINE_RISCV_EXT(
+  /* NAME */ e,
+  /* UPPERCASE_NAME */ RVE,
+  /* FULL_NAME */ "Reduced base integer extension",
+  /* DESC */ "",
+  /* URL */ ,
+  /* DEP_EXTS */ ({}),
+  /* SUPPORTED_VERSIONS */ ({{2, 0}}),
+  /* FLAG_GROUP */ base,
+  /* BITMASK_GROUP_ID */ 0,
+  /* BITMASK_BIT_POSITION*/ 4,
+  /* EXTRA_EXTENSION_FLAGS */ 0)
+
+DEFINE_RISCV_EXT(
+  /* NAME */ i,
+  /* UPPERCASE_NAME */ RVI,
+  /* FULL_NAME */ "Base integer extension",
+  /* DESC */ "",
+  /* URL */ ,
+  /* DEP_EXTS */ ({}),
+  /* SUPPORTED_VERSIONS */ ({{2, 1, ISA_SPEC_CLASS_20191213},
+			     {2, 1, ISA_SPEC_CLASS_20190608},
+			     {2, 0, ISA_SPEC_CLASS_2P2}}),
+  /* FLAG_GROUP */ base,
+  /* BITMASK_GROUP_ID */ 0,
+  /* BITMASK_BIT_POSITION*/ 8,
+  /* EXTRA_EXTENSION_FLAGS */ 0)
+
+DEFINE_RISCV_EXT(
+  /* NAME */ m,
+  /* UPPERCASE_NAME */ MUL,
+  /* FULL_NAME */ "Integer multiplication and division extension",
+  /* DESC */ "",
+  /* URL */ ,
+  /* DEP_EXTS */ ({"zmmul"}),
+  /* SUPPORTED_VERSIONS */ ({{2, 0}}),
+  /* FLAG_GROUP */ base,
+  /* BITMASK_GROUP_ID */ 0,
+  /* BITMASK_BIT_POSITION*/ 12,
+  /* EXTRA_EXTENSION_FLAGS */ 0)
+
+DEFINE_RISCV_EXT(
+  /* NAME */ a,
+  /* UPPERCASE_NAME */ ATOMIC,
+  /* FULL_NAME */ "Atomic extension",
+  /* DESC */ "",
+  /* URL */ ,
+  /* DEP_EXTS */ ({"zaamo", "zalrsc"}),
+  /* SUPPORTED_VERSIONS */ ({{2, 1, ISA_SPEC_CLASS_20191213},
+			     {2, 0, ISA_SPEC_CLASS_20190608},
+			     {2, 0, ISA_SPEC_CLASS_2P2}}),
+  /* FLAG_GROUP */ base,
+  /* BITMASK_GROUP_ID */ 0,
+  /* BITMASK_BIT_POSITION*/ 0,
+  /* EXTRA_EXTENSION_FLAGS */ EXT_FLAG_MACRO)
+
+DEFINE_RISCV_EXT(
+  /* NAME */ f,
+  /* UPPERCASE_NAME */ HARD_FLOAT,
+  /* FULL_NAME */ "Single-precision floating-point extension",
+  /* DESC */ "",
+  /* URL */ ,
+  /* DEP_EXTS */ ({"zicsr"}),
+  /* SUPPORTED_VERSIONS */ ({{2, 2, ISA_SPEC_CLASS_20191213},
+			     {2, 2, ISA_SPEC_CLASS_20190608},
+			     {2, 0, ISA_SPEC_CLASS_2P2}}),
+  /* FLAG_GROUP */ base,
+  /* BITMASK_GROUP_ID */ 0,
+  /* BITMASK_BIT_POSITION*/ 5,
+  /* EXTRA_EXTENSION_FLAGS */ 0)
+
+DEFINE_RISCV_EXT(
+  /* NAME */ d,
+  /* UPPERCASE_NAME */ DOUBLE_FLOAT,
+  /* FULL_NAME */ "Double-precision floating-point extension",
+  /* DESC */ "",
+  /* URL */ ,
+  /* DEP_EXTS */ ({"f", "zicsr"}),
+  /* SUPPORTED_VERSIONS */ ({{2, 2, ISA_SPEC_CLASS_20191213},
+			     {2, 2, ISA_SPEC_CLASS_20190608},
+			     {2, 0, ISA_SPEC_CLASS_2P2}}),
+  /* FLAG_GROUP */ base,
+  /* BITMASK_GROUP_ID */ 0,
+  /* BITMASK_BIT_POSITION*/ 3,
+  /* EXTRA_EXTENSION_FLAGS */ 0)
+
+DEFINE_RISCV_EXT(
+  /* NAME */ c,
+  /* UPPERCASE_NAME */ RVC,
+  /* FULL_NAME */ "Compressed extension",
+  /* DESC */ "",
+  /* URL */ ,
+  /* DEP_EXTS */ ({"zca",
+		   {"zcf",
+		    [] (const riscv_subset_list *subset_list) -> bool
+		      {
+			return subset_list->xlen () == 32
+			       && subset_list->lookup ("f");
+		      }},
+		   {"zcd",
+		    [] (const riscv_subset_list *subset_list) -> bool
+		      {
+			return subset_list->lookup ("d");
+		      }}}),
+  /* SUPPORTED_VERSIONS */ ({{2, 0}}),
+  /* FLAG_GROUP */ base,
+  /* BITMASK_GROUP_ID */ 0,
+  /* BITMASK_BIT_POSITION*/ 2,
+  /* EXTRA_EXTENSION_FLAGS */ 0)
+
+DEFINE_RISCV_EXT(
+  /* NAME */ b,
+  /* UPPERCASE_NAME */ RVB,
+  /* FULL_NAME */ "Standard extension for bit manipulation functions",
+  /* DESC */ "",
+  /* URL */ ,
+  /* DEP_EXTS */ ({"zba", "zbb", "zbs"}),
+  /* SUPPORTED_VERSIONS */ ({{1, 0}}),
+  /* FLAG_GROUP */ base,
+  /* BITMASK_GROUP_ID */ 0,
+  /* BITMASK_BIT_POSITION*/ 1,
+  /* EXTRA_EXTENSION_FLAGS */ EXT_FLAG_MACRO)
+
+DEFINE_RISCV_EXT(
+  /* NAME */ v,
+  /* UPPERCASE_NAME */ RVV,
+  /* FULL_NAME */ "Vector extension",
+  /* DESC */ "",
+  /* URL */ ,
+  /* DEP_EXTS */ ({"zvl128b", "zve64d"}),
+  /* SUPPORTED_VERSIONS */ ({{1, 0}}),
+  /* FLAG_GROUP */ base,
+  /* BITMASK_GROUP_ID */ 0,
+  /* BITMASK_BIT_POSITION*/ 21,
+  /* EXTRA_EXTENSION_FLAGS */ 0)
+
+DEFINE_RISCV_EXT(
+  /* NAME */ h,
+  /* UPPERCASE_NAME */ RVH,
+  /* FULL_NAME */ "Hypervisor extension",
+  /* DESC */ "",
+  /* URL */ ,
+  /* DEP_EXTS */ ({}),
+  /* SUPPORTED_VERSIONS */ ({{1, 0}}),
+  /* FLAG_GROUP */ base,
+  /* BITMASK_GROUP_ID */ 0,
+  /* BITMASK_BIT_POSITION*/ 7,
+  /* EXTRA_EXTENSION_FLAGS */ 0)
+
+DEFINE_RISCV_EXT(
+  /* NAME */ zic64b,
+  /* UPPERCASE_NAME */ ZIC64B,
+  /* FULL_NAME */ "Cache block size is 64 bytes",
+  /* DESC */ "",
+  /* URL */ ,
+  /* DEP_EXTS */ ({}),
+  /* SUPPORTED_VERSIONS */ ({{1, 0}}),
+  /* FLAG_GROUP */ zi,
+  /* BITMASK_GROUP_ID */ BITMASK_NOT_YET_ALLOCATED,
+  /* BITMASK_BIT_POSITION*/ BITMASK_NOT_YET_ALLOCATED,
+  /* EXTRA_EXTENSION_FLAGS */ 0)
+
+DEFINE_RISCV_EXT(
+  /* NAME */ zicbom,
+  /* UPPERCASE_NAME */ ZICBOM,
+  /* FULL_NAME */ "Cache-block management extension",
+  /* DESC */ "",
+  /* URL */ ,
+  /* DEP_EXTS */ ({}),
+  /* SUPPORTED_VERSIONS */ ({{1, 0}}),
+  /* FLAG_GROUP */ zi,
+  /* BITMASK_GROUP_ID */ BITMASK_NOT_YET_ALLOCATED,
+  /* BITMASK_BIT_POSITION*/ BITMASK_NOT_YET_ALLOCATED,
+  /* EXTRA_EXTENSION_FLAGS */ 0)
+
+DEFINE_RISCV_EXT(
+  /* NAME */ zicbop,
+  /* UPPERCASE_NAME */ ZICBOP,
+  /* FULL_NAME */ "Cache-block prefetch extension",
+  /* DESC */ "",
+  /* URL */ ,
+  /* DEP_EXTS */ ({}),
+  /* SUPPORTED_VERSIONS */ ({{1, 0}}),
+  /* FLAG_GROUP */ zi,
+  /* BITMASK_GROUP_ID */ BITMASK_NOT_YET_ALLOCATED,
+  /* BITMASK_BIT_POSITION*/ BITMASK_NOT_YET_ALLOCATED,
+  /* EXTRA_EXTENSION_FLAGS */ 0)
+
+DEFINE_RISCV_EXT(
+  /* NAME */ zicboz,
+  /* UPPERCASE_NAME */ ZICBOZ,
+  /* FULL_NAME */ "Cache-block zero extension",
+  /* DESC */ "",
+  /* URL */ ,
+  /* DEP_EXTS */ ({}),
+  /* SUPPORTED_VERSIONS */ ({{1, 0}}),
+  /* FLAG_GROUP */ zi,
+  /* BITMASK_GROUP_ID */ 0,
+  /* BITMASK_BIT_POSITION*/ 37,
+  /* EXTRA_EXTENSION_FLAGS */ 0)
+
+DEFINE_RISCV_EXT(
+  /* NAME */ ziccamoa,
+  /* UPPERCASE_NAME */ ZICCAMOA,
+  /* FULL_NAME */ "Main memory supports all atomics in A",
+  /* DESC */ "",
+  /* URL */ ,
+  /* DEP_EXTS */ ({}),
+  /* SUPPORTED_VERSIONS */ ({{1, 0}}),
+  /* FLAG_GROUP */ zi,
+  /* BITMASK_GROUP_ID */ BITMASK_NOT_YET_ALLOCATED,
+  /* BITMASK_BIT_POSITION*/ BITMASK_NOT_YET_ALLOCATED,
+  /* EXTRA_EXTENSION_FLAGS */ 0)
+
+DEFINE_RISCV_EXT(
+  /* NAME */ ziccif,
+  /* UPPERCASE_NAME */ ZICCIF,
+  /* FULL_NAME */ "Main memory supports instruction fetch with atomicity requirement",
+  /* DESC */ "",
+  /* URL */ ,
+  /* DEP_EXTS */ ({}),
+  /* SUPPORTED_VERSIONS */ ({{1, 0}}),
+  /* FLAG_GROUP */ zi,
+  /* BITMASK_GROUP_ID */ BITMASK_NOT_YET_ALLOCATED,
+  /* BITMASK_BIT_POSITION*/ BITMASK_NOT_YET_ALLOCATED,
+  /* EXTRA_EXTENSION_FLAGS */ 0)
+
+DEFINE_RISCV_EXT(
+  /* NAME */ zicclsm,
+  /* UPPERCASE_NAME */ ZICCLSM,
+  /* FULL_NAME */ "Main memory supports misaligned loads/stores",
+  /* DESC */ "",
+  /* URL */ ,
+  /* DEP_EXTS */ ({}),
+  /* SUPPORTED_VERSIONS */ ({{1, 0}}),
+  /* FLAG_GROUP */ zi,
+  /* BITMASK_GROUP_ID */ BITMASK_NOT_YET_ALLOCATED,
+  /* BITMASK_BIT_POSITION*/ BITMASK_NOT_YET_ALLOCATED,
+  /* EXTRA_EXTENSION_FLAGS */ 0)
+
+DEFINE_RISCV_EXT(
+  /* NAME */ ziccrse,
+  /* UPPERCASE_NAME */ ZICCRSE,
+  /* FULL_NAME */ "Main memory supports forward progress on LR/SC sequences",
+  /* DESC */ "",
+  /* URL */ ,
+  /* DEP_EXTS */ ({}),
+  /* SUPPORTED_VERSIONS */ ({{1, 0}}),
+  /* FLAG_GROUP */ zi,
+  /* BITMASK_GROUP_ID */ BITMASK_NOT_YET_ALLOCATED,
+  /* BITMASK_BIT_POSITION*/ BITMASK_NOT_YET_ALLOCATED,
+  /* EXTRA_EXTENSION_FLAGS */ 0)
+
+DEFINE_RISCV_EXT(
+  /* NAME */ zicfilp,
+  /* UPPERCASE_NAME */ ZICFILP,
+  /* FULL_NAME */ "Control-flow integrity landing pad extension",
+  /* DESC */ "",
+  /* URL */ ,
+  /* DEP_EXTS */ ({"zicsr"}),
+  /* SUPPORTED_VERSIONS */ ({{1, 0}}),
+  /* FLAG_GROUP */ zi,
+  /* BITMASK_GROUP_ID */ BITMASK_NOT_YET_ALLOCATED,
+  /* BITMASK_BIT_POSITION*/ BITMASK_NOT_YET_ALLOCATED,
+  /* EXTRA_EXTENSION_FLAGS */ 0)
+
+DEFINE_RISCV_EXT(
+  /* NAME */ zicfiss,
+  /* UPPERCASE_NAME */ ZICFISS,
+  /* FULL_NAME */ "Control-flow integrity shadow stack extension",
+  /* DESC */ "",
+  /* URL */ ,
+  /* DEP_EXTS */ ({"zicsr", "zimop"}),
+  /* SUPPORTED_VERSIONS */ ({{1, 0}}),
+  /* FLAG_GROUP */ zi,
+  /* BITMASK_GROUP_ID */ BITMASK_NOT_YET_ALLOCATED,
+  /* BITMASK_BIT_POSITION*/ BITMASK_NOT_YET_ALLOCATED,
+  /* EXTRA_EXTENSION_FLAGS */ 0)
+
+DEFINE_RISCV_EXT(
+  /* NAME */ zicntr,
+  /* UPPERCASE_NAME */ ZICNTR,
+  /* FULL_NAME */ "Standard extension for base counters and timers",
+  /* DESC */ "",
+  /* URL */ ,
+  /* DEP_EXTS */ ({}),
+  /* SUPPORTED_VERSIONS */ ({{2, 0}}),
+  /* FLAG_GROUP */ zi,
+  /* BITMASK_GROUP_ID */ BITMASK_NOT_YET_ALLOCATED,
+  /* BITMASK_BIT_POSITION*/ BITMASK_NOT_YET_ALLOCATED,
+  /* EXTRA_EXTENSION_FLAGS */ 0)
+
+DEFINE_RISCV_EXT(
+  /* NAME */ zicond,
+  /* UPPERCASE_NAME */ ZICOND,
+  /* FULL_NAME */ "Integer conditional operations extension",
+  /* DESC */ "",
+  /* URL */ ,
+  /* DEP_EXTS */ ({}),
+  /* SUPPORTED_VERSIONS */ ({{1, 0}}),
+  /* FLAG_GROUP */ zi,
+  /* BITMASK_GROUP_ID */ 0,
+  /* BITMASK_BIT_POSITION*/ 38,
+  /* EXTRA_EXTENSION_FLAGS */ 0)
+
+DEFINE_RISCV_EXT(
+  /* NAME */ zicsr,
+  /* UPPERCASE_NAME */ ZICSR,
+  /* FULL_NAME */ "Control and status register access extension",
+  /* DESC */ "",
+  /* URL */ ,
+  /* DEP_EXTS */ ({}),
+  /* SUPPORTED_VERSIONS */ ({{2, 0}}),
+  /* FLAG_GROUP */ zi,
+  /* BITMASK_GROUP_ID */ BITMASK_NOT_YET_ALLOCATED,
+  /* BITMASK_BIT_POSITION*/ BITMASK_NOT_YET_ALLOCATED,
+  /* EXTRA_EXTENSION_FLAGS */ 0)
+
+DEFINE_RISCV_EXT(
+  /* NAME */ zifencei,
+  /* UPPERCASE_NAME */ ZIFENCEI,
+  /* FULL_NAME */ "Instruction-fetch fence extension",
+  /* DESC */ "",
+  /* URL */ ,
+  /* DEP_EXTS */ ({}),
+  /* SUPPORTED_VERSIONS */ ({{2, 0}}),
+  /* FLAG_GROUP */ zi,
+  /* BITMASK_GROUP_ID */ 1,
+  /* BITMASK_BIT_POSITION*/ 11,
+  /* EXTRA_EXTENSION_FLAGS */ 0)
+
+DEFINE_RISCV_EXT(
+  /* NAME */ zihintntl,
+  /* UPPERCASE_NAME */ ZIHINTNTL,
+  /* FULL_NAME */ "Non-temporal locality hints extension",
+  /* DESC */ "",
+  /* URL */ ,
+  /* DEP_EXTS */ ({}),
+  /* SUPPORTED_VERSIONS */ ({{1, 0}}),
+  /* FLAG_GROUP */ zi,
+  /* BITMASK_GROUP_ID */ 0,
+  /* BITMASK_BIT_POSITION*/ 39,
+  /* EXTRA_EXTENSION_FLAGS */ 0)
+
+DEFINE_RISCV_EXT(
+  /* NAME */ zihintpause,
+  /* UPPERCASE_NAME */ ZIHINTPAUSE,
+  /* FULL_NAME */ "Pause hint extension",
+  /* DESC */ "",
+  /* URL */ ,
+  /* DEP_EXTS */ ({}),
+  /* SUPPORTED_VERSIONS */ ({{2, 0}}),
+  /* FLAG_GROUP */ zi,
+  /* BITMASK_GROUP_ID */ 0,
+  /* BITMASK_BIT_POSITION*/ 40,
+  /* EXTRA_EXTENSION_FLAGS */ 0)
+
+DEFINE_RISCV_EXT(
+  /* NAME */ zihpm,
+  /* UPPERCASE_NAME */ ZIHPM,
+  /* FULL_NAME */ "Standard extension for hardware performance counters",
+  /* DESC */ "",
+  /* URL */ ,
+  /* DEP_EXTS */ ({}),
+  /* SUPPORTED_VERSIONS */ ({{2, 0}}),
+  /* FLAG_GROUP */ zi,
+  /* BITMASK_GROUP_ID */ BITMASK_NOT_YET_ALLOCATED,
+  /* BITMASK_BIT_POSITION*/ BITMASK_NOT_YET_ALLOCATED,
+  /* EXTRA_EXTENSION_FLAGS */ 0)
+
+DEFINE_RISCV_EXT(
+  /* NAME */ zimop,
+  /* UPPERCASE_NAME */ ZIMOP,
+  /* FULL_NAME */ "May-be-operations extension",
+  /* DESC */ "",
+  /* URL */ ,
+  /* DEP_EXTS */ ({}),
+  /* SUPPORTED_VERSIONS */ ({{1, 0}}),
+  /* FLAG_GROUP */ zi,
+  /* BITMASK_GROUP_ID */ 1,
+  /* BITMASK_BIT_POSITION*/ 1,
+  /* EXTRA_EXTENSION_FLAGS */ 0)
+
+DEFINE_RISCV_EXT(
+  /* NAME */ zilsd,
+  /* UPPERCASE_NAME */ ZILSD,
+  /* FULL_NAME */ "Load/store pair instructions extension",
+  /* DESC */ "",
+  /* URL */ ,
+  /* DEP_EXTS */ ({}),
+  /* SUPPORTED_VERSIONS */ ({{1, 0}}),
+  /* FLAG_GROUP */ zi,
+  /* BITMASK_GROUP_ID */ 1,
+  /* BITMASK_BIT_POSITION*/ 8,
+  /* EXTRA_EXTENSION_FLAGS */ 0)
+
+DEFINE_RISCV_EXT(
+  /* NAME */ zmmul,
+  /* UPPERCASE_NAME */ ZMMUL,
+  /* FULL_NAME */ "Integer multiplication extension",
+  /* DESC */ "",
+  /* URL */ ,
+  /* DEP_EXTS */ ({}),
+  /* SUPPORTED_VERSIONS */ ({{1, 0}}),
+  /* FLAG_GROUP */ zm,
+  /* BITMASK_GROUP_ID */ 1,
+  /* BITMASK_BIT_POSITION*/ 12,
+  /* EXTRA_EXTENSION_FLAGS */ 0)
+
+DEFINE_RISCV_EXT(
+  /* NAME */ za128rs,
+  /* UPPERCASE_NAME */ ZA128RS,
+  /* FULL_NAME */ "Reservation set size of 128 bytes",
+  /* DESC */ "",
+  /* URL */ ,
+  /* DEP_EXTS */ ({}),
+  /* SUPPORTED_VERSIONS */ ({{1, 0}}),
+  /* FLAG_GROUP */ za,
+  /* BITMASK_GROUP_ID */ BITMASK_NOT_YET_ALLOCATED,
+  /* BITMASK_BIT_POSITION*/ BITMASK_NOT_YET_ALLOCATED,
+  /* EXTRA_EXTENSION_FLAGS */ 0)
+
+DEFINE_RISCV_EXT(
+  /* NAME */ za64rs,
+  /* UPPERCASE_NAME */ ZA64RS,
+  /* FULL_NAME */ "Reservation set size of 64 bytes",
+  /* DESC */ "",
+  /* URL */ ,
+  /* DEP_EXTS */ ({}),
+  /* SUPPORTED_VERSIONS */ ({{1, 0}}),
+  /* FLAG_GROUP */ za,
+  /* BITMASK_GROUP_ID */ BITMASK_NOT_YET_ALLOCATED,
+  /* BITMASK_BIT_POSITION*/ BITMASK_NOT_YET_ALLOCATED,
+  /* EXTRA_EXTENSION_FLAGS */ 0)
+
+DEFINE_RISCV_EXT(
+  /* NAME */ zaamo,
+  /* UPPERCASE_NAME */ ZAAMO,
+  /* FULL_NAME */ "Atomic memory operations extension",
+  /* DESC */ "",
+  /* URL */ ,
+  /* DEP_EXTS */ ({}),
+  /* SUPPORTED_VERSIONS */ ({{1, 0}}),
+  /* FLAG_GROUP */ za,
+  /* BITMASK_GROUP_ID */ BITMASK_NOT_YET_ALLOCATED,
+  /* BITMASK_BIT_POSITION*/ BITMASK_NOT_YET_ALLOCATED,
+  /* EXTRA_EXTENSION_FLAGS */ 0)
+
+DEFINE_RISCV_EXT(
+  /* NAME */ zabha,
+  /* UPPERCASE_NAME */ ZABHA,
+  /* FULL_NAME */ "Byte and halfword atomic memory operations extension",
+  /* DESC */ "",
+  /* URL */ ,
+  /* DEP_EXTS */ ({"zaamo"}),
+  /* SUPPORTED_VERSIONS */ ({{1, 0}}),
+  /* FLAG_GROUP */ za,
+  /* BITMASK_GROUP_ID */ BITMASK_NOT_YET_ALLOCATED,
+  /* BITMASK_BIT_POSITION*/ BITMASK_NOT_YET_ALLOCATED,
+  /* EXTRA_EXTENSION_FLAGS */ 0)
+
+DEFINE_RISCV_EXT(
+  /* NAME */ zacas,
+  /* UPPERCASE_NAME */ ZACAS,
+  /* FULL_NAME */ "Atomic compare-and-swap instructions extension",
+  /* DESC */ "",
+  /* URL */ ,
+  /* DEP_EXTS */ ({"zaamo"}),
+  /* SUPPORTED_VERSIONS */ ({{1, 0}}),
+  /* FLAG_GROUP */ za,
+  /* BITMASK_GROUP_ID */ 0,
+  /* BITMASK_BIT_POSITION*/ 26,
+  /* EXTRA_EXTENSION_FLAGS */ 0)
+
+DEFINE_RISCV_EXT(
+  /* NAME */ zalrsc,
+  /* UPPERCASE_NAME */ ZALRSC,
+  /* FULL_NAME */ "Load-reserved/store-conditional subset of the A extension",
+  /* DESC */ "",
+  /* URL */ ,
+  /* DEP_EXTS */ ({}),
+  /* SUPPORTED_VERSIONS */ ({{1, 0}}),
+  /* FLAG_GROUP */ za,
+  /* BITMASK_GROUP_ID */ BITMASK_NOT_YET_ALLOCATED,
+  /* BITMASK_BIT_POSITION*/ BITMASK_NOT_YET_ALLOCATED,
+  /* EXTRA_EXTENSION_FLAGS */ 0)
+
+DEFINE_RISCV_EXT(
+  /* NAME */ zawrs,
+  /* UPPERCASE_NAME */ ZAWRS,
+  /* FULL_NAME */ "Wait-on-reservation-set extension",
+  /* DESC */ "",
+  /* URL */ ,
+  /* DEP_EXTS */ ({"zalrsc"}),
+  /* SUPPORTED_VERSIONS */ ({{1, 0}}),
+  /* FLAG_GROUP */ za,
+  /* BITMASK_GROUP_ID */ 1,
+  /* BITMASK_BIT_POSITION*/ 7,
+  /* EXTRA_EXTENSION_FLAGS */ 0)
+
+DEFINE_RISCV_EXT(
+  /* NAME */ zama16b,
+  /* UPPERCASE_NAME */ ZAMA16B,
+  /* FULL_NAME */ "Misaligned loads, stores, and AMOs that are fully"
+		  " contained within a naturally-aligned 16-byte boundary"
+		  " are atomic",
+  /* DESC */ "",
+  /* URL */ ,
+  /* DEP_EXTS */ ({}),
+  /* SUPPORTED_VERSIONS */ ({{1, 0}}),
+  /* FLAG_GROUP */ za,
+  /* BITMASK_GROUP_ID */ BITMASK_NOT_YET_ALLOCATED,
+  /* BITMASK_BIT_POSITION*/ BITMASK_NOT_YET_ALLOCATED,
+  /* EXTRA_EXTENSION_FLAGS */ 0)
+
+DEFINE_RISCV_EXT(
+  /* NAME */ zfa,
+  /* UPPERCASE_NAME */ ZFA,
+  /* FULL_NAME */ "Additional floating-point extension",
+  /* DESC */ "",
+  /* URL */ ,
+  /* DEP_EXTS */ ({"f"}),
+  /* SUPPORTED_VERSIONS */ ({{1, 0}}),
+  /* FLAG_GROUP */ zf,
+  /* BITMASK_GROUP_ID */ 0,
+  /* BITMASK_BIT_POSITION*/ 34,
+  /* EXTRA_EXTENSION_FLAGS */ 0)
+
+DEFINE_RISCV_EXT(
+  /* NAME */ zfbfmin,
+  /* UPPERCASE_NAME */ ZFBFMIN,
+  /* FULL_NAME */ "Minimal BF16 support extension",
+  /* DESC */ "",
+  /* URL */ ,
+  /* DEP_EXTS */ ({"zfhmin"}),
+  /* SUPPORTED_VERSIONS */ ({{1, 0}}),
+  /* FLAG_GROUP */ zf,
+  /* BITMASK_GROUP_ID */ BITMASK_NOT_YET_ALLOCATED,
+  /* BITMASK_BIT_POSITION*/ BITMASK_NOT_YET_ALLOCATED,
+  /* EXTRA_EXTENSION_FLAGS */ 0)
+
+DEFINE_RISCV_EXT(
+  /* NAME */ zfh,
+  /* UPPERCASE_NAME */ ZFH,
+  /* FULL_NAME */ "Half-precision floating-point extension",
+  /* DESC */ "",
+  /* URL */ ,
+  /* DEP_EXTS */ ({"zfhmin"}),
+  /* SUPPORTED_VERSIONS */ ({{1, 0}}),
+  /* FLAG_GROUP */ zf,
+  /* BITMASK_GROUP_ID */ 0,
+  /* BITMASK_BIT_POSITION*/ 35,
+  /* EXTRA_EXTENSION_FLAGS */ 0)
+
+DEFINE_RISCV_EXT(
+  /* NAME */ zfhmin,
+  /* UPPERCASE_NAME */ ZFHMIN,
+  /* FULL_NAME */ "Minimal half-precision floating-point extension",
+  /* DESC */ "",
+  /* URL */ ,
+  /* DEP_EXTS */ ({"f"}),
+  /* SUPPORTED_VERSIONS */ ({{1, 0}}),
+  /* FLAG_GROUP */ zf,
+  /* BITMASK_GROUP_ID */ 0,
+  /* BITMASK_BIT_POSITION*/ 36,
+  /* EXTRA_EXTENSION_FLAGS */ 0)
+
+DEFINE_RISCV_EXT(
+  /* NAME */ zfinx,
+  /* UPPERCASE_NAME */ ZFINX,
+  /* FULL_NAME */ "Single-precision floating-point in integer registers extension",
+  /* DESC */ "",
+  /* URL */ ,
+  /* DEP_EXTS */ ({"zicsr"}),
+  /* SUPPORTED_VERSIONS */ ({{1, 0}}),
+  /* FLAG_GROUP */ zinx,
+  /* BITMASK_GROUP_ID */ BITMASK_NOT_YET_ALLOCATED,
+  /* BITMASK_BIT_POSITION*/ BITMASK_NOT_YET_ALLOCATED,
+  /* EXTRA_EXTENSION_FLAGS */ 0)
+
+DEFINE_RISCV_EXT(
+  /* NAME */ zdinx,
+  /* UPPERCASE_NAME */ ZDINX,
+  /* FULL_NAME */ "Double-precision floating-point in integer registers extension",
+  /* DESC */ "",
+  /* URL */ ,
+  /* DEP_EXTS */ ({"zfinx", "zicsr"}),
+  /* SUPPORTED_VERSIONS */ ({{1, 0}}),
+  /* FLAG_GROUP */ zinx,
+  /* BITMASK_GROUP_ID */ BITMASK_NOT_YET_ALLOCATED,
+  /* BITMASK_BIT_POSITION*/ BITMASK_NOT_YET_ALLOCATED,
+  /* EXTRA_EXTENSION_FLAGS */ 0)
+
+DEFINE_RISCV_EXT(
+  /* NAME */ zca,
+  /* UPPERCASE_NAME */ ZCA,
+  /* FULL_NAME */ "Integer compressed instruction extension",
+  /* DESC */ "",
+  /* URL */ ,
+  /* DEP_EXTS */ ({{"c",
+[] (const riscv_subset_list *subset_list) -> bool
+{
+  /* For RV32 Zca implies C for one of these combinations of
+     extensions: Zca, F_Zca_Zcf and FD_Zca_Zcf_Zcd.  */
+  if (subset_list->xlen () == 32)
+    {
+      if (subset_list->lookup ("d"))
+	return subset_list->lookup ("zcf") && subset_list->lookup ("zcd");
+
+      if (subset_list->lookup ("f"))
+	return subset_list->lookup ("zcf");
+
+      return true;
+    }
+
+  /* For RV64 Zca implies C for one of these combinations of
+     extensions: Zca and FD_Zca_Zcd (Zcf is not available
+     for RV64).  */
+  if (subset_list->xlen () == 64)
+    {
+      if (subset_list->lookup ("d"))
+	return subset_list->lookup ("zcd");
+
+      return true;
+    }
+
+  /* Do nothing for future RV128 specification. Behaviour
+     for this case is not yet well defined.  */
+  return false;
+
+}}}),
+  /* SUPPORTED_VERSIONS */ ({{1, 0}}),
+  /* FLAG_GROUP */ zc,
+  /* BITMASK_GROUP_ID */ 1,
+  /* BITMASK_BIT_POSITION*/ 2,
+  /* EXTRA_EXTENSION_FLAGS */ 0)
+
+DEFINE_RISCV_EXT(
+  /* NAME */ zcb,
+  /* UPPERCASE_NAME */ ZCB,
+  /* FULL_NAME */ "Simple compressed instruction extension",
+  /* DESC */ "",
+  /* URL */ ,
+  /* DEP_EXTS */ ({"zca"}),
+  /* SUPPORTED_VERSIONS */ ({{1, 0}}),
+  /* FLAG_GROUP */ zc,
+  /* BITMASK_GROUP_ID */ 1,
+  /* BITMASK_BIT_POSITION*/ 3,
+  /* EXTRA_EXTENSION_FLAGS */ 0)
+
+DEFINE_RISCV_EXT(
+  /* NAME */ zcd,
+  /* UPPERCASE_NAME */ ZCD,
+  /* FULL_NAME */ "Compressed double-precision floating point loads and stores extension",
+  /* DESC */ "",
+  /* URL */ ,
+  /* DEP_EXTS */ ({"zca"}),
+  /* SUPPORTED_VERSIONS */ ({{1, 0}}),
+  /* FLAG_GROUP */ zc,
+  /* BITMASK_GROUP_ID */ 1,
+  /* BITMASK_BIT_POSITION*/ 4,
+  /* EXTRA_EXTENSION_FLAGS */ 0)
+
+DEFINE_RISCV_EXT(
+  /* NAME */ zce,
+  /* UPPERCASE_NAME */ ZCE,
+  /* FULL_NAME */ "Compressed instruction extensions for embedded processors",
+  /* DESC */ "",
+  /* URL */ ,
+  /* DEP_EXTS */ ({"zca", "zcb", "zcmp", "zcmt",
+		  {"zcf",
+		   [] (const riscv_subset_list *subset_list) -> bool
+		     {
+		       return subset_list->xlen () == 32
+			      && subset_list->lookup ("f");
+		     }}}),
+  /* SUPPORTED_VERSIONS */ ({{1, 0}}),
+  /* FLAG_GROUP */ zc,
+  /* BITMASK_GROUP_ID */ BITMASK_NOT_YET_ALLOCATED,
+  /* BITMASK_BIT_POSITION*/ BITMASK_NOT_YET_ALLOCATED,
+  /* EXTRA_EXTENSION_FLAGS */ 0)
+
+DEFINE_RISCV_EXT(
+  /* NAME */ zcf,
+  /* UPPERCASE_NAME */ ZCF,
+  /* FULL_NAME */ "Compressed single-precision floating point loads and stores extension",
+  /* DESC */ "",
+  /* URL */ ,
+  /* DEP_EXTS */ ({"zca"}),
+  /* SUPPORTED_VERSIONS */ ({{1, 0}}),
+  /* FLAG_GROUP */ zc,
+  /* BITMASK_GROUP_ID */ 1,
+  /* BITMASK_BIT_POSITION*/ 5,
+  /* EXTRA_EXTENSION_FLAGS */ 0)
+
+DEFINE_RISCV_EXT(
+  /* NAME */ zcmop,
+  /* UPPERCASE_NAME */ ZCMOP,
+  /* FULL_NAME */ "Compressed may-be-operations extension",
+  /* DESC */ "",
+  /* URL */ ,
+  /* DEP_EXTS */ ({"zca"}),
+  /* SUPPORTED_VERSIONS */ ({{1, 0}}),
+  /* FLAG_GROUP */ zc,
+  /* BITMASK_GROUP_ID */ 1,
+  /* BITMASK_BIT_POSITION*/ 6,
+  /* EXTRA_EXTENSION_FLAGS */ 0)
+
+DEFINE_RISCV_EXT(
+  /* NAME */ zcmp,
+  /* UPPERCASE_NAME */ ZCMP,
+  /* FULL_NAME */ "Compressed push pop extension",
+  /* DESC */ "",
+  /* URL */ ,
+  /* DEP_EXTS */ ({"zca"}),
+  /* SUPPORTED_VERSIONS */ ({{1, 0}}),
+  /* FLAG_GROUP */ zc,
+  /* BITMASK_GROUP_ID */ 1,
+  /* BITMASK_BIT_POSITION*/ 10,
+  /* EXTRA_EXTENSION_FLAGS */ 0)
+
+DEFINE_RISCV_EXT(
+  /* NAME */ zcmt,
+  /* UPPERCASE_NAME */ ZCMT,
+  /* FULL_NAME */ "Table jump instruction extension",
+  /* DESC */ "",
+  /* URL */ ,
+  /* DEP_EXTS */ ({"zca", "zicsr"}),
+  /* SUPPORTED_VERSIONS */ ({{1, 0}}),
+  /* FLAG_GROUP */ zc,
+  /* BITMASK_GROUP_ID */ BITMASK_NOT_YET_ALLOCATED,
+  /* BITMASK_BIT_POSITION*/ BITMASK_NOT_YET_ALLOCATED,
+  /* EXTRA_EXTENSION_FLAGS */ 0)
+
+DEFINE_RISCV_EXT(
+  /* NAME */ zclsd,
+  /* UPPERCASE_NAME */ ZCLSD,
+  /* FULL_NAME */ "Compressed load/store pair instructions extension",
+  /* DESC */ "",
+  /* URL */ ,
+  /* DEP_EXTS */ ({"zca", "zilsd"}),
+  /* SUPPORTED_VERSIONS */ ({{1, 0}}),
+  /* FLAG_GROUP */ zc,
+  /* BITMASK_GROUP_ID */ 1,
+  /* BITMASK_BIT_POSITION*/ 9,
+  /* EXTRA_EXTENSION_FLAGS */ 0)
+
+DEFINE_RISCV_EXT(
+  /* NAME */ zba,
+  /* UPPERCASE_NAME */ ZBA,
+  /* FULL_NAME */ "Address calculation extension",
+  /* DESC */ "",
+  /* URL */ ,
+  /* DEP_EXTS */ ({}),
+  /* SUPPORTED_VERSIONS */ ({{1, 0}}),
+  /* FLAG_GROUP */ zb,
+  /* BITMASK_GROUP_ID */ 0,
+  /* BITMASK_BIT_POSITION*/ 27,
+  /* EXTRA_EXTENSION_FLAGS */ 0)
+
+DEFINE_RISCV_EXT(
+  /* NAME */ zbb,
+  /* UPPERCASE_NAME */ ZBB,
+  /* FULL_NAME */ "Basic bit manipulation extension",
+  /* DESC */ "",
+  /* URL */ ,
+  /* DEP_EXTS */ ({}),
+  /* SUPPORTED_VERSIONS */ ({{1, 0}}),
+  /* FLAG_GROUP */ zb,
+  /* BITMASK_GROUP_ID */ 0,
+  /* BITMASK_BIT_POSITION*/ 28,
+  /* EXTRA_EXTENSION_FLAGS */ 0)
+
+DEFINE_RISCV_EXT(
+  /* NAME */ zbc,
+  /* UPPERCASE_NAME */ ZBC,
+  /* FULL_NAME */ "Carry-less multiplication extension",
+  /* DESC */ "",
+  /* URL */ ,
+  /* DEP_EXTS */ ({}),
+  /* SUPPORTED_VERSIONS */ ({{1, 0}}),
+  /* FLAG_GROUP */ zb,
+  /* BITMASK_GROUP_ID */ 0,
+  /* BITMASK_BIT_POSITION*/ 29,
+  /* EXTRA_EXTENSION_FLAGS */ 0)
+
+DEFINE_RISCV_EXT(
+  /* NAME */ zbkb,
+  /* UPPERCASE_NAME */ ZBKB,
+  /* FULL_NAME */ "Cryptography bit-manipulation extension",
+  /* DESC */ "",
+  /* URL */ ,
+  /* DEP_EXTS */ ({}),
+  /* SUPPORTED_VERSIONS */ ({{1, 0}}),
+  /* FLAG_GROUP */ zb,
+  /* BITMASK_GROUP_ID */ 0,
+  /* BITMASK_BIT_POSITION*/ 30,
+  /* EXTRA_EXTENSION_FLAGS */ 0)
+
+DEFINE_RISCV_EXT(
+  /* NAME */ zbkc,
+  /* UPPERCASE_NAME */ ZBKC,
+  /* FULL_NAME */ "Cryptography carry-less multiply extension",
+  /* DESC */ "",
+  /* URL */ ,
+  /* DEP_EXTS */ ({}),
+  /* SUPPORTED_VERSIONS */ ({{1, 0}}),
+  /* FLAG_GROUP */ zb,
+  /* BITMASK_GROUP_ID */ 0,
+  /* BITMASK_BIT_POSITION*/ 31,
+  /* EXTRA_EXTENSION_FLAGS */ 0)
+
+DEFINE_RISCV_EXT(
+  /* NAME */ zbkx,
+  /* UPPERCASE_NAME */ ZBKX,
+  /* FULL_NAME */ "Cryptography crossbar permutation extension",
+  /* DESC */ "",
+  /* URL */ ,
+  /* DEP_EXTS */ ({}),
+  /* SUPPORTED_VERSIONS */ ({{1, 0}}),
+  /* FLAG_GROUP */ zb,
+  /* BITMASK_GROUP_ID */ 0,
+  /* BITMASK_BIT_POSITION*/ 32,
+  /* EXTRA_EXTENSION_FLAGS */ 0)
+
+DEFINE_RISCV_EXT(
+  /* NAME */ zbs,
+  /* UPPERCASE_NAME */ ZBS,
+  /* FULL_NAME */ "Single-bit operation extension",
+  /* DESC */ "",
+  /* URL */ ,
+  /* DEP_EXTS */ ({}),
+  /* SUPPORTED_VERSIONS */ ({{1, 0}}),
+  /* FLAG_GROUP */ zb,
+  /* BITMASK_GROUP_ID */ 0,
+  /* BITMASK_BIT_POSITION*/ 33,
+  /* EXTRA_EXTENSION_FLAGS */ 0)
+
+DEFINE_RISCV_EXT(
+  /* NAME */ zk,
+  /* UPPERCASE_NAME */ ZK,
+  /* FULL_NAME */ "Standard scalar cryptography extension",
+  /* DESC */ "",
+  /* URL */ ,
+  /* DEP_EXTS */ ({"zkn", "zkr", "zkt"}),
+  /* SUPPORTED_VERSIONS */ ({{1, 0}}),
+  /* FLAG_GROUP */ zk,
+  /* BITMASK_GROUP_ID */ BITMASK_NOT_YET_ALLOCATED,
+  /* BITMASK_BIT_POSITION*/ BITMASK_NOT_YET_ALLOCATED,
+  /* EXTRA_EXTENSION_FLAGS */ EXT_FLAG_MACRO)
+
+DEFINE_RISCV_EXT(
+  /* NAME */ zkn,
+  /* UPPERCASE_NAME */ ZKN,
+  /* FULL_NAME */ "NIST algorithm suite extension",
+  /* DESC */ "",
+  /* URL */ ,
+  /* DEP_EXTS */ ({"zbkb", "zbkc", "zbkx", "zkne", "zknd", "zknh"}),
+  /* SUPPORTED_VERSIONS */ ({{1, 0}}),
+  /* FLAG_GROUP */ zk,
+  /* BITMASK_GROUP_ID */ BITMASK_NOT_YET_ALLOCATED,
+  /* BITMASK_BIT_POSITION*/ BITMASK_NOT_YET_ALLOCATED,
+  /* EXTRA_EXTENSION_FLAGS */ EXT_FLAG_MACRO)
+
+DEFINE_RISCV_EXT(
+  /* NAME */ zknd,
+  /* UPPERCASE_NAME */ ZKND,
+  /* FULL_NAME */ "AES Decryption extension",
+  /* DESC */ "",
+  /* URL */ ,
+  /* DEP_EXTS */ ({}),
+  /* SUPPORTED_VERSIONS */ ({{1, 0}}),
+  /* FLAG_GROUP */ zk,
+  /* BITMASK_GROUP_ID */ 0,
+  /* BITMASK_BIT_POSITION*/ 41,
+  /* EXTRA_EXTENSION_FLAGS */ 0)
+
+DEFINE_RISCV_EXT(
+  /* NAME */ zkne,
+  /* UPPERCASE_NAME */ ZKNE,
+  /* FULL_NAME */ "AES Encryption extension",
+  /* DESC */ "",
+  /* URL */ ,
+  /* DEP_EXTS */ ({}),
+  /* SUPPORTED_VERSIONS */ ({{1, 0}}),
+  /* FLAG_GROUP */ zk,
+  /* BITMASK_GROUP_ID */ 0,
+  /* BITMASK_BIT_POSITION*/ 42,
+  /* EXTRA_EXTENSION_FLAGS */ 0)
+
+DEFINE_RISCV_EXT(
+  /* NAME */ zknh,
+  /* UPPERCASE_NAME */ ZKNH,
+  /* FULL_NAME */ "Hash function extension",
+  /* DESC */ "",
+  /* URL */ ,
+  /* DEP_EXTS */ ({}),
+  /* SUPPORTED_VERSIONS */ ({{1, 0}}),
+  /* FLAG_GROUP */ zk,
+  /* BITMASK_GROUP_ID */ 0,
+  /* BITMASK_BIT_POSITION*/ 43,
+  /* EXTRA_EXTENSION_FLAGS */ 0)
+
+DEFINE_RISCV_EXT(
+  /* NAME */ zkr,
+  /* UPPERCASE_NAME */ ZKR,
+  /* FULL_NAME */ "Entropy source extension",
+  /* DESC */ "",
+  /* URL */ ,
+  /* DEP_EXTS */ ({}),
+  /* SUPPORTED_VERSIONS */ ({{1, 0}}),
+  /* FLAG_GROUP */ zk,
+  /* BITMASK_GROUP_ID */ BITMASK_NOT_YET_ALLOCATED,
+  /* BITMASK_BIT_POSITION*/ BITMASK_NOT_YET_ALLOCATED,
+  /* EXTRA_EXTENSION_FLAGS */ 0)
+
+DEFINE_RISCV_EXT(
+  /* NAME */ zks,
+  /* UPPERCASE_NAME */ ZKS,
+  /* FULL_NAME */ "ShangMi algorithm suite extension",
+  /* DESC */ "",
+  /* URL */ ,
+  /* DEP_EXTS */ ({"zbkb", "zbkc", "zbkx", "zksed", "zksh"}),
+  /* SUPPORTED_VERSIONS */ ({{1, 0}}),
+  /* FLAG_GROUP */ zk,
+  /* BITMASK_GROUP_ID */ BITMASK_NOT_YET_ALLOCATED,
+  /* BITMASK_BIT_POSITION*/ BITMASK_NOT_YET_ALLOCATED,
+  /* EXTRA_EXTENSION_FLAGS */ EXT_FLAG_MACRO)
+
+DEFINE_RISCV_EXT(
+  /* NAME */ zksed,
+  /* UPPERCASE_NAME */ ZKSED,
+  /* FULL_NAME */ "SM4 block cipher extension",
+  /* DESC */ "",
+  /* URL */ ,
+  /* DEP_EXTS */ ({}),
+  /* SUPPORTED_VERSIONS */ ({{1, 0}}),
+  /* FLAG_GROUP */ zk,
+  /* BITMASK_GROUP_ID */ 0,
+  /* BITMASK_BIT_POSITION*/ 44,
+  /* EXTRA_EXTENSION_FLAGS */ 0)
+
+DEFINE_RISCV_EXT(
+  /* NAME */ zksh,
+  /* UPPERCASE_NAME */ ZKSH,
+  /* FULL_NAME */ "SM3 hash function extension",
+  /* DESC */ "",
+  /* URL */ ,
+  /* DEP_EXTS */ ({}),
+  /* SUPPORTED_VERSIONS */ ({{1, 0}}),
+  /* FLAG_GROUP */ zk,
+  /* BITMASK_GROUP_ID */ 0,
+  /* BITMASK_BIT_POSITION*/ 45,
+  /* EXTRA_EXTENSION_FLAGS */ 0)
+
+DEFINE_RISCV_EXT(
+  /* NAME */ zkt,
+  /* UPPERCASE_NAME */ ZKT,
+  /* FULL_NAME */ "Data independent execution latency extension",
+  /* DESC */ "",
+  /* URL */ ,
+  /* DEP_EXTS */ ({}),
+  /* SUPPORTED_VERSIONS */ ({{1, 0}}),
+  /* FLAG_GROUP */ zk,
+  /* BITMASK_GROUP_ID */ 0,
+  /* BITMASK_BIT_POSITION*/ 46,
+  /* EXTRA_EXTENSION_FLAGS */ 0)
+
+DEFINE_RISCV_EXT(
+  /* NAME */ ztso,
+  /* UPPERCASE_NAME */ ZTSO,
+  /* FULL_NAME */ "Total store ordering extension",
+  /* DESC */ "",
+  /* URL */ ,
+  /* DEP_EXTS */ ({}),
+  /* SUPPORTED_VERSIONS */ ({{1, 0}}),
+  /* FLAG_GROUP */ zt,
+  /* BITMASK_GROUP_ID */ 0,
+  /* BITMASK_BIT_POSITION*/ 47,
+  /* EXTRA_EXTENSION_FLAGS */ 0)
+
+DEFINE_RISCV_EXT(
+  /* NAME */ zvbb,
+  /* UPPERCASE_NAME */ ZVBB,
+  /* FULL_NAME */ "Vector basic bit-manipulation extension",
+  /* DESC */ "",
+  /* URL */ ,
+  /* DEP_EXTS */ ({"zvkb"}),
+  /* SUPPORTED_VERSIONS */ ({{1, 0}}),
+  /* FLAG_GROUP */ zvb,
+  /* BITMASK_GROUP_ID */ 0,
+  /* BITMASK_BIT_POSITION*/ 48,
+  /* EXTRA_EXTENSION_FLAGS */ 0)
+
+DEFINE_RISCV_EXT(
+  /* NAME */ zvbc,
+  /* UPPERCASE_NAME */ ZVBC,
+  /* FULL_NAME */ "Vector carry-less multiplication extension",
+  /* DESC */ "",
+  /* URL */ ,
+  /* DEP_EXTS */ ({"zve64x"}),
+  /* SUPPORTED_VERSIONS */ ({{1, 0}}),
+  /* FLAG_GROUP */ zvb,
+  /* BITMASK_GROUP_ID */ 0,
+  /* BITMASK_BIT_POSITION*/ 49,
+  /* EXTRA_EXTENSION_FLAGS */ 0)
+
+DEFINE_RISCV_EXT(
+  /* NAME */ zve32f,
+  /* UPPERCASE_NAME */ ZVE32F,
+  /* FULL_NAME */ "Vector extensions for embedded processors",
+  /* DESC */ "",
+  /* URL */ ,
+  /* DEP_EXTS */ ({"f", "zve32x", "zvl32b"}),
+  /* SUPPORTED_VERSIONS */ ({{1, 0}}),
+  /* FLAG_GROUP */ zve,
+  /* BITMASK_GROUP_ID */ 0,
+  /* BITMASK_BIT_POSITION*/ 61,
+  /* EXTRA_EXTENSION_FLAGS */ 0)
+
+DEFINE_RISCV_EXT(
+  /* NAME */ zve32x,
+  /* UPPERCASE_NAME */ ZVE32X,
+  /* FULL_NAME */ "Vector extensions for embedded processors",
+  /* DESC */ "",
+  /* URL */ ,
+  /* DEP_EXTS */ ({"zicsr", "zvl32b"}),
+  /* SUPPORTED_VERSIONS */ ({{1, 0}}),
+  /* FLAG_GROUP */ zve,
+  /* BITMASK_GROUP_ID */ 0,
+  /* BITMASK_BIT_POSITION*/ 60,
+  /* EXTRA_EXTENSION_FLAGS */ 0)
+
+DEFINE_RISCV_EXT(
+  /* NAME */ zve64d,
+  /* UPPERCASE_NAME */ ZVE64D,
+  /* FULL_NAME */ "Vector extensions for embedded processors",
+  /* DESC */ "",
+  /* URL */ ,
+  /* DEP_EXTS */ ({"d", "zve64f", "zvl64b"}),
+  /* SUPPORTED_VERSIONS */ ({{1, 0}}),
+  /* FLAG_GROUP */ zve,
+  /* BITMASK_GROUP_ID */ 1,
+  /* BITMASK_BIT_POSITION*/ 0,
+  /* EXTRA_EXTENSION_FLAGS */ 0)
+
+DEFINE_RISCV_EXT(
+  /* NAME */ zve64f,
+  /* UPPERCASE_NAME */ ZVE64F,
+  /* FULL_NAME */ "Vector extensions for embedded processors",
+  /* DESC */ "",
+  /* URL */ ,
+  /* DEP_EXTS */ ({"f", "zve32f", "zve64x", "zvl64b"}),
+  /* SUPPORTED_VERSIONS */ ({{1, 0}}),
+  /* FLAG_GROUP */ zve,
+  /* BITMASK_GROUP_ID */ 0,
+  /* BITMASK_BIT_POSITION*/ 63,
+  /* EXTRA_EXTENSION_FLAGS */ 0)
+
+DEFINE_RISCV_EXT(
+  /* NAME */ zve64x,
+  /* UPPERCASE_NAME */ ZVE64X,
+  /* FULL_NAME */ "Vector extensions for embedded processors",
+  /* DESC */ "",
+  /* URL */ ,
+  /* DEP_EXTS */ ({"zve32x", "zvl64b"}),
+  /* SUPPORTED_VERSIONS */ ({{1, 0}}),
+  /* FLAG_GROUP */ zve,
+  /* BITMASK_GROUP_ID */ 0,
+  /* BITMASK_BIT_POSITION*/ 62,
+  /* EXTRA_EXTENSION_FLAGS */ 0)
+
+DEFINE_RISCV_EXT(
+  /* NAME */ zvfbfmin,
+  /* UPPERCASE_NAME */ ZVFBFMIN,
+  /* FULL_NAME */ "Vector BF16 converts extension",
+  /* DESC */ "",
+  /* URL */ ,
+  /* DEP_EXTS */ ({"zve32f"}),
+  /* SUPPORTED_VERSIONS */ ({{1, 0}}),
+  /* FLAG_GROUP */ zvf,
+  /* BITMASK_GROUP_ID */ BITMASK_NOT_YET_ALLOCATED,
+  /* BITMASK_BIT_POSITION*/ BITMASK_NOT_YET_ALLOCATED,
+  /* EXTRA_EXTENSION_FLAGS */ 0)
+
+DEFINE_RISCV_EXT(
+  /* NAME */ zvfbfwma,
+  /* UPPERCASE_NAME */ ZVFBFWMA,
+  /* FULL_NAME */ "Vector BF16 widening multiply/add extension",
+  /* DESC */ "",
+  /* URL */ ,
+  /* DEP_EXTS */ ({"zvfbfmin", "zfbfmin"}),
+  /* SUPPORTED_VERSIONS */ ({{1, 0}}),
+  /* FLAG_GROUP */ zvf,
+  /* BITMASK_GROUP_ID */ BITMASK_NOT_YET_ALLOCATED,
+  /* BITMASK_BIT_POSITION*/ BITMASK_NOT_YET_ALLOCATED,
+  /* EXTRA_EXTENSION_FLAGS */ 0)
+
+DEFINE_RISCV_EXT(
+  /* NAME */ zvfh,
+  /* UPPERCASE_NAME */ ZVFH,
+  /* FULL_NAME */ "Vector half-precision floating-point extension",
+  /* DESC */ "",
+  /* URL */ ,
+  /* DEP_EXTS */ ({"zve32f", "zfhmin"}),
+  /* SUPPORTED_VERSIONS */ ({{1, 0}}),
+  /* FLAG_GROUP */ zvf,
+  /* BITMASK_GROUP_ID */ 0,
+  /* BITMASK_BIT_POSITION*/ 50,
+  /* EXTRA_EXTENSION_FLAGS */ 0)
+
+DEFINE_RISCV_EXT(
+  /* NAME */ zvfhmin,
+  /* UPPERCASE_NAME */ ZVFHMIN,
+  /* FULL_NAME */ "Vector minimal half-precision floating-point extension",
+  /* DESC */ "",
+  /* URL */ ,
+  /* DEP_EXTS */ ({"zve32f"}),
+  /* SUPPORTED_VERSIONS */ ({{1, 0}}),
+  /* FLAG_GROUP */ zvf,
+  /* BITMASK_GROUP_ID */ 0,
+  /* BITMASK_BIT_POSITION*/ 51,
+  /* EXTRA_EXTENSION_FLAGS */ 0)
+
+DEFINE_RISCV_EXT(
+  /* NAME */ zvkb,
+  /* UPPERCASE_NAME */ ZVKB,
+  /* FULL_NAME */ "Vector cryptography bit-manipulation extension",
+  /* DESC */ "",
+  /* URL */ ,
+  /* DEP_EXTS */ ({"zve32x"}),
+  /* SUPPORTED_VERSIONS */ ({{1, 0}}),
+  /* FLAG_GROUP */ zvk,
+  /* BITMASK_GROUP_ID */ 0,
+  /* BITMASK_BIT_POSITION*/ 52,
+  /* EXTRA_EXTENSION_FLAGS */ 0)
+
+DEFINE_RISCV_EXT(
+  /* NAME */ zvkg,
+  /* UPPERCASE_NAME */ ZVKG,
+  /* FULL_NAME */ "Vector GCM/GMAC extension",
+  /* DESC */ "",
+  /* URL */ ,
+  /* DEP_EXTS */ ({"zve32x"}),
+  /* SUPPORTED_VERSIONS */ ({{1, 0}}),
+  /* FLAG_GROUP */ zvk,
+  /* BITMASK_GROUP_ID */ 0,
+  /* BITMASK_BIT_POSITION*/ 53,
+  /* EXTRA_EXTENSION_FLAGS */ 0)
+
+DEFINE_RISCV_EXT(
+  /* NAME */ zvkn,
+  /* UPPERCASE_NAME */ ZVKN,
+  /* FULL_NAME */ "Vector NIST Algorithm Suite extension",
+  /* DESC */ "@samp{zvkn} will expand to",
+  /* URL */ ,
+  /* DEP_EXTS */ ({"zvkned", "zvknhb", "zvkb", "zvkt"}),
+  /* SUPPORTED_VERSIONS */ ({{1, 0}}),
+  /* FLAG_GROUP */ zvk,
+  /* BITMASK_GROUP_ID */ BITMASK_NOT_YET_ALLOCATED,
+  /* BITMASK_BIT_POSITION*/ BITMASK_NOT_YET_ALLOCATED,
+  /* EXTRA_EXTENSION_FLAGS */ EXT_FLAG_MACRO)
+
+DEFINE_RISCV_EXT(
+  /* NAME */ zvknc,
+  /* UPPERCASE_NAME */ ZVKNC,
+  /* FULL_NAME */ "Vector NIST Algorithm Suite with carry-less multiply extension, @samp{zvknc}",
+  /* DESC */ "",
+  /* URL */ ,
+  /* DEP_EXTS */ ({"zvkn", "zvbc"}),
+  /* SUPPORTED_VERSIONS */ ({{1, 0}}),
+  /* FLAG_GROUP */ zvk,
+  /* BITMASK_GROUP_ID */ BITMASK_NOT_YET_ALLOCATED,
+  /* BITMASK_BIT_POSITION*/ BITMASK_NOT_YET_ALLOCATED,
+  /* EXTRA_EXTENSION_FLAGS */ EXT_FLAG_MACRO)
+
+DEFINE_RISCV_EXT(
+  /* NAME */ zvkned,
+  /* UPPERCASE_NAME */ ZVKNED,
+  /* FULL_NAME */ "Vector AES block cipher extension",
+  /* DESC */ "",
+  /* URL */ ,
+  /* DEP_EXTS */ ({"zve32x"}),
+  /* SUPPORTED_VERSIONS */ ({{1, 0}}),
+  /* FLAG_GROUP */ zvk,
+  /* BITMASK_GROUP_ID */ 0,
+  /* BITMASK_BIT_POSITION*/ 54,
+  /* EXTRA_EXTENSION_FLAGS */ 0)
+
+DEFINE_RISCV_EXT(
+  /* NAME */ zvkng,
+  /* UPPERCASE_NAME */ ZVKNG,
+  /* FULL_NAME */ "Vector NIST Algorithm Suite with GCM extension, @samp{zvkng} will expand",
+  /* DESC */ "",
+  /* URL */ ,
+  /* DEP_EXTS */ ({"zvkn", "zvkg"}),
+  /* SUPPORTED_VERSIONS */ ({{1, 0}}),
+  /* FLAG_GROUP */ zvk,
+  /* BITMASK_GROUP_ID */ BITMASK_NOT_YET_ALLOCATED,
+  /* BITMASK_BIT_POSITION*/ BITMASK_NOT_YET_ALLOCATED,
+  /* EXTRA_EXTENSION_FLAGS */ EXT_FLAG_MACRO)
+
+DEFINE_RISCV_EXT(
+  /* NAME */ zvknha,
+  /* UPPERCASE_NAME */ ZVKNHA,
+  /* FULL_NAME */ "Vector SHA-2 secure hash extension",
+  /* DESC */ "",
+  /* URL */ ,
+  /* DEP_EXTS */ ({"zve32x"}),
+  /* SUPPORTED_VERSIONS */ ({{1, 0}}),
+  /* FLAG_GROUP */ zvk,
+  /* BITMASK_GROUP_ID */ 0,
+  /* BITMASK_BIT_POSITION*/ 55,
+  /* EXTRA_EXTENSION_FLAGS */ 0)
+
+DEFINE_RISCV_EXT(
+  /* NAME */ zvknhb,
+  /* UPPERCASE_NAME */ ZVKNHB,
+  /* FULL_NAME */ "Vector SHA-2 secure hash extension",
+  /* DESC */ "",
+  /* URL */ ,
+  /* DEP_EXTS */ ({"zve64x"}),
+  /* SUPPORTED_VERSIONS */ ({{1, 0}}),
+  /* FLAG_GROUP */ zvk,
+  /* BITMASK_GROUP_ID */ 0,
+  /* BITMASK_BIT_POSITION*/ 56,
+  /* EXTRA_EXTENSION_FLAGS */ 0)
+
+DEFINE_RISCV_EXT(
+  /* NAME */ zvks,
+  /* UPPERCASE_NAME */ ZVKS,
+  /* FULL_NAME */ "Vector ShangMi algorithm suite extension, @samp{zvks} will expand",
+  /* DESC */ "",
+  /* URL */ ,
+  /* DEP_EXTS */ ({"zvksed", "zvksh", "zvkb", "zvkt"}),
+  /* SUPPORTED_VERSIONS */ ({{1, 0}}),
+  /* FLAG_GROUP */ zvk,
+  /* BITMASK_GROUP_ID */ BITMASK_NOT_YET_ALLOCATED,
+  /* BITMASK_BIT_POSITION*/ BITMASK_NOT_YET_ALLOCATED,
+  /* EXTRA_EXTENSION_FLAGS */ EXT_FLAG_MACRO)
+
+DEFINE_RISCV_EXT(
+  /* NAME */ zvksc,
+  /* UPPERCASE_NAME */ ZVKSC,
+  /* FULL_NAME */ "Vector ShangMi algorithm suite with carry-less multiplication extension,",
+  /* DESC */ "",
+  /* URL */ ,
+  /* DEP_EXTS */ ({"zvks", "zvbc"}),
+  /* SUPPORTED_VERSIONS */ ({{1, 0}}),
+  /* FLAG_GROUP */ zvk,
+  /* BITMASK_GROUP_ID */ BITMASK_NOT_YET_ALLOCATED,
+  /* BITMASK_BIT_POSITION*/ BITMASK_NOT_YET_ALLOCATED,
+  /* EXTRA_EXTENSION_FLAGS */ EXT_FLAG_MACRO)
+
+DEFINE_RISCV_EXT(
+  /* NAME */ zvksed,
+  /* UPPERCASE_NAME */ ZVKSED,
+  /* FULL_NAME */ "Vector SM4 block cipher extension",
+  /* DESC */ "",
+  /* URL */ ,
+  /* DEP_EXTS */ ({"zve32x"}),
+  /* SUPPORTED_VERSIONS */ ({{1, 0}}),
+  /* FLAG_GROUP */ zvk,
+  /* BITMASK_GROUP_ID */ 0,
+  /* BITMASK_BIT_POSITION*/ 57,
+  /* EXTRA_EXTENSION_FLAGS */ 0)
+
+DEFINE_RISCV_EXT(
+  /* NAME */ zvksg,
+  /* UPPERCASE_NAME */ ZVKSG,
+  /* FULL_NAME */ "Vector ShangMi algorithm suite with GCM extension",
+  /* DESC */ "",
+  /* URL */ ,
+  /* DEP_EXTS */ ({"zvks", "zvkg"}),
+  /* SUPPORTED_VERSIONS */ ({{1, 0}}),
+  /* FLAG_GROUP */ zvk,
+  /* BITMASK_GROUP_ID */ BITMASK_NOT_YET_ALLOCATED,
+  /* BITMASK_BIT_POSITION*/ BITMASK_NOT_YET_ALLOCATED,
+  /* EXTRA_EXTENSION_FLAGS */ EXT_FLAG_MACRO)
+
+DEFINE_RISCV_EXT(
+  /* NAME */ zvksh,
+  /* UPPERCASE_NAME */ ZVKSH,
+  /* FULL_NAME */ "Vector SM3 secure hash extension",
+  /* DESC */ "",
+  /* URL */ ,
+  /* DEP_EXTS */ ({"zve32x"}),
+  /* SUPPORTED_VERSIONS */ ({{1, 0}}),
+  /* FLAG_GROUP */ zvk,
+  /* BITMASK_GROUP_ID */ 0,
+  /* BITMASK_BIT_POSITION*/ 58,
+  /* EXTRA_EXTENSION_FLAGS */ 0)
+
+DEFINE_RISCV_EXT(
+  /* NAME */ zvkt,
+  /* UPPERCASE_NAME */ ZVKT,
+  /* FULL_NAME */ "Vector data independent execution latency extension",
+  /* DESC */ "",
+  /* URL */ ,
+  /* DEP_EXTS */ ({}),
+  /* SUPPORTED_VERSIONS */ ({{1, 0}}),
+  /* FLAG_GROUP */ zvk,
+  /* BITMASK_GROUP_ID */ 0,
+  /* BITMASK_BIT_POSITION*/ 59,
+  /* EXTRA_EXTENSION_FLAGS */ 0)
+
+DEFINE_RISCV_EXT(
+  /* NAME */ zvl1024b,
+  /* UPPERCASE_NAME */ ZVL1024B,
+  /* FULL_NAME */ "Minimum vector length standard extensions",
+  /* DESC */ "",
+  /* URL */ ,
+  /* DEP_EXTS */ ({"zvl512b"}),
+  /* SUPPORTED_VERSIONS */ ({{1, 0}}),
+  /* FLAG_GROUP */ zvl,
+  /* BITMASK_GROUP_ID */ BITMASK_NOT_YET_ALLOCATED,
+  /* BITMASK_BIT_POSITION*/ BITMASK_NOT_YET_ALLOCATED,
+  /* EXTRA_EXTENSION_FLAGS */ 0)
+
+DEFINE_RISCV_EXT(
+  /* NAME */ zvl128b,
+  /* UPPERCASE_NAME */ ZVL128B,
+  /* FULL_NAME */ "Minimum vector length standard extensions",
+  /* DESC */ "",
+  /* URL */ ,
+  /* DEP_EXTS */ ({"zvl64b"}),
+  /* SUPPORTED_VERSIONS */ ({{1, 0}}),
+  /* FLAG_GROUP */ zvl,
+  /* BITMASK_GROUP_ID */ BITMASK_NOT_YET_ALLOCATED,
+  /* BITMASK_BIT_POSITION*/ BITMASK_NOT_YET_ALLOCATED,
+  /* EXTRA_EXTENSION_FLAGS */ 0)
+
+DEFINE_RISCV_EXT(
+  /* NAME */ zvl16384b,
+  /* UPPERCASE_NAME */ ZVL16384B,
+  /* FULL_NAME */ "Minimum vector length standard extension",
+  /* DESC */ "",
+  /* URL */ ,
+  /* DEP_EXTS */ ({"zvl8192b"}),
+  /* SUPPORTED_VERSIONS */ ({{1, 0}}),
+  /* FLAG_GROUP */ zvl,
+  /* BITMASK_GROUP_ID */ BITMASK_NOT_YET_ALLOCATED,
+  /* BITMASK_BIT_POSITION*/ BITMASK_NOT_YET_ALLOCATED,
+  /* EXTRA_EXTENSION_FLAGS */ 0)
+
+DEFINE_RISCV_EXT(
+  /* NAME */ zvl2048b,
+  /* UPPERCASE_NAME */ ZVL2048B,
+  /* FULL_NAME */ "Minimum vector length standard extensions",
+  /* DESC */ "",
+  /* URL */ ,
+  /* DEP_EXTS */ ({"zvl1024b"}),
+  /* SUPPORTED_VERSIONS */ ({{1, 0}}),
+  /* FLAG_GROUP */ zvl,
+  /* BITMASK_GROUP_ID */ BITMASK_NOT_YET_ALLOCATED,
+  /* BITMASK_BIT_POSITION*/ BITMASK_NOT_YET_ALLOCATED,
+  /* EXTRA_EXTENSION_FLAGS */ 0)
+
+DEFINE_RISCV_EXT(
+  /* NAME */ zvl256b,
+  /* UPPERCASE_NAME */ ZVL256B,
+  /* FULL_NAME */ "Minimum vector length standard extensions",
+  /* DESC */ "",
+  /* URL */ ,
+  /* DEP_EXTS */ ({"zvl128b"}),
+  /* SUPPORTED_VERSIONS */ ({{1, 0}}),
+  /* FLAG_GROUP */ zvl,
+  /* BITMASK_GROUP_ID */ BITMASK_NOT_YET_ALLOCATED,
+  /* BITMASK_BIT_POSITION*/ BITMASK_NOT_YET_ALLOCATED,
+  /* EXTRA_EXTENSION_FLAGS */ 0)
+
+DEFINE_RISCV_EXT(
+  /* NAME */ zvl32768b,
+  /* UPPERCASE_NAME */ ZVL32768B,
+  /* FULL_NAME */ "Minimum vector length standard extension",
+  /* DESC */ "",
+  /* URL */ ,
+  /* DEP_EXTS */ ({"zvl16384b"}),
+  /* SUPPORTED_VERSIONS */ ({{1, 0}}),
+  /* FLAG_GROUP */ zvl,
+  /* BITMASK_GROUP_ID */ BITMASK_NOT_YET_ALLOCATED,
+  /* BITMASK_BIT_POSITION*/ BITMASK_NOT_YET_ALLOCATED,
+  /* EXTRA_EXTENSION_FLAGS */ 0)
+
+DEFINE_RISCV_EXT(
+  /* NAME */ zvl32b,
+  /* UPPERCASE_NAME */ ZVL32B,
+  /* FULL_NAME */ "Minimum vector length standard extensions",
+  /* DESC */ "",
+  /* URL */ ,
+  /* DEP_EXTS */ ({}),
+  /* SUPPORTED_VERSIONS */ ({{1, 0}}),
+  /* FLAG_GROUP */ zvl,
+  /* BITMASK_GROUP_ID */ BITMASK_NOT_YET_ALLOCATED,
+  /* BITMASK_BIT_POSITION*/ BITMASK_NOT_YET_ALLOCATED,
+  /* EXTRA_EXTENSION_FLAGS */ 0)
+
+DEFINE_RISCV_EXT(
+  /* NAME */ zvl4096b,
+  /* UPPERCASE_NAME */ ZVL4096B,
+  /* FULL_NAME */ "Minimum vector length standard extensions",
+  /* DESC */ "",
+  /* URL */ ,
+  /* DEP_EXTS */ ({"zvl2048b"}),
+  /* SUPPORTED_VERSIONS */ ({{1, 0}}),
+  /* FLAG_GROUP */ zvl,
+  /* BITMASK_GROUP_ID */ BITMASK_NOT_YET_ALLOCATED,
+  /* BITMASK_BIT_POSITION*/ BITMASK_NOT_YET_ALLOCATED,
+  /* EXTRA_EXTENSION_FLAGS */ 0)
+
+DEFINE_RISCV_EXT(
+  /* NAME */ zvl512b,
+  /* UPPERCASE_NAME */ ZVL512B,
+  /* FULL_NAME */ "Minimum vector length standard extensions",
+  /* DESC */ "",
+  /* URL */ ,
+  /* DEP_EXTS */ ({"zvl256b"}),
+  /* SUPPORTED_VERSIONS */ ({{1, 0}}),
+  /* FLAG_GROUP */ zvl,
+  /* BITMASK_GROUP_ID */ BITMASK_NOT_YET_ALLOCATED,
+  /* BITMASK_BIT_POSITION*/ BITMASK_NOT_YET_ALLOCATED,
+  /* EXTRA_EXTENSION_FLAGS */ 0)
+
+DEFINE_RISCV_EXT(
+  /* NAME */ zvl64b,
+  /* UPPERCASE_NAME */ ZVL64B,
+  /* FULL_NAME */ "Minimum vector length standard extensions",
+  /* DESC */ "",
+  /* URL */ ,
+  /* DEP_EXTS */ ({"zvl32b"}),
+  /* SUPPORTED_VERSIONS */ ({{1, 0}}),
+  /* FLAG_GROUP */ zvl,
+  /* BITMASK_GROUP_ID */ BITMASK_NOT_YET_ALLOCATED,
+  /* BITMASK_BIT_POSITION*/ BITMASK_NOT_YET_ALLOCATED,
+  /* EXTRA_EXTENSION_FLAGS */ 0)
+
+DEFINE_RISCV_EXT(
+  /* NAME */ zvl65536b,
+  /* UPPERCASE_NAME */ ZVL65536B,
+  /* FULL_NAME */ "Minimum vector length standard extension",
+  /* DESC */ "",
+  /* URL */ ,
+  /* DEP_EXTS */ ({"zvl32768b"}),
+  /* SUPPORTED_VERSIONS */ ({{1, 0}}),
+  /* FLAG_GROUP */ zvl,
+  /* BITMASK_GROUP_ID */ BITMASK_NOT_YET_ALLOCATED,
+  /* BITMASK_BIT_POSITION*/ BITMASK_NOT_YET_ALLOCATED,
+  /* EXTRA_EXTENSION_FLAGS */ 0)
+
+DEFINE_RISCV_EXT(
+  /* NAME */ zvl8192b,
+  /* UPPERCASE_NAME */ ZVL8192B,
+  /* FULL_NAME */ "Minimum vector length standard extension",
+  /* DESC */ "",
+  /* URL */ ,
+  /* DEP_EXTS */ ({"zvl4096b"}),
+  /* SUPPORTED_VERSIONS */ ({{1, 0}}),
+  /* FLAG_GROUP */ zvl,
+  /* BITMASK_GROUP_ID */ BITMASK_NOT_YET_ALLOCATED,
+  /* BITMASK_BIT_POSITION*/ BITMASK_NOT_YET_ALLOCATED,
+  /* EXTRA_EXTENSION_FLAGS */ 0)
+
+DEFINE_RISCV_EXT(
+  /* NAME */ zhinx,
+  /* UPPERCASE_NAME */ ZHINX,
+  /* FULL_NAME */ "Half-precision floating-point in integer registers extension",
+  /* DESC */ "",
+  /* URL */ ,
+  /* DEP_EXTS */ ({"zhinxmin"}),
+  /* SUPPORTED_VERSIONS */ ({{1, 0}}),
+  /* FLAG_GROUP */ zinx,
+  /* BITMASK_GROUP_ID */ BITMASK_NOT_YET_ALLOCATED,
+  /* BITMASK_BIT_POSITION*/ BITMASK_NOT_YET_ALLOCATED,
+  /* EXTRA_EXTENSION_FLAGS */ 0)
+
+DEFINE_RISCV_EXT(
+  /* NAME */ zhinxmin,
+  /* UPPERCASE_NAME */ ZHINXMIN,
+  /* FULL_NAME */ "Minimal half-precision floating-point in integer registers extension",
+  /* DESC */ "",
+  /* URL */ ,
+  /* DEP_EXTS */ ({"zfinx"}),
+  /* SUPPORTED_VERSIONS */ ({{1, 0}}),
+  /* FLAG_GROUP */ zinx,
+  /* BITMASK_GROUP_ID */ BITMASK_NOT_YET_ALLOCATED,
+  /* BITMASK_BIT_POSITION*/ BITMASK_NOT_YET_ALLOCATED,
+  /* EXTRA_EXTENSION_FLAGS */ 0)
+
+DEFINE_RISCV_EXT(
+  /* NAME */ sdtrig,
+  /* UPPERCASE_NAME */ SDTRIG,
+  /* FULL_NAME */ "Debug triggers extension",
+  /* DESC */ "",
+  /* URL */ ,
+  /* DEP_EXTS */ ({"zicsr"}),
+  /* SUPPORTED_VERSIONS */ ({{1, 0}}),
+  /* FLAG_GROUP */ sd,
+  /* BITMASK_GROUP_ID */ BITMASK_NOT_YET_ALLOCATED,
+  /* BITMASK_BIT_POSITION*/ BITMASK_NOT_YET_ALLOCATED,
+  /* EXTRA_EXTENSION_FLAGS */ 0)
+
+DEFINE_RISCV_EXT(
+  /* NAME */ sha,
+  /* UPPERCASE_NAME */ SHA,
+  /* FULL_NAME */ "The augmented hypervisor extension",
+  /* DESC */ "",
+  /* URL */ ,
+  /* DEP_EXTS */ ({"h", "shcounterenw", "shgatpa", "shtvala", "shvstvala", "shvstvecd", "shvsatpa", "ssstateen"}),
+  /* SUPPORTED_VERSIONS */ ({{1, 0}}),
+  /* FLAG_GROUP */ sh,
+  /* BITMASK_GROUP_ID */ BITMASK_NOT_YET_ALLOCATED,
+  /* BITMASK_BIT_POSITION*/ BITMASK_NOT_YET_ALLOCATED,
+  /* EXTRA_EXTENSION_FLAGS */ 0)
+
+DEFINE_RISCV_EXT(
+  /* NAME */ shcounterenw,
+  /* UPPERCASE_NAME */ SHCOUNTERENW,
+  /* FULL_NAME */ "Support writeable enables for any supported counter",
+  /* DESC */ "",
+  /* URL */ ,
+  /* DEP_EXTS */ ({"h", "zihpm"}),
+  /* SUPPORTED_VERSIONS */ ({{1, 0}}),
+  /* FLAG_GROUP */ sh,
+  /* BITMASK_GROUP_ID */ BITMASK_NOT_YET_ALLOCATED,
+  /* BITMASK_BIT_POSITION*/ BITMASK_NOT_YET_ALLOCATED,
+  /* EXTRA_EXTENSION_FLAGS */ 0)
+
+DEFINE_RISCV_EXT(
+  /* NAME */ shgatpa,
+  /* UPPERCASE_NAME */ SHGATPA,
+  /* FULL_NAME */ "SvNNx4 mode supported for all modes supported by satp",
+  /* DESC */ "",
+  /* URL */ ,
+  /* DEP_EXTS */ ({"h", "ssstateen"}),
+  /* SUPPORTED_VERSIONS */ ({{1, 0}}),
+  /* FLAG_GROUP */ sh,
+  /* BITMASK_GROUP_ID */ BITMASK_NOT_YET_ALLOCATED,
+  /* BITMASK_BIT_POSITION*/ BITMASK_NOT_YET_ALLOCATED,
+  /* EXTRA_EXTENSION_FLAGS */ 0)
+
+DEFINE_RISCV_EXT(
+  /* NAME */ shlcofideleg,
+  /* UPPERCASE_NAME */ SHLCOFIDELEG,
+  /* FULL_NAME */ "Delegating LCOFI interrupts to VS-mode",
+  /* DESC */ "",
+  /* URL */ ,
+  /* DEP_EXTS */ ({"h"}),
+  /* SUPPORTED_VERSIONS */ ({{1, 0}}),
+  /* FLAG_GROUP */ sh,
+  /* BITMASK_GROUP_ID */ BITMASK_NOT_YET_ALLOCATED,
+  /* BITMASK_BIT_POSITION*/ BITMASK_NOT_YET_ALLOCATED,
+  /* EXTRA_EXTENSION_FLAGS */ 0)
+
+DEFINE_RISCV_EXT(
+  /* NAME */ shtvala,
+  /* UPPERCASE_NAME */ SHTVALA,
+  /* FULL_NAME */ "The htval register provides all needed values",
+  /* DESC */ "",
+  /* URL */ ,
+  /* DEP_EXTS */ ({"h"}),
+  /* SUPPORTED_VERSIONS */ ({{1, 0}}),
+  /* FLAG_GROUP */ sh,
+  /* BITMASK_GROUP_ID */ BITMASK_NOT_YET_ALLOCATED,
+  /* BITMASK_BIT_POSITION*/ BITMASK_NOT_YET_ALLOCATED,
+  /* EXTRA_EXTENSION_FLAGS */ 0)
+
+DEFINE_RISCV_EXT(
+  /* NAME */ shvstvala,
+  /* UPPERCASE_NAME */ SHVSTVALA,
+  /* FULL_NAME */ "The vstval register provides all needed values",
+  /* DESC */ "",
+  /* URL */ ,
+  /* DEP_EXTS */ ({"h"}),
+  /* SUPPORTED_VERSIONS */ ({{1, 0}}),
+  /* FLAG_GROUP */ sh,
+  /* BITMASK_GROUP_ID */ BITMASK_NOT_YET_ALLOCATED,
+  /* BITMASK_BIT_POSITION*/ BITMASK_NOT_YET_ALLOCATED,
+  /* EXTRA_EXTENSION_FLAGS */ 0)
+
+DEFINE_RISCV_EXT(
+  /* NAME */ shvstvecd,
+  /* UPPERCASE_NAME */ SHVSTVECD,
+  /* FULL_NAME */ "The vstvec register supports direct mode",
+  /* DESC */ "",
+  /* URL */ ,
+  /* DEP_EXTS */ ({"h"}),
+  /* SUPPORTED_VERSIONS */ ({{1, 0}}),
+  /* FLAG_GROUP */ sh,
+  /* BITMASK_GROUP_ID */ BITMASK_NOT_YET_ALLOCATED,
+  /* BITMASK_BIT_POSITION*/ BITMASK_NOT_YET_ALLOCATED,
+  /* EXTRA_EXTENSION_FLAGS */ 0)
+
+DEFINE_RISCV_EXT(
+  /* NAME */ shvsatpa,
+  /* UPPERCASE_NAME */ SHVSATPA,
+  /* FULL_NAME */ "The vsatp register supports all modes supported by satp",
+  /* DESC */ "",
+  /* URL */ ,
+  /* DEP_EXTS */ ({"h"}),
+  /* SUPPORTED_VERSIONS */ ({{1, 0}}),
+  /* FLAG_GROUP */ sh,
+  /* BITMASK_GROUP_ID */ BITMASK_NOT_YET_ALLOCATED,
+  /* BITMASK_BIT_POSITION*/ BITMASK_NOT_YET_ALLOCATED,
+  /* EXTRA_EXTENSION_FLAGS */ 0)
+
+DEFINE_RISCV_EXT(
+  /* NAME */ smaia,
+  /* UPPERCASE_NAME */ SMAIA,
+  /* FULL_NAME */ "Advanced interrupt architecture extension",
+  /* DESC */ "",
+  /* URL */ ,
+  /* DEP_EXTS */ ({"ssaia"}),
+  /* SUPPORTED_VERSIONS */ ({{1, 0}}),
+  /* FLAG_GROUP */ sm,
+  /* BITMASK_GROUP_ID */ BITMASK_NOT_YET_ALLOCATED,
+  /* BITMASK_BIT_POSITION*/ BITMASK_NOT_YET_ALLOCATED,
+  /* EXTRA_EXTENSION_FLAGS */ 0)
+
+DEFINE_RISCV_EXT(
+  /* NAME */ smcntrpmf,
+  /* UPPERCASE_NAME */ SMCNTRPMF,
+  /* FULL_NAME */ "Cycle and instret privilege mode filtering",
+  /* DESC */ "",
+  /* URL */ ,
+  /* DEP_EXTS */ ({"zicsr"}),
+  /* SUPPORTED_VERSIONS */ ({{1, 0}}),
+  /* FLAG_GROUP */ sm,
+  /* BITMASK_GROUP_ID */ BITMASK_NOT_YET_ALLOCATED,
+  /* BITMASK_BIT_POSITION*/ BITMASK_NOT_YET_ALLOCATED,
+  /* EXTRA_EXTENSION_FLAGS */ 0)
+
+DEFINE_RISCV_EXT(
+  /* NAME */ smcsrind,
+  /* UPPERCASE_NAME */ SMCSRIND,
+  /* FULL_NAME */ "Machine-level indirect CSR access",
+  /* DESC */ "",
+  /* URL */ ,
+  /* DEP_EXTS */ ({"zicsr", "sscsrind"}),
+  /* SUPPORTED_VERSIONS */ ({{1, 0}}),
+  /* FLAG_GROUP */ sm,
+  /* BITMASK_GROUP_ID */ BITMASK_NOT_YET_ALLOCATED,
+  /* BITMASK_BIT_POSITION*/ BITMASK_NOT_YET_ALLOCATED,
+  /* EXTRA_EXTENSION_FLAGS */ 0)
+
+DEFINE_RISCV_EXT(
+  /* NAME */ smepmp,
+  /* UPPERCASE_NAME */ SMEPMP,
+  /* FULL_NAME */ "PMP enhancements for memory access and execution prevention on machine mode",
+  /* DESC */ "",
+  /* URL */ ,
+  /* DEP_EXTS */ ({"zicsr"}),
+  /* SUPPORTED_VERSIONS */ ({{1, 0}}),
+  /* FLAG_GROUP */ sm,
+  /* BITMASK_GROUP_ID */ BITMASK_NOT_YET_ALLOCATED,
+  /* BITMASK_BIT_POSITION*/ BITMASK_NOT_YET_ALLOCATED,
+  /* EXTRA_EXTENSION_FLAGS */ 0)
+
+DEFINE_RISCV_EXT(
+  /* NAME */ smmpm,
+  /* UPPERCASE_NAME */ SMMPM,
+  /* FULL_NAME */ "Supervisor-mode pointer masking extension",
+  /* DESC */ "",
+  /* URL */ ,
+  /* DEP_EXTS */ ({"zicsr"}),
+  /* SUPPORTED_VERSIONS */ ({{1, 0}}),
+  /* FLAG_GROUP */ sm,
+  /* BITMASK_GROUP_ID */ BITMASK_NOT_YET_ALLOCATED,
+  /* BITMASK_BIT_POSITION*/ BITMASK_NOT_YET_ALLOCATED,
+  /* EXTRA_EXTENSION_FLAGS */ 0)
+
+DEFINE_RISCV_EXT(
+  /* NAME */ smnpm,
+  /* UPPERCASE_NAME */ SMNPM,
+  /* FULL_NAME */ "Supervisor-mode pointer masking extension",
+  /* DESC */ "",
+  /* URL */ ,
+  /* DEP_EXTS */ ({"zicsr"}),
+  /* SUPPORTED_VERSIONS */ ({{1, 0}}),
+  /* FLAG_GROUP */ sm,
+  /* BITMASK_GROUP_ID */ BITMASK_NOT_YET_ALLOCATED,
+  /* BITMASK_BIT_POSITION*/ BITMASK_NOT_YET_ALLOCATED,
+  /* EXTRA_EXTENSION_FLAGS */ 0)
+
+DEFINE_RISCV_EXT(
+  /* NAME */ smrnmi,
+  /* UPPERCASE_NAME */ SMRNMI,
+  /* FULL_NAME */ "Resumable non-maskable interrupts",
+  /* DESC */ "",
+  /* URL */ ,
+  /* DEP_EXTS */ ({"zicsr"}),
+  /* SUPPORTED_VERSIONS */ ({{1, 0}}),
+  /* FLAG_GROUP */ sm,
+  /* BITMASK_GROUP_ID */ BITMASK_NOT_YET_ALLOCATED,
+  /* BITMASK_BIT_POSITION*/ BITMASK_NOT_YET_ALLOCATED,
+  /* EXTRA_EXTENSION_FLAGS */ 0)
+
+DEFINE_RISCV_EXT(
+  /* NAME */ smstateen,
+  /* UPPERCASE_NAME */ SMSTATEEN,
+  /* FULL_NAME */ "State enable extension",
+  /* DESC */ "",
+  /* URL */ ,
+  /* DEP_EXTS */ ({"ssstateen"}),
+  /* SUPPORTED_VERSIONS */ ({{1, 0}}),
+  /* FLAG_GROUP */ sm,
+  /* BITMASK_GROUP_ID */ BITMASK_NOT_YET_ALLOCATED,
+  /* BITMASK_BIT_POSITION*/ BITMASK_NOT_YET_ALLOCATED,
+  /* EXTRA_EXTENSION_FLAGS */ 0)
+
+DEFINE_RISCV_EXT(
+  /* NAME */ smdbltrp,
+  /* UPPERCASE_NAME */ SMDBLTRP,
+  /* FULL_NAME */ "Double trap extensions",
+  /* DESC */ "",
+  /* URL */ ,
+  /* DEP_EXTS */ ({"zicsr"}),
+  /* SUPPORTED_VERSIONS */ ({{1, 0}}),
+  /* FLAG_GROUP */ sm,
+  /* BITMASK_GROUP_ID */ BITMASK_NOT_YET_ALLOCATED,
+  /* BITMASK_BIT_POSITION*/ BITMASK_NOT_YET_ALLOCATED,
+  /* EXTRA_EXTENSION_FLAGS */ 0)
+
+DEFINE_RISCV_EXT(
+  /* NAME */ ssaia,
+  /* UPPERCASE_NAME */ SSAIA,
+  /* FULL_NAME */ "Advanced interrupt architecture extension for supervisor mode",
+  /* DESC */ "",
+  /* URL */ ,
+  /* DEP_EXTS */ ({"zicsr"}),
+  /* SUPPORTED_VERSIONS */ ({{1, 0}}),
+  /* FLAG_GROUP */ ss,
+  /* BITMASK_GROUP_ID */ BITMASK_NOT_YET_ALLOCATED,
+  /* BITMASK_BIT_POSITION*/ BITMASK_NOT_YET_ALLOCATED,
+  /* EXTRA_EXTENSION_FLAGS */ 0)
+
+DEFINE_RISCV_EXT(
+  /* NAME */ ssccptr,
+  /* UPPERCASE_NAME */ SSCCPTR,
+  /* FULL_NAME */ "Main memory supports page table reads",
+  /* DESC */ "",
+  /* URL */ ,
+  /* DEP_EXTS */ ({}),
+  /* SUPPORTED_VERSIONS */ ({{1, 0}}),
+  /* FLAG_GROUP */ ss,
+  /* BITMASK_GROUP_ID */ BITMASK_NOT_YET_ALLOCATED,
+  /* BITMASK_BIT_POSITION*/ BITMASK_NOT_YET_ALLOCATED,
+  /* EXTRA_EXTENSION_FLAGS */ 0)
+
+DEFINE_RISCV_EXT(
+  /* NAME */ sscofpmf,
+  /* UPPERCASE_NAME */ SSCOFPMF,
+  /* FULL_NAME */ "Count overflow and filtering extension",
+  /* DESC */ "",
+  /* URL */ ,
+  /* DEP_EXTS */ ({"zicsr"}),
+  /* SUPPORTED_VERSIONS */ ({{1, 0}}),
+  /* FLAG_GROUP */ ss,
+  /* BITMASK_GROUP_ID */ BITMASK_NOT_YET_ALLOCATED,
+  /* BITMASK_BIT_POSITION*/ BITMASK_NOT_YET_ALLOCATED,
+  /* EXTRA_EXTENSION_FLAGS */ 0)
+
+DEFINE_RISCV_EXT(
+  /* NAME */ sscounterenw,
+  /* UPPERCASE_NAME */ SSCOUNTERENW,
+  /* FULL_NAME */ "Support writeable enables for any supported counter",
+  /* DESC */ "",
+  /* URL */ ,
+  /* DEP_EXTS */ ({"zicsr"}),
+  /* SUPPORTED_VERSIONS */ ({{1, 0}}),
+  /* FLAG_GROUP */ ss,
+  /* BITMASK_GROUP_ID */ BITMASK_NOT_YET_ALLOCATED,
+  /* BITMASK_BIT_POSITION*/ BITMASK_NOT_YET_ALLOCATED,
+  /* EXTRA_EXTENSION_FLAGS */ 0)
+
+DEFINE_RISCV_EXT(
+  /* NAME */ sscsrind,
+  /* UPPERCASE_NAME */ SSCSRIND,
+  /* FULL_NAME */ "Supervisor-mode indirect CSR access",
+  /* DESC */ "",
+  /* URL */ ,
+  /* DEP_EXTS */ ({"zicsr"}),
+  /* SUPPORTED_VERSIONS */ ({{1, 0}}),
+  /* FLAG_GROUP */ ss,
+  /* BITMASK_GROUP_ID */ BITMASK_NOT_YET_ALLOCATED,
+  /* BITMASK_BIT_POSITION*/ BITMASK_NOT_YET_ALLOCATED,
+  /* EXTRA_EXTENSION_FLAGS */ 0)
+
+DEFINE_RISCV_EXT(
+  /* NAME */ ssnpm,
+  /* UPPERCASE_NAME */ SSNPM,
+  /* FULL_NAME */ "Supervisor-mode pointer masking extension",
+  /* DESC */ "",
+  /* URL */ ,
+  /* DEP_EXTS */ ({"zicsr"}),
+  /* SUPPORTED_VERSIONS */ ({{1, 0}}),
+  /* FLAG_GROUP */ ss,
+  /* BITMASK_GROUP_ID */ BITMASK_NOT_YET_ALLOCATED,
+  /* BITMASK_BIT_POSITION*/ BITMASK_NOT_YET_ALLOCATED,
+  /* EXTRA_EXTENSION_FLAGS */ 0)
+
+DEFINE_RISCV_EXT(
+  /* NAME */ sspm,
+  /* UPPERCASE_NAME */ SSPM,
+  /* FULL_NAME */ "Supervisor-mode pointer masking extension",
+  /* DESC */ "",
+  /* URL */ ,
+  /* DEP_EXTS */ ({}),
+  /* SUPPORTED_VERSIONS */ ({{1, 0}}),
+  /* FLAG_GROUP */ ss,
+  /* BITMASK_GROUP_ID */ BITMASK_NOT_YET_ALLOCATED,
+  /* BITMASK_BIT_POSITION*/ BITMASK_NOT_YET_ALLOCATED,
+  /* EXTRA_EXTENSION_FLAGS */ 0)
+
+DEFINE_RISCV_EXT(
+  /* NAME */ ssstateen,
+  /* UPPERCASE_NAME */ SSSTATEEN,
+  /* FULL_NAME */ "Supervisor-mode state-enable extension",
+  /* DESC */ "",
+  /* URL */ ,
+  /* DEP_EXTS */ ({"zicsr"}),
+  /* SUPPORTED_VERSIONS */ ({{1, 0}}),
+  /* FLAG_GROUP */ ss,
+  /* BITMASK_GROUP_ID */ BITMASK_NOT_YET_ALLOCATED,
+  /* BITMASK_BIT_POSITION*/ BITMASK_NOT_YET_ALLOCATED,
+  /* EXTRA_EXTENSION_FLAGS */ 0)
+
+DEFINE_RISCV_EXT(
+  /* NAME */ sstc,
+  /* UPPERCASE_NAME */ SSTC,
+  /* FULL_NAME */ "Supervisor-mode timer interrupts extension",
+  /* DESC */ "",
+  /* URL */ ,
+  /* DEP_EXTS */ ({"zicsr"}),
+  /* SUPPORTED_VERSIONS */ ({{1, 0}}),
+  /* FLAG_GROUP */ ss,
+  /* BITMASK_GROUP_ID */ BITMASK_NOT_YET_ALLOCATED,
+  /* BITMASK_BIT_POSITION*/ BITMASK_NOT_YET_ALLOCATED,
+  /* EXTRA_EXTENSION_FLAGS */ 0)
+
+DEFINE_RISCV_EXT(
+  /* NAME */ sstvala,
+  /* UPPERCASE_NAME */ SSTVALA,
+  /* FULL_NAME */ "Stval provides all needed values",
+  /* DESC */ "",
+  /* URL */ ,
+  /* DEP_EXTS */ ({"zicsr"}),
+  /* SUPPORTED_VERSIONS */ ({{1, 0}}),
+  /* FLAG_GROUP */ ss,
+  /* BITMASK_GROUP_ID */ BITMASK_NOT_YET_ALLOCATED,
+  /* BITMASK_BIT_POSITION*/ BITMASK_NOT_YET_ALLOCATED,
+  /* EXTRA_EXTENSION_FLAGS */ 0)
+
+DEFINE_RISCV_EXT(
+  /* NAME */ sstvecd,
+  /* UPPERCASE_NAME */ SSTVECD,
+  /* FULL_NAME */ "Stvec supports direct mode",
+  /* DESC */ "",
+  /* URL */ ,
+  /* DEP_EXTS */ ({"zicsr"}),
+  /* SUPPORTED_VERSIONS */ ({{1, 0}}),
+  /* FLAG_GROUP */ ss,
+  /* BITMASK_GROUP_ID */ BITMASK_NOT_YET_ALLOCATED,
+  /* BITMASK_BIT_POSITION*/ BITMASK_NOT_YET_ALLOCATED,
+  /* EXTRA_EXTENSION_FLAGS */ 0)
+
+DEFINE_RISCV_EXT(
+  /* NAME */ ssstrict,
+  /* UPPERCASE_NAME */ SSSTRICT,
+  /* FULL_NAME */ "Unimplemented reserved encodings raise illegal "
+		  "instruction exceptions and no non-conforming extensions "
+		  "are present",
+  /* DESC */ "",
+  /* URL */ ,
+  /* DEP_EXTS */ ({"zicsr"}),
+  /* SUPPORTED_VERSIONS */ ({{1, 0}}),
+  /* FLAG_GROUP */ ss,
+  /* BITMASK_GROUP_ID */ BITMASK_NOT_YET_ALLOCATED,
+  /* BITMASK_BIT_POSITION*/ BITMASK_NOT_YET_ALLOCATED,
+  /* EXTRA_EXTENSION_FLAGS */ 0)
+
+DEFINE_RISCV_EXT(
+  /* NAME */ ssdbltrp,
+  /* UPPERCASE_NAME */ SSDBLTRP,
+  /* FULL_NAME */ "Double trap extensions",
+  /* DESC */ "",
+  /* URL */ ,
+  /* DEP_EXTS */ ({"zicsr"}),
+  /* SUPPORTED_VERSIONS */ ({{1, 0}}),
+  /* FLAG_GROUP */ ss,
+  /* BITMASK_GROUP_ID */ BITMASK_NOT_YET_ALLOCATED,
+  /* BITMASK_BIT_POSITION*/ BITMASK_NOT_YET_ALLOCATED,
+  /* EXTRA_EXTENSION_FLAGS */ 0)
+
+DEFINE_RISCV_EXT(
+  /* NAME */ ssu64xl,
+  /* UPPERCASE_NAME */ SSU64XL,
+  /* FULL_NAME */ "UXLEN=64 must be supported",
+  /* DESC */ "",
+  /* URL */ ,
+  /* DEP_EXTS */ ({"zicsr"}),
+  /* SUPPORTED_VERSIONS */ ({{1, 0}}),
+  /* FLAG_GROUP */ ss,
+  /* BITMASK_GROUP_ID */ BITMASK_NOT_YET_ALLOCATED,
+  /* BITMASK_BIT_POSITION*/ BITMASK_NOT_YET_ALLOCATED,
+  /* EXTRA_EXTENSION_FLAGS */ 0)
+
+DEFINE_RISCV_EXT(
+  /* NAME */ supm,
+  /* UPPERCASE_NAME */ SUPM,
+  /* FULL_NAME */ "User-mode pointer masking extension",
+  /* DESC */ "",
+  /* URL */ ,
+  /* DEP_EXTS */ ({}),
+  /* SUPPORTED_VERSIONS */ ({{1, 0}}),
+  /* FLAG_GROUP */ su,
+  /* BITMASK_GROUP_ID */ BITMASK_NOT_YET_ALLOCATED,
+  /* BITMASK_BIT_POSITION*/ BITMASK_NOT_YET_ALLOCATED,
+  /* EXTRA_EXTENSION_FLAGS */ 0)
+
+DEFINE_RISCV_EXT(
+  /* NAME */ svinval,
+  /* UPPERCASE_NAME */ SVINVAL,
+  /* FULL_NAME */ "Fine-grained address-translation cache invalidation extension",
+  /* DESC */ "",
+  /* URL */ ,
+  /* DEP_EXTS */ ({}),
+  /* SUPPORTED_VERSIONS */ ({{1, 0}}),
+  /* FLAG_GROUP */ sv,
+  /* BITMASK_GROUP_ID */ BITMASK_NOT_YET_ALLOCATED,
+  /* BITMASK_BIT_POSITION*/ BITMASK_NOT_YET_ALLOCATED,
+  /* EXTRA_EXTENSION_FLAGS */ 0)
+
+DEFINE_RISCV_EXT(
+  /* NAME */ svnapot,
+  /* UPPERCASE_NAME */ SVNAPOT,
+  /* FULL_NAME */ "NAPOT translation contiguity extension",
+  /* DESC */ "",
+  /* URL */ ,
+  /* DEP_EXTS */ ({}),
+  /* SUPPORTED_VERSIONS */ ({{1, 0}}),
+  /* FLAG_GROUP */ sv,
+  /* BITMASK_GROUP_ID */ BITMASK_NOT_YET_ALLOCATED,
+  /* BITMASK_BIT_POSITION*/ BITMASK_NOT_YET_ALLOCATED,
+  /* EXTRA_EXTENSION_FLAGS */ 0)
+
+DEFINE_RISCV_EXT(
+  /* NAME */ svpbmt,
+  /* UPPERCASE_NAME */ SVPBMT,
+  /* FULL_NAME */ "Page-based memory types extension",
+  /* DESC */ "",
+  /* URL */ ,
+  /* DEP_EXTS */ ({}),
+  /* SUPPORTED_VERSIONS */ ({{1, 0}}),
+  /* FLAG_GROUP */ sv,
+  /* BITMASK_GROUP_ID */ BITMASK_NOT_YET_ALLOCATED,
+  /* BITMASK_BIT_POSITION*/ BITMASK_NOT_YET_ALLOCATED,
+  /* EXTRA_EXTENSION_FLAGS */ 0)
+
+DEFINE_RISCV_EXT(
+  /* NAME */ svvptc,
+  /* UPPERCASE_NAME */ SVVPTC,
+  /* FULL_NAME */ "Extension for obviating memory-management instructions "
+		  "after marking PTEs valid",
+  /* DESC */ "",
+  /* URL */ ,
+  /* DEP_EXTS */ ({}),
+  /* SUPPORTED_VERSIONS */ ({{1, 0}}),
+  /* FLAG_GROUP */ sv,
+  /* BITMASK_GROUP_ID */ BITMASK_NOT_YET_ALLOCATED,
+  /* BITMASK_BIT_POSITION*/ BITMASK_NOT_YET_ALLOCATED,
+  /* EXTRA_EXTENSION_FLAGS */ 0)
+
+DEFINE_RISCV_EXT(
+  /* NAME */ svadu,
+  /* UPPERCASE_NAME */ SVADU,
+  /* FULL_NAME */ "Hardware updating of A/D bits extension",
+  /* DESC */ "",
+  /* URL */ ,
+  /* DEP_EXTS */ ({"zicsr"}),
+  /* SUPPORTED_VERSIONS */ ({{1, 0}}),
+  /* FLAG_GROUP */ sv,
+  /* BITMASK_GROUP_ID */ BITMASK_NOT_YET_ALLOCATED,
+  /* BITMASK_BIT_POSITION*/ BITMASK_NOT_YET_ALLOCATED,
+  /* EXTRA_EXTENSION_FLAGS */ 0)
+
+DEFINE_RISCV_EXT(
+  /* NAME */ svade,
+  /* UPPERCASE_NAME */ SVADE,
+  /* FULL_NAME */ "Cause exception when hardware updating of A/D bits is disabled",
+  /* DESC */ "",
+  /* URL */ ,
+  /* DEP_EXTS */ ({"zicsr"}),
+  /* SUPPORTED_VERSIONS */ ({{1, 0}}),
+  /* FLAG_GROUP */ sv,
+  /* BITMASK_GROUP_ID */ BITMASK_NOT_YET_ALLOCATED,
+  /* BITMASK_BIT_POSITION*/ BITMASK_NOT_YET_ALLOCATED,
+  /* EXTRA_EXTENSION_FLAGS */ 0)
+
+DEFINE_RISCV_EXT(
+  /* NAME */ svbare,
+  /* UPPERCASE_NAME */ SVBARE,
+  /* FULL_NAME */ "Satp mode bare is supported",
+  /* DESC */ "",
+  /* URL */ ,
+  /* DEP_EXTS */ ({"zicsr"}),
+  /* SUPPORTED_VERSIONS */ ({{1, 0}}),
+  /* FLAG_GROUP */ sv,
+  /* BITMASK_GROUP_ID */ BITMASK_NOT_YET_ALLOCATED,
+  /* BITMASK_BIT_POSITION*/ BITMASK_NOT_YET_ALLOCATED,
+  /* EXTRA_EXTENSION_FLAGS */ 0)
+
+#include "riscv-ext-corev.def"
+#include "riscv-ext-sifive.def"
+#include "riscv-ext-thead.def"
+#include "riscv-ext-ventana.def"
+#include "riscv-ext-mips.def"
+#include "riscv-ext-andes.def"
+#include "riscv-ext-spacemit.def"

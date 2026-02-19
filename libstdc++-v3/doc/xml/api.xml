@@ -1,0 +1,69 @@
+<book xmlns="http://docbook.org/ns/docbook" version="5.0">
+
+<article xml:id="api" xreflabel="API">
+<?dbhtml filename="api.html"?>
+
+<title>The GNU C++ Library API Reference</title>
+
+<info>
+  <copyright>
+    <year>
+      2008
+    </year>
+    <year>
+      2010
+    </year>
+    <year>
+      2014
+    </year>
+    <holder>
+      <link xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="https://www.fsf.org">FSF
+      </link>
+    </holder>
+  </copyright>
+  <legalnotice>
+    <para>
+      <link linkend="manual.intro.status.license">License
+      </link>
+    </para>
+  </legalnotice>
+</info>
+
+<para>
+  The GNU C++ library sources have been specially formatted so that
+  with the proper invocation of another tool (Doxygen), a set of
+  indexed reference material can generated from the sources files
+  themselves. The resultant documentation is referred to as the API
+  documentation, and is useful for examining the signatures of public
+  member functions for the library classes, finding out what is in a
+  particular include file, looking at inheritance diagrams, etc.
+</para>
+
+<para>
+  The API documentation, rendered into HTML, can be viewed online
+  <link xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="https://gcc.gnu.org/onlinedocs/">for each GCC release</link>
+  and
+  <link xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="https://gcc.gnu.org/onlinedocs/libstdc++/latest-doxygen/index.html">
+  for the main development tree
+  </link>
+  (see the date on the first page).
+</para>
+
+<para>
+  The rendered HTML, as above, is also available for download on the
+  gcc.gnu.org site in a directory located at
+   <literal>&lt;URL:https://gcc.gnu.org/pub/gcc/libstdc++/doxygen/&gt;</literal>.
+   You will almost certainly need to use one of the
+   <link xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="https://gcc.gnu.org/mirrors.html">mirror sites</link> to download
+   the tarball. After unpacking, simply load libstdc++-html-*/index.html
+   into a browser.
+</para>
+
+<para>
+  In addition, a rendered set of man pages are available in the same
+  location specified above. Start with C++Intro(3).
+</para>
+
+</article>
+
+</book>

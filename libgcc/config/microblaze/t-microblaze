@@ -1,0 +1,12 @@
+LIB2FUNCS_EXCLUDE += _divsi3 _modsi3 _moddi3 _mulsi3 _udivsi3 _umodsi3
+
+LIB2ADD += \
+        $(srcdir)/config/microblaze/divsi3.S \
+        $(srcdir)/config/microblaze/moddi3.S \
+        $(srcdir)/config/microblaze/modsi3.S \
+        $(srcdir)/config/microblaze/muldi3_hard.S \
+        $(srcdir)/config/microblaze/mulsi3.S \
+        $(srcdir)/config/microblaze/stack_overflow_exit.S \
+        $(srcdir)/config/microblaze/udivsi3.S \
+        $(srcdir)/config/microblaze/umodsi3.S \
+        $(srcdir)/config/microblaze/divsi3_table.c

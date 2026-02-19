@@ -1,0 +1,75 @@
+; Options for the Motorola MCore port of the compiler.
+
+; Copyright (C) 2005-2026 Free Software Foundation, Inc.
+;
+; This file is part of GCC.
+;
+; GCC is free software; you can redistribute it and/or modify it under
+; the terms of the GNU General Public License as published by the Free
+; Software Foundation; either version 3, or (at your option) any later
+; version.
+;
+; GCC is distributed in the hope that it will be useful, but WITHOUT ANY
+; WARRANTY; without even the implied warranty of MERCHANTABILITY or
+; FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+; for more details.
+;
+; You should have received a copy of the GNU General Public License
+; along with GCC; see the file COPYING3.  If not see
+; <http://www.gnu.org/licenses/>.
+
+m210
+Target RejectNegative InverseMask(M340)
+Generate code for the M*Core M210.
+
+m340
+Target RejectNegative Mask(M340)
+Generate code for the M*Core M340.
+
+m4byte-functions
+Target Mask(OVERALIGN_FUNC)
+Force functions to be aligned to a 4 byte boundary.
+
+mbig-endian
+Target RejectNegative InverseMask(LITTLE_END)
+Generate big-endian code.
+
+mcallgraph-data
+Target Mask(CG_DATA)
+Emit call graph information.
+
+mdiv
+Target Mask(DIV)
+Use the divide instruction.
+
+mhardlit
+Target Mask(HARDLIT)
+Inline constants if it can be done in 2 insns or less.
+
+mlittle-endian
+Target RejectNegative Mask(LITTLE_END)
+Generate little-endian code.
+
+; Not used by the compiler proper.
+mno-lsim
+Target RejectNegative
+Assume that run-time support has been provided, so omit -lsim from the linker command line.
+
+mrelax-immediates
+Target Mask(RELAX_IMM)
+Use arbitrary sized immediates in bit operations.
+
+mslow-bytes
+Target Mask(SLOW_BYTES)
+Prefer word accesses over byte accesses.
+
+; Maximum size we are allowed to grow the stack in a single operation.
+; If we want more, we must do it in increments of at most this size.
+; If this value is 0, we don't check at all.
+mstack-increment=
+Target RejectNegative Joined UInteger Var(mcore_stack_increment) Init(STACK_UNITS_MAXSTEP)
+Set the maximum amount for a single stack increment operation.
+
+mwide-bitfields
+Target Mask(W_FIELD)
+Always treat bitfields as int-sized.

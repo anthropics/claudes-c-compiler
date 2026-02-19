@@ -1,0 +1,36 @@
+#   Copyright (C) 2005-2026 Free Software Foundation, Inc.
+
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+# 
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+# 
+# You should have received a copy of the GNU General Public License
+# along with GCC; see the file COPYING3.  If not see
+# <http://www.gnu.org/licenses/>.
+
+# Test the -MG flag with a system header file.
+
+load_lib mike-gcc.exp
+load_lib gcc-defs.exp
+
+# These tests don't run runtest_file_p consistently if it
+# doesn't return the same values, so disable parallelization
+# of this *.exp file.  The first parallel runtest to reach
+# this will run all the tests serially.
+if ![gcc_parallel_test_run_p mg-2] {
+    return
+}
+gcc_parallel_test_enable 0
+
+prebase
+set actions none-of-the-above
+set compiler_output "mg-2.o ?: .*mg-2.c \[ \\\\\n\]*nonexist.h"
+postbase mg-2.c "" "" "-MM -MG"
+
+gcc_parallel_test_enable 1

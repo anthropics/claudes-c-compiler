@@ -1,0 +1,119 @@
+# This harness is for tests that should be run at all optimisation levels.
+
+load_lib g++-dg.exp
+load_lib gcc-gdb-test.exp
+
+# Disable on darwin until radr://7264615 is resolved.
+if { [istarget *-*-darwin*] } {
+    return
+}
+
+if { [check_effective_target_simulator] } {
+    return
+}
+
+if { [istarget hppa*-*-hpux*] } {
+    return
+}
+
+if { [istarget "powerpc-ibm-aix*"] } {
+    set torture_execute_xfail "powerpc-ibm-aix*"
+    return
+}
+
+proc check_guality {args} {
+    # Don't count check_guality as PASS, or FAIL etc., that would make
+    # the total PASS count dependent on how many parallel runtest invocations
+    # ran guality.exp.  So save the counts first and restore them afterwards.
+    global test_counts
+    array set saved_test_counts [array get test_counts]
+    set result [eval check_compile guality_check executable $args "-g -O0"]
+    set lines [lindex $result 0]
+    set output [lindex $result 1]
+    set ret 0
+    if {[string match "" $lines]} {
+      set execout [g++_load "./$output"]
+      set ret [string match "*1 PASS, 0 FAIL, 0 UNRESOLVED*" $execout]
+    }
+    remote_file build delete $output
+    array set test_counts [array get saved_test_counts]
+    return $ret
+}
+
+dg-init
+torture-init
+
+global GDB
+global host_triplet target_triplet
+if ![info exists ::env(GUALITY_GDB_NAME)] {
+    if [info exists GDB] {
+	set guality_gdb_name "$GDB"
+    } elseif { [string equal $host_triplet $target_triplet]
+	       && [info exists rootme]
+	       && [file exists $rootme/../gdb/gdb] } {
+	# If we're doing a combined build, and gdb is available, use it.
+	set guality_gdb_name "$rootme/../gdb/gdb"
+    } else {
+	set guality_gdb_name "gdb"
+    }
+    setenv GUALITY_GDB_NAME "$guality_gdb_name"
+}
+
+if [info exists ::env(DEBUGINFOD_URLS)] {
+  set orig_debuginfod_urls "$::env(DEBUGINFOD_URLS)"
+  setenv DEBUGINFOD_URLS ""
+}
+
+report_gdb $::env(GUALITY_GDB_NAME) [info script]
+
+global DG_TORTURE_OPTIONS LTO_TORTURE_OPTIONS
+set guality_dg_torture_options [guality_minimal_options $DG_TORTURE_OPTIONS]
+set-torture-options \
+    $guality_dg_torture_options \
+    [list {}] \
+    $LTO_TORTURE_OPTIONS
+
+if {[check_guality "
+  #include \"$srcdir/$subdir/guality.h\"
+  volatile long int varl = 6;
+  int main (int argc, char *argv\[\])
+  {
+    GUALCHKVAL (varl);
+    return 0;
+  }
+"]} {
+    set general [list]
+    set Og [list]
+    foreach file [lsort [glob $srcdir/c-c++-common/guality/*.c]] {
+	switch -glob -- [file tail $file] {
+	    Og-* { lappend Og $file }
+	    * { lappend general $file }
+	}
+    }
+
+    gcc-dg-runtest [lsort [glob $srcdir/$subdir/*.C]] "" ""
+    gcc-dg-runtest $general "" ""
+
+    if [check_effective_target_lto] {
+        set lto_option_list [list "-Og -flto"]
+    } else {
+        set lto_option_list ""  
+    }
+
+    set-torture-options \
+	[list "-O0" "-Og"] \
+	[list {}] \
+	$lto_option_list
+    gcc-dg-runtest $Og "" ""
+}
+
+if [info exists guality_gdb_name] {
+    unsetenv GUALITY_GDB_NAME
+}
+
+if [info exists ::env(DEBUGINFOD_URLS)] {
+  setenv DEBUGINFOD_URLS "$orig_debuginfod_urls"
+}
+
+torture-finish
+dg-finish

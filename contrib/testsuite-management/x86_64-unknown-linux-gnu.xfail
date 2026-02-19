@@ -1,0 +1,109 @@
+FAIL: g++.dg/guality/pr55665.C -O2  line 23 p == 40
+FAIL: g++.dg/guality/pr55665.C -O3 -fomit-frame-pointer  line 23 p == 40
+FAIL: g++.dg/guality/pr55665.C -O3 -g  line 23 p == 40
+XPASS: gcc.dg/guality/example.c -O0  execution test
+XPASS: gcc.dg/guality/example.c -O2  execution test
+XPASS: gcc.dg/guality/example.c -O2 -flto -fno-use-linker-plugin -flto-partition=none  execution test
+XPASS: gcc.dg/guality/guality.c -O0  execution test
+XPASS: gcc.dg/guality/guality.c -O1  execution test
+XPASS: gcc.dg/guality/guality.c -O2  execution test
+XPASS: gcc.dg/guality/guality.c -O3 -fomit-frame-pointer  execution test
+XPASS: gcc.dg/guality/guality.c -O3 -g  execution test
+XPASS: gcc.dg/guality/guality.c -Os  execution test
+XPASS: gcc.dg/guality/guality.c -O2 -flto -fno-use-linker-plugin -flto-partition=none  execution test
+XPASS: gcc.dg/guality/guality.c -O2 -flto -fuse-linker-plugin -fno-fat-lto-objects  execution test
+XPASS: gcc.dg/guality/inline-params.c -O2  execution test
+XPASS: gcc.dg/guality/inline-params.c -O3 -fomit-frame-pointer  execution test
+XPASS: gcc.dg/guality/inline-params.c -O3 -g  execution test
+XPASS: gcc.dg/guality/inline-params.c -Os  execution test
+XPASS: gcc.dg/guality/inline-params.c -O2 -flto -fno-use-linker-plugin -flto-partition=none  execution test
+XPASS: gcc.dg/guality/pr41353-1.c -O0  line 28 j == 28 + 37
+XPASS: gcc.dg/guality/pr41353-1.c -O1  line 28 j == 28 + 37
+XPASS: gcc.dg/guality/pr41353-1.c -O2  line 28 j == 28 + 37
+XPASS: gcc.dg/guality/pr41353-1.c -O3 -fomit-frame-pointer  line 28 j == 28 + 37
+XPASS: gcc.dg/guality/pr41353-1.c -O3 -g  line 28 j == 28 + 37
+XPASS: gcc.dg/guality/pr41353-1.c -Os  line 28 j == 28 + 37
+XPASS: gcc.dg/guality/pr41353-1.c -O2 -flto -fno-use-linker-plugin -flto-partition=none  line 28 j == 28 + 37
+XPASS: gcc.dg/guality/pr41353-1.c -O2 -flto -fuse-linker-plugin -fno-fat-lto-objects  line 28 j == 28 + 37
+XPASS: gcc.dg/guality/pr41447-1.c -O0  execution test
+XPASS: gcc.dg/guality/pr41447-1.c -O1  execution test
+XPASS: gcc.dg/guality/pr41447-1.c -O2  execution test
+XPASS: gcc.dg/guality/pr41447-1.c -O3 -fomit-frame-pointer  execution test
+XPASS: gcc.dg/guality/pr41447-1.c -O3 -g  execution test
+XPASS: gcc.dg/guality/pr41447-1.c -Os  execution test
+XPASS: gcc.dg/guality/pr41447-1.c -O2 -flto -fno-use-linker-plugin -flto-partition=none  execution test
+XPASS: gcc.dg/guality/pr41447-1.c -O2 -flto -fuse-linker-plugin -fno-fat-lto-objects  execution test
+XPASS: gcc.dg/guality/pr41616-1.c -O0  execution test
+XPASS: gcc.dg/guality/pr41616-1.c -O1  execution test
+XPASS: gcc.dg/guality/pr41616-1.c -O2  execution test
+XPASS: gcc.dg/guality/pr41616-1.c -O3 -fomit-frame-pointer  execution test
+XPASS: gcc.dg/guality/pr41616-1.c -O3 -g  execution test
+XPASS: gcc.dg/guality/pr41616-1.c -Os  execution test
+XPASS: gcc.dg/guality/pr41616-1.c -O2 -flto -fno-use-linker-plugin -flto-partition=none  execution test
+FAIL: gcc.dg/guality/pr43051-1.c -O3 -fomit-frame-pointer -funroll-loops  line 39 c == &a[0]
+FAIL: gcc.dg/guality/pr43051-1.c -O3 -fomit-frame-pointer -funroll-all-loops -finline-functions  line 39 c == &a[0]
+FAIL: gcc.dg/guality/pr48437.c -O2 -flto -fno-use-linker-plugin -flto-partition=none  line 14 i == 0
+FAIL: gcc.dg/guality/pr48437.c -O2 -flto -fuse-linker-plugin -fno-fat-lto-objects  line 14 i == 0
+FAIL: gcc.dg/guality/pr54200.c -Os  line 20 z == 3
+FAIL: gcc.dg/guality/pr54519-1.c -O2 -flto -fno-use-linker-plugin -flto-partition=none  line 20 y == 25
+FAIL: gcc.dg/guality/pr54519-1.c -O2 -flto -fno-use-linker-plugin -flto-partition=none  line 20 z == 6
+FAIL: gcc.dg/guality/pr54519-1.c -O2 -flto -fno-use-linker-plugin -flto-partition=none  line 23 y == 117
+FAIL: gcc.dg/guality/pr54519-1.c -O2 -flto -fno-use-linker-plugin -flto-partition=none  line 23 z == 8
+FAIL: gcc.dg/guality/pr54519-1.c -O2 -flto -fuse-linker-plugin -fno-fat-lto-objects  line 20 y == 25
+FAIL: gcc.dg/guality/pr54519-1.c -O2 -flto -fuse-linker-plugin -fno-fat-lto-objects  line 20 z == 6
+FAIL: gcc.dg/guality/pr54519-2.c -O2 -flto -fno-use-linker-plugin -flto-partition=none  line 17 y == 25
+FAIL: gcc.dg/guality/pr54519-2.c -O2 -flto -fuse-linker-plugin -fno-fat-lto-objects  line 17 y == 25
+FAIL: gcc.dg/guality/pr54519-3.c -O2 -flto -fno-use-linker-plugin -flto-partition=none  line 20 y == 25
+FAIL: gcc.dg/guality/pr54519-3.c -O2 -flto -fno-use-linker-plugin -flto-partition=none  line 20 z == 6
+FAIL: gcc.dg/guality/pr54519-3.c -O2 -flto -fno-use-linker-plugin -flto-partition=none  line 23 y == 117
+FAIL: gcc.dg/guality/pr54519-3.c -O2 -flto -fno-use-linker-plugin -flto-partition=none  line 23 z == 8
+FAIL: gcc.dg/guality/pr54519-3.c -O2 -flto -fuse-linker-plugin -fno-fat-lto-objects  line 20 y == 25
+FAIL: gcc.dg/guality/pr54519-3.c -O2 -flto -fuse-linker-plugin -fno-fat-lto-objects  line 20 z == 6
+FAIL: gcc.dg/guality/pr54519-3.c -O2 -flto -fuse-linker-plugin -fno-fat-lto-objects  line 23 y == 117
+FAIL: gcc.dg/guality/pr54519-3.c -O2 -flto -fuse-linker-plugin -fno-fat-lto-objects  line 23 z == 8
+FAIL: gcc.dg/guality/pr54519-4.c -O2 -flto -fno-use-linker-plugin -flto-partition=none  line 17 y == 25
+FAIL: gcc.dg/guality/pr54519-4.c -O2 -flto -fuse-linker-plugin -fno-fat-lto-objects  line 17 y == 25
+FAIL: gcc.dg/guality/pr54519-5.c -O2 -flto -fno-use-linker-plugin -flto-partition=none  line 17 y == 25
+FAIL: gcc.dg/guality/pr54519-5.c -O2 -flto -fuse-linker-plugin -fno-fat-lto-objects  line 17 y == 25
+FAIL: gcc.dg/guality/pr54693-2.c -Os  line 21 x == 10 - i
+FAIL: gcc.dg/guality/pr54693-2.c -Os  line 21 y == 20 - 2 * i
+FAIL: gcc.dg/guality/vla-1.c -O0  line 17 sizeof (a) == 6
+FAIL: gcc.dg/guality/vla-1.c -O0  line 24 sizeof (a) == 17 * sizeof (short)
+FAIL: gcc.dg/guality/vla-1.c -O1  line 17 sizeof (a) == 6
+FAIL: gcc.dg/guality/vla-1.c -O1  line 24 sizeof (a) == 17 * sizeof (short)
+FAIL: gcc.dg/guality/vla-1.c -O2  line 17 sizeof (a) == 6
+FAIL: gcc.dg/guality/vla-1.c -O2  line 24 sizeof (a) == 17 * sizeof (short)
+FAIL: gcc.dg/guality/vla-1.c -O3 -fomit-frame-pointer  line 17 sizeof (a) == 6
+FAIL: gcc.dg/guality/vla-1.c -O3 -fomit-frame-pointer  line 24 sizeof (a) == 17 * sizeof (short)
+FAIL: gcc.dg/guality/vla-1.c -O3 -g  line 17 sizeof (a) == 6
+FAIL: gcc.dg/guality/vla-1.c -O3 -g  line 24 sizeof (a) == 17 * sizeof (short)
+FAIL: gcc.dg/guality/vla-1.c -Os  line 17 sizeof (a) == 6
+FAIL: gcc.dg/guality/vla-1.c -Os  line 24 sizeof (a) == 17 * sizeof (short)
+FAIL: gcc.dg/guality/vla-1.c -O2 -flto -fno-use-linker-plugin -flto-partition=none  line 17 sizeof (a) == 6
+FAIL: gcc.dg/guality/vla-1.c -O2 -flto -fno-use-linker-plugin -flto-partition=none  line 24 sizeof (a) == 17 * sizeof (short)
+FAIL: gcc.dg/guality/vla-1.c -O2 -flto -fuse-linker-plugin -fno-fat-lto-objects  line 17 sizeof (a) == 6
+FAIL: gcc.dg/guality/vla-1.c -O2 -flto -fuse-linker-plugin -fno-fat-lto-objects  line 24 sizeof (a) == 17 * sizeof (short)
+FAIL: gcc.dg/guality/vla-2.c -O0  line 16 sizeof (a) == 5 * sizeof (int)
+FAIL: gcc.dg/guality/vla-2.c -O0  line 25 sizeof (a) == 6 * sizeof (int)
+FAIL: gcc.dg/guality/vla-2.c -O1  line 16 sizeof (a) == 5 * sizeof (int)
+FAIL: gcc.dg/guality/vla-2.c -O1  line 25 sizeof (a) == 6 * sizeof (int)
+FAIL: gcc.dg/guality/vla-2.c -O2  line 16 sizeof (a) == 5 * sizeof (int)
+FAIL: gcc.dg/guality/vla-2.c -O2  line 25 sizeof (a) == 6 * sizeof (int)
+FAIL: gcc.dg/guality/vla-2.c -O3 -fomit-frame-pointer  line 16 sizeof (a) == 5 * sizeof (int)
+FAIL: gcc.dg/guality/vla-2.c -O3 -fomit-frame-pointer  line 25 sizeof (a) == 6 * sizeof (int)
+FAIL: gcc.dg/guality/vla-2.c -O3 -g  line 16 sizeof (a) == 5 * sizeof (int)
+FAIL: gcc.dg/guality/vla-2.c -O3 -g  line 25 sizeof (a) == 6 * sizeof (int)
+FAIL: gcc.dg/guality/vla-2.c -Os  line 16 sizeof (a) == 5 * sizeof (int)
+FAIL: gcc.dg/guality/vla-2.c -Os  line 25 sizeof (a) == 6 * sizeof (int)
+FAIL: gcc.dg/guality/vla-2.c -O2 -flto -fno-use-linker-plugin -flto-partition=none  line 16 sizeof (a) == 5 * sizeof (int)
+FAIL: gcc.dg/guality/vla-2.c -O2 -flto -fno-use-linker-plugin -flto-partition=none  line 25 sizeof (a) == 6 * sizeof (int)
+FAIL: gcc.dg/guality/vla-2.c -O2 -flto -fuse-linker-plugin -fno-fat-lto-objects  line 16 sizeof (a) == 5 * sizeof (int)
+FAIL: gcc.dg/guality/vla-2.c -O2 -flto -fuse-linker-plugin -fno-fat-lto-objects  line 25 sizeof (a) == 6 * sizeof (int)
+FAIL: gcc.dg/tree-ssa/slsr-39.c scan-tree-dump-times slsr "MEM" 4
+FAIL: libmudflap.c++/pass41-frag.cxx ( -O) execution test
+FAIL: libmudflap.c++/pass41-frag.cxx (-O2) execution test
+FAIL: libmudflap.c++/pass41-frag.cxx (-O3) execution test
+FAIL: libmudflap.c++/pass55-frag.cxx (-O3) execution test
+FAIL: sourcelocation output - source compiled test
+FAIL: sourcelocation -findirect-dispatch output - source compiled test
+FAIL: sourcelocation -O3 output - source compiled test

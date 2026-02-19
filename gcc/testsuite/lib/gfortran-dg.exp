@@ -1,0 +1,242 @@
+#   Copyright (C) 2004-2026 Free Software Foundation, Inc.
+
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+# 
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+# 
+# You should have received a copy of the GNU General Public License
+# along with GCC; see the file COPYING3.  If not see
+# <http://www.gnu.org/licenses/>.
+
+load_lib gcc-dg.exp
+load_lib torture-options.exp
+
+# Define gfortran callbacks for dg.exp.
+
+proc gfortran-dg-test { prog do_what extra_tool_flags } {
+    set result \
+	[gcc-dg-test-1 gfortran_target_compile $prog $do_what $extra_tool_flags]
+    
+    set comp_output [lindex $result 0]
+    set output_file [lindex $result 1]
+
+    # gcc's default is to print the caret and source code, but
+    # most test cases implicitly use the flag -fno-diagnostics-show-caret
+    # to disable caret (and source code) printing.
+    #
+    # However, a few test cases override this back to the default by
+    # explicily supplying "-fdiagnostics-show-caret", so that we can have
+    # test coverage for caret/source code printing.
+    #
+    # gfortran error messages with caret-printing look like this:
+    #     [name]:[locus]:
+    #
+    #        some code
+    #              1
+    #     Error: Some error at (1)
+    # or
+    #     [name]:[locus]:
+    #
+    #       some code
+    #              1
+    #     [name]:[locus2]:
+    #
+    #       some other code
+    #         2
+    #     Error: Some error at (1) and (2)
+    # or
+    #     [name]:[locus]:
+    #
+    #       some code and some more code
+    #              1       2
+    #     Error: Some error at (1) and (2)
+    #
+    # If this is such a test case, skip the rest of this function, so
+    # that the test case can explicitly verify the output that it expects.
+    if {[string first "-fdiagnostics-show-caret" $extra_tool_flags] >= 0} {
+	return [list $comp_output $output_file]
+    }
+
+    # Otherwise, caret-printing is disabled.
+    # gfortran errors with caret-printing disabled look like this:
+    #     [name]:[locus]: Error: Some error
+    # or
+    #     [name]:[locus]: Error: (1)
+    #     [name]:[locus2]: Error: Some error at (1) and (2)
+    #
+    # Where [locus] is either [line] or [line].[column] or
+    # [line].[column]-[column] .
+    #
+    # We collapse these to look like:
+    #  [name]:[line]:[column]: Error: Some error at (1) and (2)
+    # or
+    #  [name]:[line]:[column]: Error: Some error at (1) and (2)
+    #  [name]:[line2]:[column]: Error: Some error at (1) and (2)
+    #
+    # Note that these regexps only make sense in the combinations used below.
+    # Note also that is imperative that we first deal with the form with
+    # two loci.
+    set locus_regexp "(\[^\n\]+:\[0-9\]+)\[\.:\](\[0-9\]+)(-\[0-9\]+)?:\n\n\[^\n\]+\n\[^\n\]+\n"
+    set diag_regexp "(\[^\n\]+)\n"
+
+    # We proceed in steps:
+
+    # 1. We add first a column number if none exists.
+    # (Some Fortran diagnostics have the locus after Warning|Error)
+    set colnum_regexp "(^|\n)(Warning: |Error: )?(\[^:\n\]+:\[0-9\]+):(\[ \n\])"
+    regsub -all $colnum_regexp $comp_output "\\1\\3:0:\\4\\2" comp_output
+    verbose "comput_output0:\n$comp_output"
+
+    # 2. We deal with the form with two different locus lines,
+    set two_loci "(^|\n)$locus_regexp$locus_regexp$diag_regexp"
+    regsub -all $two_loci $comp_output "\\1\\2:\\3: \\8\n\\5\:\\6: \\8\n" comp_output
+    verbose "comput_output1:\n$comp_output"
+
+    set locus_prefix "(\[^:\n\]+:\[0-9\]+:\[0-9\]+: )(Warning: |Error: )"
+    set two_loci2 "(^|\n)$locus_prefix\\(1\\)\n$locus_prefix$diag_regexp"
+    regsub -all $two_loci2 $comp_output "\\1\\2\\3\\6\n\\4\\5\\6\n" comp_output
+    verbose "comput_output2:\n$comp_output"
+
+    # 3. then with the form with only one locus line.
+    set single_locus "(^|\n)$locus_regexp$diag_regexp"
+    regsub -all $single_locus $comp_output "\\1\\2:\\3: \\5\n" comp_output
+    verbose "comput_output3:\n$comp_output"
+
+    # 4. Add a line number if none exists
+    regsub -all "(^|\n)(Warning: |Error: )" $comp_output "\\1:0:0: \\2" comp_output
+    verbose "comput_output4:\n$comp_output"
+    return [list $comp_output $output_file]
+}
+
+proc gfortran-dg-prune { system text } {
+    return [gcc-dg-prune $system $text]
+}
+
+# Utility routines.
+
+# Modified dg-runtest that can cycle through a list of optimization options
+# as c-torture does.
+proc gfortran-dg-runtest { testcases flags default-extra-flags } {
+    global runtests
+    global torture_with_loops
+
+    # Some callers initialize torture testing themselves; don't override those.
+    set existing_torture_init [torture-init-done]
+    if { $existing_torture_init == 0 } {
+	torture-init
+    }
+    # Some callers set torture options themselves; don't override those.
+    set existing_torture_options [torture-options-exist]
+    if { $existing_torture_options == 0 } {
+	global DG_TORTURE_OPTIONS
+	set-torture-options $DG_TORTURE_OPTIONS
+    }
+    dump-torture-options
+
+    foreach test $testcases {
+	# If we're only testing specific files and this isn't one of
+	# them, skip it.
+	if ![runtest_file_p $runtests $test] {
+	    continue
+        }
+
+	# look if this is dg-do run test, in which case
+	# we cycle through the option list, otherwise we don't
+	if [expr [search_for $test "dg-do run"]] {
+	    if { [ expr [search_for $test "dg-options*\[ \t\"\{]-O"] ] \
+		 || [ expr [search_for $test \
+			    "dg-additional-options*\[ \t\"\{]-O"] ] } {
+		set option_list [list { -O } ]
+	    } else {
+		set option_list $torture_with_loops
+	    }
+	} else {
+	    set option_list [list { -O } ]
+	}
+
+	set nshort [file tail [file dirname $test]]/[file tail $test]
+	list-module-names $test
+
+	foreach flags_t $option_list {
+	    verbose "Testing $nshort, $flags $flags_t" 1
+	    dg-test $test "$flags $flags_t" ${default-extra-flags}
+	    fortran-delete-unit-files $test
+	    cleanup-modules ""
+	}
+    }
+
+    if { $existing_torture_init == 0 } {
+	torture-finish
+    }
+}
+
+proc gfortran-dg-debug-runtest { target_compile trivial opt_opts testcases } {
+    global srcdir subdir DEBUG_TORTURE_OPTIONS
+
+    if ![info exists DEBUG_TORTURE_OPTIONS] {
+       set DEBUG_TORTURE_OPTIONS ""
+       set type_list [list "-gdwarf-2" ]
+       foreach type $type_list {
+           set comp_output [$target_compile \
+                   "$srcdir/$subdir/$trivial" "trivial.S" assembly \
+                   "additional_flags=$type"]
+           if { [string match "exit status *" $comp_output] } {
+               continue
+           }
+           if { [string match \
+                       "* target system does not support the * debug format*" \
+                       $comp_output]
+           } {
+               continue
+           }
+           remove-build-file "trivial.S"
+           foreach level {1 "" 3} {
+	       if { ($type == "-gdwarf-2") && ($level != "") } {
+		   lappend DEBUG_TORTURE_OPTIONS [list "${type}" "-g${level}"]
+		   foreach opt $opt_opts {
+		       lappend DEBUG_TORTURE_OPTIONS \
+			       [list "${type}" "-g${level}" "$opt" ]
+		   }
+	       } else {
+		   lappend DEBUG_TORTURE_OPTIONS [list "${type}${level}"]
+		   foreach opt $opt_opts {
+		       lappend DEBUG_TORTURE_OPTIONS \
+			       [list "${type}${level}" "$opt" ]
+		   }
+               }
+           }
+       }
+    }
+
+    verbose -log "Using options $DEBUG_TORTURE_OPTIONS"
+
+    global runtests
+
+    foreach test $testcases {
+       # If we're only testing specific files and this isn't one of 
+       # them, skip it.
+       if ![runtest_file_p $runtests $test] {
+           continue
+       }
+
+       set nshort [file tail [file dirname $test]]/[file tail $test]
+	list-module-names $test
+
+       foreach flags $DEBUG_TORTURE_OPTIONS {
+           set doit 1
+           # gcc-specific checking removed here
+
+           if { $doit } {
+               verbose -log "Testing $nshort, $flags" 1
+               dg-test $test $flags ""
+		cleanup-modules ""
+           }
+       }
+    }
+}

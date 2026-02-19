@@ -1,0 +1,106 @@
+# Copyright (C) 2002-2026 Free Software Foundation, Inc.
+#
+# This file is part of GCC.
+#
+# GCC is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3, or (at your option)
+# any later version.
+#
+# GCC is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with GCC; see the file COPYING3.  If not see
+# <http://www.gnu.org/licenses/>.
+
+# Main multilibs
+# --------------
+#
+# Endianness: EB or EL
+#
+# ABIs: mabi=32
+#	mabi=o64
+#	mabi=eabi
+#	mabi=eabi/mlong32
+#	mabi=eabi/mgp32
+#	mabi=eabi/mgp32/mlong64
+#
+# Architecture: march=vr4120 with -mfix-vr4120
+#		march=vr4130 with -mfix-vr4130 (default)
+#		march=vr5000
+#		march=vr5400
+#		march=vr5500
+#
+# Total: 2 * 6 * 5 = 60 multilibs.
+#
+#
+# Extra vr4300 multilibs
+# ----------------------
+#
+# Endianness: EB or EL
+#
+# ABI: o64
+#
+# Architecture: vr4300.
+#
+# Total: 2 * 1 * 2 = 2 multilibs.
+#
+#
+# Extra MIPS16 multilibs
+# ----------------------
+#
+# Endianness: EB or EL
+#
+# ABIs: mabi=o64
+#	mabi=eabi/mlong32
+#	mabi=eabi/mgp32
+#
+# Architecture: march=vr4120 with -mfix-vr4120
+#		march=vr4130 with -mfix-vr4130 (default)
+#
+# Total: 2 * 3 * 2 = 12 multilibs.
+MULTILIB_OPTIONS =			\
+	EL/EB				\
+	mabi=32/mabi=o64/mabi=eabi	\
+	mgp32				\
+	mlong64				\
+	mips16				\
+	mfix-vr4120/mfix-vr4130/march=vr4300/march=vr5000/march=vr5400/march=vr5500
+
+MULTILIB_DIRNAMES =	\
+	el eb		\
+	o32 o64 eabi	\
+	gp32		\
+	long64		\
+	mips16		\
+	vr4120 vr4130 vr4300 vr5000 vr5400 vr5500
+
+MULTILIB_MATCHES = EL=mel EB=meb mfix-vr4120=march?vr4120 \
+		   mfix-vr4130=march?vr4130
+
+# Assume a 41xx-series is the default: we'd need a *mips16 entry if
+# the default processor didn't support mips16.  Also assume the
+# default ABI is EABI64 -mlong32.
+MULTILIB_EXCEPTIONS =				\
+	*mabi=32/mlong64*			\
+	*mabi=32/mgp32*				\
+	*mabi=o64/mgp32*			\
+	*mabi=o64/mlong64*			\
+	*mips16/march=vr5*			\
+	*mips16/march=vr4300			\
+	$(MIPS16_EXCEPTIONS)			\
+	$(VR4300_EXCEPTIONS)
+
+MIPS16_EXCEPTIONS =				\
+	*mabi=32*mips16*			\
+	*mlong64*mips16*
+
+VR4300_EXCEPTIONS =				\
+	*mabi=32*march=vr4300			\
+	*mgp32*march=vr4300			\
+	*mlong64*march=vr4300			\
+	march=vr4300				\
+	E[LB]/march=vr4300

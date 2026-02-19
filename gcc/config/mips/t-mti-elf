@@ -1,0 +1,48 @@
+# Copyright (C) 2012-2026 Free Software Foundation, Inc.
+#
+# This file is part of GCC.
+#
+# GCC is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3, or (at your option)
+# any later version.
+#
+# GCC is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with GCC; see the file COPYING3.  If not see
+# <http://www.gnu.org/licenses/>.
+
+# The default build is mips32r2, hard-float big-endian.  Add mips32,
+# soft-float, and little-endian variations.
+
+MULTILIB_OPTIONS = mips32/mips64/mips64r2 mips16/mmicromips mabi=64 EL msoft-float mnan=2008
+MULTILIB_DIRNAMES = mips32 mips64 mips64r2 mips16 micromips 64 el sof nan2008
+MULTILIB_MATCHES = EL=mel EB=meb mips32r2=mips32r3 mips32r2=mips32r5 mips64r2=mips64r3 mips64r2=mips64r5
+
+# The 64 bit ABI is not supported on the mips32 architecture.
+MULTILIB_EXCEPTIONS += *mips32*/*mabi=64*
+
+# The 64 bit ABI is not supported on the mips32r2 architecture.
+# Because mips32r2 is the default we can't use that flag to trigger
+# the exception so we check for mabi=64 with no specific mips
+# architecture flag instead.
+MULTILIB_EXCEPTIONS += mabi=64*
+
+# We do not want to build mips16 versions of mips64* architectures.
+MULTILIB_EXCEPTIONS += *mips64*/*mips16*
+MULTILIB_EXCEPTIONS += *mips16/mabi=64*
+
+# We only want micromips for mips32r2 architecture.
+MULTILIB_EXCEPTIONS += *mips32/mmicromips*
+MULTILIB_EXCEPTIONS += *mips64*/mmicromips*
+MULTILIB_EXCEPTIONS += *mmicromips/mabi=64*
+
+# We do not want nan2008 libraries for soft-float,
+# mips32[r1], or mips64[r1].
+MULTILIB_EXCEPTIONS += *msoft-float*/*mnan=2008*
+MULTILIB_EXCEPTIONS += *mips32/*mnan=2008*
+MULTILIB_EXCEPTIONS += *mips64/*mnan=2008*

@@ -1,0 +1,489 @@
+// Wrapper of C-language FILE struct -*- C++ -*-
+
+// Copyright (C) 2000-2026 Free Software Foundation, Inc.
+//
+// This file is part of the GNU ISO C++ Library.  This library is free
+// software; you can redistribute it and/or modify it under the
+// terms of the GNU General Public License as published by the
+// Free Software Foundation; either version 3, or (at your option)
+// any later version.
+
+// This library is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+
+// Under Section 7 of GPL version 3, you are granted additional
+// permissions described in the GCC Runtime Library Exception, version
+// 3.1, as published by the Free Software Foundation.
+
+// You should have received a copy of the GNU General Public License and
+// a copy of the GCC Runtime Library Exception along with this program;
+// see the files COPYING3 and COPYING.RUNTIME respectively.  If not, see
+// <http://www.gnu.org/licenses/>.
+
+//
+// ISO C++ 14882: 27.8  File-based streams
+//
+
+#include <bits/largefile-config.h>
+#include <bits/basic_file.h>
+#include <fcntl.h>
+#include <errno.h>
+
+#ifdef _GLIBCXX_HAVE_POLL
+#include <poll.h>
+#endif
+
+// Pick up ioctl on Solaris 2.8
+#ifdef _GLIBCXX_HAVE_UNISTD_H
+#include <unistd.h>
+#endif
+
+// Pick up FIONREAD on Solaris 2
+#ifdef _GLIBCXX_HAVE_SYS_IOCTL_H
+#define BSD_COMP
+#include <sys/ioctl.h>
+#endif
+
+// Pick up FIONREAD on Solaris 2.5.
+#ifdef _GLIBCXX_HAVE_SYS_FILIO_H
+#include <sys/filio.h>
+#endif
+
+#ifdef _GLIBCXX_HAVE_SYS_UIO_H
+#include <sys/uio.h>
+#endif
+
+#if defined(_GLIBCXX_HAVE_S_ISREG) || defined(_GLIBCXX_HAVE_S_IFREG)
+# include <sys/stat.h>
+# ifdef _GLIBCXX_HAVE_S_ISREG
+#  define _GLIBCXX_ISREG(x) S_ISREG(x)
+# else
+#  define _GLIBCXX_ISREG(x) (((x) & S_IFMT) == S_IFREG)
+# endif
+#endif
+
+#include <limits> // For <off_t>::max() and min() and <streamsize>::max()
+
+#if _GLIBCXX_USE__GET_OSFHANDLE
+# include <stdint.h> // For intptr_t
+# include <io.h>     // For _get_osfhandle
+#endif
+
+namespace
+{
+  // Map ios_base::openmode flags to a string for use in fopen().
+  // Table of valid combinations as given in [lib.filebuf.members]/2.
+  static const char*
+  fopen_mode(std::ios_base::openmode mode)
+  {
+    enum
+      {
+	in     = std::ios_base::in,
+	out    = std::ios_base::out,
+	trunc  = std::ios_base::trunc,
+	app    = std::ios_base::app,
+	binary = std::ios_base::binary,
+	noreplace = std::_S_noreplace
+      };
+
+    // _GLIBCXX_RESOLVE_LIB_DEFECTS
+    // 596. 27.8.1.3 Table 112 omits "a+" and "a+b" modes.
+    switch (mode & (in|out|trunc|app|binary|noreplace))
+      {
+      case (   out                           ): return "w";
+      case (   out                 |noreplace): return "wx";
+      case (   out|trunc                     ): return "w";
+      case (   out|trunc           |noreplace): return "wx";
+      case (   out      |app                 ): return "a";
+      case (             app                 ): return "a";
+      case (in                               ): return "r";
+      case (in|out                           ): return "r+";
+      case (in|out|trunc                     ): return "w+";
+      case (in|out|trunc           |noreplace): return "w+x";
+      case (in|out      |app                 ): return "a+";
+      case (in          |app                 ): return "a+";
+
+      case (   out          |binary          ): return "wb";
+      case (   out          |binary|noreplace): return "wbx";
+      case (   out      |app|binary          ): return "ab";
+      case (             app|binary          ): return "ab";
+      case (   out|trunc    |binary          ): return "wb";
+      case (in              |binary          ): return "rb";
+      case (in|out          |binary          ): return "r+b";
+      case (in|out|trunc    |binary          ): return "w+b";
+      case (in|out|trunc    |binary|noreplace): return "w+bx";
+      case (in|out      |app|binary          ): return "a+b";
+      case (in          |app|binary          ): return "a+b";
+
+      default: return 0; // invalid
+      }
+  }
+
+  // Wrapper handling partial write.
+  static std::streamsize
+#ifdef _GLIBCXX_USE_STDIO_PURE
+  xwrite(FILE *__file, const char* __s, std::streamsize __n)
+#else
+  xwrite(int __fd, const char* __s, std::streamsize __n)
+#endif
+  {
+    std::streamsize __nleft = __n;
+
+    for (;;)
+      {
+#ifdef _GLIBCXX_USE_STDIO_PURE
+	const std::streamsize __ret = fwrite(__s, 1, __nleft, __file);
+	if (__ret == 0 && ferror(__file))
+	  break;
+#else
+	const std::streamsize __ret = write(__fd, __s, __nleft);
+	if (__ret == -1L && errno == EINTR)
+	  continue;
+	if (__ret == -1L)
+	  break;
+#endif
+	__nleft -= __ret;
+	if (__nleft == 0)
+	  break;
+
+	__s += __ret;
+      }
+
+    return __n - __nleft;
+  }
+
+#if defined(_GLIBCXX_HAVE_WRITEV) && !defined(_GLIBCXX_USE_STDIO_PURE)
+  // Wrapper handling partial writev.
+  static std::streamsize
+  xwritev(int __fd, const char* __s1, std::streamsize __n1,
+	  const char* __s2, std::streamsize __n2)
+  {
+    std::streamsize __nleft = __n1 + __n2;
+    std::streamsize __n1_left = __n1;
+
+    struct iovec __iov[2];
+    __iov[1].iov_base = const_cast<char*>(__s2);
+    __iov[1].iov_len = __n2;
+
+    for (;;)
+      {
+	__iov[0].iov_base = const_cast<char*>(__s1);
+	__iov[0].iov_len = __n1_left;
+
+	const std::streamsize __ret = writev(__fd, __iov, 2);
+	if (__ret == -1L && errno == EINTR)
+	  continue;
+	if (__ret == -1L)
+	  break;
+
+	__nleft -= __ret;
+	if (__nleft == 0)
+	  break;
+
+	const std::streamsize __off = __ret - __n1_left;
+	if (__off >= 0)
+	  {
+	    __nleft -= xwrite(__fd, __s2 + __off, __n2 - __off);
+	    break;
+	  }
+
+	__s1 += __ret;
+	__n1_left -= __ret;
+      }
+
+    return __n1 + __n2 - __nleft;
+  }
+#endif
+} // anonymous namespace
+
+
+namespace std _GLIBCXX_VISIBILITY(default)
+{
+_GLIBCXX_BEGIN_NAMESPACE_VERSION
+
+  // Definitions for __basic_file<char>.
+  __basic_file<char>::__basic_file(__c_lock* /*__lock*/) throw()
+  : _M_cfile(NULL), _M_cfile_created(false) { }
+
+  __basic_file<char>::~__basic_file()
+  { this->close(); }
+
+  __basic_file<char>*
+  __basic_file<char>::sys_open(__c_file* __file, ios_base::openmode)
+  {
+    __basic_file* __ret = NULL;
+    if (!this->is_open() && __file)
+      {
+	int __err, __save_errno = errno;
+	// POSIX guarantees that fflush sets errno on error, but C doesn't.
+	errno = 0;
+	do
+	  __err = fflush(__file);
+	while (__err && errno == EINTR);
+	errno = __save_errno;
+	if (!__err)
+	  {
+	    _M_cfile = __file;
+	    _M_cfile_created = false;
+	    __ret = this;
+	  }
+      }
+    return __ret;
+  }
+
+  __basic_file<char>*
+  __basic_file<char>::sys_open(int __fd, ios_base::openmode __mode) throw ()
+  {
+    __basic_file* __ret = NULL;
+    const char* __c_mode = fopen_mode(__mode);
+    if (__c_mode && !this->is_open() && (_M_cfile = fdopen(__fd, __c_mode)))
+      {
+	char* __buf = NULL;
+	_M_cfile_created = true;
+	if (__fd == 0)
+	  setvbuf(_M_cfile, __buf, _IONBF, 0);
+	__ret = this;
+      }
+    return __ret;
+  }
+
+  __basic_file<char>*
+  __basic_file<char>::open(const char* __name, ios_base::openmode __mode,
+			   int /*__prot*/)
+  {
+    __basic_file* __ret = NULL;
+    const char* __c_mode = fopen_mode(__mode);
+    if (__c_mode && !this->is_open())
+      {
+	if ((_M_cfile = fopen(__name, __c_mode)))
+	  {
+	    _M_cfile_created = true;
+	    __ret = this;
+	  }
+      }
+    return __ret;
+  }
+
+#if _GLIBCXX_HAVE__WFOPEN && _GLIBCXX_USE_WCHAR_T
+  __basic_file<char>*
+  __basic_file<char>::open(const wchar_t* __name, ios_base::openmode __mode)
+  {
+    __basic_file* __ret = NULL;
+    const char* __c_mode = fopen_mode(__mode);
+    if (__c_mode && !this->is_open())
+      {
+	wchar_t __wc_mode[4] = { };
+	int __i = 0;
+	do
+	  {
+	    switch(__c_mode[__i]) {
+	    case 'a': __wc_mode[__i] = L'a'; break;
+	    case 'b': __wc_mode[__i] = L'b'; break;
+	    case 'r': __wc_mode[__i] = L'r'; break;
+	    case 'w': __wc_mode[__i] = L'w'; break;
+	    case '+': __wc_mode[__i] = L'+'; break;
+	    default: return __ret;
+	    }
+	  }
+	while (__c_mode[++__i]);
+
+	if ((_M_cfile = _wfopen(__name, __wc_mode)))
+	  {
+	    _M_cfile_created = true;
+	    __ret = this;
+	  }
+      }
+    return __ret;
+  }
+#endif
+
+  bool
+  __basic_file<char>::is_open() const throw ()
+  { return _M_cfile != 0; }
+
+#ifndef _GLIBCCXX_USE_STDIO_PURE
+  int
+  __basic_file<char>::fd() throw ()
+  { return fileno(_M_cfile); }
+#endif
+
+  __c_file*
+  __basic_file<char>::file() throw ()
+  { return _M_cfile; }
+
+  __basic_file<char>*
+  __basic_file<char>::close()
+  {
+    __basic_file* __ret = static_cast<__basic_file*>(NULL);
+    if (this->is_open())
+      {
+	int __err = 0;
+	if (_M_cfile_created)
+	  __err = fclose(_M_cfile);
+	_M_cfile = 0;
+	if (!__err)
+	  __ret = this;
+      }
+    return __ret;
+  }
+
+  streamsize
+  __basic_file<char>::xsgetn(char* __s, streamsize __n)
+  {
+    streamsize __ret;
+#ifdef _GLIBCXX_USE_STDIO_PURE
+    __ret = fread(__s, 1, __n, this->file());
+    if (__ret == 0 && ferror(this->file()))
+      __ret = -1;
+#else
+
+#ifdef _GLIBCXX_MAX_READ_SIZE
+    if (__builtin_expect(__n > _GLIBCXX_MAX_READ_SIZE, 0))
+      __n = _GLIBCXX_MAX_READ_SIZE;
+#endif
+
+    do
+      __ret = read(this->fd(), __s, __n);
+    while (__ret == -1L && errno == EINTR);
+#endif
+    return __ret;
+  }
+
+  streamsize
+  __basic_file<char>::xsputn(const char* __s, streamsize __n)
+  {
+#ifdef _GLIBCXX_USE_STDIO_PURE
+    return xwrite(this->file(), __s, __n);
+#else
+    return xwrite(this->fd(), __s, __n);
+#endif
+  }
+
+  streamsize
+  __basic_file<char>::xsputn_2(const char* __s1, streamsize __n1,
+			       const char* __s2, streamsize __n2)
+  {
+    streamsize __ret = 0;
+#if defined(_GLIBCXX_HAVE_WRITEV) && !defined(_GLIBCXX_USE_STDIO_PURE)
+    __ret = xwritev(this->fd(), __s1, __n1, __s2, __n2);
+#else
+    if (__n1)
+#ifdef _GLIBCXX_USE_STDIO_PURE
+      __ret = xwrite(this->file(), __s1, __n1);
+#else
+      __ret = xwrite(this->fd(), __s1, __n1);
+#endif
+
+    if (__ret == __n1)
+#ifdef _GLIBCXX_USE_STDIO_PURE
+      __ret += xwrite(this->file(), __s2, __n2);
+#else
+      __ret += xwrite(this->fd(), __s2, __n2);
+#endif
+#endif
+    return __ret;
+  }
+
+  namespace
+  {
+    inline streamoff
+    get_file_offset(__basic_file<char>* __f)
+    {
+#ifdef _GLIBCXX_USE_STDIO_PURE
+# ifdef _GLIBCXX_USE_FSEEKO_FTELLO
+      return ftello(__f->file());
+# else
+      return ftell(__f->file());
+# endif
+#else
+      return lseek(__f->fd(), 0, (int)ios_base::cur);
+#endif
+    }
+  }
+
+  streamoff
+  __basic_file<char>::seekoff(streamoff __off, ios_base::seekdir __way) throw ()
+  {
+#ifdef _GLIBCXX_USE_STDIO_PURE
+#ifdef _GLIBCXX_USE_FSEEKO_FTELLO
+    if _GLIBCXX17_CONSTEXPR (sizeof(off_t) > sizeof(long))
+      {
+	if (fseeko(this->file(), __off, __way))
+	  return -1;
+      }
+    else
+#endif
+      {
+	if (__off > numeric_limits<long>::max()
+	      || __off < numeric_limits<long>::min())
+	  return -1;
+	if (fseek(this->file(), __off, __way))
+	  return -1;
+      }
+    return __way == ios_base::beg ? __off : std::get_file_offset(this);
+#else
+    if _GLIBCXX17_CONSTEXPR (sizeof(streamoff) > sizeof(off_t))
+      if (__off > numeric_limits<off_t>::max()
+	    || __off < numeric_limits<off_t>::min())
+      return -1L;
+    return lseek(this->fd(), __off, __way);
+#endif
+  }
+
+  int
+  __basic_file<char>::sync()
+  { return fflush(_M_cfile); }
+
+  streamsize
+  __basic_file<char>::showmanyc()
+  {
+#if !defined(_GLIBCXX_NO_IOCTL) && !defined(_GLIBCXX_USE_STDIO_PURE)
+#ifdef FIONREAD
+    // Pipes and sockets.
+    int __num = 0;
+    int __r = ioctl(this->fd(), FIONREAD, &__num);
+    if (!__r && __num >= 0)
+      return __num;
+#endif
+#endif
+
+#if defined(_GLIBCXX_HAVE_POLL) && !defined(_GLIBCXX_USE_STDIO_PURE)
+    // Cheap test.
+    struct pollfd __pfd[1];
+    __pfd[0].fd = this->fd();
+    __pfd[0].events = POLLIN;
+    if (poll(__pfd, 1, 0) <= 0)
+      return 0;
+#endif
+
+#if defined(_GLIBCXX_HAVE_S_ISREG) || defined(_GLIBCXX_HAVE_S_IFREG)
+    // Regular files.
+    struct stat __buffer;
+    const int __err = fstat(this->fd(), &__buffer);
+    if (!__err && _GLIBCXX_ISREG(__buffer.st_mode))
+      {
+	const streamoff __off = __buffer.st_size - std::get_file_offset(this);
+	return std::min(__off, streamoff(numeric_limits<streamsize>::max()));
+      }
+#endif
+    return 0;
+  }
+
+  __basic_file<char>::native_handle_type
+  __basic_file<char>::native_handle() const noexcept
+  {
+#ifdef _GLIBCXX_USE_STDIO_PURE
+    return _M_cfile;
+#elif _GLIBCXX_USE__GET_OSFHANDLE
+    const intptr_t handle = _M_cfile ? _get_osfhandle(fileno(_M_cfile)) : -1;
+    return reinterpret_cast<native_handle_type>(handle);
+#else
+    return fileno(_M_cfile);
+#endif
+  }
+
+_GLIBCXX_END_NAMESPACE_VERSION
+} // namespace
+

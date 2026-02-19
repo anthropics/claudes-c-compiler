@@ -1,0 +1,760 @@
+<section xmlns="http://docbook.org/ns/docbook" version="5.0"
+	 xml:id="appendix.porting.build_hacking" xreflabel="Build Hacking">
+<?dbhtml filename="build_hacking.html"?>
+
+<info><title>Configure and Build Hacking</title>
+  <keywordset>
+    <keyword>C++</keyword>
+    <keyword>build</keyword>
+    <keyword>configure</keyword>
+    <keyword>hacking</keyword>
+    <keyword>version</keyword>
+    <keyword>dynamic</keyword>
+    <keyword>shared</keyword>
+  </keywordset>
+</info>
+
+<section xml:id="build_hacking.prereq"><info><title>Prerequisites</title></info>
+
+  <para>
+    As noted <link xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="https://gcc.gnu.org/install/prerequisites.html">previously</link>,
+    certain other tools are necessary for hacking on files that
+    control configure (<code>configure.ac</code>,
+    <code>acinclude.m4</code>) and make
+    (<code>Makefile.am</code>). These additional tools
+    (<code>automake</code>, and <code>autoconf</code>) are further
+    described in detail in their respective manuals. All the libraries
+    in GCC try to stay in sync with each other in terms of versions of
+    the auto-tools used, so please try to play nicely with the
+    neighbors.
+  </para>
+</section>
+
+<section xml:id="build_hacking.overview">
+<info><title>Overview</title></info>
+
+<section xml:id="build_hacking.overview.basic">
+<info><title>General Process</title></info>
+
+<para>
+  The configure process begins the act of building libstdc++, and is
+  started via:
+</para>
+
+<screen>
+<computeroutput>
+configure
+</computeroutput>
+</screen>
+
+<para>
+The <filename>configure</filename> file is a script generated (via
+<command>autoconf</command>) from the file
+<filename>configure.ac</filename>.
+</para>
+
+
+<para>
+  After the configure process is complete,
+</para>
+
+<screen>
+<computeroutput>
+make all
+</computeroutput>
+</screen>
+
+<para>
+in the build directory starts the build process. The <literal>all</literal> target comes from the <filename>Makefile</filename> file, which is  generated via <command>configure</command> from the <filename>Makefile.in</filename> file, which is in turn generated (via
+<command>automake</command>) from the file
+<filename>Makefile.am</filename>.
+</para>
+
+</section>
+
+
+<section xml:id="build_hacking.overview.map"><info><title>What Comes from Where</title></info>
+
+
+  <figure xml:id="fig.build_hacking.deps">
+    <title>Configure and Build File Dependencies</title>
+  <mediaobject>
+    <imageobject>
+      <imagedata align="center" format="PDF" scale="75" fileref="../images/confdeps.pdf"/>
+    </imageobject>
+    <imageobject>
+      <imagedata align="center" format="PNG" scale="100" fileref="../images/confdeps.png"/>
+    </imageobject>
+    <textobject>
+      <phrase>Dependency Graph for Configure and Build Files</phrase>
+    </textobject>
+  </mediaobject>
+  </figure>
+
+  <para>
+    Regenerate all generated files by using the command
+    <command>autoreconf</command> at the top level of the libstdc++ source
+    directory.
+  </para>
+</section>
+
+</section> <!-- overview -->
+
+
+<section xml:id="build_hacking.configure">
+<info><title>Configure</title></info>
+
+<section xml:id="build_hacking.configure.scripts"><info><title>Storing Information in non-AC files (like configure.host)</title></info>
+
+
+  <para>
+    Until that glorious day when we can use <literal>AC_TRY_LINK</literal>
+    with a cross-compiler, we have to hardcode the results of what the tests
+    would have shown if they could be run.  So we have an inflexible
+    mess like <filename>crossconfig.m4</filename>.
+  </para>
+
+  <para>
+    Wouldn't it be nice if we could store that information in files
+    like configure.host, which can be modified without needing to
+    regenerate anything, and can even be tweaked without really
+    knowing how the configury all works?  Perhaps break the pieces of
+    <filename>crossconfig.m4</filename> out and place them in their appropriate
+    <filename class="directory">config/{cpu,os}</filename> directory.
+  </para>
+
+  <para>
+    Alas, writing macros like
+    "<code>AC_DEFINE(HAVE_A_NICE_DAY)</code>" can only be done inside
+    files which are passed through autoconf.  Files which are pure
+    shell script can be source'd at configure time.  Files which
+    contain autoconf macros must be processed with autoconf.  We could
+    still try breaking the pieces out into "config/*/cross.m4" bits,
+    for instance, but then we would need arguments to aclocal/autoconf
+    to properly find them all when generating configure.  I would
+    discourage that.
+</para>
+</section>
+
+<section xml:id="build_hacking.configure.conventions"><info><title>Coding and Commenting Conventions</title></info>
+
+
+  <para>
+    Most comments should use {octothorpes, shibboleths, hash marks,
+    pound signs, whatever} rather than "<literal>dnl</literal>".
+    Nearly all comments in <filename>configure.ac</filename> should.
+    Comments inside macros written in ancillary
+    <filename class="extension">.m4</filename> files should.
+    About the only comments which should <emphasis>not</emphasis>
+    use <literal>#</literal>, but use <literal>dnl</literal> instead,
+    are comments <emphasis>outside</emphasis> our own macros in the ancillary
+    files.  The difference is that <literal>#</literal> comments show up in
+    <filename>configure</filename> (which is most helpful for debugging),
+    while <literal>dnl</literal>'d lines just vanish.  Since the macros
+    in ancillary files generate code which appears in odd places,
+    their "outside" comments tend to not be useful while reading
+    <filename>configure</filename>.
+  </para>
+
+  <para>
+    Do not use any <code>$target*</code> variables, such as
+    <varname>$target_alias</varname>.  The single exception is in
+    <filename>configure.ac</filename>, for automake+dejagnu's sake.
+  </para>
+</section>
+
+<section xml:id="build_hacking.configure.acinclude"><info><title>The acinclude.m4 layout</title></info>
+
+  <para>
+    The nice thing about
+    <filename>acinclude.m4</filename>/<filename>aclocal.m4</filename>
+    is that macros aren't
+    actually performed/called/expanded/whatever here, just loaded.  So
+    we can arrange the contents however we like.  As of this writing,
+    <filename>acinclude.m4</filename> is arranged as follows:
+  </para>
+<programlisting>
+    GLIBCXX_CHECK_HOST
+    GLIBCXX_TOPREL_CONFIGURE
+    GLIBCXX_CONFIGURE
+</programlisting>
+  <para>
+    All the major variable "discovery" is done here.
+    <varname>CXX</varname>, multilibs,
+    etc.
+  </para>
+<programlisting>
+    fragments included from elsewhere
+</programlisting>
+  <para>
+    Right now, "fragments" == "the math/linkage bits".
+  </para>
+<programlisting>
+    GLIBCXX_CHECK_COMPILER_FEATURES
+    GLIBCXX_CHECK_LINKER_FEATURES
+    GLIBCXX_CHECK_WCHAR_T_SUPPORT
+</programlisting>
+<para>
+  Next come extra compiler/linker feature tests.  Wide character
+  support was placed here because I couldn't think of another place
+  for it.  It will probably get broken apart like the math tests,
+  because we're still disabling wchars on systems which could actually
+  support them.
+</para>
+<programlisting>
+    GLIBCXX_CHECK_SETRLIMIT_ancilliary
+    GLIBCXX_CHECK_SETRLIMIT
+    GLIBCXX_CHECK_S_ISREG_OR_S_IFREG
+    GLIBCXX_CHECK_POLL
+    GLIBCXX_CHECK_WRITEV
+
+    GLIBCXX_CONFIGURE_TESTSUITE
+</programlisting>
+<para>
+  Feature tests which only get used in one place.  Here, things used
+  only in the testsuite, plus a couple bits used in the guts of I/O.
+</para>
+<programlisting>
+    GLIBCXX_EXPORT_INCLUDES
+    GLIBCXX_EXPORT_FLAGS
+    GLIBCXX_EXPORT_INSTALL_INFO
+</programlisting>
+<para>
+  Installation variables, multilibs, working with the rest of the
+  compiler.  Many of the critical variables used in the makefiles are
+  set here.
+</para>
+<programlisting>
+    GLIBGCC_ENABLE
+    GLIBCXX_ENABLE_C99
+    GLIBCXX_ENABLE_CHEADERS
+    GLIBCXX_ENABLE_CLOCALE
+    GLIBCXX_ENABLE_CONCEPT_CHECKS
+    GLIBCXX_ENABLE_CSTDIO
+    GLIBCXX_ENABLE_CXX_FLAGS
+    GLIBCXX_ENABLE_C_MBCHAR
+    GLIBCXX_ENABLE_DEBUG
+    GLIBCXX_ENABLE_DEBUG_FLAGS
+    GLIBCXX_ENABLE_LONG_LONG
+    GLIBCXX_ENABLE_PCH
+    GLIBCXX_ENABLE_SYMVERS
+    GLIBCXX_ENABLE_THREADS
+</programlisting>
+<para>
+  All the features which can be controlled with enable/disable
+  configure options.  Note how they're alphabetized now?  Keep them
+  like that.  :-)
+</para>
+<programlisting>
+    AC_LC_MESSAGES
+    libtool bits
+</programlisting>
+<para>
+  Things which we don't seem to use directly, but just has to be
+  present otherwise stuff magically goes wonky.
+</para>
+
+</section>
+
+<section xml:id="build_hacking.configure.enable"><info><title><constant>GLIBCXX_ENABLE</constant>, the <literal>--enable</literal> maker</title></info>
+
+
+  <para>
+    All the <literal>GLIBCXX_ENABLE_FOO</literal> macros use a common
+    helper, <literal>GLIBCXX_ENABLE</literal>.  (You don't have to use
+    it, but it's easy.)  The helper does two things for us:
+  </para>
+
+<orderedlist>
+ <listitem>
+   <para>
+     Builds the call to the <literal>AC_ARG_ENABLE</literal> macro, with
+     <option>--help</option> text
+     properly quoted and aligned.  (Death to changequote!)
+   </para>
+ </listitem>
+ <listitem>
+   <para>
+     Checks the result against a list of allowed possibilities, and
+     signals a fatal error if there's no match.  This means that the
+     rest of the <literal>GLIBCXX_ENABLE_FOO</literal> macro doesn't need to test for
+     strange arguments, nor do we need to protect against
+     empty/whitespace strings with the <code>"x$foo" = "xbar"</code>
+     idiom.
+   </para>
+ </listitem>
+</orderedlist>
+
+<para>Doing these things correctly takes some extra autoconf/autom4te code,
+   which made our macros nearly illegible.  So all the ugliness is factored
+   out into this one helper macro.
+</para>
+
+<para>Many of the macros take an argument, passed from when they are expanded
+   in configure.ac.  The argument controls the default value of the
+   enable/disable switch.  Previously, the arguments themselves had defaults.
+   Now they don't, because that's extra complexity with zero gain for us.
+</para>
+
+<para>There are three "overloaded signatures".  When reading the descriptions
+   below, keep in mind that the brackets are autoconf's quotation characters,
+   and that they will be stripped.  Examples of just about everything occur
+   in acinclude.m4, if you want to look.
+</para>
+
+<programlisting>
+    GLIBCXX_ENABLE (FEATURE, DEFAULT, HELP-ARG, HELP-STRING)
+    GLIBCXX_ENABLE (FEATURE, DEFAULT, HELP-ARG, HELP-STRING, permit a|b|c)
+    GLIBCXX_ENABLE (FEATURE, DEFAULT, HELP-ARG, HELP-STRING, SHELL-CODE-HANDLER)
+</programlisting>
+
+<itemizedlist>
+ <listitem>
+   <para>
+     <literal>FEATURE</literal> is the string that follows
+     <option>--enable</option>.  The results of the
+     test (such as it is) will be in the variable
+     <varname>$enable_FEATURE</varname>,
+     where <literal>FEATURE</literal> has been squashed.  Example:
+     <code>[extra-foo]</code>, controlled by the
+     <option>--enable-extra-foo</option>
+     option and stored in <varname>$enable_extra_foo</varname>.
+   </para>
+ </listitem>
+ <listitem>
+   <para>
+     <literal>DEFAULT</literal> is the value to store in
+     <varname>$enable_FEATURE</varname> if the user does
+     not pass <option>--enable</option>/<option>--disable</option>.
+     It should be one of the permitted values passed later.
+     Examples: <code>[yes]</code>, or <code>[bar]</code>, or
+     <code>[$1]</code> (which passes the argument given to the
+     <literal>GLIBCXX_ENABLE_FOO</literal> macro as the default).
+   </para>
+   <para>
+     For cases where we need to probe for particular models of things,
+     it is useful to have an undocumented "auto" value here (see
+     <literal>GLIBCXX_ENABLE_CLOCALE</literal> for an example).
+   </para>
+ </listitem>
+ <listitem>
+   <para>
+     <literal>HELP-ARG</literal> is any text to append to the option string
+     itself in the <option>--help</option> output.  Examples:
+     <code>[]</code> (i.e., an empty string, which appends nothing),
+     <code>[=BAR]</code>, which produces <code>--enable-extra-foo=BAR</code>,
+     and <code>[@&lt;:@=BAR@:&gt;@]</code>, which produces
+     <code>--enable-extra-foo[=BAR]</code>.  See the difference?  See
+     what it implies to the user?
+   </para>
+   <para>
+     If you're wondering what that line noise in the last example was,
+     that's how you embed autoconf special characters in output text.
+     They're called <link xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="https://www.gnu.org/savannah-checkouts/gnu/autoconf/manual/"><emphasis>quadrigraphs</emphasis></link>
+     and you should use them whenever necessary.
+ </para>
+ </listitem>
+ <listitem>
+   <para><literal>HELP-STRING</literal> is what you think it is.  Do not include the
+   "default" text like we used to do; it will be done for you by
+   <literal>GLIBCXX_ENABLE</literal>.  By convention, these are not full English
+   sentences.  Example: <literal>[turn on extra foo]</literal>
+   </para>
+ </listitem>
+</itemizedlist>
+
+<para>
+  With no other arguments, only the standard autoconf patterns are
+  allowed: "<option>--{enable,disable}-foo[={yes,no}]</option>" The
+  <varname>$enable_FEATURE</varname> variable is guaranteed to equal
+  either "<literal>yes</literal>" or "<literal>no</literal>"
+  after the macro.  If the user tries to pass something else, an
+  explanatory error message will be given, and configure will halt.
+</para>
+
+<para>
+  The second signature takes a fifth argument, "<code>[permit
+  a | b | c | ...]</code>"
+  This allows <emphasis>a</emphasis> or <emphasis>b</emphasis> or
+  ... after the equals sign in the option, and
+  <varname>$enable_FEATURE</varname> is
+  guaranteed to equal one of them after the macro.  Note that if you
+  want to allow plain <option>--enable</option>/<option>--disable</option>
+  with no "<literal>=whatever</literal>", you must
+  include "<literal>yes</literal>" and "<literal>no</literal>" in the
+  list of permitted values.  Also note that whatever you passed as
+  <literal>DEFAULT</literal> must be in the list.  If the
+  user tries to pass something not on the list, a semi-explanatory
+  error message will be given, and configure will halt.  Example:
+  <code>[permit generic|gnu|ieee_1003.1-2001|yes|no|auto]</code>
+</para>
+
+<para>
+  The third signature takes a fifth argument.  It is arbitrary shell
+  code to execute if the user actually passes the enable/disable
+  option.  (If the user does not, the default is used.  Duh.)  No
+  argument checking at all is done in this signature.  See
+  <literal>GLIBCXX_ENABLE_CXX_FLAGS</literal> for an example of handling,
+  and an error message.
+</para>
+
+</section>
+
+<section xml:id="build_hacking.configure.version"><info><title>Shared Library Versioning</title></info>
+
+<para>
+The <filename class="library">libstdc++.so</filename> shared library must
+be carefully managed to maintain binary compatible with older versions
+of the library. This ensures a new version of the library is still usable by
+programs that were linked against an older version.
+</para>
+
+<para>
+Dependent on the target supporting it, the library uses <link
+xmlns:xlink="http://www.w3.org/1999/xlink"
+xlink:href="https://www.akkadia.org/drepper/symbol-versioning">ELF
+symbol versioning</link> for all exported symbols. The symbol versions
+are defined by a <link xmlns:xlink="http://www.w3.org/1999/xlink"
+xlink:href="https://sourceware.org/binutils/docs/ld/VERSION.html">linker
+script</link> that assigns a version to every symbol.
+The set of symbols in each version is fixed when a GCC
+release is made, and must not change after that.
+</para>
+
+<para> When new symbols are added to the library they must be added
+to a new symbol version, which must be created the first time new symbols
+are added after a release. Adding a new symbol version involves the
+following steps:
+</para>
+
+<itemizedlist>
+<listitem><para>
+Edit <filename>acinclude.m4</filename> to update the "revision" value of
+<varname>libtool_VERSION</varname>, e.g. from <literal>6:22:0</literal>
+to <literal>6:23:0</literal>, which will cause the shared library to be
+built as <filename class="library">libstdc++.so.6.0.23</filename>.
+</para>
+</listitem>
+<listitem><para>
+Regenerate the <filename>configure</filename> script by running the
+<command>autoreconf</command> tool from the correct version of the Autoconf
+package (as dictated by the <link xmlns:xlink="http://www.w3.org/1999/xlink"
+xlink:href="https://gcc.gnu.org/install/prerequisites.html">GCC
+prerequisites</link>).
+</para>
+</listitem>
+<listitem><para>
+Edit the file <filename>config/abi/pre/gnu.ver</filename> to
+add a new version node after the last new node. The node name should be
+<literal>GLIBCXX_3.4.X</literal> where <literal>X</literal> is the new
+revision set in <filename>acinclude.m4</filename>, and the node should
+depend on the previous version e.g.
+<programlisting>
+    GLIBCXX_3.4.23 {
+
+    } GLIBCXX_3.4.22;
+</programlisting>
+For symbols in the ABI runtime, libsupc++, the symbol version naming uses
+<literal>CXXABI_1.3.Y</literal> where <literal>Y</literal> increases
+monotonically with each new version. Again, the new node must depend on the
+previous version node e.g.
+<programlisting>
+    CXXABI_1.3.11 {
+
+    } CXXABI_1.3.10;
+</programlisting>
+</para>
+</listitem>
+<listitem><para>
+In order for the <link linkend="test.run.variations">check-abi</link> test
+target to pass the testsuite must be updated to know about the new symbol
+version(s). Edit the file <filename>testsuite/util/testsuite_abi.cc</filename>
+file to add the new versions to the <varname>known_versions</varname> list,
+and update the checks for the latest versions that set the
+<varname>latestp</varname> variable).
+</para>
+</listitem>
+<listitem><para>
+Add the library (<filename class="library">libstdc++.so.6.0.X</filename>)
+and symbols versions
+(<literal>GLIBCXX_3.4.X</literal> and <literal>CXXABI_1.3.Y</literal>)
+to the <link linkend="abi.versioning.history">History</link> section in
+<filename>doc/xml/manual/abi.xml</filename> at the relevant places.
+</para>
+</listitem>
+</itemizedlist>
+
+<para>
+Once the new symbol version has been added you can add the names of your new
+symbols in the new version node:
+<programlisting>
+    GLIBCXX_3.4.23 {
+
+      # basic_string&lt;C, T, A&gt;::_Alloc_hider::_Alloc_hider(C*, A&amp;&amp;)
+      _ZNSt7__cxx1112basic_stringI[cw]St11char_traitsI[cw]ESaI[cw]EE12_Alloc_hiderC[12]EP[cw]OS3_;
+
+    } GLIBCXX_3.4.22;
+</programlisting>
+You can either use mangled names, or demangled names inside an
+<literal>extern "C++"</literal> block. You might find that the new symbol
+matches an existing pattern in an old symbol version (causing the
+<literal>check-abi</literal> test target to fail). If that happens then the
+existing pattern must be adjusted to be more specific so that it doesn't
+match the new symbol.
+</para>
+
+<para>
+For an example of these steps, including adjusting old patterns to be less
+greedy, see <link xmlns:xlink="http://www.w3.org/1999/xlink"
+xlink:href="https://gcc.gnu.org/ml/gcc-patches/2016-07/msg01926.html">https://gcc.gnu.org/ml/gcc-patches/2016-07/msg01926.html</link>
+and the attached patch.
+</para>
+
+<para>
+If it wasn't done for the last release, you might also need to regenerate
+the <filename>baseline_symbols.txt</filename> file that defines the set
+of expected symbols for old symbol versions. A new baseline file can be
+generated by running <userinput>make new-abi-baseline</userinput> in the
+<filename class="directory"><replaceable>libbuilddir</replaceable>/testsuite</filename>
+directory. Be sure to generate the baseline from a clean build using
+unmodified sources, or you will incorporate your local changes into the
+baseline file.
+</para>
+
+</section>
+</section> <!-- configure -->
+
+<section xml:id="build_hacking.make"><info><title>Make</title></info>
+
+  <para>
+    The build process has to make all of object files needed for
+    static or shared libraries, but first it has to generate some
+    include files. The general order is as follows:
+  </para>
+
+<orderedlist>
+ <listitem>
+   <para>
+     make include files, make pre-compiled headers
+   </para>
+ </listitem>
+ <listitem>
+   <para>
+     make libsupc++
+   </para>
+   <para>
+     Generates a libtool convenience library,
+     <filename>libsupc++convenience</filename> with language-support
+     routines. Also generates a freestanding static library,
+     <filename>libsupc++.a</filename>.
+   </para>
+ </listitem>
+ <listitem>
+   <para>
+     make src
+   </para>
+   <para>
+     Generates several convenience libraries,
+     various compatibility files for shared and static libraries,
+     and then collects all the generated bits and creates
+     the final libstdc++ libraries.
+  </para>
+<orderedlist>
+ <listitem>
+   <para>
+     make src/c++98
+   </para>
+   <para>
+     Generates a libtool convenience library,
+     <filename>libc++98convenience</filename> with the library components
+     defined by C++98. Uses the <option>-std=gnu++98</option> dialect.
+   </para>
+ </listitem>
+ <listitem>
+   <para>
+     make src/c++11
+   </para>
+   <para>
+     Generates a libtool convenience library,
+     <filename>libc++11convenience</filename> with the library components
+     that were added or changed in C++11.
+     Uses the <option>-std=gnu++11</option> dialect.
+   </para>
+ </listitem>
+ <listitem>
+   <para>
+     make src/c++17
+   </para>
+   <para>
+     Generates a libtool convenience library,
+     <filename>libc++17convenience</filename> with the library components
+     that were added or changed in C++17.
+     Uses the <option>-std=gnu++17</option> dialect.
+   </para>
+ </listitem>
+ <listitem>
+   <para>
+     make src/c++20
+   </para>
+   <para>
+     Generates a libtool convenience library,
+     <filename>libc++20convenience</filename> with the library components
+     that were added or changed in C++20.
+     Uses the <option>-std=gnu++20</option> dialect.
+   </para>
+ </listitem>
+ <listitem>
+   <para>
+     make src/c++23
+   </para>
+   <para>
+     Generates a libtool convenience library,
+     <filename>libc++23convenience</filename> with the library components
+     that were added or changed in C++23.
+     At the time of writing (GCC 14) this convenience library is included
+     in <filename>libstdc++exp.a</filename> and not in the final
+     <filename>libstdc++</filename> libraries.
+     Uses the <option>-std=gnu++23</option> dialect.
+   </para>
+ </listitem>
+ <listitem>
+   <para>
+     make src/filesystem
+   </para>
+   <para>
+     Generates a libtool convenience library,
+     <filename>libstdc++fsconvenience</filename>,
+     and a standalone static library,
+     <filename>libstdc++fs.a</filename>.
+     These contain definitions of the Filesystem TS extensions.
+     Uses the <option>-std=gnu++17</option> dialect.
+   </para>
+ </listitem>
+ <listitem>
+   <para>
+     make src/libbacktrace
+   </para>
+   <para>
+     Generates a libtool convenience library,
+     <filename>libstdc++_libbacktrace</filename>,
+     containing the libbacktrace definitions used by the C++23
+     <classname>std::stacktrace</classname> feature.
+   </para>
+ </listitem>
+ <listitem>
+   <para>
+     make src/experimental
+   </para>
+   <para>
+     Generates a standalone static library,
+     <filename>libstdc++exp.a</filename>, containing the symbol definitions
+     for experimental features and extensions. This collects the convenience
+     libraries <filename>libstdc++fsconvenience</filename>,
+     <filename>libstdc++_libbacktrace</filename>, and
+     (at the time of writing) <filename>libc++23convenience</filename>
+     and combines them into one.
+     Uses the <option>-std=gnu++17</option> dialect.
+   </para>
+ </listitem>
+ <listitem>
+   <para>
+     make src
+   </para>
+   <para>
+     Generates needed compatibility objects for shared and static
+     libraries. Shared-only code is seggregated at compile-time via
+     the macro <literal>_GLIBCXX_SHARED</literal>.
+   </para>
+
+   <para>
+     Then, collects all the generated convenience libraries that weren't
+     added to <filename>libstdc++exp.a</filename>,
+     adds in any required compatibility objects,
+     and creates the final shared and static libraries:
+     <filename>libstdc++.so</filename> and <filename>libstdc++.a</filename>.
+   </para>
+
+ </listitem>
+</orderedlist>
+ </listitem>
+</orderedlist>
+
+</section> <!-- make -->
+
+<section xml:id="build_hacking.generated"><info><title>Generated files</title></info>
+
+<para>
+  Some files in the libstdc++ source tree are auto-generated from other files.
+  In general, these are not regenerated automatically, so it must be done
+  manually when the files they depend on are updated.
+</para>
+
+<itemizedlist>
+ <listitem>
+   <para>
+   The header file
+   <filename class="headerfile">include/bits/version.h</filename>
+   is generated from <filename>version.def</filename> and
+   <filename>version.tpl</filename> in the same directory.
+   After editing those files, either run <command>autogen version.def</command>
+   in the <filename class="directory">include</filename> directory of the
+   source tree, or run <command>make update-version</command> in the
+   <filename class="directory">include</filename> directory of the build tree.
+   </para>
+ </listitem>
+ <listitem>
+   <para>
+   The header file
+   <filename class="headerfile">include/bits/unicode-data.h</filename>
+   is generated by the Python script
+   <filename>../contrib/unicode/gen_libstdcxx_unicode_data.py</filename>
+   using data files in the same directory. The script contains information
+   on which data files it uses and how to update them.
+   </para>
+ </listitem>
+ <listitem>
+   <para>
+   The header file
+   <filename class="headerfile">include/bits/text_encoding-data.h</filename>
+   is generated by the Python script
+   <filename>scripts/gen_text_encoding_data.py</filename>
+   using the CSV file <link xmlns:xlink="http://www.w3.org/1999/xlink"
+     xlink:href="https://www.iana.org/assignments/character-sets/character-sets-1.csv"/>
+   from the <link xmlns:xlink="http://www.w3.org/1999/xlink"
+     xlink:href="https://www.iana.org/time-zones">IANA Character Sets</link>
+   registry.
+   </para>
+ </listitem>
+ <listitem>
+   <para>
+   The data file <filename>src/c++20/tzdata.zi</filename> is copied verbatim
+   from the
+   <link xmlns:xlink="http://www.w3.org/1999/xlink"
+     xlink:href="https://www.iana.org/time-zones">IANA Time Zone Database</link>
+   (the latest version can be downloaded from
+   <link xmlns:xlink="http://www.w3.org/1999/xlink"
+     xlink:href="https://data.iana.org/time-zones/tzdb/tzdata.zi"/>).
+   Libstdc++ uses this data file to populate a
+   <classname>std::chrono::tzdb</classname> object in case the system does not
+   provide a copy of the file.
+   See <xref linkend="manual.intro.setup.configure"/> for the
+   <code>--with-libstdcxx-zoneinfo</code> option that determines whether
+   this file is used.
+   </para>
+ </listitem>
+ <listitem>
+   <para>
+   The header file
+   <filename class="headerfile">src/c++20/windows_zones-map.h</filename>
+   is generated by the Python script
+   <filename>scripts/gen_windows_zones_map.py</filename>
+   using the XML file <link xmlns:xlink="http://www.w3.org/1999/xlink"
+     xlink:href="https://github.com/unicode-org/cldr/blob/main/common/supplemental/windowsZones.xml"/>
+   from the Unicode CLDR Project.
+   </para>
+ </listitem>
+</itemizedlist>
+
+</section> <!-- Generated files -->
+
+</section>

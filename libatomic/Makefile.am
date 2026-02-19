@@ -1,0 +1,214 @@
+##  Copyright (C) 2012-2026 Free Software Foundation, Inc.
+##  Contributed by Richard Henderson <rth@redhat.com>.
+##
+##  This file is part of the GNU Atomic Library (libatomic).
+##
+##  Libatomic is free software; you can redistribute it and/or modify it
+##  under the terms of the GNU General Public License as published by
+##  the Free Software Foundation; either version 3 of the License, or
+##  (at your option) any later version.
+##
+##  Libatomic is distributed in the hope that it will be useful, but WITHOUT ANY
+##  WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+##  FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
+##  more details.
+##
+##  Under Section 7 of GPL version 3, you are granted additional
+##  permissions described in the GCC Runtime Library Exception, version
+##  3.1, as published by the Free Software Foundation.
+##
+##  You should have received a copy of the GNU General Public License and
+##  a copy of the GCC Runtime Library Exception along with this program;
+##  see the files COPYING3 and COPYING.RUNTIME respectively.  If not, see
+##  <http://www.gnu.org/licenses/>.
+
+ACLOCAL_AMFLAGS = -I .. -I ../config
+SUBDIRS = testsuite
+
+## May be used by toolexeclibdir.
+gcc_version := $(shell @get_gcc_base_ver@ $(top_srcdir)/../gcc/BASE-VER)
+
+config_path= @config_path@
+search_path = $(addprefix $(top_srcdir)/config/, $(config_path)) \
+	$(top_srcdir) $(top_builddir)
+
+vpath % $(strip $(search_path))
+
+DEFAULT_INCLUDES = $(addprefix -I, $(search_path))
+AM_CFLAGS = $(XCFLAGS)
+AM_CCASFLAGS = $(XCFLAGS)
+AM_LDFLAGS = $(XLDFLAGS) $(SECTION_LDFLAGS) $(OPT_LDFLAGS)
+
+toolexeclib_LTLIBRARIES = libatomic.la
+noinst_LTLIBRARIES = libatomic_convenience.la
+
+if LIBAT_BUILD_VERSIONED_SHLIB
+if LIBAT_BUILD_VERSIONED_SHLIB_GNU
+libatomic_version_script = -Wl,--version-script,$(top_srcdir)/libatomic.map
+libatomic_version_dep = $(top_srcdir)/libatomic.map
+endif
+if LIBAT_BUILD_VERSIONED_SHLIB_SUN
+libatomic_version_script = -Wl,-M,libatomic.map-sun
+libatomic_version_dep = libatomic.map-sun
+libatomic.map-sun : $(top_srcdir)/libatomic.map \
+		$(top_srcdir)/../contrib/make_sunver.pl \
+		$(libatomic_la_OBJECTS) $(libatomic_la_LIBADD)
+	perl $(top_srcdir)/../contrib/make_sunver.pl \
+	  $(top_srcdir)/libatomic.map \
+	  $(libatomic_la_OBJECTS) $(libatomic_la_LIBADD) \
+	 > $@ || (rm -f $@ ; exit 1)
+endif
+else
+libatomic_version_script =
+libatomic_version_dep =
+endif
+libatomic_version_info = -version-info $(libtool_VERSION)
+if ENABLE_DARWIN_AT_RPATH
+libatomic_darwin_rpath = -Wc,-nodefaultrpaths
+libatomic_darwin_rpath += -Wl,-rpath,@loader_path
+endif
+
+libatomic_la_LDFLAGS = $(libatomic_version_info) $(libatomic_version_script) \
+	-Wc,-fno-link-libatomic $(lt_host_flags) $(libatomic_darwin_rpath)
+
+SIZES = @SIZES@
+
+if PARTIAL_VXWORKS
+libatomic_la_SOURCES = fenv.c fence.c flag.c
+else
+libatomic_la_SOURCES = gload.c gstore.c gcas.c gexch.c glfree.c lock.c init.c \
+	fenv.c fence.c flag.c
+
+SIZEOBJS = load store cas exch fadd fsub fand fior fxor fnand tas
+
+EXTRA_libatomic_la_SOURCES = $(addsuffix _n.c,$(SIZEOBJS))
+libatomic_la_DEPENDENCIES = $(libatomic_la_LIBADD) $(libatomic_version_dep)
+
+## And now our custom target patterns that allow us not to have tons of
+## extra source files hanging about.  Unfortunately, the complex relation
+## between source and object filenames doesn't allow us to add an explicit
+## dependency here.  Fortunately that doesn't matter since auto-generated
+## dependencies do the job just as well:
+-include $(wildcard $(DEPDIR)/*.Ppo)
+
+## Naming pattern: base_n_i_.lo
+##
+##	N	size of data
+##	I	IFUNC alternative, index beginning at 1.
+##
+## The trailing _ in the output object file name is required to differentiate
+## these objects from those which should be compiled normally.  We can only
+## have one stem in the implicit rule.
+
+empty		=
+space		= $(empty) $(empty)
+PAT_SPLIT	= $(subst _,$(space),$(*F))
+PAT_BASE	= $(word 1,$(PAT_SPLIT))
+PAT_N		= $(word 2,$(PAT_SPLIT))
+PAT_S		= $(word 3,$(PAT_SPLIT))
+IFUNC_DEF	= -DIFUNC_ALT=$(PAT_S)
+IFUNC_OPT	= $(subst |,$(space),$(word $(PAT_S),$(IFUNC_OPTIONS)))
+
+@AMDEP_TRUE@M_DEPS		= -MT $@ -MD -MP -MF $(DEPDIR)/$(@F).Ppo
+@AMDEP_FALSE@M_DEPS		=
+
+M_SIZE		= -DN=$(PAT_N)
+M_IFUNC		= $(if $(PAT_S),$(IFUNC_DEF) $(IFUNC_OPT))
+M_FILE		= $(PAT_BASE)_n.c
+
+# The lack of explicit dependency on the source file means that VPATH cannot
+# work properly.  Instead, perform this operation by hand.  First, collect a
+# list of all .c files in the search path.
+all_c_files	:= $(foreach dir,$(search_path),$(wildcard $(dir)/*.c))
+
+# Then sort through them to find the one we want, and select the first.
+M_SRC		= $(firstword $(filter %/$(M_FILE), $(all_c_files)))
+
+%_.lo: Makefile
+	$(LTCOMPILE) $(M_DEPS) $(M_SIZE) $(M_IFUNC) -c -o $@ $(M_SRC)
+
+## Include all of the sizes in the "normal" set of compilation flags.
+libatomic_la_LIBADD = $(foreach s,$(SIZES),$(addsuffix _$(s)_.lo,$(SIZEOBJS)))
+
+## On a target-specific basis, include alternates to be selected by IFUNC.
+if HAVE_IFUNC
+if ARCH_AARCH64_LINUX
+IFUNC_OPTIONS	     = -march=armv8-a+lse
+libatomic_la_LIBADD += $(foreach s,$(SIZES),$(addsuffix _$(s)_1_.lo,$(SIZEOBJS)))
+
+endif
+if ARCH_ARM_LINUX
+IFUNC_OPTIONS	     = -march=armv7-a+fp -DHAVE_KERNEL64
+libatomic_la_LIBADD += $(foreach s,$(SIZES),$(addsuffix _$(s)_1_.lo,$(SIZEOBJS)))
+libatomic_la_LIBADD += $(addsuffix _8_2_.lo,$(SIZEOBJS))
+libatomic_la_LIBADD += tas_1_2_.lo
+endif
+if ARCH_I386
+IFUNC_OPTIONS	     = -march=i586
+libatomic_la_LIBADD += $(addsuffix _8_1_.lo,$(SIZEOBJS))
+endif
+if ARCH_X86_64
+IFUNC_OPTIONS	     = -mcx16 -mcx16
+libatomic_la_LIBADD += $(addsuffix _16_1_.lo,$(SIZEOBJS)) \
+		       $(addsuffix _16_2_.lo,$(SIZEOBJS))
+endif
+if ARCH_LOONGARCH
+IFUNC_OPTIONS	     = -mlsx|-mscq
+libatomic_la_LIBADD += $(addsuffix _16_1_.lo,$(SIZEOBJS))
+endif
+endif
+
+if ARCH_AARCH64_LINUX
+libatomic_la_SOURCES += atomic_16.S
+endif
+endif
+
+libatomic_convenience_la_SOURCES = $(libatomic_la_SOURCES)
+libatomic_convenience_la_LIBADD = $(libatomic_la_LIBADD)
+
+# Amend the automake generated all-multi rule to guarantee that all-multi
+# is not run in parallel with the %_.lo rules which generate $(DEPDIR)/*.Ppo
+# makefile fragments to avoid broken *.Ppo getting included into the Makefile
+# when it is reloaded during the build of all-multi.
+all-multi: $(libatomic_la_LIBADD)
+
+# Copy built libatomic library to $build/gcc so it's easier to locate,
+# similar to libgcc.
+#
+# FIXME: libtool --mode=install also ends up copying libatomic.la in $gcc_objdir,
+# which (somehow) ends up adding $gcc_objdir to RPATH for libraries that get
+# built after libatomic, which makes RPATH insecure. Removing libatomic.la
+# from $gcc_objdir seems to fix the issue.
+
+gcc_objdir = `pwd`/$(MULTIBUILDTOP)../../gcc/
+all-local: libatomic.la
+	$(LIBTOOL) --mode=install $(INSTALL_DATA) libatomic.la $(gcc_objdir)$(MULTISUBDIR)/
+if LIBAT_BUILD_ASNEEDED_SOLINK
+	cd $(gcc_objdir)$(MULTISUBDIR) || exit 1; \
+	if test -f libatomic.so; then (echo "/* GNU ld script"; \
+	 echo "   Add DT_NEEDED entry for -latomic only if needed.  */"; \
+	 echo "INPUT ( AS_NEEDED ( -latomic ) )" \
+	) > libatomic_asneeded.so; fi; \
+	if test -f libatomic.a; then rm -f libatomic_asneeded.a; \
+	$(LN_S) libatomic.a libatomic_asneeded.a; fi
+endif
+	rm $(gcc_objdir)$(MULTISUBDIR)/libatomic.la
+
+if LIBAT_BUILD_ASNEEDED_SOLINK
+install-data-am: install-asneeded
+
+install-asneeded: install-toolexeclibLTLIBRARIES
+	$(MKDIR_P) "$(DESTDIR)$(toolexeclibdir)" || exit 1; \
+	cd "$(DESTDIR)$(toolexeclibdir)" || exit 1; \
+	if test -f libatomic.so; then (echo "/* GNU ld script"; \
+	 echo "   Add DT_NEEDED entry for -latomic only if needed.  */"; \
+	 echo "INPUT ( AS_NEEDED ( -latomic ) )" \
+	) > libatomic_asneeded.so; fi; \
+	if test -f libatomic.a; then rm -f libatomic_asneeded.a; \
+	$(LN_S) libatomic.a libatomic_asneeded.a; fi
+endif
+
+# target overrides
+-include $(tmake_file)
+
+include $(top_srcdir)/../multilib.am

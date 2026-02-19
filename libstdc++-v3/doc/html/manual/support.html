@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Chapter 4.  Support</title><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><meta name="keywords" content="ISO C++, library" /><meta name="keywords" content="ISO C++, runtime, library" /><link rel="home" href="../index.html" title="The GNU C++ Library" /><link rel="up" href="std_contents.html" title="Part II.  Standard Contents" /><link rel="prev" href="std_contents.html" title="Part II.  Standard Contents" /><link rel="next" href="dynamic_memory.html" title="Dynamic Memory" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">Chapter 4. 
+  Support
+  
+</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="std_contents.html">Prev</a> </td><th width="60%" align="center">Part II. 
+    Standard Contents
+  </th><td width="20%" align="right"> <a accesskey="n" href="dynamic_memory.html">Next</a></td></tr></table><hr /></div><div class="chapter"><div class="titlepage"><div><div><h2 class="title"><a id="std.support"></a>Chapter 4. 
+  Support
+  <a id="id-1.3.4.2.1.1.1" class="indexterm"></a>
+</h2></div></div></div><div class="toc"><p><strong>Table of Contents</strong></p><dl class="toc"><dt><span class="section"><a href="support.html#std.support.types">Types</a></span></dt><dd><dl><dt><span class="section"><a href="support.html#std.support.types.fundamental">Fundamental Types</a></span></dt><dt><span class="section"><a href="support.html#std.support.types.numeric_limits">Numeric Properties</a></span></dt><dt><span class="section"><a href="support.html#std.support.types.null">NULL</a></span></dt></dl></dd><dt><span class="section"><a href="dynamic_memory.html">Dynamic Memory</a></span></dt><dd><dl><dt><span class="section"><a href="dynamic_memory.html#std.support.memory.notes">Additional Notes</a></span></dt></dl></dd><dt><span class="section"><a href="termination.html">Termination</a></span></dt><dd><dl><dt><span class="section"><a href="termination.html#support.termination.handlers">Termination Handlers</a></span></dt><dt><span class="section"><a href="termination.html#support.termination.verbose">Verbose Terminate Handler</a></span></dt></dl></dd></dl></div><p>
+    This part deals with the functions called and objects created
+    automatically during the course of a program's existence.
+  </p><p>
+    While we can't reproduce the contents of the Standard here (you
+    need to get your own copy from your nation's member body; see our
+    homepage for help), we can mention a couple of changes in what
+    kind of support a C++ program gets from the Standard Library.
+  </p><div class="section"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a id="std.support.types"></a>Types</h2></div></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="std.support.types.fundamental"></a>Fundamental Types</h3></div></div></div><p>
+      C++ has the following builtin types:
+    </p><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem"><p>
+	char
+      </p></li><li class="listitem"><p>
+	signed char
+      </p></li><li class="listitem"><p>
+	unsigned char
+      </p></li><li class="listitem"><p>
+	signed short
+      </p></li><li class="listitem"><p>
+	signed int
+      </p></li><li class="listitem"><p>
+	signed long
+      </p></li><li class="listitem"><p>
+	unsigned short
+      </p></li><li class="listitem"><p>
+	unsigned int
+      </p></li><li class="listitem"><p>
+	unsigned long
+      </p></li><li class="listitem"><p>
+	bool
+      </p></li><li class="listitem"><p>
+	wchar_t
+      </p></li><li class="listitem"><p>
+	float
+      </p></li><li class="listitem"><p>
+	double
+      </p></li><li class="listitem"><p>
+	long double
+      </p></li></ul></div><p>
+      These fundamental types are always available, without having to
+      include a header file. These types are exactly the same in
+      either C++ or in C.
+    </p><p>
+      Specializing parts of the library on these types is prohibited:
+      instead, use a POD.
+    </p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="std.support.types.numeric_limits"></a>Numeric Properties</h3></div></div></div><p>
+    The header <code class="filename">&lt;limits&gt;</code> defines
+    traits classes to give access to various implementation
+    defined-aspects of the fundamental types. The traits classes --
+    fourteen in total -- are all specializations of the class template
+    <code class="classname">numeric_limits</code>
+    and defined as follows:
+    </p><pre class="programlisting">
+   template&lt;typename T&gt;
+     struct class
+     {
+       static const bool is_specialized;
+       static T max() throw();
+       static T min() throw();
+
+       static const int digits;
+       static const int digits10;
+       static const bool is_signed;
+       static const bool is_integer;
+       static const bool is_exact;
+       static const int radix;
+       static T epsilon() throw();
+       static T round_error() throw();
+
+       static const int min_exponent;
+       static const int min_exponent10;
+       static const int max_exponent;
+       static const int max_exponent10;
+
+       static const bool has_infinity;
+       static const bool has_quiet_NaN;
+       static const bool has_signaling_NaN;
+       static const float_denorm_style has_denorm;
+       static const bool has_denorm_loss;
+       static T infinity() throw();
+       static T quiet_NaN() throw();
+       static T denorm_min() throw();
+
+       static const bool is_iec559;
+       static const bool is_bounded;
+       static const bool is_modulo;
+
+       static const bool traps;
+       static const bool tinyness_before;
+       static const float_round_style round_style;
+     };
+</pre></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="std.support.types.null"></a>NULL</h3></div></div></div><p>
+     The only change that might affect people is the type of
+     <code class="constant">NULL</code>: while it is required to be a macro,
+     the definition of that macro is <span class="emphasis"><em>not</em></span> allowed
+     to be an expression with pointer type such as
+     <code class="constant">(void*)0</code>, which is often used in C.
+    </p><p>
+     For <span class="command"><strong>g++</strong></span>, <code class="constant">NULL</code> is
+     <code class="code">#define</code>'d to be
+     <code class="constant">__null</code>, a magic keyword extension of
+     <span class="command"><strong>g++</strong></span> that is slightly safer than a plain integer.
+    </p><p>
+     The biggest problem of #defining <code class="constant">NULL</code> to be
+     something like <span class="quote">“<span class="quote">0L</span>”</span> is that the compiler will view
+     that as a long integer before it views it as a pointer, so
+     overloading won't do what you expect. It might not even have the
+     same size as a pointer, so passing <code class="constant">NULL</code> to a
+     varargs function where a pointer is expected might not even work
+     correctly if <code class="code">sizeof(NULL) &lt; sizeof(void*)</code>.
+     The G++ <code class="constant">__null</code> extension is defined so that
+     <code class="code">sizeof(__null) == sizeof(void*)</code> to avoid this problem.
+    </p><p>
+     Scott Meyers explains this in more detail in his book
+     <a class="link" href="https://www.aristeia.com/books.html" target="_top"><span class="emphasis"><em>Effective
+     Modern C++</em></span></a> and as a guideline to solve this problem
+     recommends to not overload on pointer-vs-integer types to begin with.
+    </p><p>
+     The C++ 2011 standard added the <code class="constant">nullptr</code> keyword,
+     which is a null pointer constant of a special type,
+     <code class="classname">std::nullptr_t</code>. Values of this type can be
+     implicitly converted to <span class="emphasis"><em>any</em></span> pointer type,
+     and cannot convert to integer types or be deduced as an integer type.
+     Unless you need to be compatible with C++98/C++03 or C you should prefer
+     to use <code class="constant">nullptr</code>  instead of <code class="constant">NULL</code>.
+    </p></div></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="std_contents.html">Prev</a> </td><td width="20%" align="center"><a accesskey="u" href="std_contents.html">Up</a></td><td width="40%" align="right"> <a accesskey="n" href="dynamic_memory.html">Next</a></td></tr><tr><td width="40%" align="left" valign="top">Part II. 
+    Standard Contents
+   </td><td width="20%" align="center"><a accesskey="h" href="../index.html">Home</a></td><td width="40%" align="right" valign="top"> Dynamic Memory</td></tr></table></div></body></html>

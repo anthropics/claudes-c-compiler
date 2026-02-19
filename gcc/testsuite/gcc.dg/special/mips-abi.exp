@@ -1,0 +1,104 @@
+#   Copyright (C) 2002-2026 Free Software Foundation, Inc.
+
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with GCC; see the file COPYING3.  If not see
+# <http://www.gnu.org/licenses/>.
+
+# This test checks whether MIPS ELF configurations pass the right
+# ABI flags to the assembler.  An ABI flag should always be passed
+# unless MEABI is selected.
+
+load_lib gcc-dg.exp
+
+# Only run this test on MIPS ELF targets
+if {![istarget mips*-*-*] || [gcc_target_object_format] != "elf"} {
+    return
+}
+
+# A list of all assembler ABI flags.
+set asm_abi_flags {-mabi=32 -mabi=n32 -mabi=64 -mabi=o64 -mabi=eabi}
+
+# Try to assemble mips-abi.s (an empty file), passing -v in order to
+# get the assembler command line.  Check whether an appropriate ABI
+# flag is passed.
+#
+# NAME is a name for the pass/fail line.
+# ABIS is a list of acceptable assembler ABI flags, or "" if no
+#   ABI flag is expected.
+# FLAGS is a list of options for gcc.
+proc check_mips_abi {name abis flags} {
+    global srcdir subdir
+
+    lappend flags "-v"
+    set lines [gcc_target_compile "$srcdir/$subdir/mips-abi.s" \
+				  "mips-abi.o" object \
+				  [list "additional_flags=$flags"]]
+    set good 0
+    set bad 0
+    foreach line [split $lines "\n"] {
+	# Find the assembler command line.
+	if {[string first "$srcdir/$subdir/mips-abi.s" $line] >= 0} {
+	    foreach arg [split $line " "] {
+		# Count the number of matching and non-matching
+		# ABI options.
+		if {[lsearch -exact $abis $arg] >= 0} {
+		    incr good
+		} elseif {[string match "-mabi=*" $arg]} {
+		    incr bad
+		}
+	    }
+	}
+    }
+    if {$good == ($abis != "") && $bad == 0} {
+	pass "mips-abi $name"
+    } else {
+	fail "mips-abi $name"
+    }
+}
+
+# Collect the default target flags.
+set default_flags ""
+set target [target_info name]
+if {[info exists CFLAGS_FOR_TARGET]} {
+    append default_flags " $CFLAGS_FOR_TARGET"
+}
+if {[board_info $target exists cflags]} {
+    append default_flags " [board_info $target cflags]"
+}
+if {[board_info $target exists multilib_flags]} {
+    append default_flags " [board_info $target multilib_flags]"
+}
+
+# See whether the default command line specifies an ABI.
+set default_abi ""
+foreach flag $default_flags {
+    if {[string match "-mabi=*" $flag]} {
+	set default_abi $flag
+    }
+}
+
+# If the command line does specify an ABI, just check for the
+# appropriate assembler flag.
+if {$default_abi != ""} {
+    check_mips_abi "command line" $default_abi ""
+} else {
+    # An ABI should be passed to the assembler by default.
+    # It doesn't seem worthwhile to duplicate the
+    # configuration to ABI logic here, so just accept any ABI.
+    check_mips_abi "default" $asm_abi_flags ""
+
+    # See whether passing a -mabi flag does the right thing.
+    foreach abi $asm_abi_flags {
+	check_mips_abi $abi $abi $abi
+    }
+}

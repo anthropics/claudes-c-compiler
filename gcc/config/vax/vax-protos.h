@@ -1,0 +1,39 @@
+/* Definitions of target machine for GNU compiler.  VAX version.
+   Copyright (C) 2000-2026 Free Software Foundation, Inc.
+
+This file is part of GCC.
+
+GCC is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 3, or (at your option)
+any later version.
+
+GCC is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with GCC; see the file COPYING3.  If not see
+<http://www.gnu.org/licenses/>.  */
+
+extern bool legitimate_constant_address_p (rtx);
+extern void vax_expand_prologue (void);
+
+#ifdef RTX_CODE
+extern bool vax_acceptable_pic_operand_p (rtx, bool, bool);
+extern machine_mode vax_select_cc_mode (enum rtx_code, rtx, rtx);
+extern const char *cond_name (rtx);
+extern const char *rev_cond_name (rtx);
+extern void print_operand_address (FILE *, rtx);
+extern void print_operand (FILE *, rtx, int);
+extern void vax_expand_addsub_di_operands (rtx *, enum rtx_code);
+extern bool vax_maybe_split_dimode_move (rtx *);
+extern const char * vax_output_int_move (rtx, rtx *, machine_mode);
+extern const char * vax_output_int_add (rtx_insn *, rtx *, machine_mode);
+extern const char * vax_output_int_subtract (rtx_insn *, rtx *, machine_mode);
+#endif /* RTX_CODE */
+
+#ifdef REAL_VALUE_TYPE
+extern int check_float_value (machine_mode, REAL_VALUE_TYPE *, int);
+#endif /* REAL_VALUE_TYPE */

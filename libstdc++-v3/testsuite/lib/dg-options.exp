@@ -1,0 +1,409 @@
+# Handlers for additional dg-xxx keywords in tests.
+
+# Copyright (C) 2004-2026 Free Software Foundation, Inc.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; see the file COPYING3.  If not see
+# <http://www.gnu.org/licenses/>.
+
+proc dg-require-c-std { args } {
+    if { ![ check_v3_target_c_std ] } {
+	upvar dg-do-what dg-do-what
+	set dg-do-what [list [lindex ${dg-do-what} 0] "N" "P"]
+	return
+    }
+    return
+}
+
+proc dg-require-debug-mode { args } {
+    if { ![ check_v3_target_debug_mode ] } {
+	upvar dg-do-what dg-do-what
+	set dg-do-what [list [lindex ${dg-do-what} 0] "N" "P"]
+	return
+    }
+    return
+}
+
+proc dg-require-profile-mode { args } {
+    if { ![ check_v3_target_profile_mode ] } {
+	upvar dg-do-what dg-do-what
+	set dg-do-what [list [lindex ${dg-do-what} 0] "N" "P"]
+	return
+    }
+    return
+}
+
+proc dg-require-normal-mode { args } {
+    if { ![ check_v3_target_normal_mode ] } {
+	upvar dg-do-what dg-do-what
+	set dg-do-what [list [lindex ${dg-do-what} 0] "N" "P"]
+	return
+    }
+    return
+}
+
+proc dg-require-normal-namespace { args } {
+    if { ![ check_v3_target_normal_namespace ] } {
+	upvar dg-do-what dg-do-what
+	set dg-do-what [list [lindex ${dg-do-what} 0] "N" "P"]
+	return
+    }
+    return
+}
+
+proc dg-require-parallel-mode { args } {
+    if { ![ check_v3_target_parallel_mode ] } {
+	upvar dg-do-what dg-do-what
+	set dg-do-what [list [lindex ${dg-do-what} 0] "N" "P"]
+	return
+    }
+    return
+}
+
+proc dg-require-fileio { args } {
+    if { ![ check_v3_target_fileio ] } {
+	upvar dg-do-what dg-do-what
+	set dg-do-what [list [lindex ${dg-do-what} 0] "N" "P"]
+	return
+    }
+    return
+}
+
+proc dg-require-namedlocale { args } {
+    if { ![ check_v3_target_namedlocale [lindex $args 1] ] } {
+	upvar dg-do-what dg-do-what
+	set dg-do-what [list [lindex ${dg-do-what} 0] "N" "P"]
+	return
+    }
+    return
+}
+
+proc dg-require-sharedlib { args } {
+    if { ![ check_v3_target_sharedlib ] } {
+	upvar dg-do-what dg-do-what
+	set dg-do-what [list [lindex ${dg-do-what} 0] "N" "P"]
+	return
+    }
+    return
+}
+
+proc dg-require-time { args } {
+    if { ![ check_v3_target_time ] } {
+	upvar dg-do-what dg-do-what
+	set dg-do-what [list [lindex ${dg-do-what} 0] "N" "P"]
+	return
+    }
+    return
+}
+
+proc dg-require-cstdint { args } {
+    if { ![ check_v3_target_cstdint ] } {
+	upvar dg-do-what dg-do-what
+	set dg-do-what [list [lindex ${dg-do-what} 0] "N" "P"]
+	return
+    }
+    return
+}
+
+proc dg-require-cmath { args } {
+    if { ![ check_v3_target_cmath ] } {
+	upvar dg-do-what dg-do-what
+	set dg-do-what [list [lindex ${dg-do-what} 0] "N" "P"]
+	return
+    }
+    return
+}
+
+proc dg-require-thread-fence { args } {
+    if { ![ check_v3_target_thread_fence ] } {
+	upvar dg-do-what dg-do-what
+	set dg-do-what [list [lindex ${dg-do-what} 0] "N" "P"]
+	return
+    }
+    return
+}
+
+proc dg-require-atomic-cmpxchg-word { args } {
+    if { ![ check_v3_target_atomic_cmpxchg_word ] } {
+	upvar dg-do-what dg-do-what
+	set dg-do-what [list [lindex ${dg-do-what} 0] "N" "P"]
+	return
+    }
+    return
+}
+
+proc dg-require-atomic-builtins { args } {
+    if { ![ check_v3_target_atomic_builtins ] } {
+	upvar dg-do-what dg-do-what
+	set dg-do-what [list [lindex ${dg-do-what} 0] "N" "P"]
+	return
+    }
+    return
+}
+
+proc dg-require-gthreads { args } {
+    if { ![ check_v3_target_gthreads ] } {
+        upvar dg-do-what dg-do-what
+        set dg-do-what [list [lindex ${dg-do-what} 0] "N" "P"]
+        return
+    }
+    return
+}
+
+proc dg-require-gthreads-timed { args } {
+    if { ![ check_v3_target_gthreads_timed ] } {
+        upvar dg-do-what dg-do-what
+        set dg-do-what [list [lindex ${dg-do-what} 0] "N" "P"]
+        return
+    }
+    return
+}
+
+proc dg-require-sleep { args } {
+    if { ![ check_v3_target_sleep ] } {
+        upvar dg-do-what dg-do-what
+        set dg-do-what [list [lindex ${dg-do-what} 0] "N" "P"]
+        return
+    }
+    return
+}
+
+proc dg-require-sched-yield { args } {
+    if { ![ check_v3_target_sched_yield ] } {
+        upvar dg-do-what dg-do-what
+        set dg-do-what [list [lindex ${dg-do-what} 0] "N" "P"]
+        return
+    }
+    return
+}
+
+proc dg-require-string-conversions { args } {
+    if { ![ check_v3_target_string_conversions ] } {
+        upvar dg-do-what dg-do-what
+        set dg-do-what [list [lindex ${dg-do-what} 0] "N" "P"]
+        return
+    }
+    return
+}
+
+proc dg-require-swprintf { args } {
+    if { ![ check_v3_target_swprintf ] } {
+        upvar dg-do-what dg-do-what
+        set dg-do-what [list [lindex ${dg-do-what} 0] "N" "P"]
+        return
+    }
+    return
+}
+
+proc dg-require-binary-io { args } {
+    if { ![ check_v3_target_binary_io ] } {
+        upvar dg-do-what dg-do-what
+        set dg-do-what [list [lindex ${dg-do-what} 0] "N" "P"]
+        return
+    }
+    return
+}
+
+proc dg-require-nprocs { args } {
+    if { ![ check_v3_target_nprocs ] } {
+        upvar dg-do-what dg-do-what
+        set dg-do-what [list [lindex ${dg-do-what} 0] "N" "P"]
+        return
+    }
+    return
+}
+
+proc dg-require-static-libstdcxx { args } {
+    if { ![ check_v3_target_static_libstdcxx ] } {
+        upvar dg-do-what dg-do-what
+        set dg-do-what [list [lindex ${dg-do-what} 0] "N" "P"]
+        return
+    }
+    return
+}
+
+proc dg-require-little-endian { args } {
+    if { ![ check_v3_target_little_endian ] } {
+        upvar dg-do-what dg-do-what
+        set dg-do-what [list [lindex ${dg-do-what} 0] "N" "P"]
+        return
+    }
+    return
+}
+
+proc dg-require-filesystem-ts { args } {
+    if { ![ check_v3_target_filesystem_ts ] } {
+	upvar dg-do-what dg-do-what
+	set dg-do-what [list [lindex ${dg-do-what} 0] "N" "P"]
+	return
+    }
+    return
+}
+
+proc dg-require-target-fs-symlinks { args } {
+    if { ![ check_v3_target_fs_symlinks ] } {
+	upvar dg-do-what dg-do-what
+	set dg-do-what [list [lindex ${dg-do-what} 0] "N" "P"]
+	return
+    }
+    return
+}
+
+proc dg-require-target-fs-space { args } {
+    if { ![ check_v3_target_fs_space ] } {
+	upvar dg-do-what dg-do-what
+	set dg-do-what [list [lindex ${dg-do-what} 0] "N" "P"]
+	return
+    }
+    return
+}
+
+proc dg-require-target-fs-lwt { args } {
+    if { ![ check_v3_target_fs_last_write_time ] } {
+	upvar dg-do-what dg-do-what
+	set dg-do-what [list [lindex ${dg-do-what} 0] "N" "P"]
+	return
+    }
+    return
+}
+
+proc dg-require-cpp-feature-test { n args } {
+    if { ![ check_v3_target_cpp_feature_test $args ] } {
+	upvar dg-do-what dg-do-what
+	set dg-do-what [list [lindex ${dg-do-what} 0] "N" "P"]
+	return
+    }
+    return
+}
+
+proc add_options_for_no_pch { flags } {
+    # Remove any inclusion of bits/stdc++.h from the options.
+    regsub -all -- "-include bits/stdc...h" $flags "" flags
+    # This forces any generated and possibly included PCH to be invalid.
+    return "$flags -fno-modules -D__GLIBCXX__=99999999"
+}
+
+# Add to FLAGS all the target-specific flags needed for networking.
+
+proc add_options_for_net_ts { flags } {
+    if { [istarget *-*-rtems*] } {
+	return "$flags -lbsd -Wl,--gc-sections"
+    }
+    return $flags
+}
+
+# Add to FLAGS all the target-specific flags to link to libatomic,
+# if required for atomics on pointers and 64-bit types.
+
+proc atomic_link_flags { paths } {
+    global srcdir
+    global ld_library_path
+    global shlib_ext
+
+    set gccpath ${paths}
+    set flags ""
+
+    set shlib_ext [get_shlib_extension]
+
+    if { $gccpath != "" } {
+      if { [file exists "${gccpath}/libatomic/.libs/libatomic.a"]
+           || [file exists "${gccpath}/libatomic/.libs/libatomic.${shlib_ext}"] } {
+          append flags " -B${gccpath}/libatomic/ "
+          append flags " -B${gccpath}/libatomic/.libs"
+          append ld_library_path ":${gccpath}/libatomic/.libs"
+      }
+    } else {
+      global tool_root_dir
+
+      set libatomic [lookfor_file ${tool_root_dir} libatomic]
+      if { $libatomic != "" } {
+          append flags "-L${libatomic} "
+          append ld_library_path ":${libatomic}"
+      }
+    }
+
+    set_ld_library_path_env_vars
+
+    return "$flags"
+}
+
+proc add_options_for_libatomic { flags } {
+    # We don't (need to) build libatomic for vxworks.  Don't try to
+    # link it in, even on arches that support libatomic.
+    if { [istarget *-*-vxworks*] } {
+	return $flags
+    }
+    if { [istarget hppa*-*-hpux*]
+	 || ([istarget powerpc*-*-*] && [check_effective_target_ilp32])
+	 || [istarget riscv*-*-*]
+	 || ([istarget sparc*-*-linux-gnu] && [check_effective_target_ilp32])
+       } {
+	global TOOL_OPTIONS
+
+	set link_flags ""
+	if ![is_remote host] {
+	    if [info exists TOOL_OPTIONS] {
+		set link_flags "[atomic_link_flags [get_multilibs ${TOOL_OPTIONS}]]"
+	    } else {
+		set link_flags "[atomic_link_flags [get_multilibs]]"
+	    }
+	}
+
+	append link_flags " -latomic "
+
+	return "$flags $link_flags"
+    }
+    return $flags
+}
+
+# Add options to enable use of deprecated features.
+proc add_options_for_using-deprecated { flags } {
+    return "$flags -U_GLIBCXX_USE_DEPRECATED -D_GLIBCXX_USE_DEPRECATED=1"
+}
+
+# Add options for strict -std=c++NN dialects.
+# This is a dummy option that does nothing, but it causes v3-dg-runtest
+# to alter its behaviour.
+proc add_options_for_strict_std { flags } {
+    return $flags
+}
+
+# Like dg-options, but adds to the default options rather than replacing them.
+
+proc dg-additional-options { args } {
+    upvar dg-extra-tool-flags extra-tool-flags
+
+    if { [llength $args] > 3 } {
+        error "[lindex $args 0]: too many arguments"
+        return
+    }
+
+    if { [llength $args] >= 3 } {
+        switch [dg-process-target [lindex $args 2]] {
+            "S" { eval lappend extra-tool-flags [lindex $args 1] }
+            "N" { }
+            "F" { error "[lindex $args 0]: `xfail' not allowed here" }
+            "P" { error "[lindex $args 0]: `xfail' not allowed here" }
+        }
+    } else {
+        eval lappend extra-tool-flags [lindex $args 1]
+    }
+}
+
+set v3_additional_files ""
+
+# Process a { dg-additional-files "filelist" } directive in the test.
+proc dg-additional-files { line filelist } {
+    global v3_additional_files
+    append v3_additional_files " " $filelist
+}

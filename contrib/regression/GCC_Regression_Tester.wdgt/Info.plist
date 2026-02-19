@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple Computer//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>AllowNetworkAccess</key>
+	<true/>
+	<key>CFBundleDisplayName</key>
+	<string>GCC_Regression_Tester</string>
+	<key>CFBundleIdentifier</key>
+	<string>org.geoffk.widget.regress</string>
+	<key>CFBundleName</key>
+	<string>GCC Regr. Tester</string>
+	<key>CFBundleShortVersionString</key>
+	<string>1.0.2</string>
+	<key>CFBundleVersion</key>
+	<string>1.0.2</string>
+	<key>CloseBoxInsetX</key>
+	<integer>0</integer>
+	<key>CloseBoxInsetY</key>
+	<integer>0</integer>
+	<key>Height</key>
+	<integer>192</integer>
+	<key>LSHasLocalizedDisplayName</key>
+	<true/>
+	<key>MainHTML</key>
+	<string>widget.html</string>
+	<key>NSHumanReadableCopyright</key>
+	<string>Copyright © 2005, 2007 Free Software Foundation, Inc.</string>
+	<key>Width</key>
+	<integer>261</integer>
+</dict>
+</plist>

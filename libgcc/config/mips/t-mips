@@ -1,0 +1,16 @@
+LIB2_SIDITI_CONV_FUNCS = yes
+
+softfp_float_modes :=
+softfp_int_modes := si di
+softfp_extensions :=
+softfp_truncations :=
+softfp_exclude_libgcc2 := n
+
+LIB2ADD_ST += $(srcdir)/config/mips/lib2funcs.c
+
+
+LIB1ASMSRC = mips/lib1funcs.S
+LIB1ASMFUNCS = _speculation_barrier
+
+# Version these symbols if building libgcc.so.
+SHLIB_MAPFILES += $(srcdir)/config/mips/libgcc-mips.ver

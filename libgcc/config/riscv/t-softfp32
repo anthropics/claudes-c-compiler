@@ -1,0 +1,55 @@
+ABI_SINGLE:=$(findstring __riscv_float_abi_single,$(shell $(gcc_compile_bare) -dM -E - </dev/null))
+ABI_DOUBLE:=$(findstring __riscv_float_abi_double,$(shell $(gcc_compile_bare) -dM -E - </dev/null))
+ABI_QUAD:=$(findstring __riscv_float_abi_quad,$(shell $(gcc_compile_bare) -dM -E - </dev/null))
+
+softfp_int_modes := si di
+softfp_exclude_libgcc2 := n
+
+ifndef ABI_QUAD
+ifdef ABI_DOUBLE
+
+softfp_float_modes := tf
+softfp_extensions := sftf dftf
+softfp_truncations := tfsf tfdf
+
+# Enable divide routines to make -mno-fdiv work.
+softfp_extras += divsf3 divdf3
+
+else
+# !ABI_DOUBLE
+
+softfp_float_modes := df tf
+softfp_extensions := sfdf sftf dftf
+softfp_truncations := dfsf tfsf tfdf
+
+ifndef ABI_SINGLE
+softfp_float_modes += sf
+else
+# ABI_SINGLE
+
+# Enable divide routines to make -mno-fdiv work.
+softfp_extras += divsf3
+
+endif
+
+endif
+
+softfp_extras += floatbitinttf fixtfbitint
+
+else
+# ABI_QUAD
+
+# Enable divide routines to make -mno-fdiv work.
+softfp_extras += divsf3 divdf3 divtf3
+
+endif
+
+softfp_extensions += hfsf hfdf hftf \
+		     bfsf
+softfp_truncations += tfhf dfhf sfhf \
+		      tfbf dfbf sfbf \
+		      hfbf bfhf
+softfp_extras += fixhfsi fixhfdi fixunshfsi fixunshfdi \
+		 floatsihf floatdihf floatunsihf floatundihf \
+		 floatsibf floatdibf floatunsibf floatundibf \
+		 floatbitinthf

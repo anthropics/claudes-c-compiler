@@ -1,0 +1,156 @@
+# Top level -*- makefile -*- fragment for GNU Objective-C
+#   Copyright (C) 1997-2026 Free Software Foundation, Inc.
+
+#This file is part of GCC.
+
+#GCC is free software; you can redistribute it and/or modify
+#it under the terms of the GNU General Public License as published by
+#the Free Software Foundation; either version 3, or (at your option)
+#any later version.
+
+#GCC is distributed in the hope that it will be useful,
+#but WITHOUT ANY WARRANTY; without even the implied warranty of
+#MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#GNU General Public License for more details.
+
+# You should have received a copy of the GNU General Public License
+# along with GCC; see the file COPYING3.  If not see
+# <http://www.gnu.org/licenses/>.
+
+
+# This file provides the language dependent support in the main Makefile.
+# Each language makefile fragment must provide the following targets:
+#
+# foo.all.cross, foo.start.encap, foo.rest.encap,
+# foo.install-common, foo.install-man, foo.install-info, foo.install-pdf,
+# foo.install-html, foo.info, foo.dvi, foo.pdf, foo.html, foo.uninstall,
+# foo.mostlyclean, foo.clean, foo.distclean,
+# foo.maintainer-clean, foo.stage1, foo.stage2, foo.stage3, foo.stage4
+#
+# where `foo' is the name of the language.
+#
+# It should also provide rules for:
+#
+# - making any compiler driver (eg: g++)
+# - the compiler proper (eg: cc1plus)
+# - define the names for selecting the language in LANGUAGES.
+
+#
+# Define the names for selecting Objective-C in LANGUAGES.
+objc: cc1obj$(exeext)
+objc.serial = cc1obj$(exeext)
+
+# Tell GNU make to ignore these if they exist.
+.PHONY: objc
+
+# Use maximal warnings for this front end.
+objc-warn = $(STRICT_WARN)
+
+# Language-specific object files for Objective C.
+OBJC_OBJS = objc/objc-lang.o objc/objc-act.o hash-table.o \
+   objc/objc-runtime-shared-support.o \
+   objc/objc-gnu-runtime-abi-01.o \
+   objc/objc-next-runtime-abi-01.o \
+   objc/objc-next-runtime-abi-02.o \
+   objc/objc-encoding.o \
+   objc/objc-map.o
+
+objc_OBJS = $(OBJC_OBJS) cc1obj-checksum.o
+
+# compute checksum over all object files and the options
+# re-use the checksum from the prev-final stage so it passes
+# the bootstrap comparison and allows comparing of the cc1 binary
+cc1obj-checksum.cc : build/genchecksum$(build_exeext) checksum-options \
+        $(OBJC_OBJS) $(C_AND_OBJC_OBJS) $(BACKEND) $(LIBDEPS)
+	if [ -f ../stage_final ] \
+	   && cmp -s ../stage_current ../stage_final \
+	   && [ -f ../prev-gcc/$@ ]; then \
+	  cp ../prev-gcc/$@ $@; \
+	else \
+	  build/genchecksum$(build_exeext) $(OBJC_OBJS) $(C_AND_OBJC_OBJS) \
+		$(BACKEND) $(LIBDEPS) checksum-options > $@.tmp && \
+	  $(srcdir)/../move-if-change $@.tmp $@; \
+	fi
+
+cc1obj$(exeext): $(OBJC_OBJS) $(C_AND_OBJC_OBJS) cc1obj-checksum.o $(BACKEND) \
+		 $(LIBDEPS) $(objc.prev)
+	@$(call LINK_PROGRESS,$(INDEX.objc),start)
+	+$(LLINKER) $(ALL_LINKERFLAGS) $(LDFLAGS) -o $@ \
+	      $(OBJC_OBJS) $(C_AND_OBJC_OBJS) cc1obj-checksum.o \
+	      $(BACKEND) $(LIBS) $(BACKENDLIBS)
+	@$(call LINK_PROGRESS,$(INDEX.objc),end)
+
+objc.srcextra:
+
+#
+# Build hooks:
+
+objc.all.cross:
+objc.start.encap:
+objc.rest.encap:
+objc.info:
+objc.install-info:
+objc.dvi:
+objc.install-dvi:
+objc.pdf:
+objc.install-pdf:
+objc.html:
+objc.install-html:
+objc.man:
+objc.srcinfo:
+objc.srcman:
+objc.install-plugin:
+
+objc.tags: force
+	cd $(srcdir)/objc; $(ETAGS) -o TAGS.sub *.cc *.h; \
+	$(ETAGS) --include TAGS.sub --include ../TAGS.sub
+
+lang_checks += check-objc
+
+# The following allows you to do 'make check-objc -j2'.  The
+# execute.exp tests will be run in parallel with all the other ones.
+lang_checks_parallelized += check-objc
+check_objc_parallelize = 6
+
+# No objc-c-specific selftests
+selftest-objc:
+
+#
+# Install hooks:
+# cc1obj is installed elsewhere as part of $(COMPILERS).
+
+objc.install-common:
+
+objc.install-man:
+
+objc.uninstall:
+#
+# Clean hooks:
+# A lot of the ancillary files are deleted by the main makefile.
+# We just have to delete files specific to us.
+objc.mostlyclean:
+	-rm -f objc/*$(objext) objc/xforward objc/fflags
+	-rm -f objc/*$(coverageexts)
+	-rm -f cc1obj$(exeext)
+objc.clean: objc.mostlyclean
+	-rm -rf objc-headers
+objc.distclean:
+	-rm -f objc/Makefile objc/Make-host objc/Make-target
+	-rm -f objc/config.status objc/config.cache
+objc.maintainer-clean:
+
+#
+# Stage hooks:
+
+objc.stage1: stage1-start
+	-mv objc/*$(objext) stage1/objc
+objc.stage2: stage2-start
+	-mv objc/*$(objext) stage2/objc
+objc.stage3: stage3-start
+	-mv objc/*$(objext) stage3/objc
+objc.stage4: stage4-start
+	-mv objc/*$(objext) stage4/objc
+objc.stageprofile: stageprofile-start
+	-mv objc/*$(objext) stageprofile/objc
+objc.stagefeedback: stagefeedback-start
+	-mv objc/*$(objext) stagefeedback/objc
