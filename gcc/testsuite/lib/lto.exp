@@ -1,0 +1,995 @@
+# Copyright (C) 2009-2026 Free Software Foundation, Inc.
+
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with GCC; see the file COPYING3.  If not see
+# <http://www.gnu.org/licenses/>.
+
+# Contributed by Diego Novillo <dnovillo@google.com>
+
+# A subroutine of lto_handle_diagnostics: check TEXT for the expected
+# diagnostics for one specific source file, issuing PASS/FAIL results.
+# Return TEXT, stripped of any diagnostics that were handled.
+#
+# NAME is the testcase name to use when reporting PASS/FAIL results.
+# FILENAME is the name (with full path) of the file we're interested in.
+# MESSAGES_FOR_FILE is a list of expected messages, akin to DejaGnu's
+# "dg-messages" variable.
+# TEXT is the textual output from the LTO link.
+
+proc lto_handle_diagnostics_for_file { name filename messages_for_file text } {
+    global dg-linenum-format
+
+    set filename_without_path [file tail $filename]
+
+    # This loop is adapted from the related part of DejaGnu's dg-test,
+    # with changes as detailed below to cope with the LTO case.
+
+    foreach i ${messages_for_file} {
+	verbose "Scanning for message: $i" 4
+
+	# Remove all error messages for the line [lindex $i 0]
+	# in the source file.  If we find any, success!
+	set line [lindex $i 0]
+	set pattern [lindex $i 2]
+	set comment [lindex $i 3]
+	verbose "line: $line" 4
+	verbose "pattern: $pattern" 4
+	verbose "comment: $comment" 4
+	#send_user "Before:\n$text\n"
+
+	# Unlike dg-test, we use $filename_without_path in this pattern.
+	# This is to ensure that we have the correct file/line combination.
+	# This imposes the restriction that the filename can't contain
+	# any regexp control characters.  We have to strip the path, since
+	# e.g. the '+' in "g++.dg" wouldn't be valid.
+	set pat "(^|\n)(\[^\n\]+$filename_without_path$line\[^\n\]*($pattern)\[^\n\]*\n?)+"
+	if {[regsub -all $pat $text "\n" text]} {
+	    set text [string trimleft $text]
+	    set ok pass
+	    set uhoh fail
+	} else {
+	    set ok fail
+	    set uhoh pass
+	}
+	#send_user "After:\n$text\n"
+
+	# $line will either be a formatted line number or a number all by
+	# itself.  Delete the formatting.
+	scan $line ${dg-linenum-format} line
+
+	# Unlike dg-test, add the filename to the PASS/FAIL message (rather
+	# than just the line number) so that the user can identify the
+	# pertinent directive.
+	set describe_where "$filename_without_path line $line"
+
+	# Issue the PASS/FAIL, adding "LTO" to the messages (e.g. "LTO errors")
+	# to distinguish them from the non-LTO case (in case we ever need to
+	# support both).
+	switch [lindex $i 1] {
+	    "ERROR" {
+		$ok "$name $comment (test for LTO errors, $describe_where)"
+	    }
+	    "XERROR" {
+		x$ok "$name $comment (test for LTO errors, $describe_where)"
+	    }
+	    "WARNING" {
+		$ok "$name $comment (test for LTO warnings, $describe_where)"
+	    }
+	    "XWARNING" {
+		x$ok "$name $comment (test for LTO warnings, $describe_where)"
+	    }
+	    "BOGUS" {
+		$uhoh "$name $comment (test for LTO bogus messages, $describe_where)"
+	    }
+	    "XBOGUS" {
+		x$uhoh "$name $comment (test for LTO bogus messages, $describe_where)"
+	    }
+	    "BUILD" {
+		$uhoh "$name $comment (test for LTO build failure, $describe_where)"
+	    }
+	    "XBUILD" {
+		x$uhoh "$name $comment (test for LTO build failure, $describe_where)"
+	    }
+	    "EXEC" { }
+	    "XEXEC" { }
+	}
+    }
+    return $text
+}
+
+# Support for checking for link-time diagnostics: check for
+# the expected diagnostics within TEXT, issuing PASS/FAIL results.
+# Return TEXT, stripped of any diagnostics that were handled.
+#
+# TEXT is the textual output from the LTO link.
+
+proc lto_handle_diagnostics { text } {
+    global testcase
+
+    upvar dg-messages-by-file messages_by_file
+
+    verbose "lto_handle_diagnostics: entry: $text" 2
+
+    if { ![array exists messages_by_file] } {
+	error "lto_handle_diagnostics: messages_by_file not defined"
+    }
+
+    foreach src [lsort [array names messages_by_file]] {
+	set dg-messages $messages_by_file($src)
+	verbose "  messages for $src: ${dg-messages}" 3
+	set text [lto_handle_diagnostics_for_file $testcase $src \
+		      ${dg-messages} $text]
+    }
+
+    verbose "lto_handle_diagnostics: exit: $text" 2
+
+    return $text
+}
+
+# Prune messages that aren't useful.
+
+proc lto_prune_warns { text } {
+
+    verbose "lto_prune_warns: entry: $text" 2
+
+    # Many tests that use visibility will still pass on platforms that don't support it.
+    regsub -all "(^|\n)\[^\n\]*: warning: visibility attribute not supported in this configuration; ignored\[^\n\]*" $text "" text
+
+    # Allow mixed-language LTO tests to pass with make check-c++0x
+    regsub -all "(^|\n)\[^\n\]*: warning: command line option '-std=\[^\n\]*" $text "" text
+
+    # And any stray location lines.
+    regsub -all "(^|\n)\[^\n\]*: In function \[^\n\]*" $text "" text
+    regsub -all "(^|\n)In file included from \[^\n\]*" $text "" text
+    regsub -all "(^|\n)\[ \t\]*from \[^\n\]*" $text "" text
+
+    # Sun ld warns about common symbols with differing sizes.  Unlike GNU ld
+    # --warn-common (off by default), they cannot be disabled.
+    regsub -all "(^|\n)ld: warning: symbol \[`'\]\[^\n\]*' has differing sizes:" $text "" text
+    regsub -all "(^|\n)\[ \t\]*\[\(\]file \[^\n\]* value=\[^\n\]*; file \[^\n\]* value=\[^\n\]*\[)\];" $text "" text
+    regsub -all "(^|\n)\[ \t\]*\[^\n\]* definition taken" $text "" text
+
+    # Ignore missing jobserver for tests that do more than 1 LTRANS unit
+    regsub -all "(^|\n)\[^\n\]*: warning: using serial compilation of \[^\n\]*" $text "" text
+    regsub -all "(^|\n)\[^\n\]*: note: see the \[^\n\]*'-flto' option documentation\[^\n\]* for more information" $text "" text
+
+    global prune_notes
+    if { $prune_notes } {
+	# Ignore informational notes.
+	regsub -all "(^|\n)\[^\n\]*: note: \[^\n\]*" $text "" text
+    }
+
+    verbose "lto_prune_warns: exit: $text" 2
+
+    return $text
+}
+
+# lto_init -- called at the start of each subdir of tests
+
+proc lto_init { args } {
+    global LTO_OPTIONS
+
+    if {[info exists args] && $args == "no-mathlib"} {
+	global board_info
+	global saved_mathlib
+
+	set dest [target_info name]
+	if [board_info $dest exists mathlib] {
+	    set saved_mathlib [board_info $dest mathlib]
+	}
+	set board_info($dest,mathlib) " "
+    }
+
+    # Each test is run with the compiler options from this list.
+    # The default option lists can be overridden by LTO_OPTIONS="[list
+    # {opts_1} {opts_2}... {opts_n}]" where opts_i are lists of options.
+    # You can put this in the environment before site.exp is written or
+    # add it to site.exp directly.
+    if ![info exists LTO_OPTIONS] {
+        if [check_linker_plugin_available] {
+	  set LTO_OPTIONS [list	\
+	      {-O0 -flto -flto-partition=none -fuse-linker-plugin} \
+	      {-O2 -flto -flto-partition=none -fuse-linker-plugin -fno-fat-lto-objects } \
+	      {-O0 -flto -flto-partition=1to1 -fno-use-linker-plugin } \
+	      {-O2 -flto -flto-partition=1to1 -fno-use-linker-plugin } \
+	      {-O0 -flto -fuse-linker-plugin -fno-fat-lto-objects }	\
+	      {-O2 -flto -fuse-linker-plugin}	\
+	  ]
+ 	} else {
+	  set LTO_OPTIONS [list	\
+	      {-O0 -flto -flto-partition=none } \
+	      {-O2 -flto -flto-partition=none } \
+	      {-O0 -flto -flto-partition=1to1 } \
+	      {-O2 -flto -flto-partition=1to1 } \
+	      {-O0 -flto }	\
+	      {-O2 -flto}		\
+	  ]
+	}
+	global lto_init_set_LTO_OPTIONS
+	if [info exists lto_init_set_LTO_OPTIONS] {
+	    error "lto_init_set_LTO_OPTIONS already set"
+	}
+	set lto_init_set_LTO_OPTIONS 1
+    }
+}
+
+#
+# lto_finish -- called at the end of each subdir of tests if mathlib is
+#		changed.
+#
+
+proc lto_finish { } {
+    global board_info
+    global saved_mathlib
+
+    set dest [target_info name]
+    if [info exists saved_mathlib] {
+	set board_info($dest,mathlib) $saved_mathlib
+    } elseif [board_info $dest exists mathlib] {
+	unset board_info($dest,mathlib)
+    }
+
+    # Let the next 'lto_init' redetermine the default 'LTO_OPTIONS'.
+    global lto_init_set_LTO_OPTIONS
+    if [info exists lto_init_set_LTO_OPTIONS] {
+	global LTO_OPTIONS
+	unset LTO_OPTIONS
+	unset lto_init_set_LTO_OPTIONS
+    }
+}
+
+# Subsets of tests can be selectively disabled by members of this list:
+#  - ATTRIBUTE: disable all tests using the __attribute__ extension,
+#  - COMPLEX: disable all tests using the complex types feature,
+#  - COMPLEX_INT: disable all tests using the complex integral types extension,
+#  - VA: disable all tests using the variable number of arguments feature,
+#  - VLA_IN_STRUCT: disable all tests using the variable-length arrays as
+#    structure members extension,
+#  - ZERO_ARRAY: disable all tests using the zero-sized arrays extension.
+# The default skip lists can be overriden by
+# LTO_SKIPS="[list {skip_1}...{skip_n}]"
+# where skip_i are skip identifiers.  You can put this in the environment
+# before site.exp is written or add it to site.exp directly.
+if ![info exists LTO_SKIPS] {
+    set LTO_SKIPS [list {}]
+}
+
+global lto_skip_list
+set lto_skip_list $LTO_SKIPS
+
+load_lib dg.exp
+load_lib gcc-dg.exp
+load_lib gcc.exp
+
+# lto-obj -- compile to an object file
+#
+# SOURCE is the source file
+# DEST is the object file
+# OPTALL is the list of compiler options to use with all tests
+# OPTFILE is the list of compiler options to use with this file
+# OPTSTR is the options to print with test messages
+# XFAILDATA is the xfail data to be passed to the compiler
+proc lto-obj { source dest optall optfile optstr xfaildata } {
+    global testcase
+    global tool
+    global compiler_conditional_xfail_data
+    global lto_skip_list
+
+    # Add the skip specifiers.
+    foreach skip $lto_skip_list {
+	if { ![string match $skip ""] } {
+	    lappend optall "-DSKIP_$skip"
+	}
+    }
+
+    # Set up the options for compiling this file.
+    set options ""
+    lappend options "additional_flags=$optall $optfile"
+
+    set compiler_conditional_xfail_data $xfaildata
+
+    # Allow C source files to mix freely with other languages
+    if [ string match "*.c" $source ] then {
+      set comp_output [gcc_target_compile "$source" "$dest" object $options]
+    } else {
+      set comp_output [${tool}_target_compile "$source" "$dest" object $options]
+    }
+    # Prune unimportant visibility warnings before checking output.
+    set comp_output [lto_prune_warns $comp_output]
+    ${tool}_check_compile "$testcase $dest assemble" $optstr $dest $comp_output
+}
+
+proc lto-build-archive { testname objlist dest } {
+    global testcase
+    global tool
+    global GCC_UNDER_TEST
+    global GCC_AR_UNDER_TEST
+
+    upvar dg-messages-by-file dg-messages-by-file
+
+    verbose "lto-build-archive" 2
+    file_on_host delete $dest
+
+    # Check that all of the objects were built successfully.
+    foreach obj [split $objlist] {
+	if ![file_on_host exists $obj] then {
+	    unresolved "$testcase $testname build-archive"
+	    return
+	}
+    }
+
+    # For now find gcc-ar in the same directory as $GCC_UNDER_TEST, unless
+    # GCC_AR_UNDER_TEST is defined.
+
+    if ![info exists GCC_AR_UNDER_TEST] {
+	if { ![is_remote host] && [string match "*/*" [lindex $GCC_UNDER_TEST 0]] } {
+	    set ar_cmd [file dirname [lindex $GCC_UNDER_TEST 0]]/[gcc-transform-out-of-tree gcc-ar]
+	} else {
+	    set ar_cmd [gcc-transform-out-of-tree gcc-ar]
+	}
+	set ar_cmd "$ar_cmd [lrange $GCC_UNDER_TEST 1 end]"
+    } else {
+        set ar_cmd $GCC_AR_UNDER_TEST
+    }
+
+    set ar_output [remote_exec host "$ar_cmd rcs $dest $objlist"]
+    set retval [lindex $ar_output 0]
+    set retmsg [lindex $ar_output 1]
+
+    # If any message remains, we fail.  Don't bother overriding tool since
+    # we're not really looking to match any specific error or warning patterns
+    # here.
+    if ![string match "0" $retval] then {
+	${tool}_fail $testcase "ar returned $retval: $retmsg"
+	return 0
+    } else {
+	${tool}_pass $testcase "archive"
+	return 0
+    }
+}
+
+# lto-link-and-maybe-run -- link the object files and run the executable
+# if compile_type is set to "run"
+#
+# TESTNAME is the mixture of object files to link
+# OBJLIST is the list of object files to link
+# DEST is the name of the executable
+# OPTALL is a list of compiler and linker options to use for all tests
+# OPTFILE is a list of compiler and linker options to use for this test
+# OPTSTR is the list of options to list in messages
+proc lto-link-and-maybe-run { testname objlist dest optall optfile optstr } {
+    global testcase
+    global tool
+    global compile_type
+    global board_info
+
+    upvar dg-messages-by-file dg-messages-by-file
+
+    verbose "lto-link-and-maybe-run" 2
+
+    # Check that all of the objects were built successfully.
+    foreach obj [split $objlist] {
+	if ![file_on_host exists $obj] then {
+	    unresolved "$testcase $testname link $optstr"
+	    unresolved "$testcase $testname execute $optstr"
+	    return
+	}
+    }
+
+    # Set up the options for linking this test.
+    set options ""
+    lappend options "additional_flags=$optall $optfile"
+
+    set target_board [target_info name]
+    set relocatable 0
+
+    # Some LTO tests do relocatable linking. Some target boards set
+    # a linker script which can't be used for relocatable linking.
+    # Use the default linker script instead.
+    if { [lsearch -exact [split "$optall $optfile"] "-r"] >= 0 } {
+	set relocatable 1
+    }
+
+    if { $relocatable } {
+	set saved_ldscript [board_info $target_board ldscript]
+	set board_info($target_board,ldscript) ""
+    }
+
+    # Link the objects into an executable.
+    set comp_output [${tool}_target_compile "$objlist" $dest executable \
+		     "$options"]
+
+    if { $relocatable } {
+	set board_info($target_board,ldscript) $saved_ldscript
+    }
+
+    # Check for diagnostics specified by directives
+    set comp_output [lto_handle_diagnostics $comp_output]
+
+    # Prune unimportant visibility warnings before checking output.
+    set comp_output [lto_prune_warns $comp_output]
+
+    if ![${tool}_check_compile "$testcase $testname link" $optstr \
+	 $dest $comp_output] then {
+	if { ![string compare "execute" $compile_type] } {
+	    unresolved "$testcase $testname execute $optstr"
+	}
+	return
+    }
+
+    # Return if we only needed to link.
+    if { ![string compare "link" $compile_type] \
+        || ![string compare "ar-link" $compile_type] } {
+	return
+    }
+
+    # Run the self-checking executable.
+    if ![string match "*/*" $dest] then {
+	set dest "./$dest"
+    }
+    set result [${tool}_load $dest "" ""]
+    set status [lindex $result 0]
+    if { $status == "pass" } then {
+	file_on_host delete $dest
+    }
+    $status "$testcase $testname execute $optstr"
+}
+
+# Potentially handle the given dg- directive (a list)
+# Return true is the directive was handled, false otherwise.
+
+proc lto-can-handle-directive { op } {
+    set cmd [lindex $op 0]
+
+    # dg-warning and dg-message append to dg-messages.
+    upvar dg-messages dg-messages
+
+    # A list of directives to recognize, and a list of directives
+    # to remap them to.
+    # For example, "dg-lto-warning" is implemented by calling "dg-warning".
+    set directives { dg-lto-warning dg-lto-message dg-lto-note }
+    set remapped_directives { dg-warning dg-message dg-note }
+
+    set idx [lsearch -exact $directives $cmd]
+    if { $idx != -1 } {
+	verbose "remapping from: $op" 4
+
+	set remapped_cmd [lindex $remapped_directives $idx]
+	set op [lreplace $op 0 0 $remapped_cmd]
+
+	verbose "remapped to: $op" 4
+
+	set status [catch "$op" errmsg]
+	if { $status != 0 } {
+	    if { 0 && [info exists errorInfo] } {
+		# This also prints a backtrace which will just confuse
+		# testcase writers, so it's disabled.
+		perror "$name: $errorInfo\n"
+	    } else {
+		perror "$name: $errmsg for \"$op\"\n"
+	    }
+	    # ??? The call to unresolved here is necessary to clear `errcnt'.
+	    # What we really need is a proc like perror that doesn't set errcnt.
+	    # It should also set exit_status to 1.
+	    unresolved "$name: $errmsg for \"$op\""
+	}
+
+	return true
+    }
+
+    return false
+}
+
+# lto-get-options-main -- get target requirements for a test and
+# options for the primary source file and the test as a whole
+#
+# SRC is the full pathname of the primary source file.
+proc lto-get-options-main { src } {
+    global compile_type
+    global dg-extra-ld-options
+    global dg-suppress-ld-options
+
+    set dg-extra-ld-options ""
+    set dg-suppress-ld-options ""
+
+    # dg-options sets a variable called dg-extra-tool-flags.
+    set dg-extra-tool-flags ""
+
+    # dg-options sets a variable called tool_flags.
+    set tool_flags ""
+
+    # dg-require-* sets dg-do-what.
+    upvar dg-do-what dg-do-what 
+    upvar dg-final-code dg-final-code
+    set dg-final-code ""
+
+    # dg-warning and dg-message append to dg-messages.
+    upvar dg-messages-by-file dg-messages-by-file
+    set dg-messages ""
+    
+    set tmp [dg-get-options $src]
+    verbose "getting options for $src: $tmp"
+    foreach op $tmp {
+	set cmd [lindex $op 0]
+	verbose "cmd is $cmd"
+	if { [string match "dg-skip-if" $cmd] \
+	     || [string match "dg-require-*" $cmd] } {
+	    set status [catch "$op" errmsg]
+	    if { $status != 0 } {
+		perror "src: $errmsg for \"$op\"\n"
+		unresolved "$src: $errmsg for \"$op\""
+		return
+	    }
+	} elseif { [string match "dg-lto-options" $cmd] } {
+	    set op [lreplace $op 0 0 "dg-options"]
+	    set status [catch "$op" errmsg]
+	    if { $status != 0 } {
+		perror "src: $errmsg for \"$op\"\n"
+		unresolved "$src: $errmsg for \"$op\""
+		return
+	    }
+	} elseif { ![string compare "dg-xfail-if" $cmd] \
+		   || ![string compare "dg-options" $cmd] } {
+	    warning "lto.exp does not support $cmd in primary source file"
+	} elseif { ![string compare "dg-lto-do" $cmd] } {
+	    if { [llength $op] > 3 } {
+		set kw [lindex [lindex $op 3] 0]
+		if [string match "target" $kw] {
+		    perror "$src: dg-lto-do does not support \"target\""
+		} elseif [string match "xfail" $kw] {
+		    perror "$src: dg-lto-do does not support \"xfail\""
+		} else {
+		    perror "$src: dg-lto-do takes a single argument"
+		}
+	    }
+	    set dgdo [lindex $op 2]
+	    verbose "dg-lto-do command for \"$op\" is $dgdo"
+	    if { ![string compare "assemble" $dgdo] } {
+		set compile_type "assemble"
+	    } elseif { ![string compare "run" $dgdo] } {
+		set compile_type "run"
+	    } elseif { ![string compare "link" $dgdo] } {
+		set compile_type "link"
+	    } elseif { ![string compare "ar-link" $dgdo] } {
+		set compile_type "ar-link"
+	    } else {
+		warning "lto.exp does not support dg-lto-do $dgdo"
+	    }
+	} elseif { ![string compare "dg-extra-ld-options" $cmd] } {
+	    if { [llength $op] > 4 } {
+		error "[lindex $op 0]: too many arguments"
+	    } else {
+		if { [llength $op] == 3
+		     || ([llength $op] > 3
+			 && [dg-process-target [lindex $op 3]] == "S") } {
+		    set dg-extra-ld-options [lindex $op 2]
+		    verbose \
+			"dg-extra-ld-options for main is ${dg-extra-ld-options}"
+		}
+	    }
+	} elseif { ![string compare "dg-suppress-ld-options" $cmd] } {
+	    if { [llength $op] > 4 } {
+		error "[lindex $op 0]: too many arguments"
+	    } else {
+		if { [llength $op] == 3
+		     || ([llength $op] > 3
+			 && [dg-process-target [lindex $op 3]] == "S") } {
+		    set dg-suppress-ld-options [lindex $op 2]
+		    verbose \
+			"dg-suppress-ld-options for main is ${dg-suppress-ld-options}"
+		}
+	    }
+	} elseif { ![string compare "dg-final" $cmd] } {
+	    if { [llength $op] > 3 } {
+		error "[lindex $op 0]: too many arguments"
+	    } else {
+		append dg-final-code "[lindex $op 2]\n"
+	    }
+	} elseif { ![lto-can-handle-directive $op] } {
+	    # Ignore unrecognized dg- commands, but warn about them.
+	    warning "lto.exp does not support $cmd"
+	}
+    }
+
+    verbose "dg-messages: ${dg-messages}" 3
+    set dg-messages-by-file($src) ${dg-messages}
+
+    # Return flags to use for compiling the primary source file and for
+    # linking.
+    verbose "dg-extra-tool-flags for main is ${dg-extra-tool-flags}"
+    return ${dg-extra-tool-flags}
+}
+
+
+# lto-get-options -- get special tool flags to use for a secondary
+# source file
+#
+# SRC is the full pathname of the source file.
+# The result is a list of options to use.
+#
+# This code is copied from proc dg-test in dg.exp from DejaGNU.
+proc lto-get-options { src } {
+    # dg-options sets a variable called dg-extra-tool-flags.
+    set dg-extra-tool-flags ""
+
+    # dg-xfail-if sets compiler_conditional_xfail_data.
+    global compiler_conditional_xfail_data
+    set compiler_conditional_xfail_data ""
+
+    # dg-xfail-if needs access to dg-do-what.
+    upvar dg-do-what dg-do-what 
+
+    # dg-warning appends to dg-messages.
+    upvar dg-messages-by-file dg-messages-by-file
+    set dg-messages ""
+
+    set tmp [dg-get-options $src]
+    foreach op $tmp {
+	set cmd [lindex $op 0]
+	if { ![string compare "dg-options" $cmd] \
+	     || ![string compare "dg-xfail-if" $cmd] } {
+	    set status [catch "$op" errmsg]
+	    if { $status != 0 } {
+		perror "src: $errmsg for \"$op\"\n"
+		unresolved "$src: $errmsg for \"$op\""
+		return
+	    }
+	} elseif { [string match "dg-require-*" $cmd] } {
+	    warning "lto.exp does not support $cmd in secondary source files"
+	} elseif { ![lto-can-handle-directive $op] } {
+	    # Ignore unrecognized dg- commands, but warn about them.
+	    warning "lto.exp does not support $cmd in secondary source files"
+	}
+    }
+
+    verbose "dg-messages: ${dg-messages}" 3
+    if { [info exists dg-messages-by-file($src)] } {
+	append dg-messages-by-file($src) ${dg-messages}
+    } else {
+	set dg-messages-by-file($src) ${dg-messages}
+    }
+
+    return ${dg-extra-tool-flags}
+}
+
+# lto-execute -- compile multi-file tests
+#
+# SRC1 is the full pathname of the main file of the testcase.
+# SID identifies a test suite in the names of temporary files.
+proc lto-execute-1 { src1 sid } {
+    global srcdir tmpdir
+    global lto_option_list
+    global tool
+    global verbose
+    global testcase
+    global gluefile
+    global compiler_conditional_xfail_data
+    global dg-do-what-default
+    global compile_type
+    global dg-extra-ld-options
+    global dg-suppress-ld-options
+    global LTO_OPTIONS
+    global dg-final-code
+    global testname_with_flags
+    
+    # Get extra flags for this test from the primary source file, and
+    # process other dg-* options that this suite supports.  Warn about
+    # unsupported flags.
+    verbose "lto-execute: $src1" 1
+    set compile_type "run"
+    set dg-do-what [list ${dg-do-what-default} "" P]
+    array set dg-messages-by-file [list]
+    set extra_flags(0) [lto-get-options-main $src1]
+    set compile_xfail(0) "" 
+
+    # If the main file defines dg-options, those flags are used to
+    # overwrite the default lto_option_list taken from LTO_OPTIONS.
+    if { [string length $extra_flags(0)] > 0 } {
+	set lto_option_list $extra_flags(0)
+	set extra_flags(0) ""
+    } else {
+	set lto_option_list $LTO_OPTIONS
+    }
+
+    # Set up the names of the other source files.
+    set dir [file dirname $src1]
+    set base [file rootname $src1]
+    set base [string range $base [string length $dir] end]
+    regsub "_0" $base "" base
+    regsub "/" $base "" base
+    set src_list $src1
+    set i 1
+    set done 0
+    while { !$done } {
+	set names [glob -nocomplain -types f -- "${dir}/${base}_${i}.{c,C,ii,\[fF\]{,90,95,03,08},d,m,mm}"]
+	if { [llength ${names}] > 1 } {
+	    warning "lto-execute: more than one file matched ${dir}/${base}_${i}.{c,C,ii,\[fF\]{,90,95,03,08},d,m,mm}"
+	}
+	if { [llength ${names}] == 1 } {
+	    lappend src_list [lindex ${names} 0]
+	    incr i
+	} else {
+	    set num_srcs ${i}
+	    set done 1
+	}
+    }
+
+    # Use the dg-options mechanism to specify extra flags for each
+    # of the secondary files.
+    # The extra flags in each file are used to compile that file, and the
+    # extra flags in *_0.* are also used for linking.
+    verbose "\tsrc_list is: $src_list"
+    for {set i 1} {$i < $num_srcs} {incr i} {
+	set extra_flags($i) [lto-get-options [lindex $src_list $i]]
+	set compile_xfail($i) $compiler_conditional_xfail_data
+    }
+
+    # Define the names of the object files.
+    set obj_list ""
+    for {set i 0} {$i < $num_srcs} {incr i} {
+	lappend obj_list "${sid}_${base}_${i}.o"
+    }
+
+    # Get the base name of this test, for use in messages.
+    set testcase [lindex ${src_list} 0]
+
+    # The test needs to build all but the main file into an archive and then
+    # link them all together.
+    if { ![string compare "ar-link" $compile_type] } {
+        set arname "${sid}_${base}.a"
+    }
+
+    # Remove the $srcdir and $tmpdir prefixes from $src1.  (It would
+    # be possible to use "regsub" here, if we were careful to escape
+    # all regular expression characters in $srcdir and $tmpdir, but
+    # that would be more complicated that this approach.) 
+    if {[string first "$srcdir/" "${testcase}"] == 0} {
+	set testcase [string range "${testcase}" [string length "$srcdir/"] end]
+    }
+    if {[string first "$tmpdir/" "$testcase"] == 0} {
+	set testcase [string range "$testcase" [string length "$tmpdir/"] end]
+	set testcase "tmpdir-$testcase"
+    }
+    # If we couldn't rip $srcdir out of `src1' then just do the best we can.
+    # The point is to reduce the unnecessary noise in the logs.  Don't strip
+    # out too much because different testcases with the same name can confuse
+    # `test-tool'.
+    if [string match "/*" $testcase] then {
+        set testcase "[file tail [file dirname $src1]]/[file tail $src1]"
+    }
+
+    # Check whether this test is supported for this target.
+    if { [lindex ${dg-do-what} 1 ] == "N" } {
+	unsupported "$testcase"
+	verbose "$testcase not supported on this target, skipping it" 3
+	return
+    }
+    # Should be safe for non-fortran too but be paranoid..
+    if {$sid eq "f_lto"} {
+	list-module-names $src_list
+    }
+    regsub "_0.*" $testcase "" testcase
+
+    # Set up the base name of executable files so they'll be unique.
+    regsub -all "\[./\]" $testcase "-" execbase
+
+    # Loop through all of the option lists used for this test.
+    set count 0
+    foreach option $lto_option_list {
+	verbose "Testing $testcase, $option"
+
+	# There's a unique name for each executable we generate.
+	set execname "${execbase}-${count}1.exe"
+
+	# The LTO tests don't use dg-test, so testname_with_flags and
+	# output_file need to be defined explicitly for each file.  scan-symbol
+	# directives rely on both of these to be defined to find the symbol to
+	# scan and for the text to print in the PASS/FAIL since they can also
+	# be called from dg-test.  testname_with_flags is also used via
+	# testname-for-summary when calling into generic function below to
+	# clean temporary files.
+	set output_file $execname
+	set testname_with_flags $execname
+
+	incr count
+
+	file_on_host delete $execname
+
+	# Compile pieces with the compiler under test.
+	set i 0
+	foreach src $src_list obj $obj_list {
+	    lto-obj $src $obj $option $extra_flags($i) $option \
+		    $compile_xfail($i)
+	    incr i
+	}
+
+	# Bundle all but the main file into an archive. Update objlist to only
+	# have the archive and the last file.
+	if { ![string compare "ar-link" $compile_type] } {
+	    set mainsrc [lindex $obj_list 0]
+	    set obj_list [lrange $obj_list 1 end]
+	    lto-build-archive \
+		"[lindex $obj_list 1]-[lindex $obj_list end]" \
+		$obj_list $arname
+
+	    set obj_list ""
+	    lappend obj_list $mainsrc
+	    lappend obj_list $arname
+	    set num_srcs 2
+	}
+
+	# Link (using the compiler under test), run, and clean up tests.
+	if { ![string compare "run" $compile_type] \
+	     || ![string compare "ar-link" $compile_type] \
+	     || ![string compare "link" $compile_type] } {
+
+	    # Filter out any link options we were asked to suppress.
+	    set reduced {}
+	    foreach x [split $option] {
+	      if {[lsearch ${dg-suppress-ld-options} $x] == -1} {
+		lappend reduced $x
+	      }
+	    }
+	    set filtered [join $reduced " "]
+
+	    lto-link-and-maybe-run \
+		    "[lindex $obj_list 0]-[lindex $obj_list end]" \
+		    $obj_list $execname $filtered ${dg-extra-ld-options} \
+		    $filtered
+
+	    if (![string compare "ar-link" $compile_type]) {
+		file_on_host delete $arname
+	      }
+	}
+
+
+	# Are there any further tests to perform?
+	# Note that if the program has special run-time requirements, running
+	# of the program can be delayed until here.  Ditto for other situations.
+	# It would be a bit cumbersome though.
+
+	if ![string match ${dg-final-code} ""] {
+	    regsub -all "\\\\(\[{}\])" ${dg-final-code} "\\1" dg-final-code
+	    # Note that the use of `args' here makes this a varargs proc.
+	    proc dg-final-proc { args } ${dg-final-code}
+	    verbose "Running dg-final tests." 3
+	    verbose "dg-final-proc:\n[info body dg-final-proc]" 4
+	    if [catch "dg-final-proc $src1" errmsg] {
+		perror "$src1: error executing dg-final: $errmsg"
+		# ??? The call to unresolved here is necessary to clear
+		# `errcnt'.  What we really need is a proc like perror that
+		# doesn't set errcnt.  It should also set exit_status to 1.
+		unresolved "$src1: error executing dg-final: $errmsg"
+	    }
+	}
+
+	# Clean up object files.
+	set files [glob -nocomplain ${sid}_*.o]
+	if { $files != "" } {
+	    foreach objfile $files {
+		if { ![info exists gluefile] || $objfile != $gluefile } {
+		    eval "file_on_host delete $objfile"
+		}
+	    }
+	}
+
+	# Clean up after -save-temps.
+	eval "cleanup-saved-temps"
+
+	for {set i 0} {$i < $num_srcs} {incr i} {
+	    set testname_with_flags "${base}_${i}"
+	    eval "cleanup-saved-temps"
+	    set testname_with_flags "${sid}_${base}_${i}"
+	    eval "cleanup-saved-temps"
+	}
+	
+	unset testname_with_flags
+	
+	if { ![string compare "run" $compile_type] \
+	     || ![string compare "ar-link" $compile_type] \
+	     || ![string compare "link" $compile_type] } {
+	    file_on_host delete $execname
+	}
+	# Should be safe for non-fortran too but be paranoid..
+	if {$sid eq "f_lto"} {
+	    cleanup-modules ""
+	}
+    }
+}
+
+proc lto-execute { src1 sid } {
+    lto-execute-1 $src1 $sid
+
+    # LTO testing doesn't use 'dg-runtest'/'dg-test', and thus doesn't call
+    # 'cleanup-after-saved-dg-test', so we have to clean up manually.
+    initialize_prune_notes
+}
+
+# Call pass if object readelf is ok, otherwise fail.
+# example: /* { dg-final { object-readelf Tag_ABI_enum_size int} } */
+proc object-readelf { args } {
+    global readelf
+    global base_dir
+    upvar 2 execname execname
+
+    if { [llength $args] < 2 } {
+	error "object-readelf: too few arguments"
+	return
+    }
+    if { [llength $args] > 3 } {
+	error "object-readelf: too many arguments"
+	return
+    }
+    if { [llength $args] >= 3 } {
+	switch [dg-process-target [lindex $args 2]] {
+	    "S" { }
+	    "N" { return }
+	    "F" { setup_xfail "*-*-*" }
+	    "P" { }
+	}
+    }
+
+    # Find size like we find g++ in g++.exp.
+    if ![info exists readelf]  {
+	set readelf [findfile $base_dir/../../../binutils/readelf \
+		$base_dir/../../../binutils/readelf \
+		[findfile $base_dir/../../readelf $base_dir/../../readelf \
+		[findfile $base_dir/readelf $base_dir/readelf \
+		[transform readelf]]]]
+	verbose -log "readelf is $readelf"
+    }
+
+    set what [lindex $args 0]
+    set with [lindex $args 1]
+
+    if ![file_on_host exists $execname] {
+	verbose -log "$execname does not exist"
+	unresolved "object-readelf $what "
+	return
+    }
+
+    set output [remote_exec host "$readelf -A" "$execname"]
+    set status [lindex $output 0]
+    if { $status != 0 } {
+	verbose -log "object-readelf: $readelf failed"
+	unresolved "object-readelf $what $execname"
+	return
+    }
+
+    set text [lindex $output 1]
+    set lines [split $text "\n"]
+
+    set done 0
+    set i 0
+    while { !$done } {
+	set line_tex [lindex $lines $i]
+	if { [llength ${line_tex}] > 1} {
+	    incr i
+	    if [regexp -- $what $line_tex] {
+	        set match [regexp -- $with $line_tex]
+		set done 1
+	    }
+	} else {
+	    set done 1
+	}
+    }
+
+    verbose -log "$what size is $with;"
+    if { $match == 1 } {
+	pass "object-readelf $what size is correct."
+    } else {
+	fail "object-readelf $what size is incorrect."
+    }
+}
+
+

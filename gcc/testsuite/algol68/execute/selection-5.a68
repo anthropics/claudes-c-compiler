@@ -1,0 +1,4 @@
+begin mode Jorl = struct (int i, real r);
+      ref Jorl jorl = loc Jorl := (10, 3.14);
+      assert (i'jorl = 10)
+end

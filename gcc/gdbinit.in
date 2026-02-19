@@ -1,0 +1,397 @@
+# Copyright (C) 2001-2026 Free Software Foundation, Inc.
+#
+# This file is part of GCC.
+#
+# GCC is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3, or (at your option)
+# any later version.
+#
+# GCC is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with GCC; see the file COPYING3.  If not see
+# <http://www.gnu.org/licenses/>.
+
+define help-gcc-hooks
+help help-gcc-hooks
+end
+
+document help-gcc-hooks
+GCC gdbinit file introduces several debugging shorthands:
+
+    pr [rtx], prl [rtx], prc [rtx], pi [rtx_insn],
+    pt [tree], pct [tree], ptc [tree], trt [tree],
+    pgs [tree], pge [tree], pdn [tree], ptn [tree],
+    pgg [gimple], pgq [gimple_seq],
+    pmz [mpz_t],
+    pdd [dw_die_ref],
+    pbm [bitmap],
+    pel [location_t],
+    phrs [HARD_REG_SET]
+    pp, pbs, pcfun
+
+They are generally implemented by calling a function that prints to stderr,
+and therefore will not work when the compiler is not executing.
+
+Most shorthands accept an optional argument. When it is not supplied,
+they use value in GDB register $, i.e. the last printed value.
+end
+
+define pp
+eval "set $debug_arg = $%s", $argc ? "arg0" : ""
+call debug ($debug_arg)
+end
+
+document pp
+GCC hook: debug (<multiple overloads>)
+Print a representation of any GCC data structure for which an instance of
+overloaded function 'debug' is available.
+See also 'help-gcc-hooks'.
+end
+
+define pr
+eval "set $debug_arg = $%s", $argc ? "arg0" : ""
+call debug_rtx ($debug_arg)
+end
+
+document pr
+GCC hook: debug_rtx (rtx)
+Print the full structure of given rtx.
+See also 'help-gcc-hooks'.
+end
+
+define prl
+eval "set $debug_arg = $%s", $argc ? "arg0" : ""
+call debug_rtx_list ($debug_arg, debug_rtx_count)
+end
+
+document prl
+GCC hook: debug_rtx_list (rtx)
+Print the full structure of all rtx insns beginning at given rtx.
+Uses variable debug_rtx_count to control number of insns printed:
+  debug_rtx_count > 0: print from given rtx on.
+  debug_rtx_count < 0: print a window around given rtx.
+
+There is also debug_rtx_find (rtx, uid) that will scan a list for UID and print
+it using debug_rtx_list. Usage example: set $foo=debug_rtx_find(first, 42)
+end
+
+define pt
+eval "set $debug_arg = $%s", $argc ? "arg0" : ""
+call debug_tree ($debug_arg)
+end
+
+document pt
+GCC hook: debug_tree (tree)
+Print the full structure of given tree.
+See also 'help-gcc-hooks'.
+end
+
+define pct
+eval "set $debug_arg = $%s", $argc ? "arg0" : ""
+call debug_c_tree ($debug_arg)
+end
+
+document pct
+GCC hook: debug_c_tree (tree)
+Print given tree in C syntax.
+See also 'help-gcc-hooks'.
+end
+
+define pgg
+eval "set $debug_arg = $%s", $argc ? "arg0" : ""
+call debug_gimple_stmt ($debug_arg)
+end
+
+document pgg
+GCC hook: debug_gimple_stmt (gimple)
+Print given GIMPLE statement in C syntax.
+See also 'help-gcc-hooks'.
+end
+
+define pgq
+eval "set $debug_arg = $%s", $argc ? "arg0" : ""
+call debug_gimple_seq ($debug_arg)
+end
+
+document pgq
+GCC hook: debug_gimple_seq (gimple_seq)
+Print given GIMPLE sequence in C syntax.
+See also 'help-gcc-hooks'.
+end
+
+define pgs
+eval "set $debug_arg = $%s", $argc ? "arg0" : ""
+call debug_generic_stmt ($debug_arg)
+end
+
+document pgs
+GCC hook: debug_generic_stmt (tree)
+Print given GENERIC statement in C syntax.
+See also 'help-gcc-hooks'.
+end
+
+define pge
+eval "set $debug_arg = $%s", $argc ? "arg0" : ""
+call debug_generic_expr ($debug_arg)
+end
+
+document pge
+GCC hook: debug_generic_expr (tree)
+Print given GENERIC expression in C syntax.
+See also 'help-gcc-hooks'.
+end
+
+define phrs
+eval "set $debug_arg = $%s", $argc ? "arg0" : ""
+call debug_hard_reg_set ($debug_arg)
+end
+
+document phrs
+GCC hook: debug_hard_reg_set (HARD_REG_SET)
+Print given HARD_REG_SET.
+See also 'help-gcc-hooks'.
+end
+
+define pmz
+eval "set $debug_arg = $%s", $argc ? "arg0" : ""
+call mpz_out_str(stderr, 10, $debug_arg)
+end
+
+document pmz
+GCC hook: mpz_out_str (mpz_t)
+Print given mpz value.
+See also 'help-gcc-hooks'.
+end
+
+define ptc
+eval "set $debug_arg = $%s", $argc ? "arg0" : ""
+output (enum tree_code) $debug_arg.base.code
+echo \n
+end
+
+document ptc
+GCC hook: TREE_CODE (tree)
+Print the tree-code of given tree node.
+See also 'help-gcc-hooks'.
+end
+
+define pdn
+eval "set $debug_arg = $%s", $argc ? "arg0" : ""
+output $debug_arg.decl_minimal.name->identifier.id.str
+echo \n
+end
+
+document pdn
+GCC hook: IDENTIFIER_POINTER (DECL_NAME (tree))
+Print the name of given decl-node.
+See also 'help-gcc-hooks'.
+end
+
+define ptn
+eval "set $debug_arg = $%s", $argc ? "arg0" : ""
+output $debug_arg.type.name->decl_minimal.name->identifier.id.str
+echo \n
+end
+
+document ptn
+GCC hook: IDENTIFIER_POINTER (DECL_NAME (TREE_TYPE (tree)))
+Print the name of given type-node.
+See also 'help-gcc-hooks'.
+end
+
+define pdd
+eval "set $debug_arg = $%s", $argc ? "arg0" : ""
+call debug_dwarf_die ($debug_arg)
+end
+
+document pdd
+GCC hook: debug_dwarf_die (dw_die_ref)
+Print given dw_die_ref.
+See also 'help-gcc-hooks'.
+end
+
+define prc
+eval "set $debug_arg = $%s", $argc ? "arg0" : ""
+output (enum rtx_code) $debug_arg.code
+echo \ (
+output $debug_arg.mode
+echo )\n
+end
+
+document prc
+GCC hook: GET_CODE (rtx)
+Print the rtx-code and machine mode of given rtx.
+See also 'help-gcc-hooks'.
+end
+
+define pi
+eval "set $debug_arg = $%s", $argc ? "arg0" : ""
+print $debug_arg.u.fld[0].rt_rtx@7
+end
+
+document pi
+GCC hook: X0EXP (rtx_insn)
+Print the fields of given RTL instruction.
+See also 'help-gcc-hooks'.
+end
+
+define pbs
+call print_binding_stack ()
+end
+
+document pbs
+In cc1plus, print the current binding stack, frame by frame, up to and
+including the global binding level.
+end
+
+define pbm
+eval "set $debug_arg = $%s", $argc ? "arg0" : ""
+call bitmap_print (stderr, $debug_arg, "", "\n")
+end
+
+document pbm
+GCC hook: bitmap_print (bitmap)
+Dump given bitmap as a comma-separated list of numbers.
+See also 'help-gcc-hooks'.
+end
+
+define pel
+eval "set $debug_arg = $%s", $argc ? "arg0" : ""
+output expand_location ($debug_arg)
+echo \n
+end
+
+document pel
+GCC hook: expand_location (location_t)
+Print given location.
+See also 'help-gcc-hooks'.
+end
+
+define pcfun
+output debug_function (cfun ? cfun->decl : current_function_decl, 0)
+echo \n
+end
+
+document pcfun
+Print current function.
+end
+
+define trt
+eval "set $debug_arg = $%s", $argc ? "arg0" : ""
+print ($debug_arg.typed.type)
+end
+
+document trt
+GCC hook: TREE_TYPE (tree)
+Print TREE_TYPE of given tree node.
+See also 'help-gcc-hooks'.
+end
+
+define break-on-diagnostic
+break diagnostics::context::maybe_show_locus
+end
+
+document break-on-diagnostic
+Put a breakpoint on diagnostics::context::show_locus, called whenever
+a diagnostic is emitted (as opposed to those warnings that are suppressed by
+command-line options).
+end
+
+define break-on-saved-diagnostic
+break ana::diagnostic_manager::add_diagnostic
+end
+
+document break-on-saved-diagnostic
+Put a breakpoint on ana::diagnostic_manager::add_diagnostic, called within
+the analyzer whenever a diagnostic is saved for later de-duplication and
+possible emission.
+end
+
+define reload-gdbhooks
+python import imp; imp.reload(gdbhooks)
+end
+
+document reload-gdbhooks
+Load the gdbhooks.py module again in order to pick up any changes made to it.
+end
+
+alias rh = reload-gdbhooks
+
+# Define some macros helpful to gdb when it is expanding macros.
+macro define __FILE__ "gdb"
+macro define __LINE__ 1
+macro define __FUNCTION__ "gdb"
+macro define __null 0
+macro define input_line expand_location(input_location).line
+macro define input_filename expand_location(input_location).file
+
+# Remember previous pagination status and turn it off, so that
+# the messages for skip commands don't require pagination.
+python __gcc_prev_pagination=gdb.parameter("pagination")
+set pagination off
+
+# Gracefully handle aborts in functions used from gdb.
+set unwindonsignal on
+
+# Put breakpoints at exit and fancy_abort in case abort is mapped
+# to either fprintf/exit or fancy_abort.
+b fancy_abort
+
+# Put a breakpoint on internal_error to help with debugging ICEs.
+b internal_error
+
+set complaints 0
+# Don't let abort actually run, as it will make
+# stdio stop working and therefore the `pr' command above as well.
+# Put this last because gcc does not reference it any more unless
+# USE_SYSTEM_ABORT is defined, so gdb may complain and bail out.
+b exit
+b abort
+
+# Disable strict type checking.  This allows developers to (for example)
+# make inferior calls without casting absolute address to a suitable
+# pointer type.
+set check type off
+
+# Skip all inline functions in tree.h.
+# These are used in accessor macros.
+# Note that this is added at the end because older gdb versions
+# do not understand the 'skip' command.
+# See https://sourceware.org/gdb/current/onlinedocs/gdb/Skipping-Over-Functions-and-Files.html
+skip file tree.h
+
+# Also skip inline functions in is-a.h.
+skip file is-a.h
+
+# And line-map.h.
+skip file line-map.h
+
+# And timevar.h.
+skip file timevar.h
+
+# Likewise, skip various inline functions in rtl.h.
+skip rtx_expr_list::next
+skip rtx_expr_list::element
+skip rtx_insn_list::next
+skip rtx_insn_list::insn
+skip rtx_sequence::len
+skip rtx_sequence::element
+skip rtx_sequence::insn
+skip INSN_UID
+skip PREV_INSN
+skip SET_PREV_INSN
+skip NEXT_INSN
+skip SET_NEXT_INSN
+skip BLOCK_FOR_INSN
+skip PATTERN
+skip INSN_LOCATION
+skip INSN_HAS_LOCATION
+skip JUMP_LABEL_AS_INSN
+
+# Restore pagination to the previous state.
+python if __gcc_prev_pagination: gdb.execute("set pagination on")

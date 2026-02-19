@@ -1,0 +1,304 @@
+# Copyright (C) 2004-2026 Free Software Foundation, Inc.
+
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with GCC; see the file COPYING3.  If not see
+# <http://www.gnu.org/licenses/>.
+
+# This file was contributed by John David Anglin (dave.anglin@nrc-cnrc.gc.ca)
+
+set orig_environment_saved 0
+set orig_ld_library_path_saved 0
+set orig_ld_run_path_saved 0
+set orig_shlib_path_saved 0
+set orig_ld_library_path_32_saved 0
+set orig_ld_library_path_64_saved 0
+set orig_dyld_library_path_saved 0
+set orig_path_saved 0
+set orig_gcc_exec_prefix_saved 0
+set orig_gcc_exec_prefix_checked 0
+
+
+#######################################
+# proc set_gcc_exec_prefix_env_var { }
+#######################################
+
+proc set_gcc_exec_prefix_env_var { } {
+  global TEST_GCC_EXEC_PREFIX
+  global env
+
+  # Set GCC_EXEC_PREFIX for the compiler under test to pick up files not in
+  # the build tree from a specified location (normally the install tree).
+  if [info exists TEST_GCC_EXEC_PREFIX] {
+    setenv GCC_EXEC_PREFIX "$TEST_GCC_EXEC_PREFIX"
+  }
+}
+
+#######################################
+# proc set_ld_library_path_env_vars { }
+#######################################
+
+proc set_ld_library_path_env_vars { } {
+  global ld_library_path
+  global orig_environment_saved
+  global orig_ld_library_path_saved
+  global orig_ld_run_path_saved
+  global orig_shlib_path_saved
+  global orig_ld_library_path_32_saved
+  global orig_ld_library_path_64_saved
+  global orig_dyld_library_path_saved
+  global orig_path_saved
+  global orig_gcc_exec_prefix_saved
+  global orig_gcc_exec_prefix_checked
+  global orig_ld_library_path
+  global orig_ld_run_path
+  global orig_shlib_path
+  global orig_ld_library_path_32
+  global orig_ld_library_path_64
+  global orig_dyld_library_path
+  global orig_path
+  global orig_gcc_exec_prefix
+  global ENABLE_DARWIN_AT_RPATH
+  global env
+
+  # Save the original GCC_EXEC_PREFIX.
+  if { $orig_gcc_exec_prefix_checked == 0 } {
+    if [info exists env(GCC_EXEC_PREFIX)] {
+      set orig_gcc_exec_prefix "$env(GCC_EXEC_PREFIX)"
+      set orig_gcc_exec_prefix_saved 1
+    }
+    set orig_gcc_exec_prefix_checked 1
+  }
+
+  set_gcc_exec_prefix_env_var
+
+  # Setting the ld library path causes trouble when testing cross-compilers.
+  if { [is_remote target] } {
+    return
+  }
+
+  if { $orig_environment_saved == 0 } {
+    set orig_environment_saved 1
+
+    # Save the original environment.
+    if [info exists env(LD_LIBRARY_PATH)] {
+      set orig_ld_library_path "$env(LD_LIBRARY_PATH)"
+      set orig_ld_library_path_saved 1
+    }
+    if [info exists env(LD_RUN_PATH)] {
+      set orig_ld_run_path "$env(LD_RUN_PATH)"
+      set orig_ld_run_path_saved 1
+    }
+    if [info exists env(SHLIB_PATH)] {
+      set orig_shlib_path "$env(SHLIB_PATH)"
+      set orig_shlib_path_saved 1
+    }
+    if [info exists env(LD_LIBRARY_PATH_32)] {
+      set orig_ld_library_path_32 "$env(LD_LIBRARY_PATH_32)"
+      set orig_ld_library_path_32_saved 1
+    }
+    if [info exists env(LD_LIBRARY_PATH_64)] {
+      set orig_ld_library_path_64 "$env(LD_LIBRARY_PATH_64)"
+      set orig_ld_library_path_64_saved 1
+    }
+    if [info exists env(DYLD_LIBRARY_PATH)] {
+      set orig_dyld_library_path "$env(DYLD_LIBRARY_PATH)"
+      set orig_dyld_library_path_saved 1
+    }
+    if [info exists env(PATH)] {
+      set orig_path "$env(PATH)"
+      set orig_path_saved 1
+    }
+  }
+
+  # We need to set ld library path in the environment.  Currently,
+  # unix.exp doesn't set the environment correctly for all systems.
+  # It only sets SHLIB_PATH and LD_LIBRARY_PATH when it executes a
+  # program.  We also need the environment set for compilations, etc.
+  #
+  # On Darwin, we have to set variables akin to LD_LIBRARY_PATH, but called
+  # DYLD_LIBRARY_PATH.  The same applies to Solaris 32 bit
+  # (LD_LIBRARY_PATH_32), Solaris 64 bit (LD_LIBRARY_PATH_64), and HP-UX
+  # (SHLIB_PATH).  In some cases, the variables are independent of
+  # LD_LIBRARY_PATH, and in other cases LD_LIBRARY_PATH is used if the
+  # variable is not defined.
+  #
+  # Doing this is somewhat of a hack as ld_library_path gets repeated in
+  # SHLIB_PATH and LD_LIBRARY_PATH when unix_load sets these variables.
+  if { ![istarget *-*-darwin*] } {
+  if { $orig_ld_library_path_saved } {
+    setenv LD_LIBRARY_PATH "$ld_library_path:$orig_ld_library_path"
+  } else {
+    setenv LD_LIBRARY_PATH "$ld_library_path"
+  }
+  if { $orig_ld_run_path_saved } {
+    setenv LD_RUN_PATH "$ld_library_path:$orig_ld_run_path"
+  } else {
+    setenv LD_RUN_PATH "$ld_library_path"
+  }
+  # The default shared library dynamic path search for 64-bit
+  # HP-UX executables searches LD_LIBRARY_PATH before SHLIB_PATH.
+  # LD_LIBRARY_PATH isn't used for 32-bit executables.  Thus, we
+  # set LD_LIBRARY_PATH and SHLIB_PATH as if they were independent.
+  if { $orig_shlib_path_saved } {
+    setenv SHLIB_PATH "$ld_library_path:$orig_shlib_path"
+  } else {
+    setenv SHLIB_PATH "$ld_library_path"
+  }
+  if { $orig_ld_library_path_32_saved } {
+    setenv LD_LIBRARY_PATH_32 "$ld_library_path:$orig_ld_library_path_32"
+  } elseif { $orig_ld_library_path_saved } {
+    setenv LD_LIBRARY_PATH_32 "$ld_library_path:$orig_ld_library_path"
+  } else {
+    setenv LD_LIBRARY_PATH_32 "$ld_library_path"
+  }
+  if { $orig_ld_library_path_64_saved } {
+    setenv LD_LIBRARY_PATH_64 "$ld_library_path:$orig_ld_library_path_64"
+  } elseif { $orig_ld_library_path_saved } {
+    setenv LD_LIBRARY_PATH_64 "$ld_library_path:$orig_ld_library_path"
+  } else {
+    setenv LD_LIBRARY_PATH_64 "$ld_library_path"
+  }
+  }
+  if { [istarget *-*-darwin*] } {
+    if { [info exists ENABLE_DARWIN_AT_RPATH] || [istarget *-*-darwin1\[5-9\]*]
+         || [istarget *-*-darwin2*] } {
+      # Either we are not using DYLD_LIBRARY_PATH or we're on a version of the
+      # OS for which it is not passed through system exes.
+      if [info exists env(DYLD_LIBRARY_PATH)] {
+        unsetenv DYLD_LIBRARY_PATH
+      }
+    } else {
+      if { $orig_dyld_library_path_saved } {
+        setenv DYLD_LIBRARY_PATH "$ld_library_path:$orig_dyld_library_path"
+      } else {
+        setenv DYLD_LIBRARY_PATH "$ld_library_path"
+      }
+    }
+  }
+  if { [istarget *-*-cygwin*] || [istarget *-*-mingw*] } {
+    if { $orig_path_saved } {
+      setenv PATH "$ld_library_path:$orig_path"
+    } else {
+      setenv PATH "$ld_library_path"
+    }
+  }
+
+  verbose -log "set paths"
+  verbose -log "LD_LIBRARY_PATH=[getenv LD_LIBRARY_PATH]"
+  verbose -log "LD_RUN_PATH=[getenv LD_RUN_PATH]"
+  verbose -log "SHLIB_PATH=[getenv SHLIB_PATH]"
+  verbose -log "LD_LIBRARY_PATH_32=[getenv LD_LIBRARY_PATH_32]"
+  verbose -log "LD_LIBRARY_PATH_64=[getenv LD_LIBRARY_PATH_64]"
+  verbose -log "DYLD_LIBRARY_PATH=[getenv DYLD_LIBRARY_PATH]"
+}
+
+#######################################
+# proc restore_gcc_exec_prefix_env_var { }
+#######################################
+
+proc restore_gcc_exec_prefix_env_var { } {
+  global orig_gcc_exec_prefix_saved
+  global orig_gcc_exec_prefix
+  global env
+
+  if { $orig_gcc_exec_prefix_saved } {
+    setenv GCC_EXEC_PREFIX "$orig_gcc_exec_prefix"
+  } elseif [info exists env(GCC_EXEC_PREFIX)] {
+    unsetenv GCC_EXEC_PREFIX
+  }
+}
+
+#######################################
+# proc restore_ld_library_path_env_vars { }
+#######################################
+
+proc restore_ld_library_path_env_vars { } {
+  global orig_environment_saved
+  global orig_ld_library_path_saved
+  global orig_ld_run_path_saved
+  global orig_shlib_path_saved
+  global orig_ld_library_path_32_saved
+  global orig_ld_library_path_64_saved
+  global orig_dyld_library_path_saved
+  global orig_path_saved
+  global orig_ld_library_path
+  global orig_ld_run_path
+  global orig_shlib_path
+  global orig_ld_library_path_32
+  global orig_ld_library_path_64
+  global orig_dyld_library_path
+  global orig_path
+  global env
+
+  restore_gcc_exec_prefix_env_var
+
+  if { $orig_environment_saved == 0 } {
+    return
+  }
+
+  if { $orig_ld_library_path_saved } {
+    setenv LD_LIBRARY_PATH "$orig_ld_library_path"
+  } elseif [info exists env(LD_LIBRARY_PATH)] {
+    unsetenv LD_LIBRARY_PATH
+  }
+  if { $orig_ld_run_path_saved } {
+    setenv LD_RUN_PATH "$orig_ld_run_path"
+  } elseif [info exists env(LD_RUN_PATH)] {
+    unsetenv LD_RUN_PATH
+  }
+  if { $orig_shlib_path_saved } {
+    setenv SHLIB_PATH "$orig_shlib_path"
+  } elseif [info exists env(SHLIB_PATH)] {
+    unsetenv SHLIB_PATH
+  }
+  if { $orig_ld_library_path_32_saved } {
+    setenv LD_LIBRARY_PATH_32 "$orig_ld_library_path_32"
+  } elseif [info exists env(LD_LIBRARY_PATH_32)] {
+    unsetenv LD_LIBRARY_PATH_32
+  }
+  if { $orig_ld_library_path_64_saved } {
+    setenv LD_LIBRARY_PATH_64 "$orig_ld_library_path_64"
+  } elseif [info exists env(LD_LIBRARY_PATH_64)] {
+    unsetenv LD_LIBRARY_PATH_64
+  }
+  if { $orig_dyld_library_path_saved } {
+    setenv DYLD_LIBRARY_PATH "$orig_dyld_library_path"
+  } elseif [info exists env(DYLD_LIBRARY_PATH)] {
+    unsetenv DYLD_LIBRARY_PATH
+  }
+  if { $orig_path_saved } {
+    setenv PATH "$orig_path"
+  } elseif [info exists env(PATH)] {
+    unsetenv PATH
+  }
+}
+
+#######################################
+# proc get_shlib_extension { }
+#######################################
+
+proc get_shlib_extension { } {
+    global shlib_ext
+
+    if { [istarget *-*-darwin*] } {
+	set shlib_ext "dylib"
+    } elseif { [istarget *-*-cygwin*] || [istarget *-*-mingw*] } {
+	set shlib_ext "dll"
+    } elseif { [istarget hppa*-*-hpux*] } {
+	set shlib_ext "sl"
+    } else {
+	set shlib_ext "so"
+    }
+    return $shlib_ext
+}
+

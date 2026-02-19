@@ -1,0 +1,65 @@
+# Copyright (C) 2016-2026 Free Software Foundation, Inc.
+#
+# This file is part of GCC.
+#
+# GCC is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3, or (at your option)
+# any later version.
+#
+# GCC is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with GCC; see the file COPYING3.  If not see
+# <http://www.gnu.org/licenses/>.
+
+# GCC testsuite that uses the `dg.exp' driver.
+
+# Load support procs.
+load_lib gcc-dg.exp
+
+# Initialize `dg'.
+dg-init
+
+proc param_run_test { param_name param_value } {
+    global srcdir
+    global subdir
+
+    dg-runtest $srcdir/$subdir/blocksort-part.c "-O3 --param $param_name=$param_value" ""
+}
+
+set srcfname params-[pid].c
+set fd [open $srcfname w]
+puts $fd ""
+close $fd
+remote_download host $srcfname
+
+set gcc_options "\{additional_flags=--help=params\}"
+set text [gcc_target_compile $srcfname $srcfname.x executable $gcc_options]
+remote_file build delete $srcfname $srcfname.x
+
+# Main loop.
+foreach params [split $text "\n"] {
+    set parts [split $params " =<>,"]
+    if { [llength $parts] >= 8 } {
+      set param [lindex $parts 2]
+      set name [lindex $parts 3]
+      set min [lindex $parts 5]
+      set max [lindex $parts 6]
+
+      if { [ string equal $param "--param" ] && [string is integer -strict $min] && [string is integer -strict $max] } {
+	if { $min != -1 } {
+	  param_run_test $name $min
+	}
+	if { $max != $min && $max > 0 } {
+	  param_run_test $name $max
+	}
+      }
+    }
+}
+
+# All done.
+dg-finish

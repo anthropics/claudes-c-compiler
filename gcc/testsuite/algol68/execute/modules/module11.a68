@@ -1,0 +1,9 @@
+{ Mixing module texts with revelations and without revelations.  }
+
+module Module11 =
+          access Module1, Module3
+          def pub proc someproc = (int a, b) int: a + b;
+              skip
+          postlude
+              skip
+          fed

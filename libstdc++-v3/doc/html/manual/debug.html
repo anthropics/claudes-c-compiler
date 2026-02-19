@@ -1,0 +1,253 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Debugging Support</title><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><meta name="keywords" content="C++, debug" /><meta name="keywords" content="ISO C++, library" /><meta name="keywords" content="ISO C++, runtime, library" /><link rel="home" href="../index.html" title="The GNU C++ Library" /><link rel="up" href="using.html" title="Chapter 3. Using" /><link rel="prev" href="using_exceptions.html" title="Exceptions" /><link rel="next" href="std_contents.html" title="Part II.  Standard Contents" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">Debugging Support</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="using_exceptions.html">Prev</a> </td><th width="60%" align="center">Chapter 3. Using</th><td width="20%" align="right"> <a accesskey="n" href="std_contents.html">Next</a></td></tr></table><hr /></div><div class="section"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a id="manual.intro.using.debug"></a>Debugging Support</h2></div></div></div><p>
+  There are numerous things that can be done to improve the ease with
+  which C++ binaries are debugged when using the GNU tool chain. Here
+  are some of them.
+</p><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="debug.compiler"></a>Using <span class="command"><strong>g++</strong></span></h3></div></div></div><p>
+    Compiler flags determine how debug information is transmitted
+    between compilation and debug or analysis tools.
+  </p><p>
+    The default optimizations and debug flags for a libstdc++ build
+    are <code class="code">-g -O2</code>. However, both debug and optimization
+    flags can be varied to change debugging characteristics. For
+    instance, turning off all optimization via the <code class="code">-g -O0
+    -fno-inline</code> flags will disable inlining and optimizations,
+    and include debugging information, so that stepping through all functions,
+    (including inlined constructors and destructors) is possible. In
+    addition, <code class="code">-fno-eliminate-unused-debug-types</code> can be
+    used when additional debug information, such as nested class info,
+    is desired.
+</p><p>
+  Or, the debug format that the compiler and debugger use to
+  communicate information about source constructs can be changed via
+  <code class="code">-gdwarf-2</code> or <code class="code">-gstabs</code> flags: some debugging
+  formats permit more expressive type and scope information to be
+  shown in GDB. Expressiveness can be enhanced by flags like
+  <code class="code">-g3</code>. The default debug information for a particular
+  platform can be identified via the value set by the
+  PREFERRED_DEBUGGING_TYPE macro in the GCC sources.
+</p><p>
+  Many other options are available: please see <a class="link" href="https://gcc.gnu.org/onlinedocs/gcc/Debugging-Options.html#Debugging%20Options" target="_top">"Options
+  for Debugging Your Program"</a> in Using the GNU Compiler
+  Collection (GCC) for a complete list.
+</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="debug.debug_mode"></a>Debug Mode</h3></div></div></div><p>
+  The <a class="link" href="debug_mode.html" title="Chapter 17. Debug Mode">Debug Mode</a>
+  has compile and run-time checks for many containers.
+</p><p>
+  There are also lightweight assertions for checking function preconditions,
+  such as checking for out-of-bounds indices when accessing a
+  <code class="classname">std::vector</code>. These can be enabled without using
+  the full Debug Mode, by using <code class="option">-D_GLIBCXX_ASSERTIONS</code>
+  (see <a class="xref" href="using_macros.html" title="Macros">Macros</a>).
+</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="debug.exceptions"></a>Tracking uncaught exceptions</h3></div></div></div><p>
+  The <a class="link" href="termination.html#support.termination.verbose" title="Verbose Terminate Handler">verbose
+  termination handler</a> gives information about uncaught
+  exceptions which kill the program.
+</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="debug.memory"></a>Memory Leak Hunting</h3></div></div></div><p>
+  On many targets GCC supports AddressSanitizer, a fast memory error detector,
+  which is enabled by the <code class="option">-fsanitize=address</code> option.
+</p><p>
+  The <code class="classname">std::vector</code> implementation has additional
+  instrumentation to work with AddressSanitizer, but this has to be enabled
+  explicitly by using <code class="option">-D_GLIBCXX_SANITIZE_VECTOR</code>
+  (see <a class="xref" href="using_macros.html" title="Macros">Macros</a>).
+</p><p>
+  There are also various third party memory tracing and debug utilities
+  that can be used to provide detailed memory allocation information
+  about C++ code. An exhaustive list of tools is not going to be
+  attempted, but includes <code class="code">mtrace</code>, <code class="code">valgrind</code>,
+  <code class="code">mudflap</code> (no longer supported since GCC 4.9.0), ElectricFence,
+  and the non-free commercial product <code class="code">purify</code>.
+  In addition, <code class="code">libcwd</code>, jemalloc and TCMalloc have replacements
+  for the global <code class="code">new</code> and <code class="code">delete</code> operators
+  that can track memory allocation and deallocation and provide useful
+  memory statistics.
+</p><p>
+  For valgrind, there are some specific items to keep in mind. First
+  of all, use a version of valgrind that will work with current GNU
+  C++ tools: the first that can do this is valgrind 1.0.4, but later
+  versions should work better. Second, using an unoptimized build
+  might avoid confusing valgrind.
+</p><p>
+  Third, it may be necessary to force deallocation in other libraries
+  as well, namely the "C" library. On GNU/Linux, this can be accomplished
+  with the appropriate use of the <code class="code">__cxa_atexit</code> or
+  <code class="code">atexit</code> functions.
+</p><pre class="programlisting">
+   #include &lt;cstdlib&gt;
+
+   extern "C" void __libc_freeres(void);
+
+   void do_something() { }
+
+   int main()
+   {
+     atexit(__libc_freeres);
+     do_something();
+     return 0;
+   }
+</pre><p>or, using <code class="code">__cxa_atexit</code>:</p><pre class="programlisting">
+   extern "C" void __libc_freeres(void);
+   extern "C" int __cxa_atexit(void (*func) (void *), void *arg, void *d);
+
+   void do_something() { }
+
+   int main()
+   {
+      extern void* __dso_handle __attribute__ ((__weak__));
+      __cxa_atexit((void (*) (void *)) __libc_freeres, NULL,
+		   &amp;__dso_handle ? __dso_handle : NULL);
+      do_test();
+      return 0;
+   }
+</pre><p>
+  Suggested valgrind flags, given the suggestions above about setting
+  up the runtime environment, library, and test file, might be:
+</p><pre class="programlisting">
+   valgrind -v --num-callers=20 --leak-check=yes --leak-resolution=high --show-reachable=yes a.out
+</pre><div class="section"><div class="titlepage"><div><div><h4 class="title"><a id="debug.memory.mtalloc"></a>Non-memory leaks in Pool and MT allocators</h4></div></div></div><p>
+  There are different kinds of allocation schemes that can be used by
+  <code class="code">std::allocator</code>. Prior to GCC 3.4.0 the default was to use
+  a pooling allocator, <code class="classname">pool_allocator</code>,
+  which is still available as the optional
+  <code class="classname">__pool_alloc</code> extension.
+  Another optional extension, <code class="classname">__mt_alloc</code>,
+  is a high-performance pool allocator.
+</p><p>
+  In a suspect executable these pooling allocators can give
+  the mistaken impression that memory is being leaked,
+  when in reality the memory "leak" is a pool being used
+  by the library's allocator and is reclaimed after program
+  termination.
+</p><p>
+  If you're using memory debugging tools on a program that uses
+  one of these pooling allocators, you can set the environment variable
+  <code class="literal">GLIBCXX_FORCE_NEW</code> to keep extraneous pool allocation
+  noise from cluttering debug information.
+  For more details, see the
+  <a class="link" href="mt_allocator.html" title="Chapter 19. The mt_allocator">mt allocator</a>
+  documentation and look specifically for <code class="code">GLIBCXX_FORCE_NEW</code>.
+</p></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="debug.races"></a>Data Race Hunting</h3></div></div></div><p>
+  All synchronization primitives used in the library internals need to be
+  understood by race detectors so that they do not produce false reports.
+</p><p>
+  Two annotation macros are used to explain low-level synchronization
+  to race detectors:
+  <code class="code">_GLIBCXX_SYNCHRONIZATION_HAPPENS_BEFORE()</code> and
+  <code class="code"> _GLIBCXX_SYNCHRONIZATION_HAPPENS_AFTER()</code>.
+  By default, these macros are defined empty -- anyone who wants
+  to use a race detector needs to redefine them to call an
+  appropriate API.
+  Since these macros are empty by default when the library is built,
+  redefining them will only affect inline functions and template
+  instantiations which are compiled in user code. This allows annotation
+  of templates such as <code class="code">shared_ptr</code>, but not code which is
+  only instantiated in the library.  Code which is only instantiated in
+  the library needs to be recompiled with the annotation macros defined.
+  That can be done by rebuilding the entire
+  <code class="filename">libstdc++.so</code> file but a simpler
+  alternative exists for ELF platforms such as GNU/Linux, because ELF
+  symbol interposition allows symbols defined in the shared library to be
+  overridden by symbols with the same name that appear earlier in the
+  runtime search path. This means you only need to recompile the functions
+  that are affected by the annotation macros, which can be done by
+  recompiling individual files.
+  Annotating <code class="code">std::string</code> and <code class="code">std::wstring</code>
+  reference counting can be done by disabling extern templates (by defining
+  <code class="code">_GLIBCXX_EXTERN_TEMPLATE=-1</code>) or by rebuilding the
+  <code class="filename">src/string-inst.cc</code> file.
+  Annotating the remaining atomic operations (at the time of writing these
+  are in <code class="code">ios_base::Init::~Init</code>, <code class="code">locale::_Impl</code>,
+  <code class="code">locale::facet</code> and <code class="code">thread::_M_start_thread</code>)
+  requires rebuilding the relevant source files.
+</p><p>
+  The approach described above is known to work with the following race
+  detection tools:
+  <a class="link" href="https://valgrind.org/docs/manual/drd-manual.html" target="_top">
+  DRD</a>,
+  <a class="link" href="https://valgrind.org/docs/manual/hg-manual.html" target="_top">
+  Helgrind</a>, and
+  <a class="link" href="https://github.com/google/sanitizers" target="_top">
+  ThreadSanitizer</a> (this refers to ThreadSanitizer v1, not the
+  new "tsan" feature built-in to GCC itself).
+</p><p>
+  With DRD, Helgrind and ThreadSanitizer you will need to define
+  the macros like this:
+</p><pre class="programlisting">
+  #define _GLIBCXX_SYNCHRONIZATION_HAPPENS_BEFORE(A) ANNOTATE_HAPPENS_BEFORE(A)
+  #define _GLIBCXX_SYNCHRONIZATION_HAPPENS_AFTER(A)  ANNOTATE_HAPPENS_AFTER(A)
+</pre><p>
+  Refer to the documentation of each particular tool for details.
+</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="debug.gdb"></a>Using <span class="command"><strong>gdb</strong></span></h3></div></div></div><p>
+  </p><p>
+  Many options are available for GDB itself: please see <a class="link" href="https://sourceware.org/gdb/current/onlinedocs/gdb" target="_top">
+  "GDB features for C++" </a> in the GDB documentation. Also
+  recommended: the other parts of this manual.
+</p><p>
+  These settings can either be switched on in at the GDB command line,
+  or put into a <code class="filename">.gdbinit</code> file to establish default
+  debugging characteristics, like so:
+</p><pre class="programlisting">
+   set print pretty on
+   set print object on
+   set print static-members on
+   set print vtbl on
+   set print demangle on
+   set demangle-style gnu-v3
+</pre><p>
+  Starting with version 7.0, GDB includes support for writing
+  pretty-printers in Python.  Pretty printers for containers and other
+  classes are distributed with GCC from version 4.5.0 and should be installed
+  alongside the libstdc++ shared library files and found automatically by
+  GDB.
+</p><p>
+  Depending where libstdc++ is installed, GDB might refuse to auto-load
+  the python printers and print a warning instead.
+  If this happens the python printers can be enabled by following the
+  instructions GDB gives for setting your <code class="code">auto-load safe-path</code>
+  in your <code class="filename">.gdbinit</code> configuration file.
+</p><p>
+  Once loaded, standard library classes that the printers support
+  should print in a more human-readable format.  To print the classes
+  in the old style, use the <strong class="userinput"><code>/r</code></strong> (raw) switch in the
+  print command (i.e., <strong class="userinput"><code>print /r foo</code></strong>).  This will
+  print the classes as if the Python pretty-printers were not loaded.
+</p><p>
+  For additional information on STL support and GDB please visit:
+  <a class="link" href="https://sourceware.org/gdb/wiki/STLSupport" target="_top"> "GDB Support
+  for STL" </a> in the GDB wiki.  Additionally, in-depth
+  documentation and discussion of the pretty printing feature can be
+  found in "Pretty Printing" node in the GDB manual.  You can find
+  on-line versions of the GDB user manual in GDB's homepage, at
+  <a class="link" href="https://sourceware.org/gdb/" target="_top"> "GDB: The GNU Project
+  Debugger" </a>.
+</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="debug.req"></a>Debug Versions of Library Binary Files</h3></div></div></div><p>
+  As described above, libstdc++ is built with debug symbols enabled by default,
+  but because it's also built with optimizations the code can be hard to
+  follow when stepping into the library in a debugger.
+</p><p>
+  If you would like to debug <code class="filename">libstdc++.so</code> itself,
+  there are two ways to build an unoptimized libstdc++ with debug flags.
+  The first is to create a separate debug build by running make from the
+  top-level of a tree freshly-configured with
+</p><pre class="programlisting">
+     --enable-libstdcxx-debug
+</pre><p>and perhaps</p><pre class="programlisting">
+     --enable-libstdcxx-debug-flags='...'
+</pre><p>
+  Both the normal build and the debug build will persist, without
+  having to specify <code class="code">CXXFLAGS</code>, and the debug library will
+  be installed in a separate directory tree, in <code class="code">(prefix)/lib/debug</code>.
+  For more information, look at the
+  <a class="link" href="configure.html" title="Configure">configuration</a> section.
+</p><p>
+  A second approach is to use the configuration flags
+</p><pre class="programlisting">
+     make CXXFLAGS='-g3 -fno-inline -O0' all
+</pre></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="debug.compile_time_checks"></a>Compile Time Checking</h3></div></div></div><p> The <a class="link" href="ext_compile_checks.html" title="Chapter 16. Compile Time Checks">Compile-Time
+  Checks</a> extension has compile-time checks for many algorithms.
+  These checks were designed for C++98 and have not been updated to work
+  with C++11 and later standards. They might be removed at a future date.
+  </p></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="using_exceptions.html">Prev</a> </td><td width="20%" align="center"><a accesskey="u" href="using.html">Up</a></td><td width="40%" align="right"> <a accesskey="n" href="std_contents.html">Next</a></td></tr><tr><td width="40%" align="left" valign="top">Exceptions </td><td width="20%" align="center"><a accesskey="h" href="../index.html">Home</a></td><td width="40%" align="right" valign="top"> Part II. 
+    Standard Contents
+  </td></tr></table></div></body></html>

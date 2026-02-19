@@ -1,0 +1,37 @@
+# Copyright (C) 2007-2026 Free Software Foundation, Inc.
+#
+# This file is part of GCC.
+#
+# GCC is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3, or (at your option)
+# any later version.
+#
+# GCC is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with GCC; see the file COPYING3.  If not see
+# <http://www.gnu.org/licenses/>.
+
+MULTILIB_OPTIONS = EL/EB mips32/mips32r2/mips64/mips64r2 mips16/mmicromips msoft-float/mfp64 mcode-readable=no
+MULTILIB_DIRNAMES = el eb mips32 mips32r2 mips64 mips64r2 mips16 micromips sof f64 spram
+MULTILIB_MATCHES = EL=mel EB=meb mips32r2=mips32r3 mips32r2=mips32r5 mips64r2=mips64r3 mips64r2=mips64r5
+
+# The -mfp64 option is only valid in conjunction with -mips32r2.
+ifneq ($(filter MIPS_ISA_DEFAULT=33,$(tm_defines)),)
+MULTILIB_EXCLUSIONS := mips32/mfp64 mips64/mfp64 mips64r2/mfp64
+else
+MULTILIB_EXCLUSIONS := !mips32r2/mfp64
+endif
+
+# Don't build 64-bit MIPS16 and microMIPS multilibs.
+ifneq ($(filter MIPS_ISA_DEFAULT=6%,$(tm_defines)),)
+MULTILIB_EXCLUSIONS += !mips32/!mips32r2/mips16
+MULTILIB_EXCLUSIONS += !mips32/!mips32r2/mmicromips
+else
+MULTILIB_EXCLUSIONS += mips64/mips16 mips64r2/mips16
+MULTILIB_EXCLUSIONS += mips64/mmicromips mips64r2/mmicromips
+endif

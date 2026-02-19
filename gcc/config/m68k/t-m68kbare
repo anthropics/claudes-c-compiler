@@ -1,0 +1,4 @@
+# Add soft-float multilibs.
+M68K_MLIB_DIRNAMES += softfp
+M68K_MLIB_OPTIONS += msoft-float
+

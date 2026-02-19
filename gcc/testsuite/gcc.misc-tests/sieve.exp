@@ -1,0 +1,40 @@
+#   Copyright (C) 1997-2026 Free Software Foundation, Inc.
+
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+# 
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+# 
+# You should have received a copy of the GNU General Public License
+# along with GCC; see the file COPYING3.  If not see
+# <http://www.gnu.org/licenses/>.
+
+global PERF_TEST
+if { ![info exists PERF_TEST] || "$PERF_TEST" != "yes" } {
+    return
+}
+
+load_lib mike-gcc.exp
+load_lib gcc-defs.exp
+
+# These tests don't run runtest_file_p consistently if it
+# doesn't return the same values, so disable parallelization
+# of this *.exp file.  The first parallel runtest to reach
+# this will run all the tests serially.
+if ![gcc_parallel_test_run_p sieve] {
+    return
+}
+gcc_parallel_test_enable 0
+
+prebase
+set actions run
+set compiler_output "^$"
+set program_output "^$"
+postbase sieve.c $run $groups
+
+gcc_parallel_test_enable 1

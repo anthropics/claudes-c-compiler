@@ -1,0 +1,47 @@
+<chapter xmlns="http://docbook.org/ns/docbook" version="5.0"
+	 xml:id="std.localization" xreflabel="Localization">
+<?dbhtml filename="localization.html"?>
+
+<info><title>
+  Localization
+  <indexterm><primary>Localization</primary></indexterm>
+</title>
+  <keywordset>
+    <keyword>ISO C++</keyword>
+    <keyword>library</keyword>
+  </keywordset>
+</info>
+
+
+
+<!-- Section 01 : Locale -->
+<section xml:id="std.localization.locales" xreflabel="Locales"><info><title>Locales</title></info>
+<?dbhtml filename="locales.html"?>
+
+
+  <!--  Section 01 : locale -->
+  <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" parse="xml" href="locale.xml">
+  </xi:include>
+</section>
+
+<!-- Section 02 : Facet -->
+<section xml:id="std.localization.facet" xreflabel="Facets"><info><title>Facets</title></info>
+<?dbhtml filename="facets.html"?>
+
+
+  <!--  Section 01 : ctype -->
+  <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" parse="xml" href="ctype.xml">
+  </xi:include>
+
+  <!--  Section 02 : codecvt -->
+  <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" parse="xml" href="codecvt.xml">
+  </xi:include>
+
+  <!--  Section 03 : messages  -->
+  <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" parse="xml" href="messages.xml">
+  </xi:include>
+</section>
+
+<!-- Section 03 : Interacting with C -->
+
+</chapter>

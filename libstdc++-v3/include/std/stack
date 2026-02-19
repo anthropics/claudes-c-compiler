@@ -1,0 +1,121 @@
+// <stack> -*- C++ -*-
+
+// Copyright (C) 2001-2026 Free Software Foundation, Inc.
+//
+// This file is part of the GNU ISO C++ Library.  This library is free
+// software; you can redistribute it and/or modify it under the
+// terms of the GNU General Public License as published by the
+// Free Software Foundation; either version 3, or (at your option)
+// any later version.
+
+// This library is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+
+// Under Section 7 of GPL version 3, you are granted additional
+// permissions described in the GCC Runtime Library Exception, version
+// 3.1, as published by the Free Software Foundation.
+
+// You should have received a copy of the GNU General Public License and
+// a copy of the GCC Runtime Library Exception along with this program;
+// see the files COPYING3 and COPYING.RUNTIME respectively.  If not, see
+// <http://www.gnu.org/licenses/>.
+
+/*
+ *
+ * Copyright (c) 1994
+ * Hewlett-Packard Company
+ *
+ * Permission to use, copy, modify, distribute and sell this software
+ * and its documentation for any purpose is hereby granted without fee,
+ * provided that the above copyright notice appear in all copies and
+ * that both that copyright notice and this permission notice appear
+ * in supporting documentation.  Hewlett-Packard Company makes no
+ * representations about the suitability of this software for any
+ * purpose.  It is provided "as is" without express or implied warranty.
+ *
+ *
+ * Copyright (c) 1996,1997
+ * Silicon Graphics Computer Systems, Inc.
+ *
+ * Permission to use, copy, modify, distribute and sell this software
+ * and its documentation for any purpose is hereby granted without fee,
+ * provided that the above copyright notice appear in all copies and
+ * that both that copyright notice and this permission notice appear
+ * in supporting documentation.  Silicon Graphics makes no
+ * representations about the suitability of this software for any
+ * purpose.  It is provided "as is" without express or implied warranty.
+ */
+
+/** @file include/stack
+ *  This is a Standard C++ Library header.
+ */
+
+#ifndef _GLIBCXX_STACK
+#define _GLIBCXX_STACK 1
+
+#ifdef _GLIBCXX_SYSHDR
+#pragma GCC system_header
+#endif
+
+#include <bits/requires_hosted.h> // containers
+
+#define __glibcxx_want_adaptor_iterator_pair_constructor
+#define __glibcxx_want_containers_ranges
+#include <bits/version.h>
+
+#include <deque>
+#include <bits/stl_stack.h>
+
+#ifdef __glibcxx_format_ranges // C++ >= 23 && HOSTED
+#include <bits/formatfwd.h>
+
+namespace std _GLIBCXX_VISIBILITY(default)
+{
+_GLIBCXX_BEGIN_NAMESPACE_VERSION
+  // Standard does not constrain accepted _CharT, we do so we can
+  // befriend specializations.
+  template<__format::__char _CharT, typename _Tp,
+	   formattable<_CharT> _Container>
+    struct formatter<stack<_Tp, _Container>, _CharT>
+    {
+    private:
+      using __maybe_const_adaptor
+	= __conditional_t<
+	    __format::__const_formattable_range<_Container, _CharT>,
+	    const stack<_Tp, _Container>, stack<_Tp, _Container>>;
+
+    public:
+      // Standard declares this as template accepting unconstrained
+      // ParseContext type.
+      constexpr typename basic_format_parse_context<_CharT>::iterator
+      parse(basic_format_parse_context<_CharT>& __pc)
+      { return _M_f.parse(__pc); }
+
+      // Standard declares this as template accepting unconstrained
+      // FormatContext type.
+      template<typename _Out>
+	typename basic_format_context<_Out, _CharT>::iterator
+	format(__maybe_const_adaptor& __a,
+	       basic_format_context<_Out, _CharT>& __fc) const
+	{ return _M_f.format(__a.c, __fc); }
+
+    private:
+      // Standard uses formatter<ref_view<_Container>, _CharT>.
+      range_formatter<_Tp, _CharT> _M_f;
+    };
+
+#if __glibcxx_print >= 202406L
+  // _GLIBCXX_RESOLVE_LIB_DEFECTS
+  // 4398. enable_nonlocking_formatter_optimization should be disabled for container adaptors
+  template<typename _Tp, typename _Container>
+    constexpr bool
+    enable_nonlocking_formatter_optimization<stack<_Tp, _Container>> = false;
+#endif
+_GLIBCXX_END_NAMESPACE_VERSION
+} // namespace std
+#endif // __glibcxx_format_ranges
+
+
+#endif /* _GLIBCXX_STACK */

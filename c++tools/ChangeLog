@@ -1,0 +1,218 @@
+2025-06-02  Kito Cheng  <kito.cheng@sifive.com>
+
+	* configure.ac: Don't check `--enable-default-pie`.
+	* configure: Regen.
+
+2024-05-07  Rainer Orth  <ro@CeBiTec.Uni-Bielefeld.DE>
+
+	* configure.ac (ax_lib_socket_nsl.m4): Don't sinclude.
+	(AX_LIB_SOCKET_NSL): Don't call.
+	(NETLIBS): Remove.
+	* configure: Regenerate.
+	* Makefile.in (NETLIBS): Remove.
+	(g++-mapper-server$(exeext)): Remove $(NETLIBS).
+
+2023-06-22  Marek Polacek  <polacek@redhat.com>
+
+	* configure.ac (--enable-host-bind-now): New check.
+	* configure: Regenerate.
+
+2023-06-15  Marek Polacek  <polacek@redhat.com>
+
+	* Makefile.in: Rename PIEFLAG to PICFLAG.  Set LD_PICFLAG.  Use it.
+	Use pic/libiberty.a if PICFLAG is set.
+	* configure.ac (--enable-default-pie): Set PICFLAG instead of PIEFLAG.
+	(--enable-host-pie): New check.
+	* configure: Regenerate.
+
+2023-03-31  Jonathan Wakely  <jwakely@redhat.com>
+
+	PR bootstrap/101834
+	* Makefile.in (INSTALL): Set variable.
+	(mostlyclean): Mark as a phony target.
+	(clean): Add mostlyclean as a prerequisite.
+	(distclean): Add clean as a prerequisite and remove more files.
+	(maintainer-clean): Add distclean as a prerequisite.
+
+2023-01-09  John David Anglin  <danglin@gcc.gnu.org>
+
+	PR other/107616
+	* server.cc (server): Don't call FD_ISSET when HAVE_PSELECT
+	and HAVE_SELECT are zero.
+
+2022-11-23  Marek Polacek  <polacek@redhat.com>
+
+	Revert:
+	2022-11-23  Marek Polacek  <polacek@redhat.com>
+
+	* Makefile.in: Rename PIEFLAG to PICFLAG.  Set LD_PICFLAG.  Use it.
+	Use pic/libiberty.a if PICFLAG is set.
+	* configure.ac (--enable-default-pie): Set PICFLAG instead of PIEFLAG.
+	(--enable-host-pie): New check.
+	* configure: Regenerate.
+
+2022-11-23  Marek Polacek  <polacek@redhat.com>
+
+	Revert:
+	2022-11-23  Marek Polacek  <polacek@redhat.com>
+
+	* configure.ac (--enable-host-bind-now): New check.
+	* configure: Regenerate.
+
+2022-11-23  Marek Polacek  <polacek@redhat.com>
+
+	* configure.ac (--enable-host-bind-now): New check.
+	* configure: Regenerate.
+
+2022-11-23  Marek Polacek  <polacek@redhat.com>
+
+	* Makefile.in: Rename PIEFLAG to PICFLAG.  Set LD_PICFLAG.  Use it.
+	Use pic/libiberty.a if PICFLAG is set.
+	* configure.ac (--enable-default-pie): Set PICFLAG instead of PIEFLAG.
+	(--enable-host-pie): New check.
+	* configure: Regenerate.
+
+2022-03-18  Iain Sandoe  <iain@sandoe.co.uk>
+
+	* server.cc (accept_from): Use "1" as the dummy port number.
+
+2021-10-26  Jonathan Wakely  <jwakely@redhat.com>
+
+	* resolver.cc (module_resolver::read_tuple_file): Use unique_ptr
+	to ensure memory is freed before returning.
+
+2021-10-22  Eric Gallager  <egallager@gcc.gnu.org>
+
+	PR other/102663
+	* Makefile.in: Add dummy install-dvi target.
+
+2021-09-14  Iain Sandoe  <iain@sandoe.co.uk>
+
+	* resolver.cc (module_resolver::ModuleCompiledRequest):
+	Add a simple handler.
+	* resolver.h: Declare handler for ModuleCompiledRequest.
+
+2021-07-21  Iain Sandoe  <iain@sandoe.co.uk>
+	    Jakub Jelinek  <jakub@redhat.com>
+
+	PR c++/98821
+	* config.h.in: Regenerate.
+	* configure: Regenerate.
+	* configure.ac: Configure using C++.  Pull logic to
+	detect enabled checking modes; default to release
+	checking.
+	* server.cc (AI_NUMERICSERV): Define a fallback value.
+	(gcc_assert): New.
+	(gcc_unreachable): New.
+	(fancy_abort): Only build when checking is enabled.
+
+2021-05-25  Jakub Jelinek  <jakub@redhat.com>
+
+	PR bootstrap/100731
+	* server.cc: Include <cstdlib>.
+
+2021-05-25  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* configure.ac (--enable-maintainer-mode): Fix typo and weird syntax.
+	* configure: Regenerate.
+
+2021-05-25  Jakub Jelinek  <jakub@redhat.com>
+
+	* Makefile.in: Update copyright year.
+	* configure.ac: Likewise.
+	* resolver.cc: Likewise.
+	* resolver.h: Likewise.
+	* server.cc: Likewise.
+	(print_version): Update copyright notice date.
+
+2021-05-10  Martin Liska  <mliska@suse.cz>
+
+	* Makefile.in: Include also ../gcc folder.
+
+2021-04-01  Iain Sandoe  <iain@sandoe.co.uk>
+
+	* resolver.h: Do not include std headers directly when
+	building in GCC.
+
+2021-02-25  Nathan Sidwell  <nathan@acm.org>
+
+	* server.cc: Use #if NETWORKING not #ifdef, to be consistent
+	with elsewhere.
+
+2021-01-05  Rainer Orth  <ro@CeBiTec.Uni-Bielefeld.DE>
+
+	PR c++/98316
+	* configure.ac: Include ../config/ax_lib_socket_nsl.m4.
+	(NETLIBS): Determine using AX_LIB_SOCKET_NSL.
+	* configure: Regenerate.
+	* Makefile.in (NETLIBS): Define.
+	(g++-mapper-server$(exeext)): Add $(NETLIBS).
+
+2021-01-04  Nathan Sidwell  <nathan@acm.org>
+
+	* resolver.cc (module_resolver::cmi_response): Remove
+	std::move of temporary.
+
+2020-12-23  Nathan Sidwell  <nathan@acm.org>
+
+	PR bootstrap/98324
+	* Makefile.in: Add FLAGPIE.
+	* configure.ac: Add --enable-default-pie support.
+	* configure: Rebuilt.
+
+2020-12-21  Nathan Sidwell  <nathan@acm.org>
+
+	PR other/98409
+	* Makefile.in: Fix exeext variable case.
+
+2020-12-17  Nathan Sidwell  <nathan@acm.org>
+
+	* server.cc (crash_signal): Don't use strsignal.
+
+2020-12-17  Nathan Sidwell  <nathan@acm.org>
+
+	PR bootstrap/98300
+	* configure.ac: Check for sys/mman.h.
+	* resolver.cc: Don't assume mmap, O_CLOEXEC are available.  Use
+	xmalloc.
+	* config.h.in: Regenerated.
+	* configure: Regenerated.
+
+2020-12-17  Jakub Jelinek  <jakub@redhat.com>
+
+	* configure.ac: Add GCC_BASE_VER.
+	* Makefile.in (version): Remove variable.
+	(gcc_version): New variable.
+	(libexecsubdir): Use $(gcc_version) instead of $(version).
+	* configure: Regenerated.
+
+2020-12-16  Nathan Sidwell  <nathan@acm.org>
+
+	* Makefile.in (INSTALL): Replace with ...
+	(INSTALL_PROGRAM): ... this.
+	(INSTALL_STRIP_PROGRAM): New.
+	(install-strip): New target.
+	(install): Use INSTALL_PROGRAM.
+	* configure.ac: Add INSTALL_PROGRAM.
+	* configure: Regenerated.
+
+2020-12-16  Nathan Sidwell  <nathan@acm.org>
+
+	* Makefile.in (install): Do not use -p, use mkinstalldirs.
+	(clean): Fix typo.
+
+2020-12-15  Nathan Sidwell  <nathan@acm.org>
+
+	* Makefile.in: New.
+	* config.h.in: New.
+	* configure: New.
+	* configure.ac: New.
+	* resolver.cc: New.
+	* resolver.h: New.
+	* server.cc: New.
+
+Copyright (C) 2020-2026 Free Software Foundation, Inc.
+
+Copying and distribution of this file, with or without modification,
+are permitted in any medium without royalty provided the copyright
+notice and this notice are preserved.

@@ -1,0 +1,327 @@
+#! /bin/sh
+# Wrapper around gettext for programs using the msgid convention.
+# Copyright (C) 1998-2026 Free Software Foundation, Inc.
+
+# Written by Paul Eggert <eggert@twinsun.com>.
+# Revised by Zack Weinberg <zackw@stanford.edu> for no-POTFILES operation.
+
+# This file is part of GCC.
+
+# GCC is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3, or (at your option)
+# any later version.
+
+# GCC is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+
+# You should have received a copy of the GNU General Public License
+# along with GCC; see the file COPYING3.  If not see
+# <http://www.gnu.org/licenses/>.
+
+BUGURL="https://gcc.gnu.org/bugs/"
+
+# Always operate in the C locale.
+LANG=C
+LANGUAGE=C
+LC_ALL=C
+export LANG LANGUAGE LC_ALL
+
+# Set AWK if environment has not already set it.
+AWK=${AWK-awk}
+
+# The arguments to this wrapper are: the program to execute, the
+# name of the "package", and the path to the source directory.
+
+if [ $# -ne 3 ]
+then	echo "usage: $0 <xgettext> <package> <srcdir>"
+	exit 1
+fi
+
+xgettext=$1
+package=$2
+srcdir=$3
+
+case `$xgettext --version | sed -e 1q | sed -e 's/^\([^0-9]*\)//'` in
+  0.14.[5-9]* | 0.14.[1-9][0-9]* | 0.1[5-9]* | 0.[2-9][0-9]* | [1-9].*) : ;;
+  *) echo "$xgettext is too old.  GNU xgettext 0.14.5 is required"
+     exit 1 ;;
+esac
+
+nl='
+'
+
+set -e
+
+# Create temporary directory for scratch files.
+T=exg$$.d
+mkdir $T
+trap "rm -r $T" 0
+
+pwd=`${PWDCMD-pwd}`
+kopt=$pwd/$T/keyword-options
+kopt2=$pwd/$T/keyword2-options
+emsg=$pwd/$T/emsgids.c
+posr=$pwd/$T/po-sources
+posrcxx=$pwd/$T/po-cxx-sources
+pottmp1=$pwd/$T/tmp1.pot
+pottmp2=$pwd/$T/tmp2.pot
+pottmp3=$pwd/$T/tmp3.pot
+pottmp4=$pwd/$T/tmp4.pot
+pottmp=$pwd/$T/tmp.pot
+
+# Locate files to scan.  We scan the following directories:
+#  $srcdir
+#  $srcdir/c-family
+#  $srcdir/common
+#  $srcdir/common/config
+#  $srcdir/common/config/*
+#  $srcdir/config
+#  $srcdir/config/*
+#  all subdirectories of $srcdir containing a config-lang.in file, and
+#    all subdirectories of those directories.
+# Within those directories, we examine all .c, .cc, .h, and .def files.
+# However, any files listed in $srcdir/po/EXCLUDE are not examined.
+#
+# Then generate keyword options for xgettext, by scanning for declarations
+# of functions whose parameter names end in "msgid".
+#
+# Finally, generate a source file containing all %e and %n strings from
+# driver specs, so those can be translated too.
+#
+# All in one huge awk script.
+
+echo "scanning for keywords, %e and %n strings..." >&2
+
+( cd $srcdir
+  lang_subdirs=`echo */config-lang.in */*/config-lang.in | sed -e 's|/config-lang\.in||g'`
+  { for dir in "" c-family/ common/ common/config/ common/config/*/ \
+      config/ config/*/ \
+      `find $lang_subdirs -type d -print | sort | sed -e 's|$|/|'`
+    do  for glob in '*.c' '*.cc' '*.h' '*.def'
+        do  eval echo $dir$glob
+        done
+    done;
+  } | tr ' ' "$nl" | grep -v '\*' |
+  $AWK -v excl=po/EXCLUDES -v posr=$posr -v posrcxx=$posrcxx -v kopt=$kopt -v kopt2=$kopt2 -v emsg=$emsg '
+function keyword_option(line) {
+    paren_index = index(line, "(")
+    name = substr(line, 1, paren_index - 1)
+    sub(/[^0-9A-Z_a-z]*$/, "", name)
+    sub(/[	 ]+PARAMS/, "", name)
+    sub(/[	 ]+VPARAMS/, "", name)
+    sub(/.*[^0-9A-Z_a-z]/, "", name)
+
+    args = substr(line, paren_index)
+    sub(/msgid[,\)].*/, "", args)
+    for (n = 1; sub(/^[^,]*,/, "", args); n++) {
+	continue
+    }
+    format=""
+    if (args ~ /g$/)
+    	format="gcc-internal-format"
+    else if (args ~ /noc$/)
+        format="no-c-format"
+    else if (args ~ /c$/)
+    	format="c-format"
+
+    if (n == 1) { keyword = "--keyword=" name }
+    else {
+       keyword = "--keyword=" name ":" n
+       if (name ~ /_n$/)
+         keyword = keyword "," (n + 1)
+    }
+    if (format) {
+        keyword=keyword "\n--flag=" name ":" n ":" format
+        if (name ~ /_n$/)
+          keyword = keyword "\n--flag=" name ":" (n + 1) ":" format
+    }
+
+    if (! keyword_seen[name]) {
+	if (format == "gcc-internal-format")
+		print keyword > kopt2
+	else
+		print keyword > kopt
+    	keyword_seen[name] = keyword
+    } else if (keyword_seen[name] != keyword) {
+	printf("%s used incompatibly as both %s and %s\n",
+	       name, keyword_seen[name], keyword)
+	exit (1)
+    }
+}
+
+function spec_error_string (line) {
+    if (index(line, "%e") != 0 && index(line, "%n") != 0) return
+    while ((percent_index = index(line, "%e")) != 0 || 
+	   (percent_index = index(line, "%n")) != 0) {
+	line = substr(line, percent_index + 2)
+
+	bracket_index = index(line, "}")
+	newline_index = index(line, "\\n")
+		
+	quote_index = index(line, "\"")
+	if (bracket_index == 0 && newline_index == 0) return
+
+	if (bracket_index != 0) {
+	  if (quote_index != 0 && bracket_index > quote_index) return
+	  msgid = substr(line, 1, bracket_index - 1)
+	  line = substr(line, bracket_index + 1)
+	}
+	else if (newline_index != 0) {
+	  if (quote_index != 0 && quote_index > newline_index) return
+	  msgid = substr(line, 1, newline_index - 1)
+	  line = substr(line, newline_index + 1)
+	}
+
+	if (index(msgid, "%") != 0) continue
+
+	if ((newline_index = index(msgid, "\\n")) != 0)
+	  msgid = substr(msgid, 1, newline_index - 1)
+	printf("#line %d \"%s\"\n", lineno, file) > emsg
+	printf("_(\"%s\")\n", msgid) > emsg
+    }
+}
+
+BEGIN {
+  while ((getline < excl) > 0) {
+    if ($0 ~ /^#/ || $0 ~ /^[ 	]*$/)
+      continue
+    excludes[$1] = 1
+  }
+}
+
+{ if (!($0 in excludes)) {
+    if ($0 ~ /.cc$/) {
+      print > posrcxx
+    } else {
+      print > posr
+    }
+    files[NR] = $0
+  }
+}
+
+END {
+    for (f in files) {
+	file = files[f]
+	lineno = 1
+	while (getline < file) {
+	    if (/^(#[ 	]*define[ 	]*)?[A-Za-z_].*\(.*msgid[,\)]/) {
+		keyword_option($0)
+	    } else if (/^(#[   ]*define[       ]*)?[A-Za-z_].*(\(|\(.*,)$/) {
+		name_line = $0
+		while (getline < file) {
+		  lineno++
+		  if (/msgid[,\)]/){
+		    keyword_option(name_line $0)
+		    break
+		  } else if (/,$/) {
+		      name_line = name_line $0
+		      continue
+		  } else break
+		}
+	    } else if (/%e/ || /%n/) {
+		spec_error_string($0)
+	    }
+	    lineno++
+	}
+    }
+    print emsg > posr
+    print "--keyword=__opt_help_text\n--flag=__opt_help_text:1:no-c-format" >> kopt
+}'
+) || exit
+
+echo "scanning option files..." >&2
+
+( cd $srcdir; find . -name '*.opt' -print |
+  $AWK '{
+    file = $1
+    lineno = 1
+    field = 0
+    while (getline < file) {
+	if (/^[ \t]*(;|$)/ || !/^[^ \t]/) {
+	    if (field > 2)
+		printf("__opt_help_text(\"%s\")\n", line)
+	    field = 0
+	} else {
+	    if ((field == 1) && /MissingArgError/) {
+		line = $0
+		sub(".*MissingArgError\\(", "", line)
+		if (line ~ "^{") {
+			sub("^{", "", line)
+			sub("}\\).*", "", line)
+		} else
+			sub("\\).*", "", line)
+		printf("#line %d \"%s\"\n", lineno, file)
+		printf("error(\"%s\")\n", line)
+	    }
+	    if ((field == 1) && /UnknownError/) {
+		line = $0
+		sub(".*UnknownError\\(", "", line)
+		if (line ~ "^{") {
+			sub("^{", "", line)
+			sub("}\\).*", "", line)
+		} else
+			sub("\\).*", "", line)
+		printf("#line %d \"%s\"\n", lineno, file)
+		printf("error(\"%s\")\n", line)
+	    }
+	    if ((field == 1) && /Warn\(/) {
+		line = $0
+		sub(".*Warn\\(", "", line)
+		if (line ~ "^{") {
+			sub("^{", "", line)
+			sub("}\\).*", "", line)
+		} else
+			sub("\\).*", "", line)
+		printf("#line %d \"%s\"\n", lineno, file)
+		printf("warning(0, \"%s\")\n", line)
+	    }
+	    if (field == 2) {
+		line = $0
+		printf("#line %d \"%s\"\n", lineno, file)
+	    } else if (field > 2) {
+		line = line " " $0
+	    }
+	    field++;
+	}
+	lineno++;
+    }
+    if (field > 2)
+	printf("__opt_help_text(\"%s\")\n", line)
+  }') >> $emsg
+
+# Run the xgettext commands, with temporary added as a file to scan.
+echo "running xgettext..." >&2
+$xgettext --default-domain=$package --directory=$srcdir \
+	  --add-comments `cat $kopt` --files-from=$posr \
+	  --copyright-holder="Free Software Foundation, Inc." \
+	  --msgid-bugs-address="$BUGURL" \
+	  --language=c -o $pottmp1
+if test -s $posrcxx; then
+  $xgettext --default-domain=$package --directory=$srcdir \
+	    --add-comments `cat $kopt` --files-from=$posrcxx \
+	    --copyright-holder="Free Software Foundation, Inc." \
+	    --msgid-bugs-address="$BUGURL" \
+	    --language=c++ -o $pottmp2
+else
+  echo > $pottmp2
+fi
+$xgettext --default-domain=$package --directory=$srcdir \
+	  --add-comments --keyword= `cat $kopt2` --files-from=$posr \
+	  --copyright-holder="Free Software Foundation, Inc." \
+	  --msgid-bugs-address="$BUGURL" \
+	  --language=GCC-source -o $pottmp3
+$xgettext --default-domain=$package --directory=$srcdir \
+	  --add-comments --keyword= `cat $kopt2` --files-from=$posrcxx \
+	  --copyright-holder="Free Software Foundation, Inc." \
+	  --msgid-bugs-address="$BUGURL" \
+	  --language=GCC-source -o $pottmp4
+$xgettext --default-domain=$package \
+	  --add-comments $pottmp1 $pottmp2 $pottmp3 $pottmp4 \
+	  --copyright-holder="Free Software Foundation, Inc." \
+	  --msgid-bugs-address="$BUGURL" \
+	  --language=PO -o $pottmp
+# Remove local paths from .pot file.
+sed "s:$srcdir/::g;s:$pwd/::g;" <$pottmp >po/$package.pot

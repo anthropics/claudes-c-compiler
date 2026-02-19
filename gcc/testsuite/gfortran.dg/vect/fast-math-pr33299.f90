@@ -1,0 +1,17 @@
+! { dg-require-effective-target vect_double }
+! { dg-additional-options "-ffast-math" }
+
+PROGRAM test
+  REAL(8) :: f,dist(2)
+  dist = [1.0_8, 0.5_8]
+  if( f(1.0_8, dist) /= MINVAL(dist)) then
+    STOP 1
+  endif
+END PROGRAM test
+
+FUNCTION f( x, dist ) RESULT(s)
+  REAL(8) :: dist(2), x, s
+  s = MINVAL(dist)
+  IF( x < 0 ) s = -s
+END FUNCTION f
+

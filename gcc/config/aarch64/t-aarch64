@@ -1,0 +1,256 @@
+# Machine description for AArch64 architecture.
+#  Copyright (C) 2009-2026 Free Software Foundation, Inc.
+#  Contributed by ARM Ltd.
+#
+#  This file is part of GCC.
+#
+#  GCC is free software; you can redistribute it and/or modify it
+#  under the terms of the GNU General Public License as published by
+#  the Free Software Foundation; either version 3, or (at your option)
+#  any later version.
+#
+#  GCC is distributed in the hope that it will be useful, but
+#  WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+#  General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with GCC; see the file COPYING3.  If not see
+#  <http://www.gnu.org/licenses/>.
+
+TM_H += $(srcdir)/config/aarch64/aarch64-fusion-pairs.def \
+	$(srcdir)/config/aarch64/aarch64-tuning-flags.def \
+	$(srcdir)/config/aarch64/aarch64-tuning-enums.def \
+	$(srcdir)/config/aarch64/aarch64-option-extensions.def \
+	$(srcdir)/config/aarch64/aarch64-cores.def \
+	$(srcdir)/config/aarch64/aarch64-isa-modes.def \
+	$(srcdir)/config/aarch64/aarch64-arches.def
+OPTIONS_H_EXTRA += $(srcdir)/config/aarch64/aarch64-cores.def \
+		   $(srcdir)/config/aarch64/aarch64-arches.def
+
+$(srcdir)/config/aarch64/aarch64-tune.md: s-aarch64-tune-md; @true
+s-aarch64-tune-md: $(srcdir)/config/aarch64/gentune.sh \
+	$(srcdir)/config/aarch64/aarch64-cores.def
+	$(SHELL) $(srcdir)/config/aarch64/gentune.sh \
+		$(srcdir)/config/aarch64/aarch64-cores.def > \
+		tmp-aarch64-tune.md
+ifneq ($(strip $(ENABLE_MAINTAINER_RULES)),)
+	$(SHELL) $(srcdir)/../move-if-change tmp-aarch64-tune.md \
+		$(srcdir)/config/aarch64/aarch64-tune.md
+else
+	@if ! cmp -s tmp-aarch64-tune.md \
+	  $(srcdir)/config/aarch64/aarch64-tune.md; then \
+	  echo "aarch64-tune.md has changed; either"; \
+	  echo "configure with --enable-maintainer-mode"; \
+	  echo "or copy tmp-aarch64-tune.md to $(srcdir)/config/aarch64/aarch64-tune.md"; \
+	  exit 1; \
+	fi
+endif
+	$(STAMP) s-aarch64-tune-md
+
+# Regenerate the JSON tuning files if the schema has changed
+$(srcdir)/config/aarch64/aarch64-json-tunings-%-generated.inc: \
+$(srcdir)/config/aarch64/aarch64-json-schema.h \
+$(srcdir)/config/aarch64/aarch64-generate-json-tuning-routines.py
+	$(PYTHON) $(srcdir)/config/aarch64/aarch64-generate-json-tuning-routines.py --generate-only $*
+
+s-mddeps: s-aarch64-tune-md
+
+aarch64-builtins.o: $(srcdir)/config/aarch64/aarch64-builtins.cc $(CONFIG_H) \
+  $(SYSTEM_H) coretypes.h $(TM_H) $(REGS_H) \
+  $(RTL_H) $(TREE_H) expr.h $(TM_P_H) $(RECOG_H) langhooks.h \
+  $(DIAGNOSTIC_CORE_H) $(OPTABS_H) \
+  $(srcdir)/config/aarch64/aarch64-simd-builtins.def \
+  $(srcdir)/config/aarch64/aarch64-simd-builtin-types.def \
+  $(srcdir)/config/aarch64/aarch64-simd-pragma-builtins.def \
+  aarch64-builtin-iterators.h
+	$(COMPILER) -c $(ALL_COMPILERFLAGS) $(ALL_CPPFLAGS) $(INCLUDES) \
+		$(srcdir)/config/aarch64/aarch64-builtins.cc
+
+aarch64-sve-builtins.o: $(srcdir)/config/aarch64/aarch64-sve-builtins.cc \
+  $(srcdir)/config/aarch64/aarch64-sve-builtins.def \
+  $(srcdir)/config/aarch64/aarch64-sve-builtins-base.def \
+  $(srcdir)/config/aarch64/aarch64-sve-builtins-sve2.def \
+  $(srcdir)/config/aarch64/aarch64-sve-builtins-sme.def \
+  $(CONFIG_H) $(SYSTEM_H) coretypes.h $(TM_H) $(TREE_H) $(RTL_H) \
+  $(TM_P_H) memmodel.h insn-codes.h $(OPTABS_H) $(RECOG_H) $(DIAGNOSTIC_H) \
+  $(EXPR_H) $(BASIC_BLOCK_H) $(FUNCTION_H) fold-const.h $(GIMPLE_H) \
+  gimple-iterator.h gimplify.h explow.h $(EMIT_RTL_H) tree-vector-builder.h \
+  stor-layout.h alias.h gimple-fold.h langhooks.h \
+  stringpool.h \
+  $(srcdir)/config/aarch64/aarch64-sve-builtins.h \
+  $(srcdir)/config/aarch64/aarch64-sve-builtins-shapes.h \
+  $(srcdir)/config/aarch64/aarch64-sve-builtins-base.h \
+  $(srcdir)/config/aarch64/aarch64-sve-builtins-sve2.h \
+  $(srcdir)/config/aarch64/aarch64-sve-builtins-sme.h
+	$(COMPILER) -c $(ALL_COMPILERFLAGS) $(ALL_CPPFLAGS) $(INCLUDES) \
+		$(srcdir)/config/aarch64/aarch64-sve-builtins.cc
+
+aarch64-sve-builtins-shapes.o: \
+  $(srcdir)/config/aarch64/aarch64-sve-builtins-shapes.cc \
+  $(CONFIG_H) $(SYSTEM_H) coretypes.h $(TM_H) $(TREE_H) $(RTL_H) \
+  $(TM_P_H) memmodel.h insn-codes.h $(OPTABS_H) \
+  $(srcdir)/config/aarch64/aarch64-sve-builtins.h \
+  $(srcdir)/config/aarch64/aarch64-sve-builtins-shapes.h
+	$(COMPILER) -c $(ALL_COMPILERFLAGS) $(ALL_CPPFLAGS) $(INCLUDES) \
+		$(srcdir)/config/aarch64/aarch64-sve-builtins-shapes.cc
+
+aarch64-sve-builtins-base.o: \
+  $(srcdir)/config/aarch64/aarch64-sve-builtins-base.cc \
+  $(CONFIG_H) $(SYSTEM_H) coretypes.h $(TM_H) $(TREE_H) $(RTL_H) \
+  $(TM_P_H) memmodel.h insn-codes.h $(OPTABS_H) $(RECOG_H) \
+  $(EXPR_H) $(BASIC_BLOCK_H) $(FUNCTION_H) fold-const.h $(GIMPLE_H) \
+  gimple-iterator.h gimplify.h explow.h $(EMIT_RTL_H) tree-vector-builder.h \
+  rtx-vector-builder.h vec-perm-indices.h \
+  $(srcdir)/config/aarch64/aarch64-sve-builtins.h \
+  $(srcdir)/config/aarch64/aarch64-sve-builtins-shapes.h \
+  $(srcdir)/config/aarch64/aarch64-sve-builtins-base.h \
+  $(srcdir)/config/aarch64/aarch64-sve-builtins-functions.h
+	$(COMPILER) -c $(ALL_COMPILERFLAGS) $(ALL_CPPFLAGS) $(INCLUDES) \
+		$(srcdir)/config/aarch64/aarch64-sve-builtins-base.cc
+
+aarch64-sve-builtins-sve2.o: \
+  $(srcdir)/config/aarch64/aarch64-sve-builtins-sve2.cc \
+  $(CONFIG_H) $(SYSTEM_H) coretypes.h $(TM_H) $(TREE_H) $(RTL_H) \
+  $(TM_P_H) memmodel.h insn-codes.h $(OPTABS_H) $(RECOG_H) \
+  $(EXPR_H) $(BASIC_BLOCK_H) $(FUNCTION_H) fold-const.h $(GIMPLE_H) \
+  gimple-iterator.h gimplify.h explow.h $(EMIT_RTL_H) tree-vector-builder.h \
+  rtx-vector-builder.h vec-perm-indices.h \
+  $(srcdir)/config/aarch64/aarch64-sve-builtins.h \
+  $(srcdir)/config/aarch64/aarch64-sve-builtins-shapes.h \
+  $(srcdir)/config/aarch64/aarch64-sve-builtins-sve2.h \
+  $(srcdir)/config/aarch64/aarch64-sve-builtins-functions.h
+	$(COMPILER) -c $(ALL_COMPILERFLAGS) $(ALL_CPPFLAGS) $(INCLUDES) \
+		$(srcdir)/config/aarch64/aarch64-sve-builtins-sve2.cc
+
+aarch64-sve-builtins-sme.o: \
+  $(srcdir)/config/aarch64/aarch64-sve-builtins-sme.cc \
+  $(CONFIG_H) $(SYSTEM_H) coretypes.h $(TM_H) $(TREE_H) $(RTL_H) \
+  $(TM_P_H) memmodel.h insn-codes.h $(OPTABS_H) $(RECOG_H) \
+  $(EXPR_H) $(BASIC_BLOCK_H) $(FUNCTION_H) fold-const.h $(GIMPLE_H) \
+  gimple-iterator.h gimplify.h explow.h $(EMIT_RTL_H) \
+  $(srcdir)/config/aarch64/aarch64-sve-builtins.h \
+  $(srcdir)/config/aarch64/aarch64-sve-builtins-shapes.h \
+  $(srcdir)/config/aarch64/aarch64-sve-builtins-sme.h \
+  $(srcdir)/config/aarch64/aarch64-sve-builtins-functions.h
+	$(COMPILER) -c $(ALL_COMPILERFLAGS) $(ALL_CPPFLAGS) $(INCLUDES) \
+		$(srcdir)/config/aarch64/aarch64-sve-builtins-sme.cc
+
+aarch64-builtin-iterators.h: $(srcdir)/config/aarch64/geniterators.sh \
+	$(srcdir)/config/aarch64/iterators.md
+	$(SHELL) $(srcdir)/config/aarch64/geniterators.sh \
+		$(srcdir)/config/aarch64/iterators.md > \
+		aarch64-builtin-iterators.h
+
+aarch-common.o: $(srcdir)/config/arm/aarch-common.cc $(CONFIG_H) $(SYSTEM_H) \
+    coretypes.h $(TM_H) $(TM_P_H) $(RTL_H) $(TREE_H) output.h $(C_COMMON_H)
+	$(COMPILER) -c $(ALL_COMPILERFLAGS) $(ALL_CPPFLAGS) $(INCLUDES) \
+		$(srcdir)/config/arm/aarch-common.cc
+
+aarch64-elf-metadata.o: $(srcdir)/config/aarch64/aarch64-elf-metadata.cc \
+    $(CONFIG_H) \
+    $(BACKEND_H) \
+    $(RTL_H) \
+    $(SYSTEM_H) \
+    $(TARGET_H) \
+    $(srcdir)/config/aarch64/aarch64-elf-metadata.h \
+    output.h
+	$(COMPILER) -c $(ALL_COMPILERFLAGS) $(ALL_SPPFLAGS) $(INCLUDES) \
+	  $(srcdir)/config/aarch64/aarch64-elf-metadata.cc
+
+aarch64-c.o: $(srcdir)/config/aarch64/aarch64-c.cc $(CONFIG_H) $(SYSTEM_H) \
+    coretypes.h $(TM_H) $(TREE_H) output.h $(C_COMMON_H) $(TARGET_H)
+	$(COMPILER) -c $(ALL_COMPILERFLAGS) $(ALL_CPPFLAGS) $(INCLUDES) \
+		$(srcdir)/config/aarch64/aarch64-c.cc
+
+aarch64-d.o: $(srcdir)/config/aarch64/aarch64-d.cc
+	$(COMPILE) $<
+	$(POSTCOMPILE)
+
+PASSES_EXTRA += $(srcdir)/config/aarch64/aarch64-passes.def
+
+cortex-a57-fma-steering.o: $(srcdir)/config/aarch64/cortex-a57-fma-steering.cc \
+    $(CONFIG_H) $(SYSTEM_H) $(TM_H) $(REGS_H) insn-config.h $(RTL_BASE_H) \
+    dominance.h cfg.h cfganal.h $(BASIC_BLOCK_H) $(INSN_ATTR_H) $(RECOG_H) \
+    output.h hash-map.h $(DF_H) $(OBSTACK_H) $(TARGET_H) $(RTL_H) \
+    $(CONTEXT_H) $(TREE_PASS_H) regrename.h \
+    $(srcdir)/config/aarch64/aarch64-protos.h
+	$(COMPILER) -c $(ALL_COMPILERFLAGS) $(ALL_CPPFLAGS) $(INCLUDES) \
+		$(srcdir)/config/aarch64/cortex-a57-fma-steering.cc
+
+aarch64-speculation.o: $(srcdir)/config/aarch64/aarch64-speculation.cc \
+    $(CONFIG_H) \
+    $(SYSTEM_H) \
+    $(TM_H) \
+    $(TARGET_H) \
+    $(RTL_BASE_H) \
+    $(TREE_PASS_H)
+	$(COMPILER) -c $(ALL_COMPILERFLAGS) $(ALL_SPPFLAGS) $(INCLUDES) \
+	  $(srcdir)/config/aarch64/aarch64-speculation.cc
+
+aarch-bti-insert.o: $(srcdir)/config/arm/aarch-bti-insert.cc \
+    $(CONFIG_H) $(SYSTEM_H) $(TM_H) $(REGS_H) insn-config.h $(RTL_BASE_H) \
+    dominance.h cfg.h cfganal.h $(BASIC_BLOCK_H) $(INSN_ATTR_H) $(RECOG_H) \
+    output.h hash-map.h $(DF_H) $(OBSTACK_H) $(TARGET_H) $(RTL_H) \
+    $(CONTEXT_H) $(TREE_PASS_H) regrename.h \
+    $(srcdir)/config/aarch64/aarch64-protos.h
+	$(COMPILER) -c $(ALL_COMPILERFLAGS) $(ALL_CPPFLAGS) $(INCLUDES) \
+		$(srcdir)/config/arm/aarch-bti-insert.cc
+
+aarch64-early-ra.o: $(srcdir)/config/aarch64/aarch64-early-ra.cc \
+    $(CONFIG_H) $(SYSTEM_H) $(CORETYPES_H) $(BACKEND_H) $(RTL_H) $(DF_H) \
+    $(RTL_SSA_H) tree-pass.h
+	$(COMPILER) -c $(ALL_COMPILERFLAGS) $(ALL_CPPFLAGS) $(INCLUDES) \
+		$(srcdir)/config/aarch64/aarch64-early-ra.cc
+
+aarch64-ldp-fusion.o: $(srcdir)/config/aarch64/aarch64-ldp-fusion.cc \
+    $(CONFIG_H) $(SYSTEM_H) $(CORETYPES_H) $(BACKEND_H) $(RTL_H) \
+    tree-pass.h pair-fusion.h
+	$(COMPILER) -c $(ALL_COMPILERFLAGS) $(ALL_CPPFLAGS) $(INCLUDES) \
+		$(srcdir)/config/aarch64/aarch64-ldp-fusion.cc
+
+aarch64-sched-dispatch.o: $(srcdir)/config/aarch64/aarch64-sched-dispatch.cc \
+    $(CONFIG_H) $(SYSTEM_H) $(CORETYPES_H) $(BACKEND_H) $(RTL_H) \
+    $(INSN_ATTR_H) $(REGSET_H) sched-int.h $(DUMPFILE_H) \
+    $(srcdir)/config/aarch64/aarch64-protos.h \
+    $(srcdir)/config/aarch64/aarch64-sched-dispatch.h
+	$(COMPILER) -c $(ALL_COMPILERFLAGS) $(ALL_CPPFLAGS) $(INCLUDES) \
+		$(srcdir)/config/aarch64/aarch64-sched-dispatch.cc
+
+aarch64-json-tunings-printer.o: $(srcdir)/config/aarch64/aarch64-json-tunings-printer.cc \
+    $(CONFIG_H) $(SYSTEM_H) $(CORETYPES_H) $(TM_H) $(DIAGNOSTIC_CORE_H) \
+    $(PRETTY_PRINT_H) json.h \
+    $(srcdir)/config/aarch64/aarch64-json-tunings-printer.h \
+    $(srcdir)/config/aarch64/aarch64-json-tunings-printer-generated.inc \
+    $(srcdir)/config/aarch64/aarch64-protos.h \
+    $(srcdir)/config/arm/aarch-common-protos.h
+	$(COMPILER) -c $(ALL_COMPILERFLAGS) $(ALL_CPPFLAGS) $(INCLUDES) \
+		$(srcdir)/config/aarch64/aarch64-json-tunings-printer.cc
+
+aarch64-json-tunings-parser.o: $(srcdir)/config/aarch64/aarch64-json-tunings-parser.cc \
+    $(CONFIG_H) $(SYSTEM_H) $(CORETYPES_H) $(TM_H) $(DIAGNOSTIC_CORE_H) \
+    json-parsing.h \
+    $(srcdir)/config/aarch64/aarch64-json-schema.h \
+    $(srcdir)/config/aarch64/aarch64-json-tunings-parser.h \
+    $(srcdir)/config/aarch64/aarch64-json-tunings-parser-generated.inc \
+    $(srcdir)/config/aarch64/aarch64-protos.h \
+    $(srcdir)/config/arm/aarch-common-protos.h
+	$(COMPILER) -c $(ALL_COMPILERFLAGS) $(ALL_CPPFLAGS) $(INCLUDES) \
+		$(srcdir)/config/aarch64/aarch64-json-tunings-parser.cc
+
+comma=,
+MULTILIB_OPTIONS    = $(subst $(comma),/, $(patsubst %, mabi=%, $(subst $(comma),$(comma)mabi=,$(TM_MULTILIB_CONFIG))))
+MULTILIB_DIRNAMES   = $(subst $(comma), ,$(TM_MULTILIB_CONFIG))
+
+insn-conditions.md: s-check-sve-md
+s-check-sve-md: $(srcdir)/config/aarch64/check-sve-md.awk \
+		$(srcdir)/config/aarch64/aarch64-sve.md \
+		$(srcdir)/config/aarch64/aarch64-sve2.md \
+		$(srcdir)/config/aarch64/aarch64-sme.md
+	$(AWK) -f $(srcdir)/config/aarch64/check-sve-md.awk \
+	  $(srcdir)/config/aarch64/aarch64-sve.md
+	$(AWK) -f $(srcdir)/config/aarch64/check-sve-md.awk \
+	  $(srcdir)/config/aarch64/aarch64-sve2.md
+	$(AWK) -f $(srcdir)/config/aarch64/check-sve-md.awk \
+	  $(srcdir)/config/aarch64/aarch64-sme.md
+	$(STAMP) s-check-sve-md

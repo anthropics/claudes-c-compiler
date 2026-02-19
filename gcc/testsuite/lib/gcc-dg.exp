@@ -1,0 +1,1478 @@
+#   Copyright (C) 1997-2026 Free Software Foundation, Inc.
+
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with GCC; see the file COPYING3.  If not see
+# <http://www.gnu.org/licenses/>.
+
+load_lib dg.exp
+load_lib file-format.exp
+load_lib target-supports.exp
+load_lib target-supports-dg.exp
+load_lib scanasm.exp
+load_lib scanrtl.exp
+load_lib scantree.exp
+load_lib scanltrans.exp
+load_lib scanipa.exp
+load_lib scanwpaipa.exp
+load_lib scanlang.exp
+load_lib scansarif.exp
+load_lib scanhtml.exp
+load_lib timeout.exp
+load_lib timeout-dg.exp
+load_lib prune.exp
+load_lib libgloss.exp
+load_lib target-libpath.exp
+load_lib torture-options.exp
+load_lib fortran-modules.exp
+load_lib multiline.exp
+load_lib dg-test-cleanup.exp
+
+# We set LC_ALL and LANG to C so that we get the same error messages as expected.
+setenv LC_ALL C
+setenv LANG C
+
+# Many hosts now default to a non-ASCII C locale, however, so
+# they can set a charset encoding here if they need.
+if { [ishost "*-*-cygwin*"] } {
+  setenv LC_ALL C.ASCII
+  setenv LANG C.ASCII
+}
+
+# Set TERM to xterm to ensure that URL escapes are disabled.
+# This avoids issues where a diagnostic which could embed a URL
+# is emitted before -fdiagnostics-plain-output is handled, where
+# otherwise the output could be affected by the environment.
+setenv TERM xterm
+
+# Avoid sporadic data-losses with expect
+match_max -d 10000
+
+# Ensure GCC_COLORS is unset, for the rare testcases that verify
+# how output is colorized.
+if [info exists ::env(GCC_COLORS) ] {
+    unsetenv GCC_COLORS
+}
+
+global GCC_UNDER_TEST
+if ![info exists GCC_UNDER_TEST] {
+    set GCC_UNDER_TEST "[find_gcc]"
+}
+
+# This file may be sourced, so don't override environment settings
+# that have been previously setup.
+if { $orig_environment_saved == 0 } {
+    append ld_library_path [gcc-set-multilib-library-path $GCC_UNDER_TEST]
+    set_ld_library_path_env_vars
+}
+
+# Some torture-options cause intermediate code output, unusable for
+# testing using e.g. scan-assembler.  In this variable are the options
+# how to force it, when needed.
+global gcc_set_required_options
+set gcc_set_required_options ""
+
+if [info exists TORTURE_OPTIONS] {
+    set DG_TORTURE_OPTIONS $TORTURE_OPTIONS
+} else {
+    # It is theoretically beneficial to group all of the O2/O3 options together,
+    # as in many cases the compiler will generate identical executables for
+    # all of them--and the c-torture testsuite will skip testing identical
+    # executables multiple times.
+    # Also note that -finline-functions is explicitly included in one of the
+    # items below, even though -O3 is also specified, because some ports may
+    # choose to disable inlining functions by default, even when optimizing.
+    set DG_TORTURE_OPTIONS [list \
+	{ -O0 } \
+	{ -O1 } \
+	{ -O2 } \
+	{ -O3 -fomit-frame-pointer -funroll-loops -fpeel-loops -ftracer -finline-functions } \
+	{ -O3 -g } \
+	{ -Os } ]
+
+    if [check_effective_target_lto] {
+        set gcc_set_required_options "-ffat-lto-objects"
+    }
+}
+
+if [info exists ADDITIONAL_TORTURE_OPTIONS] {
+    set DG_TORTURE_OPTIONS \
+	[concat $DG_TORTURE_OPTIONS $ADDITIONAL_TORTURE_OPTIONS]
+}
+
+proc dg-final { args } {
+    upvar dg-final-code final-code
+
+    if { [llength $args] > 2 } {
+	error "[lindex $args 0]: too many arguments"
+    }
+    set line [lindex $args 0]
+    set code [lindex $args 1]
+    set directive [lindex $code 0]
+    switch $directive {
+	gdb-test {
+	    set code [linsert $code 1 $line]
+	}
+    }
+    append final-code "$code\n"
+}
+
+global orig_environment_saved
+
+# Deduce generated files from tool flags, return finalcode string
+proc schedule-cleanups { opts } {
+    global additional_sources
+    set finalcode ""
+    set testcases {}
+    lappend testcases [lindex [testname-for-summary] 0]
+    verbose "Cleanup testcases: $testcases" 4
+    if { [info exists additional_sources] && $additional_sources != "" } {
+	lappend testcases $additional_sources
+	verbose "Cleanup testcases, additional: $additional_sources" 4
+    }
+    verbose "Cleanup all options: $opts" 4
+
+    # First some fixups to transform stuff to something manageable ..
+    # --dump= should translate to -d with joined operand.
+    if [regexp -- {(^|\s+)--dump=[^\s]+(\s+|$)} $opts] {
+	regsub -all -- {--dump=} $opts {-d} opts
+    }
+    # -da and -dx are treated as shorthand for -fdump-rtl-all here
+    if [regexp -- {(^|\s+)-d[ax](\s+|$)} $opts] {
+	verbose "Cleanup -d seen" 4
+	lappend opts "-fdump-rtl-all"
+    }
+    # .. and don't question why there is --dump=? and -d?
+
+    # Then handle options that generate non-dump files
+    # TODO
+    # -fprofile-generate -> cleanup-coverage-files()
+    # -fstack-usage -> cleanup-stack-usage()
+    if [regexp -- {(^|\s+)-fstack-usage(\s+|$)} $opts] {
+	verbose "Cleanup -fstack-usage seen" 4
+#	append finalcode "cleanup-stack-usage\n"
+    }
+    global keep_saved_temps_suffixes
+    if [info exists keep_saved_temps_suffixes ] {
+	verbose "dg-keep-saved-temps ${keep_saved_temps_suffixes}" 2
+    }
+    # -save-temps -> cleanup-saved-temps()
+    if [regexp -- {(^|\s+)-?-save-temps(\s+|$)} $opts] {
+	verbose "Cleanup -save-temps seen" 4
+	if [info exists keep_saved_temps_suffixes] {
+	    append finalcode "cleanup-saved-temps ${keep_saved_temps_suffixes}\n"
+	} else {
+	    append finalcode "cleanup-saved-temps\n"
+	}
+    } else {
+	if [info exists keep_saved_temps_suffixes ] {
+	    error "dg-keep-saved-temps specified but testcase does not -save-temps"
+	    return
+	}
+    }
+    # Finally see if there are any dumps in opts, otherwise we are done
+    if [regexp -- {(?=(?:^|[ \t]+)?)-fdump-[^ \t]+(?=(?:$|[ \t]+)?)} $opts] {
+        # Lang, Ipa, Rtl, Tree for simplicity
+        set ptn "{l,i,r,t}"
+    } else {
+        return $finalcode
+    }
+    # stem.ext.<passnum><fam>.<passname><pass-instances>
+    # (tree)passes can have multiple instances, thus optional trailing *
+    set ptn "\[0-9\]\[0-9\]\[0-9\]$ptn.*"
+    # Handle ltrans files around -flto
+    if [regexp -- {(^|\s+)-flto(\s+|$)} $opts] {
+	verbose "Cleanup -flto seen" 4
+	set ltrans "{ltrans\[0-9\]*{.ltrans,}.,}"
+    } else {
+	set ltrans ""
+    }
+    set ptn "$ltrans$ptn"
+    verbose "Cleanup final ptn: $ptn" 4
+    set tfiles {}
+    foreach src $testcases {
+	set basename [file tail $src]
+	if { $ltrans != "" } {
+	    # ??? should we use upvar 1 output_file instead of this (dup ?)
+	    set stem [file rootname $basename]
+	    set basename_ext [file extension $basename]
+	    if {$basename_ext != ""} {
+		regsub -- {^.*\.} $basename_ext {} basename_ext
+	    }
+	    lappend tfiles "$stem{.$basename_ext,.exe,}"
+	    unset basename_ext
+	} else {
+	    lappend tfiles $basename
+	}
+    }
+    if { [llength $tfiles] > 1 } {
+	set tfiles [join $tfiles ","]
+	set tfiles "{$tfiles}"
+    }
+    verbose "Cleanup final testcases: $tfiles" 4
+    # We have to quote the regex
+    regsub -all {([][$^?+*()|\\{}])} "$tfiles.$ptn" {\\\1} ptn
+    set final ""
+    append final {remove-build-file }
+    append final "\"$ptn\""
+    verbose "Cleanup final: $final" 4
+    append finalcode "$final\n"
+
+    return $finalcode
+}
+
+# Define gcc callbacks for dg.exp.
+
+proc gcc-dg-test-1 { target_compile prog do_what extra_tool_flags } {
+    # Set up the compiler flags, based on what we're going to do.
+
+    set options [list]
+
+    switch $do_what {
+	"preprocess" {
+	    set compile_type "preprocess"
+	    set output_file "[file rootname [file tail $prog]].i"
+	}
+	"compile" {
+	    set compile_type "assembly"
+	    set output_file "[file rootname [file tail $prog]].s"
+	}
+	"assemble" {
+	    set compile_type "object"
+	    set output_file "[file rootname [file tail $prog]].o"
+	}
+	"precompile" {
+	    set compile_type "precompiled_header"
+	    set output_file "[file tail $prog].gch"
+	}
+	"link" {
+	    set compile_type "executable"
+	    set output_file "[file rootname [file tail $prog]].exe"
+	    # The following line is needed for targets like the i960 where
+	    # the default output file is b.out.  Sigh.
+	}
+	"repo" {
+	    set compile_type "object"
+	    set output_file "[file rootname [file tail $prog]].o"
+	}
+	"run" {
+	    set compile_type "executable"
+	    # FIXME: "./" is to cope with "." not being in $PATH.
+	    # Should this be handled elsewhere?
+	    # YES.
+	    set output_file "./[file rootname [file tail $prog]].exe"
+	    # This is the only place where we care if an executable was
+	    # created or not.  If it was, dg.exp will try to run it.
+	    catch { remote_file build delete $output_file }
+	}
+	"replay-sarif" {
+	    set compile_type "none"
+	    set output_file ""
+	}
+	default {
+	    perror "$do_what: not a valid dg-do keyword"
+	    return ""
+	}
+    }
+
+    # Let { dg-final { action } } force options as returned by an
+    # optional proc ${action}_required_options.
+    upvar 2 dg-final-code finalcode
+    foreach x [split $finalcode "\n"] {
+	set finalcmd [lindex $x 0]
+	if { [info procs ${finalcmd}_required_options] != "" } {
+	    foreach req [${finalcmd}_required_options] {
+		if { $req != ""
+		     && [lsearch -exact $extra_tool_flags $req] == -1 } {
+		    lappend extra_tool_flags $req
+		}
+	    }
+	}
+    }
+
+    append finalcode [schedule-cleanups "$options $extra_tool_flags"]
+    if { $extra_tool_flags != "" } {
+	lappend options "additional_flags=$extra_tool_flags"
+    }
+
+    verbose "$target_compile $prog $output_file $compile_type $options" 4
+    set comp_output [$target_compile "$prog" "$output_file" "$compile_type" $options]
+
+    global expect_ice
+    # Look for an internal compiler error, which sometimes masks the fact
+    # that we didn't get an expected error message.  XFAIL an ICE via
+    # dg-xfail-if and use { dg-prune-output ".*internal compiler error.*" }
+    # to avoid a second failure for excess errors.
+    # "Error reporting routines re-entered" ICE says "Internal" rather than
+    # "internal", so match that too.
+    if [regexp -line -- {[Ii]nternal compiler error.*} $comp_output ice] {
+	upvar 2 name name
+	if { $expect_ice == 0 } {
+	  fail "$name ($ice)"
+	} else {
+	  # We expected an ICE and we got it.
+	  xfail "$name ($ice)"
+	  # Prune the ICE from the output.
+	  set comp_output [prune_ices $comp_output]
+	}
+    } elseif { $expect_ice == 1 } {
+	upvar 2 name name
+	# We expected an ICE but we didn't get it.
+	xpass "$name (internal compiler error)"
+    }
+
+    if { $do_what == "repo" } {
+	set object_file "$output_file"
+	set output_file "[file rootname [file tail $prog]].exe"
+	set comp_output \
+	    [ concat $comp_output \
+		  [$target_compile "$object_file" "$output_file" \
+		       "executable" $options] ]
+    }
+
+    return [list $comp_output $output_file]
+}
+
+proc gcc-dg-test { prog do_what extra_tool_flags } {
+    return [gcc-dg-test-1 gcc_target_compile $prog $do_what $extra_tool_flags]
+}
+
+# Global: should blank lines be allowed in the output?
+# By default, they should not be.  (PR other/69006)
+# However, there are some ways for them to validly occur.
+# If this variable is 0, blank lines are not allowed in output,
+# if it is 1, they are allowed for a single testcase only and gcc-dg-prune
+# will clear it again after checking it, if it is 2, they are disabled
+# for all tests.
+set allow_blank_lines 0
+
+if { [check_effective_target_llvm_binutils] } {
+    set allow_blank_lines 2
+}
+
+# A command for use by testcases to mark themselves as expecting
+# blank lines in the output.
+
+proc dg-allow-blank-lines-in-output { args } {
+    global allow_blank_lines
+    if { !$allow_blank_lines } {
+	set allow_blank_lines 1
+    }
+}
+
+proc gcc-dg-prune { system text } {
+    global additional_prunes
+
+    # Extra prune rules that will apply to tests defined in a .exp file.
+    # Always remember to clear it in .exp file after executed all tests.
+    global dg_runtest_extra_prunes
+
+    # Call into multiline.exp to handle any multiline output directives.
+    # This is done before the check for blank lines so that multiline
+    # output directives can have blank lines within them.
+    set text [handle-multiline-outputs $text]
+
+    # Complain about blank lines in the output (PR other/69006)
+    global allow_blank_lines
+    if { !$allow_blank_lines } {
+	set num_blank_lines [llength [regexp -all -inline "\n\n" $text]]
+	if { $num_blank_lines } {
+	    global testname_with_flags
+	    fail "$testname_with_flags $num_blank_lines blank line(s) in output"
+	}
+    }
+    if { $allow_blank_lines == 1 } {
+	set allow_blank_lines 0
+    }
+
+    set text [prune_gcc_output $text]
+
+    foreach p "$additional_prunes $dg_runtest_extra_prunes" {
+	if { [string length $p] > 0 } {
+	    # Following regexp matches a complete line containing $p.
+	    regsub -all "(^|\n)\[^\n\]*$p\[^\n\]*" $text "" text
+	}
+    }
+
+    # If we see "region xxx is full" then the testcase is too big for ram.
+    # This is tricky to deal with in a large testsuite like c-torture so
+    # deal with it here.  Just mark the testcase as unsupported.
+    if [regexp "(^|\n)\[^\n\]*: region \[^\n\]* is full" $text] {
+	# The format here is important.  See dg.exp.
+	return "::unsupported::memory full"
+    }
+
+    if { [regexp "(^|\n)\[^\n\]*: relocation truncated to fit" $text]
+          && [check_effective_target_tiny] } {
+        return "::unsupported::memory full"
+    }
+
+    if [regexp "(^|\n)\[^\n\]* section.*will not fit in region" $text] {
+	return "::unsupported::memory full"
+    }
+
+    if [regexp "(^|\n)\[^\n\]* region.*overflowed by" $text] {
+	return "::unsupported::memory full"
+    }
+
+    if { [string match "*error: function pointers not supported*" $text]
+	  && ![check_effective_target_function_pointers] } {
+	# The format here is important.  See dg.exp.
+	return "::unsupported::funcptr"
+    }
+    if { [string match "*error: large return values not supported*" $text]
+    	  && ![check_effective_target_large_return_values] } {
+	# The format here is important.  See dg.exp.
+	return "::unsupported::large return values"
+    }
+
+    # If exception handling is not supported, expectant tests are UNSUPPORTED.
+    if { ![check_effective_target_exceptions] } {
+	if [regexp "(^|\n)\[^\n\]*: sorry, unimplemented: exception handling not supported" $text] {
+	    return "::unsupported::exception handling not supported"
+	}
+    }
+
+    # If exception handling is disabled, expectant tests are UNSUPPORTED.
+    if { ![check_effective_target_exceptions_enabled] } {
+	if [regexp "(^|\n)\[^\n\]*: error: exception handling disabled" $text] {
+	    return "::unsupported::exception handling disabled"
+	}
+
+	if [regexp "(^|\n)\[^\n\]*: error: #error .__cpp_exceptions." $text] {
+	    return "::unsupported::exception handling disabled"
+	}
+    }
+
+    # If dynamic stack allocation is not supported, expectant tests are UNSUPPORTED.
+    if { ![check_effective_target_alloca] } {
+	if [regexp "(^|\n)\[^\n\]*: sorry, unimplemented: dynamic stack allocation not supported" $text] {
+	    return "::unsupported::dynamic stack allocation not supported"
+	}
+    }
+
+    return $text
+}
+
+# Replace ${tool}_load with a wrapper to provide for an expected nonzero
+# exit status.  Multiple languages include this file so this handles them
+# all, not just gcc.
+if { [info procs ${tool}_load] != [list] \
+      && [info procs saved_${tool}_load] == [list] } {
+    rename ${tool}_load saved_${tool}_load
+
+    proc ${tool}_load { program args } {
+	global tool
+	global shouldfail
+	global set_target_env_var
+	global output-file
+
+	set saved_target_env_var [list]
+	if { [info exists set_target_env_var] \
+	     && [llength $set_target_env_var] != 0 } {
+	    if { [is_remote target] } {
+		return [list "unsupported" ""]
+	    }
+	    set-target-env-var
+	}
+	set result [eval [list saved_${tool}_load $program] $args]
+	if { [info exists set_target_env_var] \
+	     && [llength $set_target_env_var] != 0 } {
+	    restore-target-env-var
+	}
+	if { $shouldfail != 0 } {
+	    switch [lindex $result 0] {
+		"pass" { set status "fail" }
+		"fail" { set status "pass" }
+		default { set status [lindex $result 0] }
+	    }
+	    set result [list $status [lindex $result 1]]
+	}
+
+	set result [list [lindex $result 0] [prune_file_path [lindex $result 1]]]
+	if { [info exists output-file] && [lindex $result 0] eq "pass" } {
+	    if { [lindex ${output-file} 0] eq "F" } {
+		setup_xfail "*-*-*"
+	    }
+	    set output [lindex $result 1]
+	    set idx 0
+	    set linenum 1
+	    set outfile [open [lindex ${output-file} 1]]
+	    set do_fail 0
+	    set name [testname-for-summary]
+	    while { [gets $outfile line] >= 0 } {
+		if { $linenum != 1 } {
+		    set c [string index $output $idx]
+		    if { $c eq "\n" } {
+			set idx [expr $idx + 1]
+		    } elseif { $c eq "\r" } {
+			set idx [expr $idx + 1]
+			set c [string index $output $idx]
+			if { $c eq "\n" } {
+			    set idx [expr $idx + 1]
+			}
+		    } else {
+			set do_fail 1
+			fail "$name output file test"
+			send_log "Unexpected character $c on line [expr $linenum - 1] where new-line expected\n"
+			verbose "Failed test for output line [expr $linenum - 1]" 3
+			break
+		    }
+		}
+		set len [string length $line]
+		set output_line [string range $output $idx [expr $idx + $len - 1]]
+		if { $line ne $output_line } {
+		    set do_fail 1
+		    fail "$name output file test"
+		    send_log "Output line $linenum was:\n$output_line\nShould match (from [lindex ${output-file} 1]):\n$line\n"
+		    verbose "Failed test for output line $linenum $line" 3
+		    break
+		}
+		set idx [expr $idx + $len]
+		incr linenum
+	    }
+	    close $outfile
+	    if { $do_fail == 0 } {
+		set c [string index $output $idx]
+		if { $c eq "\n" } {
+		    set idx [expr $idx + 1]
+		} elseif { $c eq "\r" } {
+		    set idx [expr $idx + 1]
+		    set c [string index $output $idx]
+		    if { $c eq "\n" } {
+			set idx [expr $idx + 1]
+		    }
+		} else {
+		    incr linenum -1
+		}
+		set c [string index $output $idx]
+		if { $c ne "" } {
+		    fail "$name output file test"
+		    send_log "Unexpected character $c on line $linenum where and of output expected\n"
+		    verbose "Failed test for output line $linenum" 3
+		    break
+		} else {
+		    pass "$name output file test"
+		    verbose "Passed test for output file [lindex ${output-file} 1]" 3
+		}
+	    }
+	    unset output
+	}
+	return $result
+    }
+}
+
+proc dg-set-target-env-var { args } {
+    global set_target_env_var
+    if { [llength $args] != 3 } {
+	error "dg-set-target-env-var: need two arguments"
+	return
+    }
+    set var [lindex $args 1]
+    set value [lindex $args 2]
+    verbose "dg-set-target-env-var $var $value" 2
+    lappend set_target_env_var [list $var $value]
+}
+
+proc set-target-env-var { } {
+    global set_target_env_var
+    upvar 1 saved_target_env_var saved_target_env_var
+    foreach env_var $set_target_env_var {
+	set var [lindex $env_var 0]
+	set value [lindex $env_var 1]
+	if [info exists ::env($var)] {
+	    lappend saved_target_env_var [list $var 1 $::env($var)]
+	} else {
+	    lappend saved_target_env_var [list $var 0]
+	}
+	setenv $var $value
+    }
+}
+
+proc restore-target-env-var { } {
+    upvar 1 saved_target_env_var saved_target_env_var
+    for { set env_vari [llength $saved_target_env_var] } {
+          [incr env_vari -1] >= 0 } {} {
+	set env_var [lindex $saved_target_env_var $env_vari]
+	set var [lindex $env_var 0]
+	if [lindex $env_var 1] {
+	    setenv $var [lindex $env_var 2]
+	} else {
+	    unsetenv $var
+	}
+    }
+}
+
+proc dg-set-compiler-env-var { args } {
+    global set_compiler_env_var
+    global saved_compiler_env_var
+    if { [llength $args] != 3 } {
+	error "dg-set-compiler-env-var: need two arguments"
+	return
+    }
+    set var [lindex $args 1]
+    set value [lindex $args 2]
+    verbose "dg-set-compiler-env-var $var $value" 2
+    if [info exists ::env($var)] {
+      lappend saved_compiler_env_var [list $var 1 $::env($var)]
+    } else {
+      lappend saved_compiler_env_var [list $var 0]
+    }
+    setenv $var $value
+    lappend set_compiler_env_var [list $var $value]
+}
+
+proc restore-compiler-env-var { } {
+    global saved_compiler_env_var
+    for { set env_vari [llength $saved_compiler_env_var] } {
+          [incr env_vari -1] >= 0 } {} {
+	set env_var [lindex $saved_compiler_env_var $env_vari]
+	set var [lindex $env_var 0]
+	if [lindex $env_var 1] {
+	    setenv $var [lindex $env_var 2]
+	} else {
+	    unsetenv $var
+	}
+    }
+}
+
+# Indicate expected program output in a file.
+#
+proc dg-output-file { args } {
+    global output-file
+    global srcdir subdir
+
+    if { [llength $args] > 3 } {
+	error "[lindex $args 0]: too many arguments"
+    }
+
+    # Allow target dependent output.
+
+    if { ![info exists output-file] } {
+	set output-file "P"
+    }
+    set expected [lindex ${output-file} 0]
+    if { [llength $args] >= 3 } {
+	switch -- [dg-process-target [lindex $args 2]] {
+	    "N" { return }
+	    "S" { }
+	    "F" { set expected "F" }
+	    # Don't override a previous xfail.
+	    "P" { }
+	}
+    }
+
+    set output-file [list $expected $srcdir/$subdir/[lindex $args 1]]
+}
+
+# Utility routines.
+
+#
+# search_for -- looks for a string match in a file
+#
+proc search_for { file pattern } {
+    set fd [open $file r]
+    while { [gets $fd cur_line]>=0 } {
+	if [string match "*$pattern*" $cur_line] then {
+	    close $fd
+	    return 1
+	}
+    }
+    close $fd
+    return 0
+}
+
+# get_matching_lines -- return a list of matching lines in file
+proc get_matching_lines { file pattern } {
+    set lines {}
+    set fd [open $file r]
+    while { [gets $fd cur_line]>=0 } {
+	if [string match "*$pattern*" $cur_line] then {
+	    lappend lines $cur_line
+	}
+    }
+    close $fd
+    return $lines
+}
+
+# Modified dg-runtest that can cycle through a list of optimization options
+# as c-torture does.
+proc gcc-dg-runtest { testcases flags default-extra-flags } {
+    global runtests
+
+    # Some callers initialize torture testing themselves; don't override those.
+    set existing_torture_init [torture-init-done]
+    if { $existing_torture_init == 0 } {
+	torture-init
+    }
+    # Some callers set torture options themselves; don't override those.
+    set existing_torture_options [torture-options-exist]
+    if { $existing_torture_options == 0 } {
+	global DG_TORTURE_OPTIONS LTO_TORTURE_OPTIONS
+	set-torture-options $DG_TORTURE_OPTIONS [list {}] $LTO_TORTURE_OPTIONS
+    }
+    dump-torture-options
+
+    foreach test $testcases {
+	global torture_with_loops torture_without_loops
+	# If we're only testing specific files and this isn't one of
+	# them, skip it.
+	if ![runtest_file_p $runtests $test] {
+	    continue
+        }
+
+	# Look for a loop within the source code - if we don't find one,
+	# don't pass -funroll[-all]-loops.
+	if [expr [search_for $test "for*("]+[search_for $test "while*("]] {
+	    set option_list $torture_with_loops
+	} else {
+	    set option_list $torture_without_loops
+	}
+
+	set nshort [file tail [file dirname $test]]/[file tail $test]
+
+	foreach flags_t $option_list {
+	    global torture_current_flags
+	    set torture_current_flags "$flags_t"
+	    verbose "Testing $nshort, $flags $flags_t" 1
+	    dg-test $test "$flags $flags_t" ${default-extra-flags}
+	    unset torture_current_flags
+	}
+    }
+
+    if { $existing_torture_init == 0 } {
+	torture-finish
+    }
+}
+
+# Check if frontend has CTF support
+proc gcc-dg-frontend-supports-ctf { target_compile trivial } {
+    global srcdir subdir
+
+    set comp_output [$target_compile \
+	    "$srcdir/$subdir/$trivial" "trivial.S" assembly \
+	    "additional_flags=-gctf"]
+    if { ! [string match \
+	    "*CTF debug info requested, but not supported for * frontend*" \
+	    $comp_output] } {
+	remove-build-file "trivial.S"
+	return 1
+    }
+    return 0
+}
+
+# Check if the target system supports the debug format
+proc gcc-dg-target-supports-debug-format { target_compile trivial type } {
+    global srcdir subdir
+
+    set comp_output [$target_compile \
+	    "$srcdir/$subdir/$trivial" "trivial.S" assembly \
+	    "additional_flags=$type"]
+    if { ! [string match "*: target system does not support the * debug format*" \
+	    $comp_output] } {
+	remove-build-file "trivial.S"
+	return 1
+    }
+    return 0
+}
+
+proc gcc-dg-debug-runtest { target_compile trivial opt_opts testcases } {
+    if ![info exists DEBUG_TORTURE_OPTIONS] {
+	set DEBUG_TORTURE_OPTIONS ""
+	foreach type {-gctf -gdwarf-2} {
+	    if [expr [gcc-dg-target-supports-debug-format \
+		      $target_compile $trivial $type]] {
+		if { $type == "-gctf" } {
+		    if [expr [gcc-dg-frontend-supports-ctf \
+			      $target_compile $trivial]] {
+			# At this time, running tests with various opt levels or
+			# ctf debug info levels does not add value.
+			lappend DEBUG_TORTURE_OPTIONS  [list "${type}"]
+		    }
+		    continue
+		}
+		foreach level {1 "" 3} {
+		    if { ($type == "-gdwarf-2") && ($level != "") } {
+			lappend DEBUG_TORTURE_OPTIONS [list "${type}" "-g${level}"]
+			foreach opt $opt_opts {
+			    lappend DEBUG_TORTURE_OPTIONS \
+				    [list "${type}" "-g${level}" "$opt" ]
+			}
+		    } else {
+			lappend DEBUG_TORTURE_OPTIONS [list "${type}${level}"]
+			foreach opt $opt_opts {
+			    lappend DEBUG_TORTURE_OPTIONS \
+				    [list "${type}${level}" "$opt" ]
+			}
+		    }
+		}
+	    }
+	}
+    }
+
+    verbose -log "Using options $DEBUG_TORTURE_OPTIONS"
+
+    global runtests
+
+    foreach test $testcases {
+	# If we're only testing specific files and this isn't one of
+	# them, skip it.
+	if ![runtest_file_p $runtests $test] {
+	    continue
+	}
+
+	set nshort [file tail [file dirname $test]]/[file tail $test]
+
+	foreach flags $DEBUG_TORTURE_OPTIONS {
+	    set doit 1
+
+	    # These tests check for information which may be deliberately
+	    # suppressed at -g1.
+	    if { ([string match {*/debug-[126].c} "$nshort"] \
+		   || [string match {*/enum-1.c} "$nshort"] \
+		   || [string match {*/enum-[12].C} "$nshort"]) \
+		    && ([string match "*1" [lindex "$flags" 0] ]
+			|| [lindex "$flags" 1] == "-g1") } {
+		set doit 0
+	    }
+
+    # High optimization can remove the variable whose existence is tested.
+    # Dwarf debugging with commentary (-dA) preserves the symbol name in the
+    # assembler output, but stabs debugging does not.
+    # http://gcc.gnu.org/ml/gcc-regression/2003-04/msg00095.html
+	    if { [string match {*/debug-[12].c} "$nshort"] \
+		    && [string match "*O*" "$flags"] \
+		    && ( [string match "*coff*" "$flags"] \
+			 || [string match "*stabs*" "$flags"] ) } {
+		set doit 0
+	    }
+
+	    # These tests check for information which is not emitted for CTF
+	    # as CTF type information is emitted for entities at file and 
+	    # global scope only.
+	    if { ([string match {*/debug-[126].c} "$nshort"] \
+		  || [string match {*/enum-[12].C} "$nshort"] ) \
+		  && [string match "*ctf*" "$flags"] } {
+		set doit 0
+	    }
+
+	    if { $doit } {
+		verbose -log "Testing $nshort, $flags" 1
+		dg-test $test $flags ""
+	    }
+	}
+    }
+}
+
+# Prune any messages matching ARGS[1] (a regexp) from test output.
+proc dg-prune-output { args } {
+    global additional_prunes
+
+    if { [llength $args] != 2 } {
+	error "[lindex $args 1]: need one argument"
+	return
+    }
+
+    lappend additional_prunes [lindex $args 1]
+}
+
+# Remove files matching the pattern from the build machine.
+proc remove-build-file { pat } {
+    verbose "remove-build-file `$pat'" 2
+    set file_list "[glob -nocomplain $pat]"
+    verbose "remove-build-file `$file_list'" 2
+    foreach output_file $file_list {
+	if [is_remote host] {
+	    # Ensure the host knows the file is gone by deleting there
+	    # first.
+	    remote_file host delete $output_file
+	}
+	remote_file build delete $output_file
+    }
+}
+
+# Remove runtime-generated profile file for the current test.
+proc cleanup-profile-file { } {
+    remove-build-file "mon.out"
+    remove-build-file "gmon.out"
+}
+
+# Remove compiler-generated coverage files for the current test.
+proc cleanup-coverage-files { } {
+    global additional_sources_used
+    set testcase [testname-for-summary]
+    # The name might include a list of options; extract the file name.
+    set testcase [lindex $testcase 0]
+    remove-build-file "[file rootname [file tail $testcase]].gc??"
+
+    # Clean up coverage files for additional source files.
+    if [info exists additional_sources_used] {
+	foreach srcfile $additional_sources_used {
+	    remove-build-file "[file rootname [file tail $srcfile]].gc??"
+	}
+    }
+}
+
+# Remove a final insns dump file for the current test.
+proc cleanup-final-insns-dump { } {
+    set testcase [testname-for-summary]
+    # The name might include a list of options; extract the file name.
+    set testcase [lindex $testcase 0]
+    remove-build-file "[file rootname [file tail $testcase]].s.gkd"
+
+    # Clean up files for additional source files.
+    if [info exists additional_sources_used] {
+	foreach srcfile $additional_sources_used {
+	    remove-build-file "[file rootname [file tail $srcfile]].s.gkd"
+	}
+    }
+}
+
+# Remove a stack usage file for the current test.
+proc cleanup-stack-usage { } {
+    set testcase [testname-for-summary]
+    # The name might include a list of options; extract the file name.
+    set testcase [lindex $testcase 0]
+    remove-build-file "[file rootname [file tail $testcase]].su"
+
+    # Clean up files for additional source files.
+    if [info exists additional_sources_used] {
+	foreach srcfile $additional_sources_used {
+	    remove-build-file "[file rootname [file tail $srcfile]].su"
+	}
+    }
+}
+
+# Remove an Ada spec file for the current test.
+proc cleanup-ada-spec { } {
+    global additional_sources_used
+    set testcase [testname-for-summary]
+    remove-build-file "[get_ada_spec_filename $testcase]"
+
+    # Clean up files for additional source files.
+    if [info exists additional_sources_used] {
+	foreach srcfile $additional_sources_used {
+	    remove-build-file "[get_ada_spec_filename $srcfile]"
+	}
+    }
+}
+
+# Remove files kept by --save-temps for the current test.
+#
+# Currently this is only .i, .ii, .s and .o files, but more can be added
+# if there are tests generating them.
+# ARGS is a list of suffixes to NOT delete.
+proc cleanup-saved-temps { args } {
+    global additional_sources_used
+    set suffixes {}
+
+    # add the to-be-kept suffixes
+    foreach suffix {".mii" ".ii" ".i" ".s" ".o" ".gkd" ".res" ".ltrans.out"} {
+	if {[lsearch $args $suffix] < 0} {
+	    lappend suffixes $suffix
+	}
+    }
+
+    set testcase [testname-for-summary]
+    # The name might include a list of options; extract the file name.
+    set testcase [lindex $testcase 0]
+    foreach suffix $suffixes {
+	remove-build-file "[file rootname [file tail $testcase]]$suffix"
+	remove-build-file "[file rootname [file tail $testcase]].exe$suffix"
+	remove-build-file "[file rootname [file tail $testcase]].exe.ltrans\[0-9\]*$suffix"
+	# -fcompare-debug dumps
+	remove-build-file "[file rootname [file tail $testcase]].gk$suffix"
+    }
+
+    # Clean up saved temp files for additional source files.
+    if [info exists additional_sources_used] {
+	foreach srcfile $additional_sources_used {
+	    foreach suffix $suffixes {
+		remove-build-file "[file rootname [file tail $srcfile]]$suffix"
+		remove-build-file "[file rootname [file tail $srcfile]].exe$suffix"
+		remove-build-file "[file rootname [file tail $srcfile]].exe.ltrans\[0-9\]*$suffix"
+
+		# -fcompare-debug dumps
+		remove-build-file "[file rootname [file tail $srcfile]].gk$suffix"
+	    }
+	}
+    }
+}
+
+
+# Files to be kept after cleanup of --save-temps for the current test.
+# ARGS is a list of suffixes to NOT delete.
+proc dg-keep-saved-temps { args } {
+    global keep_saved_temps_suffixes
+    set keep_saved_temps_suffixes {}
+
+    # add the to-be-kept suffixes
+    foreach suffix {".mii" ".ii" ".i" ".s" ".o" ".gkd" ".res" ".ltrans.out"} {
+	if {[lsearch $args $suffix] >= 0} {
+	    lappend keep_saved_temps_suffixes $suffix
+	}
+    }
+    if { [llength keep_saved_temps_suffixes] < 1 } {
+	error "dg-keep-saved-temps ${args} did not match any known suffix"
+    }
+}
+
+# Scan Fortran modules for a given regexp.
+#
+# Argument 0 is the module name
+# Argument 1 is the regexp to match
+proc scan-module { args } {
+    set modfilename [string tolower [lindex $args 0]].mod
+    set fd [open [list | gzip -dc $modfilename] r]
+    set text [read $fd]
+    close $fd
+
+    set testcase [testname-for-summary]
+    if [regexp -- [lindex $args 1] $text] {
+      pass "$testcase scan-module [lindex $args 1]"
+    } else {
+      fail "$testcase scan-module [lindex $args 1]"
+    }
+}
+
+# Scan Fortran modules for absence of a given regexp.
+#
+# Argument 0 is the module name
+# Argument 1 is the regexp to match
+proc scan-module-absence { args } {
+    set modfilename [string tolower [lindex $args 0]].mod
+    set fd [open [list | gzip -dc $modfilename] r]
+    set text [read $fd]
+    close $fd
+
+    set testcase [testname-for-summary]
+    if [regexp -- [lindex $args 1] $text] {
+      fail "$testcase scan-module [lindex $args 1]"
+    } else {
+      pass "$testcase scan-module [lindex $args 1]"
+    }
+}
+
+# Verify that the compiler output file exists, invoked via dg-final.
+proc output-exists { args } {
+    # Process an optional target or xfail list.
+    if { [llength $args] >= 1 } {
+	switch [dg-process-target [lindex $args 0]] {
+	    "S" { }
+	    "N" { return }
+	    "F" { setup_xfail "*-*-*" }
+	    "P" { }
+	}
+    }
+
+    set testcase [testname-for-summary]
+    # Access variable from gcc-dg-test-1.
+    upvar 2 output_file output_file
+
+    if [file exists $output_file] {
+	pass "$testcase output-exists $output_file"
+    } else {
+	fail "$testcase output-exists $output_file"
+    }
+}
+
+# Verify that the compiler output file does not exist, invoked via dg-final.
+proc output-exists-not { args } {
+    # Process an optional target or xfail list.
+    if { [llength $args] >= 1 } {
+	switch [dg-process-target [lindex $args 0]] {
+	    "S" { }
+	    "N" { return }
+	    "F" { setup_xfail "*-*-*" }
+	    "P" { }
+	}
+    }
+
+    set testcase [testname-for-summary]
+    # Access variable from gcc-dg-test-1.
+    upvar 2 output_file output_file
+
+    if [file exists $output_file] {
+	fail "$testcase output-exists-not $output_file"
+    } else {
+	pass "$testcase output-exists-not $output_file"
+    }
+}
+
+if { [info procs saved-dg-warning] == [list] \
+     && [info exists gcc_warning_prefix] } {
+    rename dg-warning saved-dg-warning
+
+    proc dg-warning { args } {
+	# Make this variable available here and to the saved proc.
+	upvar dg-messages dg-messages
+	global gcc_warning_prefix
+
+ 	process-message saved-dg-warning "$gcc_warning_prefix" "$args"
+    }
+}
+
+if { [info procs saved-dg-error] == [list] \
+     && [info exists gcc_error_prefix] } {
+    rename dg-error saved-dg-error
+
+    proc dg-error { args } {
+	# Make this variable available here and to the saved proc.
+	upvar dg-messages dg-messages
+	global gcc_error_prefix
+
+	process-message saved-dg-error "$gcc_error_prefix" "$args"
+    }
+
+    # Override dg-bogus at the same time.  It doesn't handle a prefix
+    # but its expression should include a column number.  Otherwise the
+    # line number can match the column number for other messages, leading
+    # to insanity.
+    rename dg-bogus saved-dg-bogus
+
+    proc dg-bogus { args } {
+	upvar dg-messages dg-messages
+	process-message saved-dg-bogus "" $args
+    }
+}
+
+# Set variable VARNAME to LINENR
+
+proc dg-line { linenr varname } {
+    set org_varname $varname
+    set varname "saved_linenr_$varname"
+    eval global $varname
+
+    # Generate defined-but-previously-defined error.
+    eval set var_defined [info exists $varname]
+    if { $var_defined } {
+	eval set deflinenr \$$varname
+	error "dg-line var $org_varname defined at line $linenr, but previously defined at line $deflinenr"
+	return
+    }
+
+    eval set $varname $linenr
+
+    # Schedule cleanup of varname by cleanup-after-saved-dg-test
+    global save_linenr_varnames
+    if { [info exists save_linenr_varnames] } {
+	lappend save_linenr_varnames $varname
+    } else {
+	set save_linenr_varnames [list $varname]
+    }
+}
+
+# Get the absolute line number corresponding to:
+# - a relative line number (a non-null useline is required), or
+# - a line number variable reference.
+# Argument 0 is the line number on which line was used
+# Argument 1 is the relative line number or line number variable reference
+#
+proc get-absolute-line { useline line } {
+    if { "$line" == "." } {
+	return $useline
+    }
+
+    if { [regsub "^\.\[+-\](\[0-9\]+)$" $line "\\1" num] && $useline != "" } {
+	# Handle relative line specification, .+1 or .-1 etc.
+	set num [expr $useline [string index $line 1] $num]
+	return $num
+    }
+
+    if { ! [regsub "^(\[a-zA-Z\]\[a-zA-Z0-9_\]*)$" $line "\\1" varname] } {
+	return $line
+    }
+
+    # Handle linenr variable defined by dg-line
+    set org_varname $varname
+    set varname "saved_linenr_$varname"
+    eval global $varname
+
+    # Generate used-but-not-defined error.
+    eval set var_defined [info exists $varname]
+    if { ! $var_defined } {
+	if { "$useline" != "" } {
+	    error "dg-line var $org_varname used at line $useline, but not defined"
+	} else {
+	    error "dg-line var $org_varname used, but not defined"
+	}
+	return
+    }
+
+    # Note that varname has been used.
+    set varname_used "used_$varname"
+    eval global $varname_used
+    eval set $varname_used 1
+
+    # Get line number from var and use it.
+    eval set num \$$varname
+    set line $num
+}
+
+# Modify the regular expression saved by a DejaGnu message directive to
+# include a prefix and to force the expression to match a single line.
+# MSGPROC is the procedure to call.
+# MSGPREFIX is the prefix to prepend.
+# DGARGS is the original argument list.
+
+proc process-message { msgproc msgprefix dgargs } {
+    upvar dg-messages dg-messages
+
+    if { [llength $dgargs] == 5 } {
+	set useline [lindex $dgargs 0]
+
+	# Resolve absolute line number.
+	set line [get-absolute-line $useline [lindex $dgargs 4]]
+	set dgargs [lreplace $dgargs 4 4 $line]
+
+	if { $line != $useline } {
+	    # Make sure that we get unique test names if different USELINEs
+	    # refer to the same LINE.
+	    set comment "[lindex $dgargs 2] at line $useline"
+	    set dgargs [lreplace $dgargs 2 2 $comment]
+	}
+    }
+
+    # Process the dg- directive, including adding the regular expression
+    # to the new message entry in dg-messages.
+    set msgcnt [llength ${dg-messages}]
+    eval $msgproc $dgargs
+
+    # If the target expression wasn't satisfied there is no new message.
+    if { [llength ${dg-messages}] == $msgcnt } {
+	return;
+    }
+
+    # Get the entry for the new message.  Prepend the message prefix to
+    # the regular expression and make it match a single line.
+    set newentry [lindex ${dg-messages} end]
+    set expmsg [lindex $newentry 2]
+
+    set column ""
+    # Handle column numbers from the specified expression (if there is
+    # one) and set up the search expression that will be used by DejaGnu.
+    if [regexp {^-:} $expmsg] {
+	# The expected column is -, so shouldn't appear.
+	set expmsg [string range $expmsg 2 end]
+    } elseif [regexp {^[0-9]+:} $expmsg column] {
+	# The expression in the directive included a column number.
+	# Remove it from the original expression and move it
+	# to the proper place in the search expression.
+	set expmsg [string range $expmsg [string length $column] end]
+	set column "$column "
+    } elseif [string match "" [lindex $newentry 0]] {
+	# The specified line number is 0; don't expect a column number.
+    } else {
+	# There is no column number in the search expression, but we
+	# should expect one in the message itself.
+	set column {[0-9]+: }
+    }
+    set expmsg "$column$msgprefix\[^\n\]*$expmsg"
+    set newentry [lreplace $newentry 2 2 $expmsg]
+
+    set dg-messages [lreplace ${dg-messages} end end $newentry]
+    verbose "process-message:\n${dg-messages}" 3
+}
+
+# Look for messages that don't have standard prefixes.
+
+proc dg-message { args } {
+    upvar dg-messages dg-messages
+    process-message saved-dg-warning "" $args
+}
+
+# Look for a location marker of the form
+#   file:line:column:
+# with no extra text (e.g. a line-span separator).
+
+proc dg-locus { args } {
+    upvar dg-messages dg-messages
+
+    # Process the dg- directive, including adding the regular expression
+    # to the new message entry in dg-messages.
+    set msgcnt [llength ${dg-messages}]
+    eval saved-dg-warning $args
+
+    # If the target expression wasn't satisfied there is no new message.
+    if { [llength ${dg-messages}] == $msgcnt } {
+	return;
+    }
+
+    # Get the entry for the new message.  Prepend the message prefix to
+    # the regular expression and make it match a single line.
+    set newentry [lindex ${dg-messages} end]
+    set expmsg [lindex $newentry 2]
+
+    set newentry [lreplace $newentry 2 2 $expmsg]
+    set dg-messages [lreplace ${dg-messages} end end $newentry]
+    verbose "process-message:\n${dg-messages}" 3
+}
+
+# Handle output from -fopt-info for MSG_OPTIMIZED_LOCATIONS:
+# a successful optimization.
+
+proc dg-optimized { args } {
+    # Make this variable available here and to the saved proc.
+    upvar dg-messages dg-messages
+
+    process-message saved-dg-warning "optimized:" "$args"
+}
+
+# Handle output from -fopt-info for MSG_MISSED_OPTIMIZATION:
+# a missed optimization.
+
+proc dg-missed { args } {
+    # Make this variable available here and to the saved proc.
+    upvar dg-messages dg-messages
+
+    process-message saved-dg-warning "missed:" "$args"
+}
+
+# Look for messages with 'note: ' prefixes.
+# In addition to standard compiler diagnostics (diagnostics::kind::note,
+# 'inform' functions, "for additional details on an error message"),
+# this also includes output from '-fopt-info' for 'MSG_NOTE':
+# a general optimization info.
+# By default, any *excess* notes are pruned, meaning their appearance doesn't
+# trigger *excess errors*.  However, if 'dg-note' is used at least once in a
+# testcase, they're not pruned and instead must *all* be handled explicitly.
+# Thus, if looking for just single instances of messages with 'note: ' prefixes
+# without caring for all of them, use 'dg-message "note: [...]"' instead of
+# 'dg-note', or use 'dg-note' together with 'dg-prune-output "note: "'.
+
+variable prune_notes
+
+initialize_prune_notes
+
+proc dg-note { args } {
+    upvar dg-messages dg-messages
+
+    global prune_notes
+    set prune_notes 0
+
+    process-message saved-dg-warning "note:" "$args"
+}
+
+# Check the existence of a gdb in the path, and return true if there
+# is one.
+#
+# Set env(GDB_FOR_GCC_TESTING) accordingly.
+
+proc gdb-exists { args } {
+    if ![info exists ::env(GDB_FOR_GCC_TESTING)] {
+	global GDB
+	if ![info exists ::env(GDB_FOR_GCC_TESTING)] {
+	    if [info exists GDB] {
+		setenv GDB_FOR_GCC_TESTING "$GDB"
+	    } else {
+		setenv GDB_FOR_GCC_TESTING "gdb"
+	    }
+	}
+    }
+    if { [lindex [remote_exec target "$::env(GDB_FOR_GCC_TESTING)" "-v"] 0]
+	 == 0 } {
+	return 1;
+    }
+    return 0;
+}
+
+# Helper function for scan-symbol and scan-symbol-not. It scans a symbol in
+# the final executable and return 1 if present, otherwise fail.
+#
+# Argument 0 is the regexp to match.
+# Argument 1 handles expected failures and the like
+proc scan-symbol-common { scan_directive args } {
+    global nm
+    global base_dir
+
+    # Access variable from gcc-dg-test-1 or lto-execute.
+    upvar 3 output_file output_file
+
+    if { [llength $args] >= 2 } {
+	switch [dg-process-target [lindex $args 1]] {
+	    "S" { }
+	    "N" { return }
+	    "F" { setup_xfail "*-*-*" }
+	    "P" { }
+	}
+    }
+
+    # Find nm like we find g++ in g++.exp.
+    if ![info exists nm]  {
+	set nm [findfile $base_dir/../../../binutils/nm \
+		$base_dir/../../../binutils/nm \
+	        [findfile $base_dir/../../nm $base_dir/../../nm \
+		      [findfile $base_dir/nm $base_dir/nm \
+		       [transform nm]]]]
+	verbose -log "nm is $nm"
+    }
+
+    set output_file "[glob -nocomplain $output_file]"
+    if { $output_file == "" } {
+	fail "$scan_directive $args: output file does not exist"
+	return
+    }
+
+    set fd [open "| $nm $output_file" r]
+    set text [read $fd]
+    close $fd
+
+    if [regexp -- [lindex $args 0] $text] {
+	return 1
+    } else {
+	return 0
+    }
+}
+
+# Utility for scanning a symbol in the final executable, invoked via dg-final.
+# Call pass if pattern is present, otherwise fail.
+#
+# Argument 0 is the regexp to match.
+# Argument 1 handles expected failures and the like
+proc scan-symbol { args } {
+    set testcase [testname-for-summary]
+    if { [scan-symbol-common "scan-symbol" $args]} {
+	pass "$testcase   scan-symbol $args"
+    } else {
+	fail "$testcase   scan-symbol $args"
+    }
+}
+
+# Utility for scanning a symbol in the final executable, invoked via dg-final.
+# Call pass if pattern is absent, otherwise fail.
+#
+# Argument 0 is the regexp to match.
+# Argument 1 handles expected failures and the like
+proc scan-symbol-not { args } {
+    set testcase [testname-for-summary]
+    if { [scan-symbol-common "scan-symbol-not" $args]} {
+	fail "$testcase   scan-symbol-not $args"
+    } else {
+	pass "$testcase   scan-symbol-not $args"
+    }
+}
+
+# Transform a tool-name to its canonical-target-name by "transform"
+# (which may return the original name for native targets) but only if
+# testing out-of-tree.  When in-tree, the tool is expected to be found
+# by its original name, typically with some build-directory prefix
+# prepended by the caller.
+proc gcc-transform-out-of-tree { args } {
+    global TESTING_IN_BUILD_TREE
+    if { [info exists TESTING_IN_BUILD_TREE] } {
+	return $args;
+    }
+    return [transform $args]
+}
+
+set additional_prunes ""
+set dg_runtest_extra_prunes ""

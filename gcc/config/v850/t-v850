@@ -1,0 +1,35 @@
+# Copyright (C) 1997-2026 Free Software Foundation, Inc.
+#
+# This file is part of GCC.
+#
+# GCC is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3, or (at your option)
+# any later version.
+#
+# GCC is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with GCC; see the file COPYING3.  If not see
+# <http://www.gnu.org/licenses/>.
+
+# Create target-specific versions of the libraries
+MULTILIB_OPTIONS  = mgcc-abi msoft-float
+MULTILIB_DIRNAMES =  gcc-abi  soft-float
+
+MULTILIB_OPTIONS  += mv850e3v5
+MULTILIB_DIRNAMES +=  v850e3v5
+
+TCFLAGS = -mno-app-regs -msmall-sld -Wa,-mwarn-signed-overflow -Wa,-mwarn-unsigned-overflow
+
+v850-c.o: $(srcdir)/config/v850/v850-c.cc $(CONFIG_H) $(SYSTEM_H) coretypes.h \
+  $(TM_H) $(CPPLIB_H) $(TREE_H) $(C_PRAGMA_H) $(GGC_H) $(TM_P_H)
+	$(COMPILER) -c $(ALL_COMPILERFLAGS) $(ALL_CPPFLAGS) $(INCLUDES) \
+		$(srcdir)/config/v850/v850-c.cc 
+
+# Local Variables:
+# mode: Makefile
+# End:

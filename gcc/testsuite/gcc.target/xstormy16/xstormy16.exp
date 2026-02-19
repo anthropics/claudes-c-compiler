@@ -1,0 +1,60 @@
+# Copyright (C) 2004-2026 Free Software Foundation, Inc.
+#
+# This file is part of GCC.
+#
+# GCC is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3, or (at your option)
+# any later version.
+#
+# GCC is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with GCC; see the file COPYING3.  If not see
+# <http://www.gnu.org/licenses/>.
+
+# Tests for the xstormy16
+
+if {![istarget xstormy16-*-*]} {
+    return 0
+}
+
+load_lib gcc-dg.exp
+
+# Initialize `dg'.
+dg-init
+
+# Assemble the below100.S file which contains
+# support code for the rest of the tests.
+set old-dg-do-what-default "${dg-do-what-default}"
+set dg-do-what-default assemble
+dg-test -keep-output "$srcdir/$subdir/below100.S" "" ""
+set dg-do-what-default run
+
+
+# Main loop.
+foreach testcase [lsort [find $srcdir/$subdir *.c]] {
+    global test_counts
+
+    set base "[file rootname [file tail $testcase]]"
+
+    if ![runtest_file_p $runtests $testcase] {
+        continue
+    }
+
+    set fails_before $test_counts(FAIL,count)
+    dg-test $testcase "--save-temps -fno-inline-functions -L$srcdir/$subdir" ""
+    set fails_after $test_counts(FAIL,count)
+
+    if { $fails_before == $fails_after } {
+        catch "exec rm -f $base.i $base.s $base.o"
+    }
+}
+
+set dg-do-what-default "${old-dg-do-what-default}"
+
+# All done.
+dg-finish

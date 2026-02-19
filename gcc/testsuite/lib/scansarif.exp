@@ -1,0 +1,201 @@
+# Copyright (C) 2000-2026 Free Software Foundation, Inc.
+
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+# 
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+# 
+# You should have received a copy of the GNU General Public License
+# along with GCC; see the file COPYING3.  If not see
+# <http://www.gnu.org/licenses/>.
+
+# Various utilities for scanning SARIF output, used by gcc-dg.exp and
+# g++-dg.exp.
+#
+# This is largely borrowed from scanasm.exp, but tweaked to force Tcl
+# to treat the file as UTF-8: section 3.1 of SARIF 2.1.0
+# ("File Format" > "General") specifies: "A SARIF log file SHALL be
+# encoded in UTF-8 [RFC3629])".
+
+# Look for a pattern in the .sarif file produced by the compiler.  See
+# dg-scan for details.
+
+proc scan-sarif-file { args } {
+    set testcase [testname-for-summary]
+    # The name might include a list of options; extract the file name.
+    set filename [lindex $testcase 0]
+    set output_file "[file tail $filename].sarif"
+
+    # Treat the file as UTF-8 encoded when reading it.
+    set args [append_encoding_arg $args "utf-8"]
+
+    dg-scan "scan-sarif-file" 1 $testcase $output_file $args
+}
+
+# Check that a pattern is not present in the .sarif file.  See dg-scan
+# for details.
+
+proc scan-sarif-file-not { args } {
+    set testcase [testname-for-summary]
+    # The name might include a list of options; extract the file name.
+    set filename [lindex $testcase 0]
+    set output_file "[file tail $filename].sarif"
+
+    # Treat the file as UTF-8 encoded when reading it.
+    set args [append_encoding_arg $args "utf-8"]
+
+    dg-scan "scan-sarif-file-not" 0 $testcase $output_file $args
+}
+
+# Perform validity checks on the .sarif file produced by the compiler.
+#
+# Assuming python3 is available, use verify-sarif-file.py to check
+# that the .sarif file is UTF-8 encoded and is parseable as JSON.
+#
+# Assuming "check-jsonschema" is available, use it to verify that the .sarif
+# file complies with the SARIF schema.
+#
+# The first argument is the version of the SARIF schema to validate against
+# If present can be "2.1" or "2.2"
+# If absent, validate against 2.1
+#
+# If present, the second argument is the expected filename of the .sarif file
+
+proc verify-sarif-file { args } {
+    global srcdir subdir
+
+    set testcase [testname-for-summary]
+    set filename [lindex $testcase 0]
+
+    set version [lindex $args 0]
+    verbose "sarif version: $version" 2
+
+    set output_file [lindex $args 1]
+    verbose "output_file: $output_file" 2
+    if { $output_file == "" } {
+	set output_file "[file tail $filename].sarif"
+    }
+
+    if { ![check_effective_target_recent_python3] } {
+	unsupported "$testcase verify-sarif-file: python3 is missing"
+	return
+    }
+
+    # Verify that the file is correctly encoded and is parseable as JSON.
+    set script_name $srcdir/lib/verify-sarif-file.py
+    set what "$testcase (test .sarif output for UTF-8-encoded parseable JSON)"
+    if [catch {exec python3 $script_name $output_file} res ] {
+	verbose "verify-sarif-file: res: $res" 2
+	fail "$what"
+	return
+    } else {
+	pass "$what"
+    }
+
+    # Verify that the file complies with the SARIF schema.
+
+    # Check that jsonschema is installed.
+    if { ![check_effective_target_check_jsonschema] } {
+	unsupported "$testcase verify-sarif-file: check-jsonschema is missing"
+	return	
+    }
+
+    # Handle different versions of SARIF
+    if { $version == "" } {
+	set version "2.1"
+    }
+    
+    if { $version == "2.1" } {
+	set schema_file $srcdir/lib/sarif-schema-2.1.0.json
+    } elseif { $version == "2.2" } {
+	set schema_file $srcdir/lib/sarif-schema-2.2-prerelease-2024-08-08.json
+    } else {
+	fail "unrecognized sarif version: $version"
+	return
+    }
+    verbose "schema_file: $schema_file" 2
+
+    set what "$testcase (test .sarif output against SARIF $version schema)"
+    if [catch {exec check-jsonschema --schemafile $schema_file $output_file} res ] {
+	verbose "verify-sarif-file: res: $res" 2
+	fail "$what"
+	return
+    } else {
+	pass "$what"
+    }
+}
+
+proc sarif-pytest-format-line { args } {
+    global subdir
+
+    set testcase [lindex $args 0]
+    set pytest_script [lindex $args 1]
+    set output_line [lindex $args 2]
+
+    set index [string first "::" $output_line]
+    set test_output [string range $output_line [expr $index + 2] [string length $output_line]]
+
+    return "$subdir/$testcase ${pytest_script}::${test_output}"
+}
+
+# Call by dg-final to run a pytest Python script.
+# We pass filename of a test via SARIF_PATH environment variable.
+
+proc run-sarif-pytest { args } {
+    global srcdir subdir
+    # Extract the test file name from the arguments.
+    set testcase [lindex $args 0]
+
+    verbose "Running SARIF $testcase in $srcdir/$subdir" 2
+    set testcase [remote_download host $testcase]
+
+    set pytest_script [lindex $args 1]
+    if { ![check_effective_target_pytest3] } {
+      unsupported "$pytest_script pytest python3 is missing"
+      return
+    }
+
+    setenv SARIF_PATH $testcase
+    set libdir "${srcdir}/lib"
+
+    # Set/prepend libdir to PYTHONPATH
+    if [info exists ::env(PYTHONPATH)] {
+	set old_PYTHONPATH $::env(PYTHONPATH)
+	setenv PYTHONPATH "${libdir}:${old_PYTHONPATH}"
+    } else {
+	setenv PYTHONPATH "${libdir}"
+    }
+    
+    verbose "PYTHONPATH=[getenv PYTHONPATH]" 2
+
+    spawn -noecho python3 -m pytest --color=no -rap -s --tb=no $srcdir/$subdir/$pytest_script
+
+    if [info exists old_PYTHONPATH] {
+	setenv PYTHONPATH ${old_PYTHONPATH}
+    }
+
+    set prefix "\[^\r\n\]*"
+    expect {
+      -re "FAILED($prefix)\[^\r\n\]+\r\n" {
+       set output [sarif-pytest-format-line $testcase $pytest_script $expect_out(1,string)]
+       fail $output
+       exp_continue
+      }
+      -re "ERROR($prefix)\[^\r\n\]+\r\n" {
+       set output [sarif-pytest-format-line $testcase $pytest_script $expect_out(1,string)]
+       fail $output
+       exp_continue
+      }
+      -re "PASSED($prefix)\[^\r\n\]+\r\n" {
+       set output [sarif-pytest-format-line $testcase $pytest_script $expect_out(1,string)]
+       pass $output
+       exp_continue
+      }
+    }
+}
+

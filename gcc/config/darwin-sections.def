@@ -1,0 +1,224 @@
+/* Copyright (C) 2005-2026 Free Software Foundation, Inc.
+
+This file is part of GCC.
+
+GCC is free software; you can redistribute it and/or modify it under
+the terms of the GNU General Public License as published by the Free
+Software Foundation; either version 3, or (at your option) any later
+version.
+
+GCC is distributed in the hope that it will be useful, but WITHOUT ANY
+WARRANTY; without even the implied warranty of MERCHANTABILITY or
+FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+for more details.
+
+You should have received a copy of the GNU General Public License
+along with GCC; see the file COPYING3.  If not see
+<http://www.gnu.org/licenses/>.  */
+
+/* Since Darwin's ld will not allow zero-sized objects, and gcc wants them,
+   we emit one byte (in darwin.cc) when such an object is encountered.
+
+   This messes up section anchoring because the emitted byte is not counted
+   outside the port.  To cope with this, we set aside sections for zero-sized
+   objects and disallow those sections from  participating in section anchors
+   ("zobj_" sections, below).
+   
+   Items that might be coalesced by the linker are prevented from participating,
+   (and those in mergeable sections are disallowed in varasm.cc).  */
+
+/* The .text section is generated in varasm.cc  */
+DEF_SECTION (text_coal_section, SECTION_CODE|SECTION_NO_ANCHOR,
+	     ".section __TEXT,__textcoal_nt,coalesced,pure_instructions", 0)
+
+/* We define a picbase thunks section separately, so that we can override the
+   def to be '.text' for versions of ld64 that handle coalescing.  */
+DEF_SECTION (picbase_thunk_section, SECTION_CODE|SECTION_NO_ANCHOR,
+	     ".section __TEXT,__textcoal_nt,coalesced,pure_instructions", 0)
+
+DEF_SECTION (text_hot_section, SECTION_CODE,
+	     ".section __TEXT,__text_hot,regular,pure_instructions", 0)
+DEF_SECTION (text_cold_section, SECTION_CODE,
+	     ".section __TEXT,__text_cold,regular,pure_instructions", 0)
+DEF_SECTION (text_startup_section, SECTION_CODE,
+	     ".section __TEXT,__text_startup,regular,pure_instructions", 0)
+DEF_SECTION (text_exit_section, SECTION_CODE,
+	     ".section __TEXT,__text_exit,regular,pure_instructions", 0)
+
+DEF_SECTION (text_hot_coal_section, SECTION_CODE,
+	     ".section __TEXT,__text_hot_coal,coalesced,pure_instructions", 0)
+DEF_SECTION (text_cold_coal_section, SECTION_CODE,
+	     ".section __TEXT,__text_cold_coal,coalesced,pure_instructions", 0)
+DEF_SECTION (text_startup_coal_section, SECTION_CODE,
+	     ".section __TEXT,__text_stt_coal,coalesced,pure_instructions", 0)
+DEF_SECTION (text_exit_coal_section, SECTION_CODE,
+	     ".section __TEXT,__text_exit_coal,coalesced,pure_instructions", 0)
+
+/* const */
+DEF_SECTION (const_section, 0, ".const", 0)
+DEF_SECTION (const_coal_section, SECTION_NO_ANCHOR,
+	     ".section __TEXT,__const_coal,coalesced", 0)
+/* Place to put zero-sized to avoid issues with section anchors.  */
+DEF_SECTION (zobj_const_section, SECTION_NO_ANCHOR, 
+	     ".section\t__DATA,__zobj_const", 0)
+
+/* Write-able data.  '.data'  handled in varasm.cc  */
+DEF_SECTION (static_data_section, SECTION_WRITE, ".static_data", 0)
+DEF_SECTION (data_coal_section, SECTION_WRITE|SECTION_NO_ANCHOR,
+	     ".section __DATA,__datacoal_nt,coalesced", 0)
+/* Place to put zero-sized to avoid issues with section anchors.  */
+DEF_SECTION (zobj_data_section, SECTION_WRITE|SECTION_NO_ANCHOR, 
+	     ".section\t__DATA,__zobj_data", 0)
+
+/* BSS - .lcomm / .zerofill __DATA,__bss sections cannot be switched to
+   explicitly (will create an assembler error).  */
+DEF_SECTION (zobj_bss_section, SECTION_WRITE|SECTION_BSS|SECTION_NO_ANCHOR, 
+	     ".section\t__DATA,__zobj_bss", 0)
+
+/* const data */
+DEF_SECTION (const_data_section, 0, ".const_data", 0)
+DEF_SECTION (const_data_coal_section, SECTION_NO_ANCHOR,
+	     ".section __DATA,__const_coal,coalesced", 0)
+/* Place to put zero-sized to avoid issues with section anchors.  */
+DEF_SECTION (zobj_const_data_section, SECTION_NO_ANCHOR, 
+	     ".section\t__DATA,__zobj_cnst_data", 0)
+
+/* Strings and other literals.  */
+DEF_SECTION (cstring_section, SECTION_MERGE | SECTION_STRINGS, ".cstring", 0)
+DEF_SECTION (literal4_section, SECTION_MERGE, ".literal4", 0)
+DEF_SECTION (literal8_section, SECTION_MERGE, ".literal8", 0)
+DEF_SECTION (literal16_section, SECTION_MERGE, ".literal16", 0)
+/* Unlike constant NSStrings, constant CFStrings do not live  in the
+   __OBJC segment since they may also occur in pure C  or C++ programs.  */
+DEF_SECTION (cfstring_constant_object_section, 0, 
+	     ".section __DATA, __cfstring", 0)
+
+/* Module init, term, constructors & destructors.  */
+DEF_SECTION (mod_init_section, 0, ".mod_init_func", 0)
+DEF_SECTION (mod_term_section, 0, ".mod_term_func", 0)
+DEF_SECTION (constructor_section, 0, ".constructor", 0)
+DEF_SECTION (destructor_section, 0, ".destructor", 0)
+DEF_SECTION (static_init_section, SECTION_CODE,
+	     ".section\t__TEXT,__StaticInit,regular,pure_instructions", 0)
+
+/* Objective-C ABI=0 (Original version) sections.  */
+DEF_SECTION (objc_class_section, 0, ".objc_class", 1)
+DEF_SECTION (objc_meta_class_section, 0, ".objc_meta_class", 1)
+DEF_SECTION (objc_category_section, 0, ".objc_category", 1)
+DEF_SECTION (objc_class_vars_section, 0, ".objc_class_vars", 1)
+DEF_SECTION (objc_instance_vars_section, 0, ".objc_instance_vars", 1)
+DEF_SECTION (objc_cls_meth_section, 0, ".objc_cls_meth", 1)
+DEF_SECTION (objc_inst_meth_section, 0, ".objc_inst_meth", 1)
+DEF_SECTION (objc_cat_cls_meth_section, 0, ".objc_cat_cls_meth", 1)
+DEF_SECTION (objc_cat_inst_meth_section, 0, ".objc_cat_inst_meth", 1)
+DEF_SECTION (objc_selector_refs_section, SECTION_MERGE, ".objc_message_refs", 1)
+DEF_SECTION (objc_selector_fixup_section, 0,
+	    ".section __OBJC, __sel_fixup, regular, no_dead_strip", 1)
+DEF_SECTION (objc_symbols_section, 0, ".objc_symbols", 1)
+DEF_SECTION (objc_module_info_section, 0, ".objc_module_info", 1)
+DEF_SECTION (objc_protocol_section, 0, ".objc_protocol", 1)
+DEF_SECTION (objc_string_object_section, 0, ".objc_string_object", 1)
+DEF_SECTION (objc_constant_string_object_section, 0,
+	     ".section __OBJC, __cstring_object, regular, no_dead_strip", 0)
+
+/* Fix-and-Continue image marker.  */
+DEF_SECTION (objc_image_info_section, 0,
+	     ".section __OBJC, __image_info, regular, no_dead_strip", 1)
+DEF_SECTION (objc_class_names_section, 0, ".objc_class_names", 1)
+DEF_SECTION (objc_meth_var_names_section, 0, ".objc_meth_var_names", 1)
+DEF_SECTION (objc_meth_var_types_section, 0, ".objc_meth_var_types", 1)
+DEF_SECTION (objc_cls_refs_section, SECTION_MERGE, ".objc_cls_refs", 1)
+
+/* Stubs and symbol indirection sections.  */
+/* lazy symbol pointers.  */
+DEF_SECTION (machopic_lazy_symbol_ptr_section, SECTION_NO_ANCHOR, 
+	     ".lazy_symbol_pointer", 0)
+DEF_SECTION (machopic_lazy_symbol_ptr2_section,	SECTION_NO_ANCHOR,
+	     ".section __DATA, __la_sym_ptr2,lazy_symbol_pointers", 0)
+DEF_SECTION (machopic_lazy_symbol_ptr3_section, SECTION_NO_ANCHOR,
+	     ".section __DATA, __la_sym_ptr3,lazy_symbol_pointers", 0)
+/* non-lazy symbol pointers.  */
+DEF_SECTION (machopic_nl_symbol_ptr_section, SECTION_NO_ANCHOR,
+	     MACHOPIC_NL_SYMBOL_PTR_SECTION, 0)
+/* Symbol stubs.  */
+DEF_SECTION (machopic_symbol_stub_section, SECTION_NO_ANCHOR, 
+	     ".symbol_stub", 0)
+DEF_SECTION (machopic_symbol_stub1_section, SECTION_NO_ANCHOR,
+	     ".section __TEXT,__symbol_stub1,symbol_stubs,"
+	     "pure_instructions,16", 0)
+/* PIC symbol stubs.  */
+DEF_SECTION (machopic_picsymbol_stub_section, SECTION_NO_ANCHOR, 
+	     ".picsymbol_stub", 0)
+DEF_SECTION (machopic_picsymbol_stub1_section, SECTION_NO_ANCHOR,
+	     ".section __TEXT,__picsymbolstub1,symbol_stubs,"
+	     "pure_instructions,32", 0)
+DEF_SECTION (machopic_picsymbol_stub2_section, SECTION_NO_ANCHOR,
+	     ".section __TEXT,__picsymbolstub2,symbol_stubs,pure_instructions,25", 0)
+DEF_SECTION (machopic_picsymbol_stub3_section, SECTION_NO_ANCHOR,
+	     ".section __IMPORT,__jump_table,symbol_stubs,self_modifying_code+pure_instructions,5", 0)
+
+/* Exception-related.  */
+DEF_SECTION (darwin_exception_section, SECTION_NO_ANCHOR,
+	     ".section __TEXT,__gcc_except_tab", 0)
+DEF_SECTION (darwin_eh_frame_section, SECTION_NO_ANCHOR,
+	     ".section " EH_FRAME_SECTION_NAME ",__eh_frame"
+	     EH_FRAME_SECTION_ATTR, 0)
+
+/* Sections for ObjC ABI=1 (ObjC 'V1' extensions) */
+DEF_SECTION (objc1_class_ext_section, 0,
+	    ".section __OBJC, __class_ext, regular, no_dead_strip", 1)
+DEF_SECTION (objc1_prop_list_section, 0,
+	    ".section __OBJC, __property, regular, no_dead_strip", 1)
+DEF_SECTION (objc1_protocol_ext_section, 0,
+	    ".section __OBJC, __protocol_ext, regular, no_dead_strip", 1)
+
+/* Sections for ObjC ABI=2 (m64).  */
+DEF_SECTION (objc2_message_refs_section, 0,
+	     ".section __DATA, __objc_msgrefs, regular, no_dead_strip", 1)
+DEF_SECTION (objc2_classdefs_section, 0, ".section __DATA, __objc_data", 1)
+DEF_SECTION (objc2_metadata_section, 0, ".section __DATA, __objc_const", 1)
+
+DEF_SECTION (objc2_classrefs_section, 0, 
+             ".section __DATA, __objc_classrefs, regular, no_dead_strip", 1)
+DEF_SECTION (objc2_classlist_section, 0,
+	     ".section __DATA, __objc_classlist, regular, no_dead_strip", 1)
+DEF_SECTION (objc2_categorylist_section, 0,
+	     ".section __DATA, __objc_catlist, regular, no_dead_strip", 1)
+DEF_SECTION (objc2_selector_refs_section, 0,
+	     ".section __DATA, __objc_selrefs, literal_pointers, no_dead_strip", 1)
+DEF_SECTION (objc2_nonlazy_class_section, 0,
+	     ".section __DATA, __objc_nlclslist, regular, no_dead_strip", 1)
+DEF_SECTION (objc2_nonlazy_category_section, 0,
+	     ".section __DATA, __objc_nlcatlist, regular, no_dead_strip", 1)
+DEF_SECTION (objc2_protocollist_section, 0,
+	     ".section __DATA, __objc_protolist, regular, no_dead_strip", 1)
+DEF_SECTION (objc2_protocolrefs_section, 0,
+	     ".section __DATA, __objc_protorefs, regular, no_dead_strip", 1)
+DEF_SECTION (objc2_super_classrefs_section, 0,
+	     ".section __DATA, __objc_superrefs, regular, no_dead_strip", 1)
+DEF_SECTION (objc2_image_info_section, 0,
+	     ".section __DATA, __objc_imageinfo, regular, no_dead_strip", 1)
+DEF_SECTION (objc2_constant_string_object_section, 0,
+	     ".section __DATA, __objc_stringobj, regular, no_dead_strip", 1)
+
+/* Additions for compatibility with later runtime conventions especially for
+   sections containing strings.  */
+DEF_SECTION (objc2_data_section, 0, ".section __DATA, __data", 1)
+
+DEF_SECTION (objc2_ivar_section, 0, ".section __DATA, __objc_ivar", 1)
+
+DEF_SECTION (objc2_class_names_section, 0,
+	     ".section __TEXT, __objc_classname, cstring_literals", 1)
+
+DEF_SECTION (objc2_method_names_section, 0,
+	     ".section __TEXT, __objc_methname, cstring_literals", 1)
+
+DEF_SECTION (objc2_method_types_section, 0,
+	     ".section __TEXT, __objc_methtype, cstring_literals", 1)
+
+/* ASAN sections.  */
+
+DEF_SECTION (asan_string_section, 0, ".section __TEXT, __asan_cstring", 0)
+DEF_SECTION (asan_globals_section, 0, ".section __DATA, __asan_globals", 0)
+DEF_SECTION (asan_liveness_section, 0,
+	     ".section __DATA,__asan_liveness,regular,live_support", 0)

@@ -1,0 +1,73 @@
+; Options for the Tensilica Xtensa port of the compiler.
+
+; Copyright (C) 2005-2026 Free Software Foundation, Inc.
+;
+; This file is part of GCC.
+;
+; GCC is free software; you can redistribute it and/or modify it under
+; the terms of the GNU General Public License as published by the Free
+; Software Foundation; either version 3, or (at your option) any later
+; version.
+;
+; GCC is distributed in the hope that it will be useful, but WITHOUT ANY
+; WARRANTY; without even the implied warranty of MERCHANTABILITY or
+; FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+; for more details.
+;
+; You should have received a copy of the GNU General Public License
+; along with GCC; see the file COPYING3.  If not see
+; <http://www.gnu.org/licenses/>.
+
+HeaderInclude
+config/xtensa/xtensa-opts.h
+
+mconst16
+Target Mask(CONST16)
+Use CONST16 instruction to load constants.
+
+mforce-no-pic
+Target Mask(FORCE_NO_PIC)
+Disable position-independent code (PIC) for use in OS kernel code.
+
+mlongcalls
+Target Mask(LONGCALLS)
+Use indirect CALLXn instructions for large programs.
+
+mextra-l32r-costs=
+Target RejectNegative Joined UInteger Var(xtensa_extra_l32r_costs) Init(0)
+Set extra memory access cost for L32R instruction, in clock-cycle units.
+
+mlra
+Target Undocumented Ignore
+Does nothing.  Preserved for backward compatibility.
+
+mtarget-align
+Target
+Automatically align branch targets to reduce branch penalties.
+
+mtext-section-literals
+Target
+Intersperse literal pools with code in the text section.
+
+mauto-litpools
+Target Mask(AUTO_LITPOOLS)
+Relax literals in assembler and place them automatically in the text section.
+
+mserialize-volatile
+Target Mask(SERIALIZE_VOLATILE)
+-mno-serialize-volatile	Do not serialize volatile memory references with MEMW instructions.
+
+TargetVariable
+int xtensa_windowed_abi = -1
+
+mabi=call0
+Target RejectNegative Var(xtensa_windowed_abi, 0)
+Use call0 ABI.
+
+mabi=windowed
+Target RejectNegative Var(xtensa_windowed_abi, 1)
+Use windowed registers ABI.
+
+mstrict-align
+Target Var(xtensa_strict_alignment) Init(XTENSA_STRICT_ALIGNMENT_UNDEFINED)
+Do not use unaligned memory references.

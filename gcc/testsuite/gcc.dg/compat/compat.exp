@@ -1,0 +1,86 @@
+# Copyright (C) 2002-2026 Free Software Foundation, Inc.
+
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with GCC; see the file COPYING3.  If not see
+# <http://www.gnu.org/licenses/>.
+#
+# This file was written by Janis Johnson, <janis187@us.ibm.com>
+
+
+# Test interoperability of two compilers that follow the same ABI.
+#
+# Break simple tests into two pieces and see that they work when linked
+# together.  If an alternate compiler is specified then the two main
+# pieces of each test are compiled with different compilers.  The
+# alternate compiler must be installed, and is specified by defining
+# ALT_CC_UNDER_TEST in the environment.
+
+if $tracelevel then {
+    strace $tracelevel
+}
+
+global GCC_UNDER_TEST
+global ALT_CC_UNDER_TEST
+global compat_save_gcc_under_test
+global compat_use_alt
+global compat_same_alt
+global compat_have_dfp
+
+# Load procedures from common libraries. 
+load_lib standard.exp
+load_lib gcc.exp
+
+# Load the language-dependent compatibility support procedures.
+load_lib c-compat.exp
+
+# Load the language-independent compabibility support procedures.
+load_lib compat.exp
+
+gcc_init
+
+# Save variables for the C compiler under test, which each test will
+# change a couple of times.  This must be done after calling gcc-init.
+set compat_save_gcc_under_test $GCC_UNDER_TEST
+
+# Define an identifier for use with this suite to avoid name conflicts
+# with other compat tests running at the same time.
+set sid "c_compat"
+
+# Find out whether there is an alternate compiler to test.  If the
+# variable is defined but is set to "same", that means we use the same
+# compiler twice, which is meaningful if the two parts of COMPAT_OPTIONS
+# are different.
+set compat_use_alt 0
+set compat_same_alt 0
+
+if [info exists ALT_CC_UNDER_TEST] then {
+    set compat_use_alt 1
+    if [string match "same" $ALT_CC_UNDER_TEST] then {
+	set compat_same_alt 1
+    }
+}
+
+compat_setup_dfp
+
+# Main loop.
+foreach src [lsort [find $srcdir/$subdir *_main.c]] {
+    # If we're only testing specific files and this isn't one of them, skip it.
+    if ![runtest_file_p $runtests $src] then {
+	continue
+    }
+
+    compat-execute $src $sid $compat_use_alt
+}
+
+# Restore the original compiler under test.
+compat-use-tst-compiler

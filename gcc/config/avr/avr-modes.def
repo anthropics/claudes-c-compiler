@@ -1,0 +1,41 @@
+/* Extra machine modes for AVR 8-bit microcontrollers.
+   Copyright (C) 2012-2026 Free Software Foundation, Inc.
+
+   This file is part of GCC.
+
+   GCC is free software; you can redistribute it and/or modify it under
+   the terms of the GNU General Public License as published by the Free
+   Software Foundation; either version 3, or (at your option) any later
+   version.
+
+   GCC is distributed in the hope that it will be useful, but WITHOUT ANY
+   WARRANTY; without even the implied warranty of MERCHANTABILITY or
+   FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+   for more details.
+
+   You should have received a copy of the GNU General Public License
+   along with GCC; see the file COPYING3.  If not see
+   <http://www.gnu.org/licenses/>.  */
+
+FRACTIONAL_INT_MODE (PSI, 24, 3);
+INT_N (PSI, 24);
+
+/* Used when the N (and Z) flag(s) of SREG are set.
+   The N flag indicates  whether the value is negative.
+   The Z flag indicates  whether the value is zero.  */
+CC_MODE (CCN);
+CC_MODE (CCZN);
+
+/* Make TA and UTA 64 bits wide.
+   128 bit wide modes would be insane on a 8-bit machine.
+   This needs special treatment in avr.cc and avr-lib.h.  */
+
+ADJUST_BYTESIZE  (TA, 8);
+ADJUST_ALIGNMENT (TA, 1);
+ADJUST_IBIT (TA, 16);
+ADJUST_FBIT (TA, 47);
+
+ADJUST_BYTESIZE  (UTA, 8);
+ADJUST_ALIGNMENT (UTA, 1);
+ADJUST_IBIT (UTA, 16);
+ADJUST_FBIT (UTA, 48);

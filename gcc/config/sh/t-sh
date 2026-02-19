@@ -1,0 +1,97 @@
+# Copyright (C) 1993-2026 Free Software Foundation, Inc.
+#
+# This file is part of GCC.
+#
+# GCC is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3, or (at your option)
+# any later version.
+#
+# GCC is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with GCC; see the file COPYING3.  If not see
+# <http://www.gnu.org/licenses/>.
+
+sh-mem.o: $(srcdir)/config/sh/sh-mem.cc \
+  $(CONFIG_H) $(SYSTEM_H) $(TREE_H) $(TM_H) $(TM_P_H)
+	$(COMPILER) -c $(ALL_COMPILERFLAGS) $(ALL_CPPFLAGS) $(INCLUDES) $<
+
+sh-c.o: $(srcdir)/config/sh/sh-c.cc \
+  $(CONFIG_H) $(SYSTEM_H) $(TREE_H) $(TM_H) $(TM_P_H) coretypes.h
+	$(COMPILER) -c $(ALL_COMPILERFLAGS) $(ALL_CPPFLAGS) $(INCLUDES) \
+		$(srcdir)/config/sh/sh-c.cc
+
+sh_treg_combine.o: $(srcdir)/config/sh/sh_treg_combine.cc \
+  $(CONFIG_H) $(SYSTEM_H) $(TREE_H) $(TM_H) $(TM_P_H) coretypes.h
+	$(COMPILER) -c $(ALL_COMPILERFLAGS) $(ALL_CPPFLAGS) $(INCLUDES) $<
+
+sh_optimize_sett_clrt.o: $(srcdir)/config/sh/sh_optimize_sett_clrt.cc \
+  $(CONFIG_H) $(SYSTEM_H) $(TREE_H) $(TM_H) $(TM_P_H) coretypes.h
+	$(COMPILER) -c $(ALL_COMPILERFLAGS) $(ALL_CPPFLAGS) $(INCLUDES) $<
+
+DEFAULT_ENDIAN = $(word 1,$(TM_ENDIAN_CONFIG))
+OTHER_ENDIAN = $(word 2,$(TM_ENDIAN_CONFIG))
+
+MULTILIB_OPTIONS= $(OTHER_ENDIAN) $(TM_MULTILIB_CONFIG)
+MULTILIB_DIRNAMES= 
+
+# The separate entries for m2a-nofpu and m2a-single-only with
+# duplicate base libraries are there to make sure we don't ever use an
+# m4* multilib for m2a or vice-versa; they are not compatible.  This
+# is why sh2a and sh2a-single need their own multilibs.
+MULTILIB_MATCHES = $(shell \
+  multilibs="$(MULTILIB_OPTIONS)" ; \
+  for abi in m1,m2,m3,m4-nofpu,m4-100-nofpu,m4-200-nofpu,m4-400,m4-500,m4-340,m4-300-nofpu,m4al,m4a-nofpu \
+             m1,m2,m2a-nofpu \
+             m2e,m3e,m4-single-only,m4-100-single-only,m4-200-single-only,m4-300-single-only,m4a-single-only \
+             m2a-single,m2a-single-only \
+             m4-single,m4-100-single,m4-200-single,m4-300-single,m4a-single \
+             m4,m4-100,m4-200,m4-300,m4a; do \
+    subst= ; \
+    for lib in `echo $$abi|tr , ' '` ; do \
+      if test "`echo $$multilibs|sed s/$$lib//`" != "$$multilibs"; then \
+        subst=$$lib ; \
+      elif test x$$subst != x ; then \
+        echo $$subst=$$lib ; \
+      fi \
+    done \
+  done)
+
+# SH1 and SH2A support big endian only.
+ifeq ($(DEFAULT_ENDIAN),ml)
+MULTILIB_EXCEPTIONS = m1 ml/m1 m2a* ml/m2a* $(TM_MULTILIB_EXCEPTIONS_CONFIG)
+else
+MULTILIB_EXCEPTIONS = ml/m1 ml/m2a* $(TM_MULTILIB_EXCEPTIONS_CONFIG)
+endif
+
+MULTILIB_OSDIRNAMES = \
+	$(OTHER_ENDIAN)=!$(OTHER_ENDIAN) \
+	m1=!m1 $(OTHER_ENDIAN)/m1=!$(OTHER_ENDIAN)/m1 \
+	m2a=!m2a $(OTHER_ENDIAN)/m2a=!$(OTHER_ENDIAN)/m2a \
+	m2a-nofpu=!m2a-nofpu $(OTHER_ENDIAN)/m2a-nofpu=!$(OTHER_ENDIAN)/m2a-nofpu \
+	m2a-single-only=!m2a-single-only $(OTHER_ENDIAN)/m2a-single-only=!$(OTHER_ENDIAN)/m2a-single-only \
+	m2a-single=!m2a-single $(OTHER_ENDIAN)/m2a-single=!$(OTHER_ENDIAN)/m2a-single \
+	m2e=!m2e $(OTHER_ENDIAN)/m2e=!$(OTHER_ENDIAN)/m2e \
+	m2=!m2 $(OTHER_ENDIAN)/m2=!$(OTHER_ENDIAN)/m2 \
+	m3e=!m3e $(OTHER_ENDIAN)/m3e=!$(OTHER_ENDIAN)/m3e \
+	m3=!m3 $(OTHER_ENDIAN)/m3=!$(OTHER_ENDIAN)/m3 \
+	m4-nofpu=!m4-nofpu $(OTHER_ENDIAN)/m4-nofpu=!$(OTHER_ENDIAN)/m4-nofpu \
+	m4-single-only=!m4-single-only $(OTHER_ENDIAN)/m4-single-only=!$(OTHER_ENDIAN)/m4-single-only \
+	m4-single=!m4-single $(OTHER_ENDIAN)/m4-single=!$(OTHER_ENDIAN)/m4-single \
+	m4=!m4 $(OTHER_ENDIAN)/m4=!$(OTHER_ENDIAN)/m4 \
+	m4a-nofpu=!m4a-nofpu $(OTHER_ENDIAN)/m4a-nofpu=!$(OTHER_ENDIAN)/m4a-nofpu \
+	m4a-single-only=!m4a-single-only $(OTHER_ENDIAN)/m4a-single-only=!$(OTHER_ENDIAN)/m4a-single-only \
+	m4a-single=!m4a-single $(OTHER_ENDIAN)/m4a-single=!$(OTHER_ENDIAN)/m4a-single \
+	m4a=!m4a $(OTHER_ENDIAN)/m4a=!$(OTHER_ENDIAN)/m4a \
+	m4al=!m4al $(OTHER_ENDIAN)/m4al=!$(OTHER_ENDIAN)/m4al
+
+$(out_object_file): gt-sh.h
+gt-sh.h : s-gtype ; @true
+
+# Local Variables:
+# mode: Makefile
+# End:

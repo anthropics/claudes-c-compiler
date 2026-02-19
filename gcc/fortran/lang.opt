@@ -1,0 +1,969 @@
+; Options for the Fortran front end.
+; Copyright (C) 2003-2026 Free Software Foundation, Inc.
+;
+; This file is part of GCC.
+;
+; GCC is free software; you can redistribute it and/or modify it under
+; the terms of the GNU General Public License as published by the Free
+; Software Foundation; either version 3, or (at your option) any later
+; version.
+;
+; GCC is distributed in the hope that it will be useful, but WITHOUT ANY
+; WARRANTY; without even the implied warranty of MERCHANTABILITY or
+; FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+; for more details.
+;
+; You should have received a copy of the GNU General Public License
+; along with GCC; see the file COPYING3.  If not see
+; <http://www.gnu.org/licenses/>.
+
+; See the GCC internals manual for a description of this file's format.
+
+; Please try to keep this file in ASCII collating order.
+
+Language
+Fortran
+
+-all-warnings
+Fortran Alias(Wall)
+
+-assert
+Fortran Separate Alias(A)
+
+-assert=
+Fortran Joined Alias(A)
+
+-comments
+Fortran Alias(C)
+
+-comments-in-macros
+Fortran Alias(CC)
+
+-define-macro
+Fortran Separate Alias(D)
+
+-define-macro=
+Fortran Joined Alias(D)
+
+-dependencies
+Fortran Alias(M)
+
+-dump
+Fortran Separate Alias(d)
+
+-dump=
+Fortran Joined Alias(d)
+
+-include-barrier
+Fortran Alias(I, -)
+
+-include-directory
+Fortran Separate Alias(I)
+
+-include-directory=
+Fortran Joined Alias(I)
+
+-include-directory-after
+Fortran Separate Alias(idirafter)
+
+-include-directory-after=
+Fortran Joined Alias(idirafter)
+
+-include-prefix
+Fortran Separate Alias(iprefix)
+
+-include-prefix=
+Fortran JoinedOrMissing Alias(iprefix)
+
+-no-line-commands
+Fortran Alias(P)
+
+-no-standard-includes
+Fortran Alias(nostdinc)
+
+-output
+Fortran Separate Alias(o)
+
+-output=
+Fortran Joined Alias(o)
+
+-preprocess
+Fortran Undocumented Alias(E)
+
+-print-missing-file-dependencies
+Fortran Alias(MG)
+
+-trace-includes
+Fortran Alias(H)
+
+-undefine-macro
+Fortran Separate Alias(U)
+
+-undefine-macro=
+Fortran Joined Alias(U)
+
+-user-dependencies
+Fortran Alias(MM)
+
+-verbose
+Fortran Alias(v)
+
+-write-dependencies
+Fortran NoDriverArg Separate Alias(MD)
+
+-write-user-dependencies
+Fortran NoDriverArg Separate Alias(MMD)
+
+A
+Fortran Joined Separate
+; Documented in C
+
+C
+Fortran
+; Documented in C
+
+CC
+Fortran
+; Documented in C
+
+D
+Fortran Joined Separate
+; Documented in C
+
+E
+Fortran Undocumented
+
+H
+Fortran
+; Documented in C
+
+I
+Fortran Joined Separate
+; Documented in C
+
+J
+Fortran Joined Separate
+-J<directory>	Put MODULE files in 'directory'.
+
+M
+Fortran
+; Documented in C
+
+MD
+Fortran Separate NoDriverArg
+; Documented in C
+
+MF
+Fortran Joined Separate
+; Documented in C
+
+MG
+Fortran
+; Documented in C
+
+MM
+Fortran
+; Documented in C
+
+MMD
+Fortran Separate NoDriverArg
+; Documented in C
+
+MP
+Fortran
+; Documented in C
+
+MT
+Fortran Joined Separate
+; Documented in C
+
+MQ
+Fortran Joined Separate
+; Documented in C
+
+P
+Fortran
+; Documented in C
+
+U
+Fortran Joined Separate
+; Documented in C
+
+Wall
+Fortran
+; Documented in C
+
+Waliasing
+Fortran Warning Var(warn_aliasing) LangEnabledBy(Fortran,Wall)
+Warn about possible aliasing of dummy arguments.
+
+Walign-commons
+Fortran Warning Var(warn_align_commons) Init(1)
+Warn about alignment of COMMON blocks.
+
+Wampersand
+Fortran Warning Var(warn_ampersand) LangEnabledBy(Fortran,Wall || Wpedantic)
+Warn about missing ampersand in continued character constants.
+
+Warray-temporaries
+Fortran Warning Var(warn_array_temporaries)
+Warn about creation of array temporaries.
+
+Wargument-mismatch
+Fortran WarnRemoved
+Does nothing. Preserved for backward compatibility.
+
+Wc-binding-type
+Fortran Var(warn_c_binding_type) Warning LangEnabledBy(Fortran,Wall)
+Warn if the type of a variable might be not interoperable with C.
+
+Wdate-time
+Fortran
+; Documented in C
+
+Wcharacter-truncation
+Fortran Var(warn_character_truncation) Warning LangEnabledBy(Fortran,Wall)
+Warn about truncated character expressions.
+
+Wcompare-reals
+Fortran Warning Var(warn_compare_reals) LangEnabledBy(Fortran,Wextra)
+Warn about equality comparisons involving REAL or COMPLEX expressions.
+
+Wconversion
+Fortran Var(warn_conversion) Warning LangEnabledBy(Fortran,Wall)
+; Documented in C
+
+Wconversion-extra
+Fortran Var(warn_conversion_extra) Warning
+Warn about most implicit conversions.
+
+Wdeprecated-openmp
+Fortran Var(warn_deprecated_openmp) Warning Init(1)
+; Documented in C
+
+Wdo-subscript
+Fortran Var(warn_do_subscript) Warning LangEnabledBy(Fortran,Wextra)
+Warn about possibly incorrect subscripts in do loops.
+
+Wexternal-argument-mismatch
+Fortran Var(warn_external_argument_mismatch) Warning LangEnabledBy(Fortran,Wall || fc-prototypes-external)
+Warn when arguments of external procedures do not match.
+
+Wextra
+Fortran Warning
+; Documented in common
+
+Wfrontend-loop-interchange
+Fortran Var(flag_warn_frontend_loop_interchange)
+Warn if loops have been interchanged.
+
+Wfunction-elimination
+Fortran Warning Var(warn_function_elimination) LangEnabledBy(Fortran,Wextra)
+Warn about function call elimination.
+
+Wimplicit-interface
+Fortran Warning Var(warn_implicit_interface)
+Warn about calls with implicit interface.
+
+Wimplicit-procedure
+Fortran Warning Var(warn_implicit_procedure)
+Warn about called procedures not explicitly declared.
+
+Winteger-division
+Fortran Warning Var(warn_integer_division) LangEnabledBy(Fortran,Wall)
+Warn about constant integer divisions with truncated results.
+
+Wline-truncation
+Fortran Warning Var(warn_line_truncation) LangEnabledBy(Fortran,Wall) Init(-1)
+Warn about truncated source lines.
+
+Wintrinsics-std
+Fortran Var(warn_intrinsics_std) Warning LangEnabledBy(Fortran,Wall)
+Warn on intrinsics not part of the selected standard.
+
+Wmaybe-uninitialized
+Fortran LangEnabledBy(Fortran,Wall)
+; Documented in common.opt
+
+Wmissing-include-dirs
+Fortran
+; Documented in C/C++
+
+Wuse-without-only
+Fortran Var(warn_use_without_only) Warning
+Warn about USE statements that have no ONLY qualifier.
+
+Wopenacc-parallelism
+Fortran
+; Documented in C
+
+Wopenmp
+Fortran
+; Documented in C
+
+Wopenmp-simd
+Fortran
+; Documented in C
+
+Woverwrite-recursive
+Fortran Warning Var(warn_overwrite_recursive) Init(1)
+Warn that -fno-automatic may break recursion.
+
+Wpedantic
+Fortran
+; Documented in common.opt
+
+Wreal-q-constant
+Fortran Warning Var(warn_real_q_constant) LangEnabledBy(Fortran,Wall)
+Warn about real-literal-constants with 'q' exponent-letter.
+
+Wrealloc-lhs
+Fortran Warning Var(warn_realloc_lhs) LangEnabledBy(Fortran,Wrealloc-lhs-all)
+Warn when a left-hand-side array variable is reallocated.
+
+Wrealloc-lhs-all
+Fortran Warning Var(warn_realloc_lhs_all)
+Warn when a left-hand-side variable is reallocated.
+
+Wtarget-lifetime
+Fortran Warning Var(warn_target_lifetime) LangEnabledBy(Fortran,Wall)
+Warn if the pointer in a pointer assignment might outlive its target.
+
+Wreturn-type
+Fortran Warning LangEnabledBy(Fortran,Wall)
+; Documented in C
+
+Wsurprising
+Fortran Warning Var(warn_surprising) LangEnabledBy(Fortran,Wall)
+Warn about \"suspicious\" constructs.
+
+Wtabs
+Fortran Warning Var(warn_tabs) LangEnabledBy(Fortran,Wall || Wpedantic)
+Permit nonconforming uses of the tab character.
+
+Wundefined-do-loop
+Fortran Warning Var(warn_undefined_do_loop) LangEnabledBy(Fortran,Wall)
+Warn about an invalid DO loop.
+
+Wunderflow
+Fortran Warning Var(warn_underflow) Init(1)
+Warn about underflow of numerical constant expressions.
+
+Wuninitialized
+Fortran LangEnabledBy(Fortran,Wall)
+; Documented in common.opt
+
+Wintrinsic-shadow
+Fortran Warning Var(warn_intrinsic_shadow) LangEnabledBy(Fortran,Wall)
+Warn if a user-procedure has the same name as an intrinsic.
+
+Wunused
+LangEnabledBy(Fortran,Wall)
+; Documented in common.opt
+
+Wunused-dummy-argument
+Fortran Warning Var(warn_unused_dummy_argument) LangEnabledBy(Fortran,Wall)
+Warn about unused dummy arguments.
+
+Wzerotrip
+Fortran Warning Var(warn_zerotrip) LangEnabledBy(Fortran,Wall)
+Warn about zero-trip DO loops.
+
+cpp
+Fortran Negative(nocpp)
+Enable preprocessing.
+
+cpp=
+Fortran Joined Negative(nocpp) Undocumented NoDWARFRecord
+; Internal option generated by specs from -cpp.
+
+nocpp
+Fortran Negative(cpp)
+Disable preprocessing.
+
+d
+Fortran Joined
+; Documented in common.opt
+
+fallow-argument-mismatch
+Fortran Var(flag_allow_argument_mismatch) LangEnabledBy(Fortran,std=legacy)
+Accept argument mismatches in procedure calls.
+
+faggressive-function-elimination
+Fortran Var(flag_aggressive_function_elimination)
+Eliminate multiple function invocations also for impure functions.
+
+falign-commons
+Fortran Var(flag_align_commons) Init(1)
+Enable alignment of COMMON blocks.
+
+fall-intrinsics
+Fortran RejectNegative Var(flag_all_intrinsics)
+All intrinsics procedures are available regardless of selected standard.
+
+fallow-invalid-boz
+Fortran RejectNegative Var(flag_allow_invalid_boz)
+Allow a BOZ literal constant to appear in an invalid context and with X instead of Z.
+
+fallow-leading-underscore
+Fortran Undocumented Var(flag_allow_leading_underscore)
+; For internal use only: allow the first character of symbol names to be an underscore
+
+fautomatic
+Fortran Var(flag_automatic) Init(1)
+Do not treat local variables and COMMON blocks as if they were named in SAVE statements.
+
+fbackslash
+Fortran Var(flag_backslash)
+Specify that backslash in string introduces an escape character.
+
+fbacktrace
+Fortran Var(flag_backtrace) Init(1)
+Produce a backtrace when a runtime error is encountered.
+
+fblas-matmul-limit=
+Fortran RejectNegative Joined UInteger Var(flag_blas_matmul_limit) Init(30)
+-fblas-matmul-limit=<n>	Size of the smallest matrix for which matmul will use BLAS.
+
+fbuilding-libgfortran
+Fortran Undocumented Var(flag_building_libgfortran)
+
+fbuiltin-
+Fortran Joined
+; Documented in C
+
+fcheck-array-temporaries
+Fortran
+Produce a warning at runtime if a array temporary has been created for a procedure argument.
+
+fconvert=
+Fortran RejectNegative Joined Enum(gfc_convert) EnumSet Var(flag_convert) Init(GFC_FLAG_CONVERT_NATIVE)
+-fconvert=<big-endian|little-endian|native|swap|r16_ieee|r16_ibm>	The endianness used for unformatted files.
+
+Enum
+Name(gfc_convert) Type(enum gfc_convert) UnknownError(Unrecognized option to endianness value: %qs)
+
+EnumValue
+Enum(gfc_convert) String(big-endian) Value(GFC_FLAG_CONVERT_BIG) Set(1)
+
+EnumValue
+Enum(gfc_convert) String(little-endian) Value(GFC_FLAG_CONVERT_LITTLE) Set(1)
+
+EnumValue
+Enum(gfc_convert) String(native) Value(GFC_FLAG_CONVERT_NATIVE) Set(1)
+
+EnumValue
+Enum(gfc_convert) String(swap) Value(GFC_FLAG_CONVERT_SWAP) Set(1)
+
+EnumValue
+Enum(gfc_convert) String(r16_ieee) Value(GFC_FLAG_CONVERT_R16_IEEE) Set(2)
+
+EnumValue
+Enum(gfc_convert) String(r16_ibm) Value(GFC_FLAG_CONVERT_R16_IBM) Set(2)
+
+fcray-pointer
+Fortran Var(flag_cray_pointer)
+Use the Cray Pointer extension.
+
+fc-prototypes
+Fortran Var(flag_c_prototypes)
+Generate C prototypes from BIND(C) declarations.
+
+fc-prototypes-external
+Fortran Var(flag_c_prototypes_external)
+Generate C prototypes from non-BIND(C) external procedure definitions.
+
+fd-lines-as-code
+Fortran RejectNegative
+Ignore 'D' in column one in fixed form.
+
+fd-lines-as-comments
+Fortran RejectNegative
+Treat lines with 'D' in column one as comments.
+
+fdebug-aux-vars
+Fortran Var(flag_debug_aux_vars)
+Issue debug information for compiler-generated auxiliary variables.
+
+fdec
+Fortran Var(flag_dec)
+Enable all DEC language extensions.
+
+fdec-blank-format-item
+Fortran Var(flag_dec_blank_format_item)
+Enable the use of blank format items in format strings.
+
+fdec-char-conversions
+Fortran Var(flag_dec_char_conversions)
+Enable the use of character literals in assignments and data statements
+for non-character variables.
+
+fdec-include
+Fortran Var(flag_dec_include)
+Enable legacy parsing of INCLUDE as statement.
+
+fdec-format-defaults
+Fortran Var(flag_dec_format_defaults)
+Enable default widths for i, f and g format specifiers.
+
+fdec-intrinsic-ints
+Fortran Var(flag_dec_intrinsic_ints)
+Enable kind-specific variants of integer intrinsic functions.
+
+fdec-math
+Fortran Var(flag_dec_math)
+Enable legacy math intrinsics for compatibility.
+
+fdec-structure
+Fortran Var(flag_dec_structure)
+Enable support for DEC STRUCTURE/RECORD.
+
+fdec-static
+Fortran Var(flag_dec_static)
+Enable DEC-style STATIC and AUTOMATIC attributes.
+
+fdefault-double-8
+Fortran Var(flag_default_double)
+Set the default double precision kind to an 8 byte wide type.
+
+fdefault-integer-8
+Fortran Var(flag_default_integer)
+Set the default integer kind to an 8 byte wide type.
+
+fdefault-real-8
+Fortran Var(flag_default_real_8)
+Set the default real kind to an 8 byte wide type.
+
+fdefault-real-10
+Fortran Var(flag_default_real_10)
+Set the default real kind to an 10 byte wide type.
+
+fdefault-real-16
+Fortran Var(flag_default_real_16)
+Set the default real kind to an 16 byte wide type.
+
+fdollar-ok
+Fortran Var(flag_dollar_ok)
+Allow dollar signs in entity names.
+
+fdump-core
+Fortran Ignore
+Does nothing. Preserved for backward compatibility.
+
+fdump-fortran-original
+Fortran Var(flag_dump_fortran_original)
+Display the code tree after parsing.
+
+fdump-fortran-optimized
+Fortran Var(flag_dump_fortran_optimized)
+Display the code tree after front end optimization.
+
+fdump-fortran-global
+Fortran Var(flag_dump_fortran_global)
+Display the global symbol table after parsing.
+
+fdump-parse-tree
+Fortran Alias(fdump-fortran-original)
+Display the code tree after parsing; deprecated option.
+
+fexternal-blas
+Fortran Var(flag_external_blas)
+Specify that an external BLAS library should be used for matmul calls on large-size arrays.
+
+fexternal-blas64
+Fortran Var(flag_external_blas64)
+Use an external BLAS library with 64-bit indexing for matmul on large-size arrays.
+
+ff2c
+Fortran Var(flag_f2c)
+Use f2c calling convention.
+
+ffixed-form
+Fortran RejectNegative
+Assume that the source file is fixed form.
+
+ftest-forall-temp
+Fortran Var(flag_test_forall_temp) Init(0)
+Force creation of temporary to test infrequently-executed forall code.
+
+finteger-4-integer-8
+Fortran RejectNegative Var(flag_integer4_kind,8)
+Interpret any INTEGER(4) as an INTEGER(8).
+
+fintrinsic-modules-path
+Fortran RejectNegative Separate
+Specify where to find the compiled intrinsic modules.
+
+fintrinsic-modules-path=
+Fortran RejectNegative Joined
+Specify where to find the compiled intrinsic modules.
+
+ffixed-line-length-none
+Fortran RejectNegative Var(flag_fixed_line_length,0)
+Allow arbitrary character line width in fixed mode.
+
+ffixed-line-length-
+Fortran RejectNegative Joined UInteger Var(flag_fixed_line_length) Init(72)
+-ffixed-line-length-<n>	Use n as character line width in fixed mode.
+
+fpad-source
+Fortran Var(flag_pad_source) Init(1)
+Pad shorter fixed form lines to line width with spaces.
+
+ffpe-trap=
+Fortran RejectNegative JoinedOrMissing
+-ffpe-trap=[...]	Stop on following floating point exceptions.
+
+ffpe-summary=
+Fortran RejectNegative JoinedOrMissing
+-ffpe-summary=[...]	Print summary of floating point exceptions.
+
+ffree-form
+Fortran RejectNegative
+Assume that the source file is free form.
+
+ffree-line-length-none
+Fortran RejectNegative Var(flag_free_line_length,0)
+Allow arbitrary character line width in free mode.
+
+ffree-line-length-
+Fortran RejectNegative Joined UInteger Var(flag_free_line_length) Init(132)
+-ffree-line-length-<n>	Use n as character line width in free mode.
+
+ffrontend-loop-interchange
+Fortran Var(flag_frontend_loop_interchange) Init(-1)
+Try to interchange loops if profitable.
+
+ffrontend-optimize
+Fortran Var(flag_frontend_optimize) Init(-1)
+Enable front end optimization.
+
+fimplicit-none
+Fortran Var(flag_implicit_none)
+Specify that no implicit typing is allowed, unless overridden by explicit IMPLICIT statements.
+
+finit-character=
+Fortran RejectNegative Joined UInteger
+-finit-character=<n>	Initialize local character variables to ASCII value n.
+
+finit-derived
+Fortran Var(flag_init_derived)
+Initialize components of derived type variables according to other init flags.
+
+finit-integer=
+Fortran RejectNegative Joined
+-finit-integer=<n>	Initialize local integer variables to n.
+
+finit-local-zero
+Fortran
+Initialize local variables to zero (from g77).
+
+finit-logical=
+Fortran RejectNegative Joined
+-finit-logical=<true|false>	Initialize local logical variables.
+
+finit-real=
+Fortran RejectNegative ToLower Joined Enum(gfc_init_local_real) Var(flag_init_real) Init(GFC_INIT_REAL_OFF)
+-finit-real=<zero|snan|nan|inf|-inf>	Initialize local real variables.
+
+Enum
+Name(gfc_init_local_real) Type(enum gfc_init_local_real) UnknownError(Unrecognized option to floating-point init value: %qs)
+
+EnumValue
+Enum(gfc_init_local_real) String(zero) Value(GFC_INIT_REAL_ZERO)
+
+EnumValue
+Enum(gfc_init_local_real) String(snan) Value(GFC_INIT_REAL_SNAN)
+
+EnumValue
+Enum(gfc_init_local_real) String(nan) Value(GFC_INIT_REAL_NAN)
+
+EnumValue
+Enum(gfc_init_local_real) String(inf) Value(GFC_INIT_REAL_INF)
+
+EnumValue
+Enum(gfc_init_local_real) String(-inf) Value(GFC_INIT_REAL_NEG_INF)
+
+finline-arg-packing
+Fortran  Var(flag_inline_arg_packing) Init(-1)
+-finline-arg-packing	Perform argument packing inline.
+
+finline-intrinsics
+Fortran RejectNegative Enum(gfc_inlineable_intrinsics) Var(flag_inline_intrinsics, GFC_FLAG_INLINE_INTRINSIC_ALL) Undocumented
+
+fno-inline-intrinsics
+Fortran RejectNegative Enum(gfc_inlineable_intrinsics) Var(flag_inline_intrinsics, GFC_FLAG_INLINE_INTRINSIC_NONE) Undocumented
+
+finline-intrinsics=
+Fortran Joined Var(flag_inline_intrinsics) Enum(gfc_inlineable_intrinsics) Init(GFC_FLAG_INLINE_INTRINSIC_ALL_UNSET) EnumSet
+Enable generation of inline code instead of calls to functions from the library to implement intrinsics.
+
+Enum
+Name(gfc_inlineable_intrinsics) Type(int) UnknownError(%qs is not an inline-controlable intrinsic)
+
+; This is not part of any set
+; EnumValue
+; Enum(gfc_inlineable_intrinsics) String(none) Value(GFC_FLAG_INLINE_INTRINSIC_NONE)
+
+EnumValue
+Enum(gfc_inlineable_intrinsics) String(maxloc) Value(GFC_FLAG_INLINE_INTRINSIC_MAXLOC) Set(1)
+
+EnumValue
+Enum(gfc_inlineable_intrinsics) String(minloc) Value(GFC_FLAG_INLINE_INTRINSIC_MINLOC) Set(2)
+
+; This is not part of any set
+; EnumValue
+; Enum(gfc_inlineable_intrinsics) String(all) Value(GFC_FLAG_INLINE_INTRINSIC_ALL)
+
+finline-matmul-limit=
+Fortran RejectNegative Joined UInteger Var(flag_inline_matmul_limit) Init(-1)
+-finline-matmul-limit=<n>	Specify the size of the largest matrix for which matmul will be inlined.
+
+fmax-array-constructor=
+Fortran RejectNegative Joined UInteger Var(flag_max_array_constructor) Init(65535)
+-fmax-array-constructor=<n>	Maximum number of objects in an array constructor.
+
+fmax-identifier-length=
+Fortran RejectNegative Joined UInteger
+-fmax-identifier-length=<n>	Maximum identifier length.
+
+fmax-subrecord-length=
+Fortran RejectNegative Joined UInteger Var(flag_max_subrecord_length)
+-fmax-subrecord-length=<n>	Maximum length for subrecords.
+
+fmax-stack-var-size=
+Fortran RejectNegative Joined UInteger Var(flag_max_stack_var_size) Init(-2)
+-fmax-stack-var-size=<n>	Size in bytes of the largest array that will be put on the stack.
+
+fstack-arrays
+Fortran Var(flag_stack_arrays) Init(-1)
+Put all local arrays on stack.
+
+fmodule-private
+Fortran Var(flag_module_private)
+Set default accessibility of module entities to PRIVATE.
+
+fopenacc
+Fortran LTO
+; Documented in C
+
+fopenacc-dim=
+Fortran LTO Joined Var(flag_openacc_dims)
+; Documented in C
+
+fopenmp
+Fortran LTO
+; Documented in C
+
+fopenmp-simd
+Fortran
+; Documented in C
+
+fopenmp-allocators
+Fortran Var(flag_openmp_allocators)
+Handle OpenMP allocators for allocatables and pointers.
+
+fpack-derived
+Fortran Var(flag_pack_derived)
+Try to lay out derived types as compactly as possible.
+
+fpreprocessed
+Fortran
+; Documented in C
+
+fprotect-parens
+Fortran Var(flag_protect_parens) Init(-1)
+Protect parentheses in expressions.
+
+fpre-include=
+Fortran RejectNegative Joined Var(flag_pre_include) Undocumented
+Path to header file that should be pre-included before each compilation unit.
+
+frange-check
+Fortran Var(flag_range_check) Init(1)
+Enable range checking during compilation.
+
+freal-4-real-8
+Fortran RejectNegative Var(flag_real4_kind,8)
+Interpret any REAL(4) as a REAL(8).
+
+freal-4-real-10
+Fortran RejectNegative Var(flag_real4_kind,10)
+Interpret any REAL(4) as a REAL(10).
+
+freal-4-real-16
+Fortran RejectNegative Var(flag_real4_kind,16)
+Interpret any REAL(4) as a REAL(16).
+
+freal-8-real-4
+Fortran RejectNegative Var(flag_real8_kind,4)
+Interpret any REAL(8) as a REAL(4).
+
+freal-8-real-10
+Fortran RejectNegative Var(flag_real8_kind,10)
+Interpret any REAL(8) as a REAL(10).
+
+freal-8-real-16
+Fortran RejectNegative Var(flag_real8_kind,16)
+Interpret any REAL(8) as a REAL(16).
+
+frealloc-lhs
+Fortran Var(flag_realloc_lhs) Init(-1)
+Reallocate the LHS in assignments.
+
+frecord-marker=4
+Fortran RejectNegative Var(flag_record_marker,4)
+Use a 4-byte record marker for unformatted files.
+
+frecord-marker=8
+Fortran RejectNegative Var(flag_record_marker,8)
+Use an 8-byte record marker for unformatted files.
+
+frecursive
+Fortran Var(flag_recursive)
+Allocate local variables on the stack to allow indirect recursion.
+
+frepack-arrays
+Fortran Var(flag_repack_arrays)
+Copy array sections into a contiguous block on procedure entry.
+
+funsigned
+Fortran Var(flag_unsigned)
+Experimental unsigned numbers.
+
+fcoarray=
+Fortran RejectNegative Joined Enum(gfc_fcoarray) Var(flag_coarray) Init(GFC_FCOARRAY_NONE)
+-fcoarray=<none|single|lib>	Specify which coarray parallelization should be used.
+
+Enum
+Name(gfc_fcoarray) Type(enum gfc_fcoarray) UnknownError(Unrecognized option: %qs)
+
+EnumValue
+Enum(gfc_fcoarray) String(none) Value(GFC_FCOARRAY_NONE)
+
+EnumValue
+Enum(gfc_fcoarray) String(single) Value(GFC_FCOARRAY_SINGLE)
+
+EnumValue
+Enum(gfc_fcoarray) String(lib) Value(GFC_FCOARRAY_LIB)
+
+fcheck=
+Fortran RejectNegative JoinedOrMissing
+-fcheck=[...]	Specify which runtime checks are to be performed.
+
+fsecond-underscore
+Fortran Var(flag_second_underscore) Init(-1)
+Append a second underscore if the name already contains an underscore.
+
+fshort-enums
+Fortran Var(flag_short_enums)
+; Documented in C
+
+fsign-zero
+Fortran Var(flag_sign_zero) Init(1)
+Apply negative sign to zero values.
+
+ftail-call-workaround
+Fortran Alias(ftail-call-workaround=,1,0)
+
+ftail-call-workaround=
+Fortran RejectNegative Joined UInteger IntegerRange(0, 2) Var(flag_tail_call_workaround) Init(1)
+Disallow tail call optimization when a calling routine may have omitted character lengths.
+
+funderscoring
+Fortran Var(flag_underscoring) Init(1)
+Append underscores to externally visible names.
+
+fwhole-file
+Fortran Ignore
+Does nothing.  Preserved for backward compatibility.
+
+fworking-directory
+Fortran
+; Documented in C
+
+idirafter
+Fortran Joined Separate
+; Documented in C
+
+imultilib
+Fortran Joined Separate
+; Documented in C
+
+iprefix
+Fortran Joined Separate
+; Documented in C
+
+iquote
+Fortran Joined Separate
+; Documented in C
+
+isysroot
+Fortran Joined Separate
+; Documented in C
+
+isystem
+Fortran Joined Separate
+; Documented in C
+
+nostdinc
+Fortran
+; Documented in C
+
+o
+Fortran Joined Separate
+; Documented in common.opt
+
+static-libgfortran
+Driver
+Statically link the GNU Fortran helper library (libgfortran).
+
+static-libquadmath
+Driver
+Statically link the GCC Quad-Precision Math Library (libquadmath).
+
+std=f2003
+Fortran
+Conform to the ISO Fortran 2003 standard.
+
+std=f2008
+Fortran
+Conform to the ISO Fortran 2008 standard.
+
+std=f2008ts
+Fortran
+Conform to the ISO Fortran 2008 standard including TS 29113.
+
+std=f2018
+Fortran
+Conform to the ISO Fortran 2018 standard.
+
+std=f2023
+Fortran
+Conform to the ISO Fortran 2023 standard.
+
+std=f202y
+Fortran
+Enable experimental Fortran 202y features.
+
+std=f95
+Fortran
+Conform to the ISO Fortran 95 standard.
+
+std=gnu
+Fortran
+Conform to nothing in particular.
+
+std=legacy
+Fortran
+Accept extensions to support legacy code.
+
+undef
+Fortran
+; Documented in C
+
+v
+Fortran
+; Documented in C
+
+; This comment is to ensure we retain the blank line above.

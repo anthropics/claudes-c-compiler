@@ -1,0 +1,1678 @@
+2026-02-14  Jakub Jelinek  <jakub@redhat.com>
+
+	PR cobol/122839
+	* configure.ac (--with-target-libxml2, --with-target-libxml2-include,
+	--with-target-libxml2-lib): New configure options, use those to find
+	libxml2.
+	(LIBXML2_CPPFLAGS, LIBXML2_LIBS): New AC_SUBSTs.
+	* Makefile.am (AM_CPPFLAGS): Add $(LIBXML2_CPPFLAGS) rather than
+	-I /usr/include/libxml2.
+	(libgcobol_la_LDFLAGS): Add $(LIBXML2_LIBS).
+	* configure: Regenerate.
+	* config.h.in: Regenerate.
+	* Makefile.in: Regenerate.
+
+2026-02-12  Robert Dubner  <rdubner@symas.com>
+
+	PR cobol/121499
+	* LICENSE: Copyright updated to 2026.
+	* Makefile.am: Compile with -fstrict-aliasing.
+	* Makefile.in: Autoreconf.
+	* acinclude.m4: Copyright updated to 2026.
+	* charmaps.cc: Likewise.
+	* charmaps.h: Likewise.
+	* common-defs.h: Likewise.
+	* configure.tgt: Likewise.
+	* constants.cc: Likewise.
+	* ec.h: Likewise.
+	* encodings.h: Likewise.
+	* exceptl.h: Likewise.
+	* gcobolio.h: Likewise.
+	* gfileio.cc: Likewise.
+	* gfileio.h: Likewise.
+	* gmath.cc (multiply_int256_by_int64): Eliminate aliasing.
+	(divide_int256_by_int64): Likewise.
+	(multiply_int128_by_int128): Likewise.
+	(divide_int128_by_int128): Likewise.
+	* gmath.h: Copyright updated to 2026.
+	* intrinsic.cc: Likewise.
+	* io.cc: Likewise.
+	* io.h: Likewise.
+	* libgcobol.cc: Likewise.
+	* libgcobol.h: Likewise.
+	* stringbin.cc: Likewise.
+	* stringbin.h: Likewise.
+	* valconv.cc: Likewise.
+	* valconv.h: Likewise.
+	* xmlparse.cc: Likewise.
+
+2026-02-12  Robert Dubner  <rdubner@symas.com>
+
+	* Makefile.am: Temporarily continue to use -fno-strict-aliasing.
+	* Makefile.in: Likewise.
+	* libgcobol.cc (__gg__fetch_call_by_value_value): Simplify handling
+	of FldFloat.
+	(__gg__assign_value_from_stack): Likewise.
+	(__gg__unstring): Avoid uninitialized variable error.
+	(__gg__look_at_int128): New function useful for debugging.
+	(__gg__look_at_pointer): Likewise.
+	* xmlparse.cc (xml_event): Implement namespace XML.
+	(cdataBlock): Likewise.
+	(characters): Likewise.
+	(__gg__xml_parse):  Likewise.
+
+2026-02-05  Robert Dubner  <rdubner@symas.com>
+
+	* valconv.cc (__gg__string_to_numeric_edited): Explanatory comment.
+
+2026-01-17  Robert Dubner  <rdubner@symas.com>
+	    James K. Lowden  <jklowden@cobolworx.com>
+
+	* charmaps.cc (__gg__encoding_iconv_name): Charsets.
+	(__gg__encoding_iconv_valid): Charsets.
+	(__gg__encoding_iconv_type): Charsets.
+	(encoding_descr): Charsets.
+	(__gg__encoding_iconv_descr): Charsets.
+	(__gg__iconverter): Charsets.
+	(__gg__miconverter): Charsets.
+	* charmaps.h (NOT_A_CHARACTER): Charsets.
+	(ascii_nul): Charsets.
+	(ascii_bang): Charsets.
+	(__gg__encoding_iconv_type): Charsets.
+	(__gg__iconverter): Charsets.
+	(__gg__miconverter): Charsets.
+	(DEFAULT_32_ENCODING): Charsets.
+	(class charmap_t): Charsets.
+	(__gg__get_charmap): Charsets.
+	* common-defs.h (enum cbl_field_attr_t):
+	(enum cbl_figconst_t): Formatting.
+	(LOW_VALUE_E): Handle enum arithmetic.
+	(ZERO_VALUE_E): Handle enum arithmetic.
+	(SPACE_VALUE_E): Handle enum arithmetic.
+	(QUOTE_VALUE_E): Handle enum arithmetic.
+	(HIGH_VALUE_E): Handle enum arithmetic.
+	(enum convert_type_t): Enum for new FUNCTION CONVERT.
+	(struct cbl_declarative_t): Formatting.
+	* encodings.h (struct encodings_t): Charsets.
+	* gcobolio.h: Charsets.
+	* gfileio.cc (get_filename): Rename to establish filename.
+	(establish_filename): Renamed from get_filename.
+	(relative_file_delete):  Charsets.
+	(__io__file_remove): Moved.
+	(trim_in_place): Charsets.
+	(relative_file_start): Charsets.
+	(relative_file_rewrite): Charsets.
+	(relative_file_write): Charsets.
+	(sequential_file_write): Charsets.
+	(line_sequential_file_read): Charsets.
+	(sequential_file_read): Charsets.
+	(relative_file_read): Charsets.
+	(__gg__file_reopen): Charsets.
+	(__io__file_open): Charsets.
+	(__io__file_close): Charsets.
+	(gcobol_fileops): Charsets.
+	(__gg__file_open): Charsets.
+	(__gg__file_remove): Charsets.
+	* gfileio.h (__gg__file_open): Charsets.
+	* gmath.cc (__gg__subtractf1_float_phase2): Comment.
+	(__gg__subtractf2_float_phase1): Comment.
+	(__gg__multiplyf1_phase2): Comment.
+	* intrinsic.cc (is_zulu_format): Charsets.
+	(string_to_dest): Charsets.
+	(get_all_time): Charsets.
+	(ftime_replace): Charsets.
+	(__gg__char): Charsets.
+	(__gg__current_date): Charsets.
+	(__gg__formatted_current_date): Charsets.
+	(__gg__formatted_date): Charsets.
+	(__gg__formatted_datetime): Charsets.
+	(__gg__formatted_time): Charsets.
+	(change_case): Charsets.
+	(__gg__upper_case): Charsets.
+	(numval): Charsets.
+	(numval_c): Charsets.
+	(__gg__trim): Charsets.
+	(__gg__reverse): Charsets.
+	(fill_cobol_tm): Charsets.
+	(__gg__seconds_from_formatted_time): Charsets.
+	(__gg__hex_of): Charsets.
+	(__gg__numval_f): Charsets.
+	(__gg__test_numval_f): Charsets.
+	(__gg__locale_date): Charsets.
+	(__gg__locale_time): Charsets.
+	(__gg__locale_time_from_seconds): Charsets.
+	* libgcobol.cc (NO_RDIGITS): Alias for (0).
+	(__gg__move): Forward reference.
+	(struct program_state): Charsets.
+	(cstrncmp): Charsets.
+	(__gg__init_program_state): Charsets.
+	(edited_to_binary): Charsets.
+	(var_is_refmod): Comment.
+	(__gg__power_of_ten): Reworked data initialization.
+	(__gg__scale_by_power_of_ten_1): Likewise.
+	(__gg__scale_by_power_of_ten_2): Likewise.
+	(value_is_too_big): Likewise.
+	(binary_to_big_endian): Likewise.
+	(binary_to_little_endian): Likewise.
+	(int128_to_int128_rounded): Likewise.
+	(get_binary_value_local): Likewise.
+	(get_init_value): Likewise.
+	(f128_to_i128_rounded): Likewise.
+	(__gg__initialization_values): Likewise.
+	(int128_to_field): Likewise.
+	(__gg__get_date_yymmdd): Charsets.
+	(__gg__field_from_string): Charsets.
+	(field_from_ascii): Charsets.
+	(__gg__get_date_yyyymmdd): Charsets.
+	(__gg__get_date_yyddd): Charsets.
+	(__gg__get_yyyyddd): Charsets.
+	(__gg__get_date_dow): Charsets.
+	(__gg__get_date_hhmmssff): Charsets.
+	(collation_position): Charsets.
+	(uber_compare): Charsets.
+	(__gg__dirty_to_binary): Charsets.
+	(__gg__dirty_to_float): Charsets.
+	(format_for_display_internal): Charsets.
+	(compare_88): Charsets.
+	(get_float128): Reworked.
+	(compare_field_class): Charsets.
+	(interconvert): Charsets.
+	(compare_strings): Charsets.
+	(__gg__compare_2): Charsets.
+	(compare_two_records): Charsets.
+	(__gg__sort_table): Charsets.
+	(init_var_both): Charsets.
+	(__gg__initialize_variable_clean): Charsets.
+	(alpha_to_alpha_move_from_location): Charsets.
+	(__gg__memdup): New function.
+	(alpha_to_alpha_move): Charsets.
+	(__gg__sort_workfile): Charsets.
+	(__gg__merge_files): Charsets.
+	(funky_find_wide): Charsets.
+	(funky_find_wide_backward): Charsets.
+	(normalize_id): Charsets.
+	(match_lengths): Charsets.
+	(the_alpha_and_omega): Charsets.
+	(the_alpha_and_omega_backward): Charsets.
+	(inspect_backward_format_1): Charsets.
+	(__gg__inspect_format_1): Charsets.
+	(inspect_backward_format_2): Charsets.
+	(__gg__inspect_format_2): Charsets.
+	(normalize_for_inspect_format_4): Charsets.
+	(__gg__inspect_format_4): Charsets.
+	(move_string): Charsets.
+	(brute_force_trim): Charsets.
+	(__gg__string): Charsets.
+	(display_both): Charsets.
+	(__gg__display_string): Charsets.
+	(__gg__bitwise_op): Charsets.
+	(is_numeric_display_numeric): Charsets.
+	(is_alpha_a_number): Charsets.
+	(classify_numeric_type): Charsets.
+	(classify_alphabetic_type): Charsets.
+	(__gg__classify): Charsets.
+	(__gg__convert_encoding): Charsets.
+	(accept_envar): Charsets.
+	(__gg__accept_envar): Charsets.
+	(__gg__get_argc): Charsets.
+	(__gg__get_argv): Charsets.
+	(__gg__get_command_line): Charsets.
+	(__gg__parser_set_conditional): Charsets.
+	(__gg__literaln_alpha_compare): Charsets.
+	(string_in): Charsets.
+	(__gg__unstring): Charsets.
+	(__gg__integer_from_float128): Charsets.
+	(__gg__adjust_dest_size): Charsets.
+	(__gg__just_mangle_name): Charsets.
+	(__gg__function_handle_from_name): Charsets.
+	(get_the_byte): Charsets.
+	(__gg__refer_from_string): Charsets.
+	(__gg__refer_from_psz): Charsets.
+	(__gg__find_string): Charsets.
+	(convert_for_convert): Charsets.
+	(__gg__convert): Charsets.
+	* libgcobol.h (__gg__compare_2): Charsets.
+	(__gg__field_from_string): Charsets.
+	(__gg__memdup): Charsets.
+	* posix/bin/Makefile: Posix bindings.
+	* posix/bin/scrape.awk: Posix bindings.
+	* posix/bin/udf-gen: Posix bindings.
+	* posix/udf/posix-lseek.cbl: Posix bindings.
+	* posix/udf/posix-unlink.cbl: Posix bindings.
+	* stringbin.cc (__gg__binary_to_string_encoded): Charsets.
+	(__gg__numeric_display_to_binary): Charsets.
+	* stringbin.h (__gg__binary_to_string_encoded): Charsets.
+	* valconv.cc (__gg__string_to_numeric_edited): Charsets.
+	* posix/cpy/psx-lseek.cpy: New file.
+	* posix/shim/lseek.cc: New file.
+
+2025-12-29  Rainer Orth  <ro@CeBiTec.Uni-Bielefeld.DE>
+
+	* configure: Regenerate.
+
+2025-11-29  Richard Biener  <rguenther@suse.de>
+
+	PR cobol/122803
+	* configure.ac (LIBGCOBOL_VERSION): Bump to 2:0:0.
+	* configure: Re-generate.
+
+2025-11-18  James K. Lowden  <jklowden@cobolworx.com>
+
+	PR cobol/122702
+	* Makefile.am: Include posix/udf/posix-open.cbl.
+
+2025-11-17  James K. Lowden  <jklowden@cobolworx.com>
+
+	PR cobol/122702
+	* Makefile.am: Set libdir and libsubdir per libada example.
+	* Makefile.in: Regenerate.
+	* compat/README.md: Revise per new directory structure.
+	* compat/gnu/lib/CBL_ALLOC_MEM.cbl: Moved from compat/lib/gnu.
+	* compat/gnu/lib/CBL_CHECK_FILE_EXIST.cbl: Moved from compat/lib/gnu.
+	* compat/gnu/lib/CBL_DELETE_FILE.cbl: Moved from compat/lib/gnu.
+	* compat/gnu/lib/CBL_FREE_MEM.cbl: Moved from compat/lib/gnu.
+	* compat/gnu/udf/stored-char-length.cbl: New file.
+	* compat/lib/gnu/CBL_ALLOC_MEM.cbl: Moved to compat/gnu/lib.
+	* compat/lib/gnu/CBL_CHECK_FILE_EXIST.cbl: Moved to compat/gnu/lib.
+	* compat/lib/gnu/CBL_DELETE_FILE.cbl: Moved to compat/gnu/lib.
+	* compat/lib/gnu/CBL_FREE_MEM.cbl: Moved to compat/gnu/lib.
+	* posix/cpy/psx-open.cpy: New file.
+	* posix/shim/open.cc: New file.
+	* posix/shim/stat.h: Add mode & flag bits for open.cc
+	* posix/udf/posix-lseek.cbl: New file.
+	* posix/udf/posix-open.cbl: New file.
+	* posix/udf/posix-read.cbl: New file.
+	* posix/udf/posix-write.cbl: New file.
+	* xmlparse.cc: Quell context_t initialization-order warning.
+
+2025-11-13  James K. Lowden  <jklowden@cobolworx.com>
+
+	* Makefile.am: Move UDF-support to posix/shim, add install targets
+	* Makefile.in: Regenerate
+	* charmaps.cc (__gg__currency_signs): Use std::string.
+	* charmaps.h: Include string and vector headers.
+	(class charmap_t): Use std::string and vector for currency.
+	* config.h.in: Regenerate.
+	* configure: Regenerate.
+	* configure.ac: Check for libxml2.
+	* intrinsic.cc (numval_c): Constify.
+	* libgcobol.cc (struct program_state): Use std::string and vector.
+	(__gg__inspect_format_2): Add debug messages.
+	* libgcobol.h (__gg__get_default_currency_string): Constify.
+	* valconv.cc (expand_picture): Use std::string and vector.
+	(__gg__string_to_numeric_edited): Use std::string and vector.
+	(__gg__currency_sign_init): Use std::string and vector.
+	(__gg__currency_sign): Use std::string and vector.
+	* xmlparse.cc (xml_push_parse): Reformat.
+	* posix/stat.cc: Removed.
+	* posix/stat.h: Removed.
+	* .gitignore: New file.
+	* compat/README.md: New file.
+	* compat/lib/gnu/CBL_ALLOC_MEM.cbl: New file.
+	* compat/lib/gnu/CBL_CHECK_FILE_EXIST.cbl: New file.
+	* compat/lib/gnu/CBL_DELETE_FILE.cbl: New file.
+	* compat/lib/gnu/CBL_FREE_MEM.cbl: New file.
+	* compat/t/Makefile: New file.
+	* compat/t/smoke.cbl: New file.
+	* posix/README.md: New file.
+	* posix/bin/Makefile: New file for UDF-developer.
+	* posix/bin/headers: New file.
+	* posix/bin/scrape.awk: New file.
+	* posix/bin/sizeofs.c: New file.
+	* posix/bin/udf-gen: New file.
+	* posix/cpy/posix-errno.cbl: New file.
+	* posix/cpy/statbuf.cpy: New file.
+	* posix/cpy/tm.cpy: New file.
+	* posix/errno.cc: Removed.
+	* posix/localtime.cc: Removed.
+	* posix/shim/stat.cc: New file.
+	* posix/shim/stat.h: New file.
+	* posix/t/Makefile: New file.
+	* posix/t/errno.cbl: New file.
+	* posix/t/exit.cbl: New file.
+	* posix/t/localtime.cbl: New file.
+	* posix/t/stat.cbl: New file.
+	* posix/tm.h: Removed.
+	* posix/udf/posix-exit.cbl: New file.
+	* posix/udf/posix-localtime.cbl: New file.
+	* posix/udf/posix-mkdir.cbl: New file.
+	* posix/udf/posix-stat.cbl: New file.
+	* posix/udf/posix-unlink.cbl: New file.
+	* posix/shim/errno.cc: New file.
+	* posix/shim/localtime.cc: New file.
+	* posix/shim/tm.h: New file.
+
+2025-11-06  Robert Dubner  <rdubner@symas.com>
+	    James K. Lowden  <jklowden@cobolworx.com>
+
+	* charmaps.cc (__gg__encoding_iconv_type): Eliminate trailing
+	'/' characters from encoding names.
+	(__gg__get_charmap): Switch to DEFAULT_SOURCE_ENCODING macro name.
+	* charmaps.h (DEFAULT_CHARMAP_SOURCE): Likewise.
+	(DEFAULT_SOURCE_ENCODING): Likewise.
+	(class charmap_t): Enhance constructor.
+	* encodings.h (valid_encoding): New routine.
+	* gcobolio.h (enum cblc_file_prior_op_t): Support DELETE FILE.
+	* gfileio.cc (get_filename): Likewise.
+	(__io__file_remove): Likewise.
+	(__gg__file_reopen): Likewise.
+	(__io__file_open): Likewise.
+	(gcobol_fileops): Likewise.
+	(__gg__file_delete): Likewise.
+	(__gg__file_remove): Likewise.
+	* intrinsic.cc (get_all_time):  Switch to DEFAULT_SOURCE_ENCODING
+	macro name.
+	(ftime_replace): Support ASCII/EBCDIC encoding.
+	(__gg__current_date): Likewise.
+	(__gg__max): Likewise.
+	(__gg__lower_case): Likewise.
+	(numval): Likewise.
+	(numval_c): Likewise.
+	(__gg__upper_case): Likewise.
+	(__gg__when_compiled): Likewise.
+	(gets_int): Likewise.
+	(gets_nanoseconds): Likewise.
+	(fill_cobol_tm): Likewise.
+	(floating_format_tester): Likewise.
+	(__gg__numval_f): Likewise.
+	(__gg__test_numval_f): Likewise.
+	(iscasematch): Likewise.
+	(strcasestr): Likewise.
+	(strcaselaststr): Likewise.
+	(__gg__substitute): Likewise.
+	(__gg__locale_compare): Support for locale.
+	(__gg__locale_date): Likewise.
+	(__gg__locale_time): Likewise.
+	(__gg__locale_time_from_seconds): Likewise.
+	* libgcobol.cc (class ec_status_t): Support for encoding.
+	(int128_to_field): Likewise.
+	(__gg__dirty_to_float): Likewise.
+	(format_for_display_internal): Likewise.
+	(get_float128): Likewise.
+	(compare_field_class): Likewise.
+	(__gg__compare_2): Likewise.
+	(init_var_both): Likewise.
+	(__gg__move): Likewise.
+	(display_both): Likewise.
+	(is_numeric_display_numeric): Likewise.
+	(accept_envar): Likewise.
+	(__gg__get_argv): Likewise.
+	(__gg__unstring): Likewise.
+	(__gg__check_fatal_exception): Likewise.
+	(__gg__adjust_encoding): Likewise.
+	(__gg__func_exception_location): Likewise.
+	(__gg__func_exception_statement): Likewise.
+	(__gg__func_exception_status): Likewise.
+	(__gg__func_exception_file): Likewise.
+	(__gg__just_mangle_name): Likewise.
+	(__gg__function_handle_from_name): Likewise.
+	(get_the_byte): Likewise.
+	(__gg__module_name): Likewise.
+	(__gg__accept_arg_value): Likewise.
+	* xmlparse.cc (fatalError): Formatting.
+	(setDocumentLocator): Formatting.
+	(xmlchar_of): Formatting.
+	(xmlParserErrors_str): Formatting.
+
+2025-11-03  Sam James  <sam@gentoo.org>
+
+	* configure: Regenerate.
+
+2025-10-28  Sam James  <sam@gentoo.org>
+
+	PR cobol/122451
+	* xmlparse.cc (context_t): Make 'ctxt' public.
+	(xml_push_parse): Fix xmlCtxtGetVersion argument.
+
+2025-10-27  Sam James  <sam@gentoo.org>
+
+	PR cobol/122451
+	* xmlparse.cc (xml_push_parse): Fix xmlCtxtGetVersion argument
+	typo to be 'context'.
+
+2025-10-27  James K. Lowden  <jklowden@cobolworx.com>
+
+	* xmlparse.cc (CTX): Macro for unused user-context parameter.
+	(attributeDecl): Mark unused parameters.
+	(cdataBlock): Same.
+	(characters): Same.
+	(comment): Same.
+	(elementDecl): Same.
+	(endDocument): Same.
+	(endElementNs): Same.
+	(endElement): Same.
+	(entityDecl): Same.
+	(error): Same.
+	(externalSubset): Same.
+	(fatalError): Same.
+	(getEntity): Eliminate via preprocessor until needed.
+	(getParameterEntity): Same.
+	(hasExternalSubset): Mark unused parameters.
+	(hasInternalSubset): Same.
+	(ignorableWhitespace): Same.
+	(internalSubset): Same.
+	(isStandalone): Eliminate via preprocessor until needed.
+	(notationDecl): Mark unused parameters.
+	(processingInstruction): Same.
+	(reference): Same.
+	(resolveEntity): Eliminate via preprocessor until needed.
+	(setDocumentLocator): Mark unused parameters.
+	(startDocument): Same.
+	(startElementNs): Same.
+	(startElement): Same.
+	(unparsedEntityDecl): Same.
+	(warning): Same.
+	(xmlchar_of): Utility cast function.
+	(xmlParserErrors_str): Message string for libxml2 errors.
+	(xmlerror_str): Macro to include textual form of libxml2 error.
+	(context_t): Push-parser context class.
+	(xml_push_parse): Use push-parser.
+	(__gg__xml_parse_done): Signify end-of-input to XML push-parser.
+	(__gg__xml_parse): Mark unused parameters.
+
+2025-10-25  Sam James  <sam@gentoo.org>
+
+	PR cobol/122398
+	* xmlparse.cc (__gg__xml_parse): Make 'msg' const.
+
+2025-10-23  Robert Dubner  <rdubner@symas.com>
+
+	* charmaps.cc: Encoding.
+	* charmaps.h (class charmap_t): Encoding.
+	* intrinsic.cc (__gg__char): Report the character at the
+	collation position.
+	(__gg__ord): Report the collation position of a character.
+	* libgcobol.cc (struct program_state): Add encodings;
+	Remove obsolete defines.
+	(__gg__current_collation): New function for encoding/collation.
+	(__gg__pop_program_state): Encoding.
+	(__gg__init_program_state): Encoding.
+	(format_for_display_internal): Handle LOW-VALUE and HIGH-VALUE.
+	(__gg__compare_2): Encoding.
+	(__gg__alphabet_use): Likewise.
+	* libgcobol.h (__gg__current_collation): New declaration.
+	* xmlparse.cc (__gg__xml_parse): Make a parameter const.
+
+2025-10-23  Robert Dubner  <rdubner@symas.com>
+	    James K. Lowden  <jklowden@cobolworx.com>
+
+	* Makefile.am: Changes for XML PARSE and POSIX functions.
+	* Makefile.in: Likewise.
+	* charmaps.cc: Augment encodings[] table with "supported" boolean.
+	(__gg__encoding_iconv_name): Modify how encodings are identified.
+	(encoding_descr): Likewise.
+	(__gg__encoding_iconv_valid): Likewise.
+	* common-defs.h (callback_t): Define function pointer.
+	* constants.cc: Use named cbl_attr_e constants instead of magic
+	numbers.; New definitions for XML special registers.
+	* encodings.h (struct encodings_t): Declare "supported" boolean.
+	* libgcobol.cc (format_for_display_internal): Use std::ptrdiff_t.
+	(__gg__alphabet_use): Add case for iconv_CP1252_e.
+	(default_exception_handler): Repair exception handling after a
+	successful file operation.
+	* posix/errno.cc: New file.
+	* posix/localtime.cc: New file.
+	* posix/stat.cc: New file.
+	* posix/stat.h: New file.
+	* posix/tm.h: New file.
+	* xmlparse.cc: New file to support XML PARSE statement.
+
+2025-10-19  Robert Dubner  <rdubner@symas.com>
+
+	* charmaps.cc (__gg__set_internal_codeset): Eliminate ascii/ebcdic.
+	(__gg__text_conversion_override): Remove.
+	* charmaps.h (enum text_device_t):  Eliminate ascii/ebcdic.
+	(enum text_codeset_t): Remove.
+	(__gg__set_internal_codeset): Remove.
+	(__gg__text_conversion_override): Remove.
+	* gfileio.cc: Anticipate cbl_encoding_t fixes.
+	* libgcobol.cc (struct program_state): Incorporate
+	__gg__entry_label.
+	(__gg__pop_program_state): Eliminate unused defines.
+	(__gg__alphabet_use): Eliminate ascii/ebcdic dichotomy.
+	* valconv.cc (__gg__alphabet_create): Likewise.
+
+2025-10-10  Robert Dubner  <rdubner@symas.com>
+
+	* charmaps.cc (raw_is_SBC): Likewise.
+	(extract_next_code_point): Likewise.
+	(flipper): Likewise.
+	(__gg__ascii_to_ascii_chr): Likewise.
+	(__gg__ascii_to_ebcdic_chr): Likewise.
+	(__gg__raw_to_ascii): Likewise.
+	(__gg__raw_to_ebcdic): Likewise.
+	(convert_cp1252_to_utf8): Likewise.
+	(__gg__text_conversion_override): Likewise.
+	(__gg__ascii_to_ascii): Likewise.
+	(__gg__encoding_iconv_name): Likewise.
+	(__gg__encoding_iconv_type): Likewise.
+	(__gg__ascii_to_ebcdic): Likewise.
+	(__gg__iconverter): Likewise.
+	(__gg__ebcdic_to_ascii): Likewise.
+	(__gg__ascii_to_console): Likewise.
+	(__gg__ebcdic_to_console): Likewise.
+	(__gg__console_to_ascii): Likewise.
+	(__gg__console_to_ebcdic): Likewise.
+	(_to_ctype): Likewise.
+	(_from_ctype): Likewise.
+	(__gg__get_charmap): Likewise.
+	* charmaps.h (internal_is_ebcdic): Likewise.
+	(internal_space): Likewise.
+	(internal_zero): Likewise.
+	(internal_period): Likewise.
+	(internal_comma): Likewise.
+	(internal_dquote): Likewise.
+	(internal_asterisk): Likewise.
+	(internal_plus): Likewise.
+	(internal_minus): Likewise.
+	(internal_cr): Likewise.
+	(internal_ff): Likewise.
+	(internal_newline): Likewise.
+	(internal_return): Likewise.
+	(internal_0): Likewise.
+	(internal_1): Likewise.
+	(internal_2): Likewise.
+	(internal_3): Likewise.
+	(internal_4): Likewise.
+	(internal_5): Likewise.
+	(internal_6): Likewise.
+	(internal_7): Likewise.
+	(internal_8): Likewise.
+	(internal_9): Likewise.
+	(internal_colon): Likewise.
+	(internal_query): Likewise.
+	(internal_A): Likewise.
+	(internal_B): Likewise.
+	(internal_C): Likewise.
+	(internal_D): Likewise.
+	(internal_E): Likewise.
+	(internal_F): Likewise.
+	(internal_G): Likewise.
+	(internal_H): Likewise.
+	(internal_I): Likewise.
+	(internal_J): Likewise.
+	(internal_K): Likewise.
+	(internal_L): Likewise.
+	(internal_M): Likewise.
+	(internal_N): Likewise.
+	(internal_O): Likewise.
+	(internal_P): Likewise.
+	(internal_Q): Likewise.
+	(internal_R): Likewise.
+	(internal_S): Likewise.
+	(internal_T): Likewise.
+	(internal_U): Likewise.
+	(internal_V): Likewise.
+	(internal_W): Likewise.
+	(internal_X): Likewise.
+	(internal_Y): Likewise.
+	(internal_Z): Likewise.
+	(internal_a): Likewise.
+	(internal_b): Likewise.
+	(internal_c): Likewise.
+	(internal_d): Likewise.
+	(internal_e): Likewise.
+	(internal_f): Likewise.
+	(internal_g): Likewise.
+	(internal_h): Likewise.
+	(internal_i): Likewise.
+	(internal_j): Likewise.
+	(internal_k): Likewise.
+	(internal_l): Likewise.
+	(internal_m): Likewise.
+	(internal_n): Likewise.
+	(internal_o): Likewise.
+	(internal_p): Likewise.
+	(internal_q): Likewise.
+	(internal_r): Likewise.
+	(internal_s): Likewise.
+	(internal_t): Likewise.
+	(internal_u): Likewise.
+	(internal_v): Likewise.
+	(internal_w): Likewise.
+	(internal_x): Likewise.
+	(internal_y): Likewise.
+	(internal_z): Likewise.
+	(enum text_codeset_t): Likewise.
+	(__gg__ascii_to_ascii_chr): Likewise.
+	(__gg__ascii_to_ebcdic_chr): Likewise.
+	(ascii_to_internal): Likewise.
+	(__gg__ascii_to_ascii): Likewise.
+	(__gg__ascii_to_ebcdic): Likewise.
+	(ascii_to_internal_str): Likewise.
+	(__gg__raw_to_ascii): Likewise.
+	(__gg__raw_to_ebcdic): Likewise.
+	(raw_to_internal): Likewise.
+	(__gg__ascii_to_console): Likewise.
+	(__gg__ebcdic_to_console): Likewise.
+	(internal_to_console): Likewise.
+	(__gg__console_to_ascii): Likewise.
+	(__gg__console_to_ebcdic): Likewise.
+	(console_to_internal): Likewise.
+	(__gg__ebcdic_to_ascii): Likewise.
+	(internal_to_ascii): Likewise.
+	(__gg__encoding_iconv_name): Likewise.
+	(__gg__encoding_iconv_type): Likewise.
+	(__gg__iconverter): Likewise.
+	(DEFAULT_CHARMAP_SOURCE): Likewise.
+	(class charmap_t): Likewise.
+	(__gg__get_charmap): Likewise.
+	* common-defs.h (EBCDIC_MINUS): Likewise.
+	(EBCDIC_PLUS): Likewise.
+	(EBCDIC_ZERO): Likewise.
+	(EBCDIC_NINE): Likewise.
+	(PACKED_NYBBLE_PLUS): Likewise.
+	(PACKED_NYBBLE_MINUS): Likewise.
+	(PACKED_NYBBLE_UNSIGNED): Likewise.
+	(NUMERIC_DISPLAY_SIGN_BIT_EBCDIC): Likewise.
+	(NUMERIC_DISPLAY_SIGN_BIT): Likewise.
+	(SEPARATE_PLUS): Likewise.
+	(SEPARATE_MINUS): Likewise.
+	(ZONED_ZERO): Likewise.
+	(ZONE_SIGNED_EBCDIC): Likewise.
+	(enum cbl_field_type_t): Likewise.
+	(enum cbl_field_attr_t): Likewise.
+	(enum cbl_figconst_t): Likewise.
+	(enum cbl_encoding_t): Likewise.
+	* constants.cc (struct cblc_field_t): Likewise.
+	(X): Likewise.
+	(S9): Likewise.
+	* gcobolio.h: Likewise.
+	* gfileio.cc (get_filename): Likewise.
+	(relative_file_delete): Likewise.
+	(relative_file_start): Likewise.
+	(relative_file_rewrite): Likewise.
+	(relative_file_write_varying): Likewise.
+	(relative_file_write): Likewise.
+	(sequential_file_write): Likewise.
+	(line_sequential_file_read): Likewise.
+	(sequential_file_read): Likewise.
+	(relative_file_read): Likewise.
+	(file_indexed_open): Likewise.
+	(__gg__file_reopen): Likewise.
+	(__io__file_open): Likewise.
+	(__io__file_close): Likewise.
+	(__gg__file_open): Likewise.
+	* intrinsic.cc (trim_trailing_spaces): Likewise.
+	(is_zulu_format): Likewise.
+	(string_to_dest): Likewise.
+	(get_all_time): Likewise.
+	(ftime_replace): Likewise.
+	(__gg__char): Likewise.
+	(__gg__current_date): Likewise.
+	(__gg__seconds_past_midnight): Likewise.
+	(__gg__formatted_current_date): Likewise.
+	(__gg__formatted_date): Likewise.
+	(__gg__formatted_datetime): Likewise.
+	(__gg__formatted_time): Likewise.
+	(__gg__lower_case): Likewise.
+	(numval): Likewise.
+	(numval_c): Likewise.
+	(__gg__ord): Likewise.
+	(__gg__trim): Likewise.
+	(__gg__random): Likewise.
+	(__gg__random_next): Likewise.
+	(__gg__reverse): Likewise.
+	(__gg__upper_case): Likewise.
+	(__gg__when_compiled): Likewise.
+	(gets_int): Likewise.
+	(gets_year): Likewise.
+	(gets_month): Likewise.
+	(gets_day): Likewise.
+	(gets_day_of_week): Likewise.
+	(gets_day_of_year): Likewise.
+	(gets_week): Likewise.
+	(gets_hours): Likewise.
+	(gets_minutes): Likewise.
+	(gets_seconds): Likewise.
+	(gets_nanoseconds): Likewise.
+	(fill_cobol_tm): Likewise.
+	(__gg__hex_of): Likewise.
+	(floating_format_tester): Likewise.
+	(__gg__numval_f): Likewise.
+	(__gg__test_numval_f): Likewise.
+	(strcasestr): Likewise.
+	(strlaststr): Likewise.
+	(__gg__locale_compare): Likewise.
+	(__gg__locale_date): Likewise.
+	(__gg__locale_time): Likewise.
+	(__gg__locale_time_from_seconds): Likewise.
+	* libgcobol.cc (struct program_state): Likewise.
+	(turn_sign_bit_on): Likewise.
+	(turn_sign_bit_off): Likewise.
+	(is_sign_bit_on): Likewise.
+	(__gg__string_to_alpha_edited_ascii): Likewise.
+	(int128_to_field): Likewise.
+	(edited_to_binary): Likewise.
+	(get_binary_value_local): Likewise.
+	(__gg__get_date_yymmdd): Likewise.
+	(__gg__get_date_yyyymmdd): Likewise.
+	(__gg__get_date_yyddd): Likewise.
+	(__gg__get_yyyyddd): Likewise.
+	(__gg__get_date_dow): Likewise.
+	(__gg__get_date_hhmmssff): Likewise.
+	(__gg__dirty_to_binary_internal): Likewise.
+	(__gg__dirty_to_binary): Likewise.
+	(__gg__dirty_to_float): Likewise.
+	(psz_to_internal): Likewise.
+	(get_scaled_rdigits): Likewise.
+	(format_for_display_internal): Likewise.
+	(format_for_display_local): Likewise.
+	(compare_88): Likewise.
+	(compare_field_class): Likewise.
+	(compare_strings): Likewise.
+	(__gg__compare_2): Likewise.
+	(init_var_both): Likewise.
+	(alpha_to_alpha_move_from_location): Likewise.
+	(alpha_to_alpha_move): Likewise.
+	(__gg__move): Likewise.
+	(__gg__move_literala): Likewise.
+	(normalize_id): Likewise.
+	(inspect_backward_format_1): Likewise.
+	(__gg__inspect_format_1): Likewise.
+	(inspect_backward_format_2): Likewise.
+	(__gg__inspect_format_2): Likewise.
+	(normalize_for_inspect_format_4): Likewise.
+	(__gg__inspect_format_4): Likewise.
+	(move_string): Likewise.
+	(brute_force_trim): Likewise.
+	(__gg__string): Likewise.
+	(display_both): Likewise.
+	(__gg__display_string): Likewise.
+	(not_mangled_core): Likewise.
+	(__gg__accept): Likewise.
+	(__gg__set_initial_switch_value): Likewise.
+	(__gg__onetime_initialization): Likewise.
+	(is_numeric_display_numeric): Likewise.
+	(is_alpha_a_number): Likewise.
+	(__gg__classify): Likewise.
+	(__gg__convert_encoding): Likewise.
+	(__gg__convert_encoding_length): Likewise.
+	(accept_envar): Likewise.
+	(__gg__accept_envar): Likewise.
+	(__gg__set_envar): Likewise.
+	(__gg__get_argc): Likewise.
+	(__gg__get_argv): Likewise.
+	(__gg__get_command_line): Likewise.
+	(__gg__alphabet_use): Likewise.
+	(__gg__ascii_to_internal_field): Likewise.
+	(__gg__ascii_to_internal): Likewise.
+	(__gg__console_to_internal): Likewise.
+	(__gg__parser_set_conditional): Likewise.
+	(__gg__internal_to_console_in_place): Likewise.
+	(__gg__literaln_alpha_compare): Likewise.
+	(__gg__unstring): Likewise.
+	(struct cbl_exception_t): Likewise.
+	(__gg__codeset_figurative_constants): Likewise.
+	(__gg__function_handle_from_cobpath): Likewise.
+	(__gg__just_mangle_name): Likewise.
+	(__gg__function_handle_from_name): Likewise.
+	(get_the_byte): Likewise.
+	(__gg__set_env_name): Likewise.
+	(__gg__get_env_name): Likewise.
+	(__gg__get_env_value): Likewise.
+	(__gg__set_env_value): Likewise.
+	(__gg__fprintf_stderr): Likewise.
+	(__gg__accept_arg_value): Likewise.
+	(__gg__fc_char): Likewise.
+	* libgcobol.h (__gg__dirty_to_binary_internal): Likewise.
+	(__gg__dirty_to_binary): Likewise.
+	(__gg__internal_to_console_in_place): Likewise.
+	(__gg__fc_char): Likewise.
+	(__gg__convert_encoding): Likewise.
+	(__gg__convert_encoding_length): Likewise.
+	* stringbin.cc (string_from_combined): Likewise.
+	(__gg__binary_to_string_internal): Likewise.
+	(__gg__binary_to_string_encoded): Likewise.
+	(__gg__numeric_display_to_binary): Likewise.
+	(__gg__packed_to_binary): Likewise.
+	* stringbin.h (__gg__binary_to_string_internal): Likewise.
+	(__gg__binary_to_string_encoded): Likewise.
+	(__gg__numeric_display_to_binary): Likewise.
+	* valconv.cc (__gg__alphabet_create): Likewise.
+	(__gg__string_to_numeric_edited): Likewise.
+	(__gg__string_to_alpha_edited): Likewise.
+	(__gg__remove_trailing_zeroes): Likewise.
+	* valconv.h (__VALCONV_H): Likewise.
+	* encodings.h: New file.
+
+2025-10-05  Sam James  <sam@gentoo.org>
+
+	* Makefile.in: Regenerate.
+	* aclocal.m4: Regenerate.
+	* configure: Regenerate.
+
+2025-09-05  Robert Dubner  <rdubner@symas.com>
+
+	* common-defs.h (enum cbl_field_attr_t): Define register_e.
+	* constants.cc (struct cblc_field_t): Define special registers with
+	"__ggsr__" prefix.
+
+2025-08-20  Robert Dubner  <rdubner@symas.com>
+
+	* libgcobol.cc (format_for_display_internal): Handle NumericDisplay
+	properly.
+	(compare_88): Fix memory access error.
+	(__gg__unstring): Likewise.
+
+2025-08-13  Mark Wielaard  <mark@klomp.org>
+
+	* configure: Regenerate.
+
+2025-08-13  Robert Dubner  <rdubner@symas.com>
+
+	* libgcobol.cc (get_binary_value_local): Use the new routine.
+	* stringbin.cc (int_from_string): Removed.
+	(__gg__packed_to_binary): Implement new routine.
+	* stringbin.h (__gg__packed_to_binary): Likewise.
+
+2025-08-13  Robert Dubner  <rdubner@symas.com>
+
+	* libgcobol.cc (int128_to_field): Use the new routine.
+	(get_binary_value_local): Use the new routine.
+	(format_for_display_internal): Formatting.
+	(__gg__get_file_descriptor): Likewise.
+	* stringbin.cc (string_from_combined): Formatting.
+	(packed_from_combined): Likewise.
+	(int_from_string): New routine.
+	(__gg__numeric_display_to_binary): Likewise.
+	* stringbin.h (__gg__numeric_display_to_binary): Likewise.
+
+2025-08-12  Robert Dubner  <rdubner@symas.com>
+
+	* common-defs.h (NUMERIC_DISPLAY_SIGN_BIT): New comment; new constant.
+	(EBCDIC_MINUS): New constant.
+	(EBCDIC_PLUS): Likewise.
+	(EBCDIC_ZERO): Likewise.
+	(EBCDIC_NINE): Likewise.
+	(PACKED_NYBBLE_PLUS): Likewise.
+	(PACKED_NYBBLE_MINUS): Likewise.
+	(PACKED_NYBBLE_UNSIGNED): Likewise.
+	(NUMERIC_DISPLAY_SIGN_BIT_ASCII): Likewise.
+	(NUMERIC_DISPLAY_SIGN_BIT_EBCDIC): Likewise.
+	(SEPARATE_PLUS): Likewise.
+	(SEPARATE_MINUS): Likewise.
+	(ZONED_ZERO): Likewise.
+	(ZONE_SIGNED_EBCDIC): Likewise.
+	* configure: Regenerate.
+	* libgcobol.cc (turn_sign_bit_on): Handle new EBCDIC sign convention.
+	(turn_sign_bit_off): Likewise.
+	(is_sign_bit_on): Likewise.
+	(int128_to_field): EBCDIC NumericDisplay conversion.
+	(get_binary_value_local): Likewise.
+	(format_for_display_internal): Likewise.
+	(normalize_id): Likewise.
+	(__gg__inspect_format_1): Convert EBCDIC negative numbers to positive.
+	* stringbin.cc (packed_from_combined): Quell cppcheck warning.
+
+2025-08-10  H.J. Lu  <hjl.tools@gmail.com>
+
+	* configure: Regenerated.
+
+2025-08-08  Robert Dubner  <rdubner@symas.com>
+
+	* libgcobol.cc (int128_to_field): Switch to the new routine.
+	* stringbin.cc (packed_from_combined): Implement the new routine.
+	(__gg__binary_to_packed): Likewise.
+	* stringbin.h (__gg__binary_to_packed): Likewise.
+
+2025-08-07  Robert Dubner  <rdubner@symas.com>
+
+	* Makefile.am: Include new stringbin.cc file.
+	* Makefile.in: Regenerated.
+	* libgcobol.cc (__gg__power_of_ten): Improve error message.
+	(__gg__binary_to_string): Deleted.
+	(__gg__binary_to_string_internal): Deleted.
+	(int128_to_field): Use new conversion routine.
+	(__gg__move): Use new conversion routine.
+	* stringbin.cc: New file. Implements new conversion routine.
+	* stringbin.h: New file. Likewise.
+
+2025-07-13  Robert Dubner  <rdubner@symas.com>
+
+	* common-defs.h (PTRCAST): Moved here from libgcobol.h.
+	* libgcobol.h (PTRCAST): Deleted.
+
+2025-07-10  James K. Lowden  <jklowden@cobolworx.com>
+
+	* common-defs.h (cdf_enabled_exceptions): Use new CDF state.
+
+2025-07-09  Robert Dubner  <rdubner@symas.com>
+	    James K. Lowden  <jklowden@cobolworx.com>
+
+	* libgcobol.cc (__gg__accept_envar): ACCEPT/DISPLAY environment variables.
+	(accept_envar): Likewise.
+	(default_exception_handler): Refine system log entries.
+	(open_syslog): Likewise.
+	(__gg__set_env_name): ACCEPT/DISPLAY environment variables.
+	(__gg__get_env_name): ACCEPT/DISPLAY environment variables.
+	(__gg__get_env_value): ACCEPT/DISPLAY environment variables.
+	(__gg__set_env_value): ACCEPT/DISPLAY environment variables.
+	(__gg__fprintf_stderr): Adjust __attribute__ for printf.
+	(__gg__set_arg_num): ACCEPT/DISPLAY command-line arguments.
+	(__gg__accept_arg_value): ACCEPT/DISPLAY command-line arguments.
+	(__gg__get_file_descriptor): DISPLAY on os_filename[] /dev device.
+
+2025-06-20  James K. Lowden  <jklowden@cobolworx.com>
+
+	* LICENSE: New file.
+
+2025-06-16  James K. Lowden  <jklowden@cobolworx.com>
+
+	PR cobol/120621
+	* common-defs.h (class cbl_enabled_exceptions_t): Const parameter.
+
+2025-06-11  Robert Dubner  <rdubner@symas.com>
+
+	PR cobol/119975
+	* intrinsic.cc (__gg__current_date): Eliminate CLOCK_REALTIME.
+	(__gg__seconds_past_midnight): Likewise.
+	(__gg__formatted_current_date): Likewise.
+	(__gg__random): Likewise.
+	(__gg__random_next): Likewise.
+	* libgcobol.cc: include <sys/time.h>.
+	(__gg__abort): Eliminate CLOCK_REALTIME.
+	(cobol_time): Likewise.
+	(get_time_nanoseconds): Rename.
+	(get_time_nanoseconds_local): Comment; Eliminate CLOCK_REALTIME.
+	(__gg__clock_gettime): Likewise.
+	(__gg__get_date_hhmmssff): Likewise.
+	* libgcobol.h (__gg__clock_gettime): Eliminate clockid_t from declaration.
+
+2025-06-06  Robert Dubner  <rdubner@symas.com>
+	    James K. Lowden  <jklowden@cobolworx.com>
+
+	* common-defs.h (enum cbl_file_mode_t): Whitespace.
+	(enum file_stmt_t): Likewise.
+	(ec_cmp): Likewise.
+	(struct cbl_declarative_t): Add "explicit" keyword.
+	(class cbl_enabled_exceptions_t): Whitespace.
+	* gfileio.cc: Remove cppcheck comment.
+	* libgcobol.cc (class ec_status_t): Add "explicit" keyword.
+	(match_declarative): Remove %zu.
+	(default_exception_handler): Likwise.
+	(__gg__check_fatal_exception): Exception overhead.
+	(__gg__exception_push): Remove %zu.
+	(__gg__exception_pop): Likewise.
+	(cbl_enabled_exception_t::dump): Likewise.
+	(__gg__match_exception): Exception overhead; remove %zu.
+	(cbl_enabled_exceptions_t::dump): Remove %zu.
+	(__gg__set_exception_environment): Likewise.
+
+2025-06-05  Robert Dubner  <rdubner@symas.com>
+
+	PR cobol/119975
+	* configure.ac: AC_CHECK_LIB(rt, clock_gettime).
+	* config.h.in: Likewise.
+	* configure: Likewise.
+	* gfileio.cc: Remove in-line cppcheck-suppress.
+	* intrinsic.cc (timespec_to_string): Use guarded clock_gettime().
+	(__gg__current_date): Likewise.
+	(__gg__seconds_past_midnight): Likewise.
+	(__gg__formatted_current_date): Likewise.
+	(__gg__random): Likewise.
+	(__gg__random_next): Likewise.
+	(__gg__when_compiled): Likewise.
+	* libgcobol.cc (cobol_time): Likewise.
+	(get_time_nanoseconds): Likewise.
+	(__gg__clock_gettime): Likewise.
+	(__gg__get_date_hhmmssff): Likewise.
+	* libgcobol.h (__gg__clock_gettime): Likewise.
+	(struct cbl_timespec): Likewise.
+
+2025-06-04  Robert Dubner  <rdubner@symas.com>
+
+	PR cobol/119323
+	* charmaps.cc (__gg__raw_to_ascii):  Eliminate cppcheck warnings.
+	(__gg__raw_to_ebcdic): Likewise.
+	(__gg__ebcdic_to_console): Likewise.
+	(__gg__console_to_ascii): Likewise.
+	(__gg__console_to_ebcdic): Likewise.
+	* common-defs.h (struct cbl_declarative_t): Likewise.
+	* gfileio.cc (get_filename): Likewise.
+	(max_value): Likewise.
+	(relative_file_delete_varying): Likewise.
+	(relative_file_delete): Likewise.
+	(read_an_indexed_record): Likewise.
+	(position_state_restore): Likewise.
+	(indexed_file_delete): Likewise.
+	(indexed_file_start): Likewise.
+	(sequential_file_rewrite): Likewise.
+	(relative_file_write_varying): Likewise.
+	(relative_file_write): Likewise.
+	(sequential_file_write): Likewise.
+	(indexed_file_write): Likewise.
+	(__io__file_write): Likewise.
+	(line_sequential_file_read): Likewise.
+	(indexed_file_read): Likewise.
+	(file_indexed_open): Likewise.
+	(__gg__file_reopen): Likewise.
+	* gmath.cc (conditional_stash): Likewise.
+	(__gg__pow): Likewise.
+	(multiply_int256_by_int64): Likewise.
+	(add_int256_to_int256): Likewise.
+	(divide_int256_by_int64): Likewise.
+	(squeeze_int256): Likewise.
+	(get_int256_from_qualified_field): Likewise.
+	(__gg__add_fixed_phase1): Likewise.
+	(__gg__addf1_fixed_phase2): Likewise.
+	(__gg__fixed_phase2_assign_to_c): Likewise.
+	(__gg__add_float_phase1): Likewise.
+	(__gg__addf1_float_phase2): Likewise.
+	(__gg__float_phase2_assign_to_c): Likewise.
+	(__gg__addf3): Likewise.
+	(__gg__subtractf1_fixed_phase2): Likewise.
+	(__gg__subtractf2_fixed_phase1): Likewise.
+	(__gg__subtractf1_float_phase2): Likewise.
+	(__gg__subtractf2_float_phase1): Likewise.
+	(__gg__subtractf3): Likewise.
+	(__gg__multiplyf1_phase1): Likewise.
+	(multiply_int128_by_int128): Likewise.
+	(__gg__multiplyf1_phase2): Likewise.
+	(__gg__multiplyf2): Likewise.
+	(shift_in_place128): Likewise.
+	(divide_int128_by_int128): Likewise.
+	(__gg__dividef1_phase2): Likewise.
+	(__gg__dividef23): Likewise.
+	(__gg__dividef45): Likewise.
+	* intrinsic.cc (struct input_state): Likewise.
+	(get_value_as_double_from_qualified_field): Likewise.
+	(kahan_summation): Likewise.
+	(variance): Likewise.
+	(get_all_time): Likewise.
+	(populate_ctm_from_date): Likewise.
+	(populate_ctm_from_time): Likewise.
+	(ftime_replace): Likewise.
+	(__gg__abs): Likewise.
+	(__gg__acos): Likewise.
+	(__gg__annuity): Likewise.
+	(__gg__asin): Likewise.
+	(__gg__atan): Likewise.
+	(__gg__byte_length): Likewise.
+	(__gg__char): Likewise.
+	(__gg__combined_datetime): Likewise.
+	(__gg__cos): Likewise.
+	(__gg__date_of_integer): Likewise.
+	(__gg__date_to_yyyymmdd): Likewise.
+	(__gg__day_of_integer): Likewise.
+	(__gg__day_to_yyyyddd): Likewise.
+	(__gg__exp): Likewise.
+	(__gg__exp10): Likewise.
+	(__gg__factorial): Likewise.
+	(__gg__formatted_current_date): Likewise.
+	(__gg__formatted_date): Likewise.
+	(__gg__formatted_datetime): Likewise.
+	(__gg__formatted_time): Likewise.
+	(__gg__integer): Likewise.
+	(__gg__integer_of_date): Likewise.
+	(__gg__integer_of_day): Likewise.
+	(__gg__integer_part): Likewise.
+	(__gg__fraction_part): Likewise.
+	(__gg__log): Likewise.
+	(__gg__log10): Likewise.
+	(__gg__max): Likewise.
+	(__gg__lower_case): Likewise.
+	(__gg__median): Likewise.
+	(__gg__min): Likewise.
+	(numval): Likewise.
+	(numval_c): Likewise.
+	(__gg__numval): Likewise.
+	(__gg__test_numval): Likewise.
+	(__gg__numval_c): Likewise.
+	(__gg__test_numval_c): Likewise.
+	(__gg__ord): Likewise.
+	(__gg__rem): Likewise.
+	(__gg__trim): Likewise.
+	(__gg__random): Likewise.
+	(__gg__reverse): Likewise.
+	(__gg__sign): Likewise.
+	(__gg__sin): Likewise.
+	(__gg__sqrt): Likewise.
+	(__gg__tan): Likewise.
+	(__gg__test_date_yyyymmdd): Likewise.
+	(__gg__test_day_yyyyddd): Likewise.
+	(__gg__upper_case): Likewise.
+	(__gg__year_to_yyyy): Likewise.
+	(gets_int): Likewise.
+	(gets_year): Likewise.
+	(gets_month): Likewise.
+	(gets_day): Likewise.
+	(gets_day_of_week): Likewise.
+	(gets_day_of_year): Likewise.
+	(gets_week): Likewise.
+	(gets_hours): Likewise.
+	(gets_minutes): Likewise.
+	(gets_seconds): Likewise.
+	(gets_nanoseconds): Likewise.
+	(fill_cobol_tm): Likewise.
+	(__gg__test_formatted_datetime): Likewise.
+	(__gg__integer_of_formatted_date): Likewise.
+	(__gg__seconds_from_formatted_time): Likewise.
+	(__gg__hex_of): Likewise.
+	(__gg__highest_algebraic): Likewise.
+	(__gg__lowest_algebraic): Likewise.
+	(floating_format_tester): Likewise.
+	(__gg__numval_f): Likewise.
+	(__gg__test_numval_f): Likewise.
+	(ismatch): Likewise.
+	(iscasematch): Likewise.
+	(strstr): Likewise.
+	(strcasestr): Likewise.
+	(strlaststr): Likewise.
+	(strcaselaststr): Likewise.
+	(__gg__substitute): Likewise.
+	(__gg__locale_compare): Likewise.
+	(__gg__locale_date): Likewise.
+	(__gg__locale_time): Likewise.
+	(__gg__locale_time_from_seconds): Likewise.
+	* libgcobol.cc (class ec_status_t): Likewise.
+	(__gg__set_truncation_mode): Likewise.
+	(malloc): Likewise.
+	(__gg__mabort): Likewise.
+	(__gg__resize_int_p): Likewise.
+	(__gg__resize_treeplet): Likewise.
+	(var_is_refmod): Likewise.
+	(value_is_too_big): Likewise.
+	(__gg__string_to_alpha_edited_ascii): Likewise.
+	(int128_to_field): Likewise.
+	(edited_to_binary): Likewise.
+	(get_binary_value_local): Likewise.
+	(__gg__get_date_yymmdd): Likewise.
+	(__gg__get_date_yyyymmdd): Likewise.
+	(__gg__get_date_yyddd): Likewise.
+	(__gg__get_yyyyddd): Likewise.
+	(__gg__get_date_dow): Likewise.
+	(get_scaled_rdigits): Likewise.
+	(format_for_display_internal): Likewise.
+	(compare_88): Likewise.
+	(get_float128): Likewise.
+	(compare_field_class): Likewise.
+	(compare_strings): Likewise.
+	(__gg__compare_2): Likewise.
+	(__gg__sort_table): Likewise.
+	(init_var_both): Likewise.
+	(alpha_to_alpha_move_from_location): Likewise.
+	(alpha_to_alpha_move): Likewise.
+	(__gg__move): Likewise.
+	(__gg__move_literala): Likewise.
+	(__gg__sort_workfile): Likewise.
+	(__gg__merge_files): Likewise.
+	(normalize_id): Likewise.
+	(inspect_backward_format_1): Likewise.
+	(__gg__inspect_format_1): Likewise.
+	(inspect_backward_format_2): Likewise.
+	(__gg__inspect_format_2): Likewise.
+	(__gg__inspect_format_4): Likewise.
+	(move_string): Likewise.
+	(__gg__string): Likewise.
+	(display_both): Likewise.
+	(__gg__display_string): Likewise.
+	(__gg__accept): Likewise.
+	(__gg__binary_value_from_qualified_field): Likewise.
+	(__gg__float128_from_qualified_field): Likewise.
+	(float128_to_int128): Likewise.
+	(float128_to_location): Likewise.
+	(__gg__set_initial_switch_value): Likewise.
+	(is_numeric_display_numeric): Likewise.
+	(is_packed_numeric): Likewise.
+	(is_alpha_a_number): Likewise.
+	(__gg__classify): Likewise.
+	(__gg__accept_envar): Likewise.
+	(__gg__set_envar): Likewise.
+	(command_line_plan_b): Likewise.
+	(__gg__get_command_line): Likewise.
+	(__gg__set_pointer): Likewise.
+	(__gg__ascii_to_internal_field): Likewise.
+	(__gg__internal_to_console_in_place): Likewise.
+	(__gg__routine_to_call): Likewise.
+	(__gg__fetch_call_by_value_value): Likewise.
+	(__gg__assign_value_from_stack): Likewise.
+	(__gg__literaln_alpha_compare): Likewise.
+	(string_in): Likewise.
+	(__gg__unstring): Likewise.
+	(local_ec_type_of): Likewise.
+	(struct exception_descr_t): Likewise.
+	(struct cbl_exception_t): Likewise.
+	(cbl_enabled_exception_t: Likewise.: Likewise.dump): Likewise.
+	(__gg__match_exception): Likewise.
+	(__gg__float128_from_location): Likewise.
+	(__gg__integer_from_float128): Likewise.
+	(__gg__set_exception_file): Likewise.
+	(__gg__func_exception_file): Likewise.
+	(__gg__set_exception_code): Likewise.
+	(__gg__is_float_infinite): Likewise.
+	(__gg__float32_from_128): Likewise.
+	(__gg__float32_from_64): Likewise.
+	(__gg__float64_from_128): Likewise.
+	(__gg__copy_as_big_endian): Likewise.
+	(__gg__get_figconst_data): Likewise.
+	(find_in_dirs): Likewise.
+	(__gg__function_handle_from_cobpath): Likewise.
+	(__gg__just_mangle_name): Likewise.
+	(__gg__function_handle_from_literal): Likewise.
+	(__gg__function_handle_from_name): Likewise.
+	(__gg__mirror_range): Likewise.
+	(__gg__deallocate): Likewise.
+	(__gg__allocate): Likewise.
+	(__gg__module_name): Likewise.
+	(__gg__set_env_name): Likewise.
+	(__gg__set_env_value): Likewise.
+	* libgcobol.h (__gg__mabort): Likewise.
+	(massert): Likewise.
+	(PTRCAST): Likewise.
+	(__gg__float128_from_location): Likewise.
+	(__gg__set_exception_file): Likewise.
+	(__gg__binary_value_from_qualified_field): Likewise.
+	(__gg__float128_from_qualified_field): Likewise.
+	* valconv.cc (__gg__realloc_if_necessary): Likewise.
+	(__gg__alphabet_create): Likewise.
+	(__gg__string_to_numeric_edited): Likewise.
+	(__gg__string_to_alpha_edited): Likewise.
+	* valconv.h: Likewise.
+
+2025-06-01  Robert Dubner  <rdubner@symas.com>
+
+	PR cobol/119524
+	* libgcobol.cc (__gg__fprintf_stderr): New function.
+
+2025-05-20  Robert Dubner  <rdubner@symas.com>
+	    James K. Lowden  <jklowden@cobolworx.com>
+
+	* charmaps.cc: Switch to C++ includes.
+	* common-defs.h: Likewise.
+	* constants.cc: Likewise.
+	* ec.h: Remove #include <assert.h>.
+	* gcobolio.h (GCOBOLIO_H_): Switch to C++ includes.
+	* gfileio.cc: Likewise.
+	* gmath.cc: Likewise.
+	* intrinsic.cc: Comment formatting; C++ includes.
+	* io.cc: C++ includes.
+	* libgcobol.cc: (__gg__stash_exceptions): Eliminate.
+	* valconv.cc: Switch to C++ includes.
+
+2025-05-20  Robert Dubner  <rdubner@symas.com>
+
+	PR cobol/119885
+	* intrinsic.cc: (__gg__sqrt): Change test from <= zero to < zero.
+
+2025-05-16  Robert Dubner  <rdubner@symas.com>
+
+	* common-defs.h (struct cbl_declarative_t): Eliminate blobl.
+	* libgcobol.cc (__gg__set_env_name): Code for ENVIRONMENT-NAME/VALUE.
+	(__gg__set_env_value): Likewise.
+
+2025-05-13  Rainer Orth  <ro@CeBiTec.Uni-Bielefeld.DE>
+
+	* libgcobol.cc [!LOG_PERROR] (LOG_PERROR): Provide fallback.
+
+2025-05-11  Robert Dubner  <rdubner@symas.com>
+
+	PR cobol/119377
+	* common-defs.h: (struct cbl_declaratives_t): Change "bool global" to
+	"uint32_t global".
+
+2025-05-10  Robert Dubner  <rdubner@symas.com>
+
+	* common-defs.h (ec_cmp): Delete "getenv("match_declarative")" calls.
+	(enabled_exception_match): Delete "getenv("match_declarative")" calls.
+	* libgcobol.cc: Eliminate __gg__odo_violation.
+
+2025-05-08  Rainer Orth  <ro@CeBiTec.Uni-Bielefeld.DE>
+
+	* configure.ac: Handle --enable-libgcobol.
+	Let it override LIBGCOBOL_SUPPORTED.
+	* configure: Regenerate.
+
+2025-05-06  Iain Sandoe  <iain@sandoe.co.uk>
+
+	* config.h.in: Regenerate.
+	* configure: Regenerate.
+	* configure.ac: Check for program_invocation_short_name and
+	and getprogname().
+	* libgcobol.cc (default_exception_handler): When the platform
+	has program_invocation_short_name, use it otherwise fall
+	back to using getprogname() or a constant string (if neither
+	interface is available).
+
+2025-05-05  Robert Dubner  <rdubner@symas.com>
+
+	* charmaps.cc: Add #include <vector>.
+	* common-defs.h (COMMON_DEFS_H_): Add #include <stdio.h>.
+	(enum cbl_file_mode_t): Add file_mode_any_e.
+	(enum file_stmt_t): Created.
+	(cbl_file_mode_str): Add case for file_mode_any_e.
+	(ec_cmp): Exceptions.
+	(struct cbl_enabled_exception_t): Likewise.
+	(struct cbl_declarative_t): Likewise.
+	(class cbl_enabled_exceptions_array_t): Likewise.
+	(class cbl_enabled_exceptions_t): Likewise.
+	(struct cbl_enabled_exceptions_array_t): Likewise.
+	(enabled_exception_match): Likewise.
+	* constants.cc: Add #include <vector>.
+	* exceptl.h (struct cbl_exception_t): Removed.
+	(struct cbl_declarative_t): Removed.
+	(class ec_status_t): Removed.
+	* gcobolio.h: Add symbol_table_index to cblc_file_t.
+	* gfileio.cc: Add #include <vector>
+	(establish_status): Comment.
+	(__io__file_init): Handle symbol_table_index.
+	(__io__file_delete): Set file->prior_op.
+	(__io__file_rewrite): Likewise.
+	(__io__file_read): Likewise.
+	(__io__file_open): Likewise.
+	(__io__file_close): Likewise.
+	* gmath.cc: Include #include <vector>.
+	* intrinsic.cc: Include #include <vector>.
+	* libgcobol.cc: Multiple modifications for exceptions.
+	* valconv.cc: #include <vector>.
+
+2025-05-02  Jakub Jelinek  <jakub@redhat.com>
+
+	PR cobol/119364
+	* valconv.cc (__gg__realloc_if_necessary): Use (new_size>>16)>>16;
+	instead of new_size>>32; to avoid warnings on 32-bit hosts.
+	* common-defs.h (enum cbl_field_attr_t): Use uint64_t
+	as underlying type rather than size_t.
+	* gcobolio.h (cblc_field_t): Change attr member type from size_t
+	to unsigned long long.
+
+2025-04-21  Rainer Orth  <ro@CeBiTec.Uni-Bielefeld.DE>
+
+	* configure.ac: Check for struct tm.tm_zone.
+	* configure, config.h.in: Regenerate.
+	* intrinsic.cc (__gg__formatted_current_date): Guard tm.tm_zone
+	use with HAVE_STRUCT_TM_TM_ZONE.
+
+2025-04-15  Andreas Schwab  <schwab@suse.de>
+
+	* configure.tgt: Set LIBGCOBOL_SUPPORTED for riscv64-*-linux* with
+	64-bit multilib.
+
+2025-04-15  Jakub Jelinek  <jakub@redhat.com>
+	    Rainer Orth  <ro@CeBiTec.Uni-Bielefeld.DE>
+
+	PR cobol/119244
+	* acinclude.m4 (LIBGCOBOL_CHECK_FLOAT128): Ensure
+	libgcob_cv_have_float128 is not yes on targets with IEEE quad
+	long double.  Don't check for --as-needed nor set LIBQUADSPEC
+	on targets which USE_IEC_60559.
+	* libgcobol-fp.h (FP128_FMT, strtofp128, strfromfp128): Define.
+	* intrinsic.cc (strtof128): Don't redefine.
+	(WEIRD_TRANSCENDENT_RETURN_VALUE): Use GCOB_FP128_LITERAL macro.
+	(__gg__numval_f): Use strtofp128 instead of strtof128.
+	* libgcobol.cc (strtof128): Don't redefine.
+	(format_for_display_internal): Use strfromfp128 instead of
+	strfromf128 or quadmath_snprintf and use FP128_FMT in the format
+	string.
+	(get_float128, __gg__compare_2, __gg__move, __gg__move_literala):
+	Use strtofp128 instead of strtof128.
+	* configure: Regenerate.
+
+2025-04-14  Andreas Schwab  <schwab@suse.de>
+
+	* libgcobol.cc (__gg__float64_from_128): Mark literal as float128
+	literal.
+
+2025-04-13  Rainer Orth  <ro@CeBiTec.Uni-Bielefeld.DE>
+
+	* valconv.cc (__gg__string_to_numeric_edited): Use strchr instead
+	of index.
+
+2025-04-12  Bob Dubner  <rdubner@symas.com>
+
+	PR cobol/119694
+	* gfileio.cc: Eliminate getenv() calls.
+	* libgcobol.cc: Likewise.
+
+2025-04-10  Iain Sandoe  <iain@sandoe.co.uk>
+
+	* configure.tgt: Enable for x86_64 Darwin.
+
+2025-04-10  Iain Sandoe  <iain@sandoe.co.uk>
+
+	PR cobol/119244
+	* Makefile.am: Add support for libquadmath.
+	* Makefile.in: Regenerate.
+	* acinclude.m4: Add support for libquadmath.
+	* config.h.in: Regenerate.
+	* configure: Regenerate.
+	* configure.ac: Configure libquadmath support.
+	* gmath.cc: Use GCOB_FP128 to represent the configured
+	128b floating point type.  Use FP128_FUNC to represent
+	the naming of intrinsics in the configure 128b floating
+	point type. Render literals with GCOB_FP128_LITERAL.
+	* intrinsic.cc: Likewise.
+	* libgcobol.cc: Likewise.
+	* libgcobol.h: Likewise.
+	* libgcobol-fp.h: New file.
+	* gfileio.cc: Include libgcobol-fp.h.
+	* libgcobol.spec.in: Add libquadmath configure output.
+
+2025-04-09  Bob Dubner  <rdubner@symas.com>
+
+	PR cobol/119682
+	* common-defs.h: Define the REFER_T_REFMOD constant.
+	* intrinsic.cc: (__gg__max): Change the calls to __gg__compare_2(),
+	(__gg__min): Likewise, (__gg__ord_min): Likewise,
+	(__gg__ord_max): Likewise.
+	* libgcobol.cc: (__gg__compare_2): Change definition of calling
+	parameters, eliminate separate flag bit for ALL and ADDRESS_OF,
+	change comparison of alphanumeric to numeric when the numeric
+	is a refmod.
+	* libgcobol.h: Change declaration of __gg__compare_2.
+
+2025-04-05  Iain Sandoe  <iain@sandoe.co.uk>
+
+	* Makefile.am: Add libgcobol.spec and dependency.
+	* Makefile.in: Regenerate.
+	* configure: Regenerate.
+	* configure.ac: Add libgcobol.spec handling.
+	* libgcobol.spec.in: New file.
+
+2025-04-05  Iain Sandoe  <iain@sandoe.co.uk>
+
+	* aclocal.m4: Regenerate.
+	* config.h.in: Regenerate.
+	* Makefile.am: Use the configured LIBS and extra_ldflags.
+	* Makefile.in: Regenerate.
+	* configure: Regenerate.
+	* configure.ac: Shift configure to use c++. Order tests for tools
+	and environment before other tests.
+
+2025-04-04  Iain Sandoe  <iain@sandoe.co.uk>
+
+	* Makefile.am: Use $(LIBM) to add the math lib when
+	it is needed.
+	* Makefile.in: Regenerate.
+	* configure: Regenerate.
+	* configure.ac: Check if the target wants libm.
+
+2025-04-04  Bob Dubner  <rdubner@symas.com>
+
+	* charmaps.h: Change __gg__data_return_code to 'short' type.
+	* constants.cc: Likewise.
+
+2025-04-03  Iain Sandoe  <iain@sandoe.co.uk>
+
+	* config.h.in: Regenerate.
+	* configure: Regenerate.
+	* configure.ac: Check for availability of strfromf32 and
+	strfromf64.
+	* libgcobol.cc (strfromf32, strfromf64): New.
+
+2025-04-03  Iain Sandoe  <iain@sandoe.co.uk>
+
+	PR cobol/119295
+	* config.h.in: Regenerate.
+	* configure: Regenerate.
+	* configure.ac: Configure random_r and friends
+	* intrinsic.cc (__gg__random): Use random_r when available.
+	(__gg__random_next): Likewise.
+
+2025-04-03  Iain Sandoe  <iain@sandoe.co.uk>
+
+	* gfileio.cc: Include config.h.
+	* gmath.cc: Likewise.
+	* io.cc: Likewise.
+	* libgcobol.cc: Likewise.
+
+2025-04-02  Bob Dubner  <rdubner@symas.com>
+
+	PR cobol/119521
+	* intrinsic.cc: (__gg__reverse): Trim final result for intermediate_e.
+	* libgcobol.cc: (__gg__adjust_dest_size): Abort on attempt to increase
+	the size of a result.  (__gg__module_name): Formatting.
+	__gg__reverse(): Resize only intermediates
+
+2025-03-28  Bob Dubner  <rdubner@symas.com>
+
+	* charmaps.cc:Eliminate "#include libgcobol.h".
+	Change comment about _Float128.
+	* common-defs.h: Change comment about _Float128. Receive
+	#defines from libgcobol.h.
+	* constants.cc: Eliminate #include libgcobol.h. Eliminate other
+	unneeded #includes.
+	* ec.h: Receive declarations from libgcobol.h.
+	* gcobolio.h: Likewise.
+	* gfileio.cc: (__gg__file_init): Use file_flag_none_e instead of
+	zero in assignment.  (__gg__file_reopen): Likewise.
+	(__io__file_open): Likewise.
+	* gfileio.h: Receive declarations from libgcobol.h.
+	* libgcobol.h: Numerous declarations moved elsewhere.
+
+2025-03-26  Jonathan Wakely  <jwakely@redhat.com>
+
+	* charmaps.cc (__gg__raw_to_ascii): Use auto for complicated
+	nested type.
+	(__gg__raw_to_ebcdic): Likewise.
+	(__gg__console_to_ascii): Likewise.
+	(__gg__console_to_ebcdic): Likewise.
+
+2025-03-26  Jonathan Wakely  <jwakely@redhat.com>
+
+	* intrinsic.cc (is_zulu_format): Qualify toupper and cast
+	argument to unsigned char.
+	(fill_cobol_tm): Likewise.
+	(iscasematch): Likewise for to lower.
+	(numval): Qualify calls to tolower.
+	(__gg__lower_case): Use lambda expression for
+	tolower call.
+	(__gg__upper_case): Likewise for toupper call.
+	* libgcobol.cc (mangler_core): Cast tolower argument to unsigned
+	char.
+	* valconv.cc (__gg__string_to_numeric_edited): Cast to upper
+	arguments to unsigned char.
+
+2025-03-26  Jonathan Wakely  <jwakely@redhat.com>
+
+	* common-defs.h (cbl_enabled_exceptions_t::operator=): Define as
+	defaulted.
+
+2025-03-23  Bob Dubner  <rdubner@symas.com>
+
+	* Makefile.am: Incorporate AM_CXXFLAGS = $(CXXFLAGS_FOR_TARGET).
+	* Makefile.in: Regenerated.
+
+2025-03-20  Iain Sandoe  <iain@sandoe.co.uk>
+
+	* Makefile.am: Use LIBICONV.
+	* Makefile.in: Regenerate.
+	* aclocal.m4: Regenerate.
+	* config.h.in: Regenerate.
+	* configure: Regenerate.
+	* configure.ac: Check for iconv support.
+
+2025-03-17  Bob Dubner  <rdubner@symas.com>
+
+	* charmaps.cc: Remove unused headers
+	* libgcobol.h: Likewise.
+	* valconv.cc: Likewise.
+
+2025-03-14  Richard Biener  <rguenther@suse.de>
+
+	* Makefile.am: Define gcc_version.
+	* configure.ac: Execute GCC_BASE_VER.
+	* Makefile.in: Regenerated.
+	* configure: Likewise.
+
+2025-03-12  Jonathan Wakely  <jwakely@redhat.com>
+
+	* charmaps.cc: Fix typo in comment.
+
+2025-03-11  Jakub Jelinek  <jakub@redhat.com>
+
+	* config.h.in: Regenerate.
+
+2025-03-11  Jakub Jelinek  <jakub@redhat.com>
+
+	PR cobol/119216
+	* configure.tgt: On fully unsupported targets set UNSUPPORTED=1.
+	* configure.ac: Add AC_CHECK_SIZEOF([void *]), source in
+	configure.tgt and set BUILD_LIBGCOBOL also based on
+	LIBGCOBOL_SUPPORTED.
+	* Makefile.am (toolexeclib_LTLIBRARIES): Conditionalize on
+	BUILD_LIBGCOBOL.
+	(AM_CFLAGS): Rename to ...
+	(AM_CXXFLAGS): ... this.
+	(%.lo: %.cc): Use $(AM_CXXFLAGS) rather than $(AM_CFLAGS).
+	* configure: Regenerate.
+	* Makefile.in: Regenerate.
+
+2025-03-11  Jakub Jelinek  <jakub@redhat.com>
+
+	* Makefile.am: Remove tons of VAR = @VAR@ style lines.
+	(libgcobol.la): Remove.
+	(libgcobol_la_LFLAGS): Remove.
+	(all): Remove.
+	(.PHONY): Remove.
+	(install): Remove.
+	(%.lo: %.c): Remove.
+	(doc): Remove.
+	(install-html install-pdf install-info): Remove.
+	* Makefile.in: Regenerate.
+
+2025-03-11  Jakub Jelinek  <jakub@redhat.com>
+
+	* configure.tgt: Remove x86_64-*-linux*x32 special case.
+
+2025-03-11  Jakub Jelinek  <jakub@redhat.com>
+
+	* configure.tgt: Only set LIBGCOBOL_SUPPORTED for lp64
+	multilibs of powerpc64le-*-linux* and x86_64-*-linux*.  Handle
+	i?86-*-linux* the same as x86_64-*-linux*.
+
+2025-03-11  James K. Lowden  <jklowden@symas.com>
+
+	* Makefile.am: New file.
+	* Makefile.in: Autogenerate.
+	* acinclude.m4: Likewise.
+	* aclocal.m4: Likewise.
+	* configure.ac: New file.
+	* configure: Autogenerate.
+	* configure.tgt: New file.
+	* README: New file.
+	* charmaps.cc: New file.
+	* config.h.in: New file.
+	* constants.cc: New file.
+	* gfileio.cc: New file.
+	* gmath.cc: New file.
+	* io.cc: New file.
+	* valconv.cc: New file.
+	* charmaps.h: New file.
+	* common-defs.h: New file.
+	* ec.h: New file.
+	* exceptl.h: New file.
+	* gcobolio.h: New file.
+	* gfileio.h: New file.
+	* gmath.h: New file.
+	* io.h: New file.
+	* libgcobol.h: New file.
+	* valconv.h: New file.
+	* libgcobol.cc: New file.
+	* intrinsic.cc: New file.
+
+Copyright (C) 2025-2026 Free Software Foundation, Inc.
+
+Copying and distribution of this file, with or without modification,
+are permitted in any medium without royalty provided the copyright
+notice and this notice are preserved.

@@ -1,0 +1,802 @@
+# Damn dejagnu for not having proper library search paths for load_lib.
+# We have to explicitly load everything that gcc-dg.exp wants to load.
+
+proc load_gcc_lib { filename } {
+    global srcdir loaded_libs
+
+    load_file $srcdir/../../gcc/testsuite/lib/$filename
+    set loaded_libs($filename) ""
+}
+
+load_lib dg.exp
+load_lib standard.exp
+
+# Required to use gcc-dg.exp - however, the latter should NOT be
+# loaded until ${tool}_target_compile is defined since it uses that
+# to determine default LTO options.
+
+load_gcc_lib multiline.exp
+load_gcc_lib prune.exp
+load_gcc_lib target-libpath.exp
+load_gcc_lib wrapper.exp
+load_gcc_lib target-supports.exp
+load_gcc_lib target-utils.exp
+load_gcc_lib gcc-defs.exp
+load_gcc_lib timeout.exp
+load_gcc_lib file-format.exp
+load_gcc_lib target-supports-dg.exp
+load_gcc_lib scanasm.exp
+load_gcc_lib scandump.exp
+load_gcc_lib scanlang.exp
+load_gcc_lib scanrtl.exp
+load_gcc_lib scansarif.exp
+load_gcc_lib scanhtml.exp
+load_gcc_lib scantree.exp
+load_gcc_lib scanltrans.exp
+load_gcc_lib scanoffload.exp
+load_gcc_lib scanoffloadipa.exp
+load_gcc_lib scanoffloadtree.exp
+load_gcc_lib scanoffloadrtl.exp
+load_gcc_lib scanipa.exp
+load_gcc_lib scanwpaipa.exp
+load_gcc_lib timeout-dg.exp
+load_gcc_lib torture-options.exp
+load_gcc_lib fortran-modules.exp
+load_gcc_lib dg-test-cleanup.exp
+
+# Try to load a test support file, built during libgomp configuration.
+# Search in '..' vs. '.' to support parallel vs. sequential testing.
+if [info exists ::env(GCC_RUNTEST_PARALLELIZE_DIR)] {
+    load_file ../libgomp-test-support.exp
+} else {
+    load_file libgomp-test-support.exp
+}
+
+set dg-do-what-default run
+
+set libgomp_compile_options ""
+
+#
+# libgomp_init
+#
+
+if [info exists TOOL_OPTIONS] {
+    set multilibs [get_multilibs $TOOL_OPTIONS]
+} else {
+    set multilibs [get_multilibs]
+}
+
+proc libgomp_init { args } {
+    global srcdir blddir objdir tool_root_dir
+    global libgomp_initialized
+    global tmpdir
+    global gluefile wrap_flags
+    global ALWAYS_CFLAGS
+    global CFLAGS
+    global TOOL_EXECUTABLE TOOL_OPTIONS
+    global GCC_UNDER_TEST GXX_UNDER_TEST GFORTRAN_UNDER_TEST
+    global TESTING_IN_BUILD_TREE
+    global target_triplet
+    global always_ld_library_path
+
+    set blddir [lookfor_file [get_multilibs] libgomp]
+
+    # We set LC_ALL and LANG to C so that we get the same error
+    # messages as expected.
+    setenv LC_ALL C
+    setenv LANG C
+
+    # Many hosts now default to a non-ASCII C locale, however, so
+    # they can set a charset encoding here if they need.
+    if { [ishost "*-*-cygwin*"] } {
+      setenv LC_ALL C.ASCII
+      setenv LANG C.ASCII
+    }
+
+    if ![info exists GCC_UNDER_TEST] then {
+	if [info exists TOOL_EXECUTABLE] {
+	    set GCC_UNDER_TEST $TOOL_EXECUTABLE
+	} else {
+	    set GCC_UNDER_TEST "[find_gcc]"
+	}
+	# Only if we're guessing 'GCC_UNDER_TEST', we're also going to guess
+	# 'GXX_UNDER_TEST', 'GFORTRAN_UNDER_TEST'.
+	if ![info exists GXX_UNDER_TEST] then {
+	    if [info exists TOOL_EXECUTABLE] {
+		set GXX_UNDER_TEST $TOOL_EXECUTABLE
+	    } else {
+		set GXX_UNDER_TEST "[find_g++]"
+	    }
+	} else {
+	    error "GXX_UNDER_TEST set but not GCC_UNDER_TEST"
+	}
+	if ![info exists GFORTRAN_UNDER_TEST] then {
+	    if [info exists TOOL_EXECUTABLE] {
+		set GFORTRAN_UNDER_TEST $TOOL_EXECUTABLE
+	    } else {
+		set GFORTRAN_UNDER_TEST "[find_gfortran]"
+	    }
+	} else {
+	    error "GFORTRAN_UNDER_TEST set but not GCC_UNDER_TEST"
+	}
+    }
+
+    if ![info exists tmpdir] {
+	set tmpdir "/tmp"
+    }
+
+    if [info exists gluefile] {
+	unset gluefile
+    }
+
+    if {![info exists CFLAGS]} {
+	set CFLAGS ""
+    }
+
+    # Locate libgcc.a so we don't need to account for different values of
+    # SHLIB_EXT on different platforms
+    set gccdir [lookfor_file $tool_root_dir gcc/libgcc.a]
+    if {$gccdir != ""} {
+        set gccdir [file dirname $gccdir]
+    }
+
+    # Compute what needs to be put into LD_LIBRARY_PATH
+    set always_ld_library_path "."
+
+    global offload_additional_lib_paths
+    if { $offload_additional_lib_paths != "" } {
+	append always_ld_library_path "${offload_additional_lib_paths}"
+    }
+
+    # Compute what needs to be added to the existing LD_LIBRARY_PATH.
+    if {$gccdir != ""} {
+	# Add AIX pthread directory first.
+	if { [llength [glob -nocomplain ${gccdir}/pthread/libgcc_s*.a]] >= 1 } {
+	    append always_ld_library_path ":${gccdir}/pthread"
+	}
+	append always_ld_library_path ":${gccdir}"
+	set compiler [lindex $GCC_UNDER_TEST 0]
+
+	if { [is_remote host] == 0 && [which $compiler] != 0 } {
+	  foreach i "[exec $compiler --print-multi-lib]" {
+	    set mldir ""
+	    regexp -- "\[a-z0-9=_/\.-\]*;" $i mldir
+	    set mldir [string trimright $mldir "\;@"]
+	    if { "$mldir" == "." } {
+	      continue
+	    }
+	    if { [llength [glob -nocomplain ${gccdir}/${mldir}/libgcc_s*.so.*]] >= 1 } {
+	      append always_ld_library_path ":${gccdir}/${mldir}"
+	    }
+	  }
+	}
+    }
+
+    set ALWAYS_CFLAGS ""
+    if { $blddir != "" } {
+	# If '--with-build-sysroot=[...]' was specified, use it for build-tree
+	# testing.
+	global SYSROOT_CFLAGS_FOR_TARGET
+	lappend ALWAYS_CFLAGS "additional_flags=${SYSROOT_CFLAGS_FOR_TARGET}"
+
+        lappend ALWAYS_CFLAGS "additional_flags=-B${blddir}/"
+        # targets that use libgomp.a%s in their specs need a -B option
+        # for uninstalled testing.
+        lappend ALWAYS_CFLAGS "additional_flags=-B${blddir}/.libs"
+        lappend ALWAYS_CFLAGS "additional_flags=-I${blddir}"
+        lappend ALWAYS_CFLAGS "ldflags=-L${blddir}/.libs"
+
+	append always_ld_library_path ":${blddir}/.libs"
+    }
+    # The top-level include directory, for gomp-constants.h.
+    lappend ALWAYS_CFLAGS "additional_flags=-I${srcdir}/../../include"
+    lappend ALWAYS_CFLAGS "additional_flags=-I${srcdir}/.."
+
+    # For build-tree testing, also consider the library paths used for builing.
+    # For installed testing, we assume all that to be provided in the sysroot.
+    if { $blddir != "" } {
+	# The `-fopenacc' and `-fopenmp' options imply `-pthread', and
+	# that implies `-latomic' on some hosts, so wire in libatomic
+	# build directories.
+	if [ishost "riscv*-*-linux*"] {
+	    set shlib_ext [get_shlib_extension]
+	    set atomic_library_path "${blddir}/../libatomic/.libs"
+	    if { [file exists "${atomic_library_path}/libatomic.a"]
+		 || [file exists \
+		     "${atomic_library_path}/libatomic.${shlib_ext}"] } {
+		lappend ALWAYS_CFLAGS \
+		    "additional_flags=-L${atomic_library_path}"
+		append always_ld_library_path ":${atomic_library_path}"
+	    }
+	}
+    }
+
+    # We use atomic operations in the testcases to validate results.
+    if { ([istarget i?86-*-*] || [istarget x86_64-*-*])
+	 && [check_effective_target_ia32]
+	 && ![check_effective_target_cas_char] } {
+	lappend ALWAYS_CFLAGS "additional_flags=-march=i486"
+    }
+
+    if [istarget *-*-darwin*] {
+	lappend ALWAYS_CFLAGS "additional_flags=-shared-libgcc"
+    }
+
+    if [istarget sparc*-*-*] {
+	lappend ALWAYS_CFLAGS "additional_flags=-mcpu=v9"
+    }
+
+    if [info exists TOOL_OPTIONS] {
+	lappend ALWAYS_CFLAGS "additional_flags=$TOOL_OPTIONS"
+    }
+
+    # Make sure that lines are not wrapped.  That can confuse the
+    # error-message parsing machinery.
+    lappend ALWAYS_CFLAGS "additional_flags=-fmessage-length=0"
+
+    # Disable caret, color, URL diagnostics
+    lappend ALWAYS_CFLAGS "additional_flags=-fdiagnostics-plain-output"
+
+    # Help GCC to find offload compilers' 'mkoffload'.
+    global offload_additional_options
+    if { $offload_additional_options != "" } {
+	lappend ALWAYS_CFLAGS "additional_flags=${offload_additional_options}"
+    }
+
+    # Tell warning from error diagnostics.  This fits for C, C++, and Fortran.
+    global gcc_warning_prefix
+    set gcc_warning_prefix "\[Ww\]arning:"
+    global gcc_error_prefix
+    set gcc_error_prefix "(\[Ff\]atal )?\[Ee\]rror:"
+}
+
+#
+# libgomp_target_compile -- compile a source file
+#
+
+proc libgomp_target_compile { source dest type options } {
+    global blddir
+    global libgomp_compile_options
+    global gluefile wrap_flags
+    global ALWAYS_CFLAGS
+    global GCC_UNDER_TEST
+
+    global lang_source_re lang_include_flags
+    if { [info exists lang_include_flags] \
+	 && [regexp ${lang_source_re} ${source}] } {
+	lappend options "additional_flags=${lang_include_flags}"
+    }
+
+    global lang_library_paths
+    if { [info exists lang_library_paths] } {
+	foreach lang_library_path $lang_library_paths {
+	    # targets that use lib[...].a%s in their specs need a -B option
+	    # for uninstalled testing.
+	    lappend options "additional_flags=-B${blddir}/${lang_library_path}"
+	    lappend options "ldflags=-L${blddir}/${lang_library_path}"
+	}
+    }
+    global lang_link_flags
+    if { [info exists lang_link_flags] } {
+	lappend options "ldflags=${lang_link_flags}"
+    }
+
+    if { [target_info needs_status_wrapper] != "" && [info exists gluefile] } {
+	lappend options "libs=${gluefile}"
+	lappend options "ldflags=${wrap_flags}"
+    }
+
+    lappend options "additional_flags=[libio_include_flags]"
+    lappend options "timeout=[timeout_value]"
+
+    set options [concat $libgomp_compile_options $options]
+
+    if [info exists ALWAYS_CFLAGS] {
+	set options [concat "$ALWAYS_CFLAGS" $options]
+    }
+
+    if { $source != "" } {
+        set options [dg-additional-files-options $options $source $dest $type]
+    }
+
+    set result [target_compile $source $dest $type $options]
+
+    return $result
+}
+
+proc libgomp_option_help { } {
+    send_user " --additional_options,OPTIONS\t\tUse OPTIONS to compile the testcase files. OPTIONS should be comma-separated.\n"
+}
+
+proc libgomp_option_proc { option } {
+    if [regexp "^--additional_options," $option] {
+	global libgomp_compile_options
+	regsub "--additional_options," $option "" option
+	foreach x [split $option ","] {
+	    lappend libgomp_compile_options "additional_flags=$x"
+	}
+	return 1
+    } else {
+	return 0
+    }
+}
+
+if ![info exists ::env(GCC_RUNTEST_PARALLELIZE_DIR)] {
+    # No parallel testing.
+} elseif { $FLOCK == "" } {
+    # Using just one parallel slot.
+} else {
+    # Using several parallel slots.  Override DejaGnu
+    # 'standard.exp:${tool}_load'...
+    rename libgomp_load standard_libgomp_load
+    proc libgomp_load { program args } {
+	# ... in order to serialize execution testing via an exclusive lock.
+	# We use stdout, as per <https://perldoc.perl.org/functions/flock>
+	# "[...] FILEHANDLE [...] be open with write intent to use LOCK_EX".
+	set lock_file ../lock
+	set lock_kind --exclusive
+	set lock_fd [open $lock_file a+]
+	set lock_clock_begin [clock seconds]
+	global FLOCK
+	exec $FLOCK $lock_kind 1 >@ $lock_fd
+	set lock_clock_end [clock seconds]
+	verbose -log "Got ${FLOCK}('$lock_file', '$lock_kind') at [clock format $lock_clock_end] after [expr $lock_clock_end - $lock_clock_begin] s" 2
+
+	set result [standard_libgomp_load $program $args]
+
+	# Unlock (implicit with 'close').
+	close $lock_fd
+
+	return $result
+    }
+}
+
+# Translate offload target to OpenACC device type.  Return the empty string if
+# not supported, and 'host' for offload target 'disable'.
+proc offload_target_to_openacc_device_type { offload_target } {
+    switch -glob $offload_target {
+	amdgcn* {
+	    return "radeon"
+	}
+	disable {
+	    return "host"
+	}
+	nvptx* {
+	    return "nvidia"
+	}
+	default {
+	    error "Unknown offload target: $offload_target"
+	}
+    }
+}
+
+# Return 1 if certain nonstandard math functions are available
+# on the target: gamma, scalb, significand, and their float variants.
+proc check_effective_target_nonstandard_math_functions { } {
+    return [check_no_compiler_messages nonstandard_math_functions executable {
+      #include <math.h>
+      int main() {
+        float x = 42;
+        double y = 42;
+        x = gammaf (x);
+        x = __builtin_scalbf (x, 2.f);
+        x =__builtin_significandf (x);
+        y = gamma (y);
+        y = __builtin_scalb (y, 2.);
+        y =__builtin_significand (y);
+        return 0;
+      }
+    } "-lm" ]
+}
+
+# Return 1 if compiling for the specified offload target
+# Takes -foffload=... into account by checking OFFLOAD_TARGET_NAMES=
+# in the -v compiler output.
+proc libgomp_check_effective_target_offload_target { target_name } {
+    # Consider all actual options, including the flags passed to
+    # 'gcc-dg-runtest', or 'gfortran-dg-runtest' (see the 'libgomp.*/*.exp'
+    # files; in particular, '-foffload', 'libgomp.oacc-*/*.exp'), which don't
+    # get passed on to 'check_effective_target_*' functions.  (Not caching the
+    # result due to that.)
+    set options [list "additional_flags=[concat "-v" [current_compiler_flags]]"]
+    # Instead of inspecting command-line options, look what the compiler driver
+    # decides.  This is somewhat modelled after
+    # 'gcc/testsuite/lib/target-supports.exp:check_configured_with'.
+    set gcc_output [libgomp_target_compile "" "" "none" $options]
+    if [regexp "(?n)^OFFLOAD_TARGET_NAMES=(.*)" $gcc_output dummy gcc_offload_targets] {
+	verbose "compiling for offload targets: $gcc_offload_targets"
+	return [string match "*:$target_name*:*" ":$gcc_offload_targets:"]
+    }
+
+    verbose "not compiling for $target_name offload target"
+    return 0
+}
+
+# Return 1 if compiling for any offload target.
+proc check_effective_target_offload_target_any { } {
+    return [libgomp_check_effective_target_offload_target ""]
+}
+
+# Return 1 if compiling for offload target nvptx.
+proc check_effective_target_offload_target_nvptx { } {
+    return [libgomp_check_effective_target_offload_target "nvptx"]
+}
+
+# Return 1 if compiling for offload target amdgcn
+proc check_effective_target_offload_target_amdgcn { } {
+    return [libgomp_check_effective_target_offload_target "amdgcn"]
+}
+
+# Return 1 if offload device is available.
+proc check_effective_target_offload_device { } {
+    return [check_runtime_nocache offload_device_available_ {
+      #include <omp.h>
+      int main ()
+	{
+	  int a;
+	  #pragma omp target map(from: a)
+	    a = omp_is_initial_device ();
+	  return a;
+	}
+    } ]
+}
+
+# Return 1 if offload device is available and it has non-shared address space.
+proc check_effective_target_offload_device_nonshared_as { } {
+    return [check_runtime_nocache offload_device_nonshared_as {
+      int main ()
+	{
+	  int a = 8;
+	  #pragma omp target map(to: a)
+	    a++;
+	  return a != 8;
+	}
+    } ]
+}
+  
+# Return 1 if offload device is available and it has shared address space.
+proc check_effective_target_offload_device_shared_as { } {
+    return [check_runtime_nocache offload_device_shared_as {
+      int main ()
+	{
+	  int x = 10;
+	  #pragma omp target map(to: x)
+	    x++;
+	  return x == 10;
+	}
+    } ]
+}
+
+# Return 1 if using nvptx offload device.
+proc check_effective_target_offload_device_nvptx { } {
+    return [check_runtime_nocache offload_device_nvptx {
+      #include <omp.h>
+      #include "testsuite/libgomp.c-c++-common/on_device_arch.h"
+      int main ()
+	{
+	  return !on_device_arch_nvptx ();
+	}
+    } ]
+}
+
+# Return 1 if using a GCN offload device.
+proc check_effective_target_offload_device_gcn { } {
+    return [check_runtime_nocache offload_device_gcn {
+      #include <omp.h>
+      #include "testsuite/libgomp.c-c++-common/on_device_arch.h"
+      int main ()
+	{
+	  return !on_device_arch_gcn ();
+	}
+    } ]
+}
+
+# Return 1 if at least one Nvidia GPU is accessible.
+
+proc check_effective_target_openacc_nvidia_accel_present { } {
+    return [check_runtime openacc_nvidia_accel_present {
+	#include <openacc.h>
+	int main () {
+	return !(acc_get_num_devices (acc_device_nvidia) > 0);
+	}
+    } "" ]
+}
+
+# Return 1 if at least one Nvidia GPU is accessible, and the OpenACC 'nvidia'
+# device type is selected.
+
+proc check_effective_target_openacc_nvidia_accel_selected { } {
+    if { ![check_effective_target_openacc_nvidia_accel_present] } {
+	return 0;
+    }
+    global openacc_device_type
+    return [string match "nvidia" $openacc_device_type]
+}
+
+# Return 1 if the OpenACC 'host' device type is selected.
+
+proc check_effective_target_openacc_host_selected { } {
+    global openacc_device_type
+    return [string match "host" $openacc_device_type]
+}
+
+# Return 1 if at least one AMD GPU is accessible.
+
+proc check_effective_target_openacc_radeon_accel_present { } {
+    return [check_runtime openacc_radeon_accel_present {
+	#include <openacc.h>
+	int main () {
+	return !(acc_get_num_devices (acc_device_radeon) > 0);
+	}
+    } "" ]
+}
+
+# Return 1 if at least one AMD GPU is accessible, and the OpenACC 'radeon'
+# device type is selected.
+
+proc check_effective_target_openacc_radeon_accel_selected { } {
+    if { ![check_effective_target_openacc_radeon_accel_present] } {
+	return 0;
+    }
+    global openacc_device_type
+    return [string match "radeon" $openacc_device_type]
+}
+
+# Return 1 if cuda.h and -lcuda are available.
+
+proc check_effective_target_openacc_cuda { } {
+    return [check_no_compiler_messages openacc_cuda executable {
+#include <cuda.h>
+int main() {
+    CUdevice dev;
+    CUresult r = cuDeviceGet (&dev, 0);
+    if (r != CUDA_SUCCESS)
+	return 1;
+    return 0;
+} } "-lcuda" ]
+}
+
+# Return 1 if -lcuda is available (header not required).
+
+proc check_effective_target_openacc_libcuda { } {
+    return [check_no_compiler_messages openacc_libcuda executable {
+typedef enum { CUDA_SUCCESS } CUresult;
+typedef int CUdevice;
+CUresult cuDeviceGet (CUdevice *, int);
+int main() {
+    CUdevice dev;
+    CUresult r = cuDeviceGet (&dev, 0);
+    if (r != CUDA_SUCCESS)
+	return 1;
+    return 0;
+} } "-lcuda" ]
+}
+
+# Return 1 if cublas_v2.h, cuda.h, -lcublas and -lcuda are available.
+
+proc check_effective_target_openacc_cublas { } {
+    return [check_no_compiler_messages openacc_cublas executable {
+#include <cuda.h>
+#include <cublas_v2.h>
+int main() {
+    cublasStatus_t s;
+    cublasHandle_t h;
+    CUdevice dev;
+    CUresult r = cuDeviceGet (&dev, 0);
+    if (r != CUDA_SUCCESS)
+	return 1;
+    s = cublasCreate (&h);
+    if (s != CUBLAS_STATUS_SUCCESS)
+	return 1;
+    return 0;
+} } "-lcuda -lcublas" ]
+}
+
+# Return 1 if -lcublas is available header not required).
+
+proc check_effective_target_openacc_libcublas { } {
+    return [check_no_compiler_messages openacc_libcublas executable {
+typedef enum { CUBLAS_STATUS_SUCCESS } cublasStatus_t;
+typedef struct cublasContext* cublasHandle_t;
+#define cublasCreate cublasCreate_v2
+cublasStatus_t cublasCreate_v2 (cublasHandle_t *);
+int main() {
+    cublasStatus_t s;
+    cublasHandle_t h;
+    s = cublasCreate (&h);
+    if (s != CUBLAS_STATUS_SUCCESS)
+	return 1;
+    return 0;
+} } "-lcublas" ]
+}
+
+# Return 1 if cuda_runtime_api.h, cuda.h, -lcuda and -lcudart are available.
+
+proc check_effective_target_openacc_cudart { } {
+    return [check_no_compiler_messages openacc_cudart executable {
+#include <cuda.h>
+#include <cuda_runtime_api.h>
+int main() {
+    cudaError_t e;
+    int devn;
+    CUdevice dev;
+    CUresult r = cuDeviceGet (&dev, 0);
+    if (r != CUDA_SUCCESS)
+	return 1;
+    e = cudaGetDevice (&devn);
+    if (e != cudaSuccess)
+	return 1;
+    return 0;
+} } "-lcuda -lcudart" ]
+}
+
+# Return 1 if -lcudart is available (no header required).
+
+proc check_effective_target_openacc_libcudart { } {
+    return [check_no_compiler_messages openacc_libcudart executable {
+typedef int cudaError_t;
+cudaError_t cudaGetDevice(int *);
+enum { cudaSuccess };
+int main() {
+    cudaError_t e;
+    int devn;
+    e = cudaGetDevice (&devn);
+    if (e != cudaSuccess)
+	return 1;
+    return 0;
+} } "-lcudart" ]
+}
+
+# Return 1 if hip.h is available (no link check; AMD platform).
+
+proc check_effective_target_gomp_hip_header_amd { } {
+    return [check_no_compiler_messages gomp_hip_header_amd assembly {
+#define __HIP_PLATFORM_AMD__
+#include <hip/hip_runtime_api.h>
+int main() {
+    hipDevice_t dev;
+    hipError_t r = hipDeviceGet (&dev, 0);
+    if (r != hipSuccess)
+	return 1;
+    return 0;
+} }]
+}
+
+# Return 1 if hip.h is available (no link check; Nvidia/CUDA platform).
+
+proc check_effective_target_gomp_hip_header_nvidia { } {
+    return [check_no_compiler_messages gomp_hip_header_nvidia assembly {
+#define __HIP_PLATFORM_NVIDIA__
+#include <hip/hip_runtime_api.h>
+int main() {
+    hipDevice_t dev;
+    hipError_t r = hipDeviceGet (&dev, 0);
+    if (r != hipSuccess)
+	return 1;
+    return 0;
+} } "-Wno-deprecated-declarations"]
+}
+
+# Return 1 if the Fortran hipfort module is available (no link check)
+
+proc check_effective_target_gomp_hipfort_module { } {
+    return [check_no_compiler_messages gomp_hipfort_module assembly {
+! Fortran
+use hipfort
+implicit none
+integer(kind(hipSuccess)) :: r
+integer(c_int) :: dev
+r = hipDeviceGet (dev, 0)
+if (r /= hipSuccess) error stop
+end
+}]
+}
+
+# Return 1 if AMD HIP's -lamdhip64 is available (no header required).
+
+proc check_effective_target_gomp_libamdhip64 { } {
+    return [check_no_compiler_messages gomp_libamdhip64 executable {
+typedef int hipError_t;
+typedef int hipDevice_t;
+enum { hipSuccess = 0 };
+hipError_t hipDeviceGet(hipDevice_t*, int);
+int main() {
+    hipDevice_t dev;
+    hipError_t r = hipDeviceGet (&dev, 0);
+    if (r != hipSuccess)
+	return 1;
+    return 0;
+} } "-lamdhip64" ]
+}
+
+# Return 1 if AMD HIP's -lamdhip64 is available (no header required).
+
+proc check_effective_target_gomp_libhipblas { } {
+    return [check_no_compiler_messages gomp_libhipblas executable {
+typedef enum { HIPBLAS_STATUS_SUCCESS = 0 } hipblasStatus_t;
+typedef void* hipblasHandle_t;
+hipblasStatus_t hipblasCreate (hipblasHandle_t*);
+int main() {
+    hipblasHandle_t handle;
+    hipblasStatus_t stat = hipblasCreate (&handle);
+    if (stat != HIPBLAS_STATUS_SUCCESS)
+	return 1;
+    return 0;
+} } "-lhipblas" ]
+}
+
+# return 1 if OpenMP Unified Shared Memory is supported by offload devices
+
+proc check_effective_target_omp_usm { } {
+    set flags ""
+    if { [check_effective_target_offload_target_amdgcn] } {
+	# Specify '-mxnack=any' to inhibit GCN offloading compilation
+	# 'warning: Unified Shared Memory is required, but XNACK is disabled'.
+	# This run-time effective-target check shouldn't fail in case there's
+	# actually no AMD GPU, but there's an USM-capable NVIDIA GPU.
+	lappend flags "-foffload-options=amdgcn-amdhsa=-mxnack=any"
+    }
+    if { $flags != ""
+	 || [check_effective_target_offload_device_nvptx] } {
+	if [check_runtime usm_available_ {
+	    #include <omp.h>
+	    #pragma omp requires unified_shared_memory
+	    int main ()
+	    {
+	      int a;
+	      #pragma omp target map(from: a)
+		a = omp_is_initial_device ();
+	      return a;
+	    }
+	} "$flags" ] {
+	  return 1
+	}
+    }
+
+    return 0
+}
+
+# return 1 if OpenMP Device Managed Memory is supported
+
+proc check_effective_target_omp_managedmem { } {
+    if { [check_effective_target_offload_device_nvptx] } {
+	return 1
+    }
+
+    if { [libgomp_check_effective_target_offload_target "amdgcn"] } {
+	if [check_runtime_nocache managed_available_ {
+	    #include <omp.h>
+	    #include <stdlib.h>
+	    int main ()
+	    {
+	      const omp_alloctrait_t traits[] = {
+		  { omp_atk_fallback, omp_atv_null_fb }
+	      };
+	      omp_allocator_handle_t managed_no_fallback
+	         = omp_init_allocator (ompx_gnu_managed_mem_space, 1, traits);
+	      void *a = omp_alloc (16, managed_no_fallback);
+	      return a == NULL;
+	    }
+	} ] {
+	  return 1
+	}
+    }
+
+    return 0
+}
+
+# return 1 if -mxnack=on is accepted
+
+proc check_effective_target_offload_target_amdgcn_with_xnack { } {
+    if { [libgomp_check_effective_target_offload_target "amdgcn"] } {
+	return [check_runtime amd_xnack_ {
+	   int main () {
+	     #pragma omp target
+	       ;
+	     return 0;
+	   }
+	} "-foffload-options=amdgcn-amdhsa=-mxnack=on" ]
+    }
+
+    return 0
+}

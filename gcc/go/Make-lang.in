@@ -1,0 +1,257 @@
+# Make-lang.in -- Top level -*- makefile -*- fragment for gcc Go frontend.
+
+# Copyright (C) 2009-2026 Free Software Foundation, Inc.
+
+# This file is part of GCC.
+
+# GCC is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3, or (at your option)
+# any later version.
+
+# GCC is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+
+# You should have received a copy of the GNU General Public License
+# along with GCC; see the file COPYING3.  If not see
+# <http://www.gnu.org/licenses/>.
+
+# This file provides the language dependent support in the main Makefile.
+
+# Installation name.
+
+GCCGO_INSTALL_NAME := $(shell echo gccgo|sed '$(program_transform_name)')
+GCCGO_TARGET_INSTALL_NAME := $(target_noncanonical)-$(shell echo gccgo|sed '$(program_transform_name)')
+
+# The name for selecting go in LANGUAGES.
+go: go1$(exeext)
+go.serial = go1$(exeext)
+
+.PHONY: go
+
+CFLAGS-go/gospec.o += $(DRIVER_DEFINES)
+
+GCCGO_OBJS = $(GCC_OBJS) go/gospec.o
+gccgo$(exeext): $(GCCGO_OBJS) $(EXTRA_GCC_OBJS) libcommon-target.a $(LIBDEPS)
+	+$(LINKER) $(ALL_LINKERFLAGS) $(LDFLAGS) -o $@ \
+	  $(GCCGO_OBJS) $(EXTRA_GCC_OBJS) libcommon-target.a \
+	  $(EXTRA_GCC_LIBS) $(LIBS)
+
+# The cross-compiler version.  This is built mainly as a signal to the
+# go.install-common target.  If this executable exists, it means that
+# go.all.cross was run.
+gccgo-cross$(exeext): gccgo$(exeext)
+	-rm -f gccgo-cross$(exeext)
+	cp gccgo$(exeext) gccgo-cross$(exeext)
+
+# Use strict warnings.
+go-warn = $(STRICT_WARN)
+
+GO_OBJS = \
+	go/ast-dump.o \
+	go/embed.o \
+	go/escape.o \
+	go/export.o \
+	go/expressions.o \
+	go/go-backend.o \
+	go/go-diagnostics.o \
+	go/go-encode-id.o \
+	go/go-dump.o \
+	go/go-gcc.o \
+	go/go-gcc-diagnostics.o \
+	go/go-lang.o \
+	go/go-linemap.o \
+	go/go-optimize.o \
+	go/go-sha1.o \
+	go/go.o \
+	go/gogo.o \
+	go/import.o \
+	go/import-archive.o \
+	go/lex.o \
+	go/names.o \
+	go/parse.o \
+	go/runtime.o \
+	go/statements.o \
+	go/types.o \
+	go/unsafe.o \
+	go/wb.o
+
+go_OBJS = $(GO_OBJS) go/gospec.o
+
+go1$(exeext): $(GO_OBJS) attribs.o $(BACKEND) $(LIBDEPS) $(go.prev)
+	@$(call LINK_PROGRESS,$(INDEX.go),start)
+	+$(LLINKER) $(ALL_LINKERFLAGS) $(LDFLAGS) -o $@ \
+	      $(GO_OBJS) attribs.o $(BACKEND) $(LIBS) $(BACKENDLIBS)
+	@$(call LINK_PROGRESS,$(INDEX.go),end)
+
+# Documentation.
+
+GO_TEXI_FILES = \
+	go/gccgo.texi \
+	$(gcc_docdir)/include/fdl.texi \
+	$(gcc_docdir)/include/gpl_v3.texi \
+	$(gcc_docdir)/include/gcc-common.texi \
+	gcc-vers.texi
+
+doc/gccgo.info: $(GO_TEXI_FILES)
+	if test "x$(BUILD_INFO)" = xinfo; then \
+	  rm -f doc/gccgo.info*; \
+	  $(MAKEINFO) $(MAKEINFOFLAGS) -I $(gcc_docdir) \
+		-I $(gcc_docdir)/include -o $@ $<; \
+	else true; fi
+
+doc/gccgo.dvi: $(GO_TEXI_FILES)
+	$(TEXI2DVI) -I $(abs_docdir) -I $(abs_docdir)/include -o $@ $<
+
+doc/gccgo.pdf: $(GO_TEXI_FILES)
+	$(TEXI2PDF) -I $(abs_docdir) -I $(abs_docdir)/include -o $@ $<
+
+$(build_htmldir)/go/index.html: $(GO_TEXI_FILES)
+	$(mkinstalldirs) $(@D)
+	rm -f $(@D)/*
+	$(TEXI2HTML) -I $(gcc_docdir) -I $(gcc_docdir)/include \
+		-I $(srcdir)/go -o $(@D) $<
+
+.INTERMEDIATE: gccgo.pod
+
+gccgo.pod: go/gccgo.texi
+	-$(TEXI2POD) -D gccgo < $< > $@
+
+# Build hooks.
+
+go.all.cross: gccgo-cross$(exeext)
+go.start.encap: gccgo$(exeext)
+go.rest.encap:
+go.info: doc/gccgo.info
+go.dvi: doc/gccgo.dvi
+go.pdf: doc/gccgo.pdf
+go.html: $(build_htmldir)/go/index.html
+go.srcinfo: doc/gccgo.info
+	-cp -p $^ $(srcdir)/doc
+go.srcextra:
+go.tags: force
+	cd $(srcdir)/go; \
+	$(ETAGS) -o TAGS.sub *.cc *.h gofrontend/*.h gofrontend/*.cc; \
+	$(ETAGS) --include TAGS.sub --include ../TAGS.sub
+go.man: doc/gccgo.1
+go.srcman: doc/gccgo.1
+	-cp -p $^ $(srcdir)/doc
+
+lang_checks += check-go
+lang_checks_parallelized += check-go
+check_go_parallelize = 10
+
+# No go-specific selftests
+selftest-go:
+
+# Install hooks.
+
+go.install-common: installdirs
+	-rm -f $(DESTDIR)$(bindir)/$(GCCGO_INSTALL_NAME)$(exeext)
+	$(INSTALL_PROGRAM) gccgo$(exeext) $(DESTDIR)$(bindir)/$(GCCGO_INSTALL_NAME)$(exeext)
+	-if test -f go1$(exeext); then \
+	  if test -f gccgo-cross$(exeext); then \
+	    :; \
+	  else \
+	    rm -f $(DESTDIR)$(bindir)/$(GCCGO_TARGET_INSTALL_NAME)$(exeext); \
+	    ( cd $(DESTDIR)$(bindir) && \
+	      $(LN) $(GCCGO_INSTALL_NAME)$(exeext) $(GCCGO_TARGET_INSTALL_NAME)$(exeext) ); \
+	  fi; \
+	fi
+
+go.install-plugin:
+
+go.install-info: $(DESTDIR)$(infodir)/gccgo.info
+
+go.install-pdf: doc/gccgo.pdf
+	@$(NORMAL_INSTALL)
+	test -z "$(pdfdir)" || $(mkinstalldirs) "$(DESTDIR)$(pdfdir)/gcc"
+	@for p in doc/gccgo.pdf; do \
+	  if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
+	  f=$(pdf__strip_dir) \
+	  echo " $(INSTALL_DATA) '$$d$$p' '$(DESTDIR)$(pdfdir)/gcc/$$f'"; \
+	  $(INSTALL_DATA) "$$d$$p" "$(DESTDIR)$(pdfdir)/gcc/$$f"; \
+	done
+
+go.install-dvi: doc/gccgo.dvi
+	@$(NORMAL_INSTALL)
+	test -z "$(dvidir)" || $(mkinstalldirs) "$(DESTDIR)$(dvidir)/gcc"
+	@for p in doc/gccgo.dvi; do \
+	  if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
+	  f=$(dvi__strip_dir) \
+	  echo " $(INSTALL_DATA) '$$d$$p' '$(DESTDIR)$(dvidir)/gcc/$$f'"; \
+	  $(INSTALL_DATA) "$$d$$p" "$(DESTDIR)$(dvidir)/gcc/$$f"; \
+	done
+
+go.install-html: $(build_htmldir)/go
+	@$(NORMAL_INSTALL)
+	test -z "$(htmldir)" || $(mkinstalldirs) "$(DESTDIR)$(htmldir)"
+	@for p in $(build_htmldir)/go; do \
+	  if test -f "$$p" || test -d "$$p"; then d=""; else d="$(srcdir)/"; fi; \
+	  f=$(html__strip_dir) \
+	  if test -d "$$d$$p"; then \
+	    echo " $(mkinstalldirs) '$(DESTDIR)$(htmldir)/$$f'"; \
+	    $(mkinstalldirs) "$(DESTDIR)$(htmldir)/$$f" || exit 1; \
+	    echo " $(INSTALL_DATA) '$$d$$p'/* '$(DESTDIR)$(htmldir)/$$f'"; \
+	    $(INSTALL_DATA) "$$d$$p"/* "$(DESTDIR)$(htmldir)/$$f"; \
+	  else \
+	    echo " $(INSTALL_DATA) '$$d$$p' '$(DESTDIR)$(htmldir)/$$f'"; \
+	    $(INSTALL_DATA) "$$d$$p" "$(DESTDIR)$(htmldir)/$$f"; \
+	  fi; \
+	done
+
+go.install-man: $(DESTDIR)$(man1dir)/$(GCCGO_INSTALL_NAME)$(man1ext)
+
+$(DESTDIR)$(man1dir)/$(GCCGO_INSTALL_NAME)$(man1ext): doc/gccgo.1 installdirs
+	-rm -f $@
+	-$(INSTALL_DATA) $< $@
+	-chmod a-x $@
+
+go.uninstall:
+	rm -rf $(DESTDIR)$(bindir)/$(GCCGO_INSTALL_NAME)$(exeext)
+	rm -rf $(DESTDIR)$(man1dir)/$(GCCGO_INSTALL_NAME)$(man1ext)
+	rm -rf $(DESTDIR)$(bindir)/$(GCCGO_TARGET_INSTALL_NAME)$(exeext)
+	rm -rf $(DESTDIR)$(infodir)/gccgo.info*
+
+# Clean hooks.
+
+go.mostlyclean:
+	-rm -f go/*$(objext)
+	-rm -f go/*$(coverageexts)
+	-rm -f gccgo$(exeext) gccgo-cross$(exeext) go1$(exeext)
+go.clean:
+go.distclean:
+go.maintainer-clean:
+	-rm -f $(docobjdir)/gccgo.1
+
+# Stage hooks.
+
+go.stage1: stage1-start
+	-mv go/*$(objext) stage1/go
+go.stage2: stage2-start
+	-mv go/*$(objext) stage2/go
+go.stage3: stage3-start
+	-mv go/*$(objext) stage3/go
+go.stage4: stage4-start
+	-mv go/*$(objext) stage4/go
+go.stageprofile: stageprofile-start
+	-mv go/*$(objext) stageprofile/go
+go.stagefeedback: stagefeedback-start
+	-mv go/*$(objext) stagefeedback/go
+
+CFLAGS-go/go-lang.o += -DDEFAULT_TARGET_VERSION=\"$(version)\" \
+	-DDEFAULT_TARGET_MACHINE=\"$(target_noncanonical)\"
+
+GOINCLUDES = -I $(srcdir)/go -I $(srcdir)/go/gofrontend
+
+CFLAGS-go/go-gcc.o += $(GOINCLUDES)
+CFLAGS-go/go-linemap.o += $(GOINCLUDES)
+CFLAGS-go/go-sha1.o += $(GOINCLUDES)
+CFLAGS-go/go-gcc-diagnostics.o += $(GOINCLUDES)
+CFLAGS-go/go-encode-id.o += $(GOINCLUDES)
+
+go/%.o: go/gofrontend/%.cc
+	$(COMPILE) $(GOINCLUDES) $<
+	$(POSTCOMPILE)

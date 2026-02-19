@@ -1,0 +1,330 @@
+# Copyright (C) 2000-2026 Free Software Foundation, Inc.
+
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+# 
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+# 
+# You should have received a copy of the GNU General Public License
+# along with GCC; see the file COPYING3.  If not see
+# <http://www.gnu.org/licenses/>.
+
+# Various utilities for scanning dump output, used by gcc-dg.exp and
+# g++-dg.exp.
+#
+# This is largely borrowed from scanasm.exp.
+
+# Extract the constant part of the dump file suffix from the regexp.
+# Argument 0 is the regular expression.
+proc dump-suffix { arg } {
+    set idx [expr [string first "." $arg] + 1]
+    return [string range $arg $idx end]
+}
+
+# Construct the dumpbase.
+# Argument 0 is the src file
+# Argument 1 is the dump base suffix
+proc dump-base { args } {
+    set src [lindex $args 0]
+    set dumpbase_suf [lindex $args 1]
+    # The dump basename may vary depending on the output name, on
+    # whether there are multiple sources.  We use -dumpbase "" in
+    # gcc-defs to base compilation dumps only on the source basename.
+    set dumpbase $src
+    if { [string length $dumpbase_suf] != 0 } {
+	# Accept {} as dump base suffix to drop the source suffix entirely.
+	if { "$dumpbase_suf" == "{}" } {
+	    set dumpbase_suf ""
+	}
+	regsub {[.][^.]*$} $src $dumpbase_suf dumpbase
+    }
+    return $dumpbase
+}
+
+# Expand dump file name pattern to exactly one file.
+# Return a single dump file name or an empty string
+# if the pattern matches no file or more than one file.
+#
+# Argument 0 is the testcase name
+# Argument 1 is the dump file glob pattern
+proc glob-dump-file { args } {
+
+    set pattern [lindex $args 1]
+    set dump_file "[glob -nocomplain $pattern]"
+    set num_files [llength $dump_file]
+
+    if { $num_files != 1 } {
+	set testcase [lindex $args 0]
+	if { $num_files == 0 } {
+	    verbose -log "$testcase: dump file does not exist"
+	}
+
+	if { $num_files > 1 } {
+	    verbose -log "$testcase: multiple dump files found"
+	}
+
+	return
+    }
+
+    return $dump_file
+}
+
+# Utility for scanning compiler result, invoked via dg-final.
+# Call pass if pattern is present, otherwise fail.
+#
+# Argument 0 is the type of dump we are searching (rtl, tree, ipa)
+# Argument 1 is the regexp to match.
+# Argument 2 is the suffix for the dump file
+# Argument 3 is the suffix of the dump base
+# Argument 4 handles expected failures and the like
+proc scan-dump { args } {
+
+    if { [llength $args] >= 5 } {
+        switch [dg-process-target [lindex $args 4]] {
+            "S" { }
+            "N" { return }
+            "F" { setup_xfail "*-*-*" }
+            "P" { }
+        }
+    }
+
+    set testcase [testname-for-summary]
+    # The name might include a list of options; extract the file name.
+    set filename [lindex $testcase 0]
+
+    set printable_pattern [make_pattern_printable [lindex $args 1]]
+    set suf [dump-suffix [lindex $args 2]]
+    set testname "$testcase scan-[lindex $args 0]-dump $suf \"$printable_pattern\""
+    set src [file tail $filename]
+    set dumpbase [dump-base $src [lindex $args 3]]
+
+    set pattern "$dumpbase.[lindex $args 2]"
+    set output_file "[glob-dump-file $testcase $pattern]"
+    if { $output_file == "" } {
+	unresolved "$testname"
+	return
+    }
+
+    set fd [open $output_file r]
+    set text [read $fd]
+    close $fd
+
+    if [regexp -- [lindex $args 1] $text] {
+	pass "$testname"
+    } else {
+	fail "$testname"
+    }
+}
+
+# Call pass if pattern is present given number of times, otherwise fail.
+# Argument 0 is the type of dump we are searching (rtl, tree, ipa)
+# Argument 1 is the regexp to match.
+# Argument 2 is number of times the regexp must be found
+# Argument 3 is the suffix for the dump file
+# Argument 4 is the suffix of the dump base
+# Argument 5 handles expected failures and the like
+proc scan-dump-times { args } {
+
+    if { [llength $args] >= 6 } {
+	switch [dg-process-target [lindex $args 5]] {
+	    "S" { }
+	    "N" { return }
+	    "F" { setup_xfail "*-*-*" }
+	    "P" { }
+	}
+    }
+
+    set testcase [testname-for-summary]
+    # The name might include a list of options; extract the file name.
+    set filename [lindex $testcase 0]
+    set times [lindex $args 2]
+    set suf [dump-suffix [lindex $args 3]]
+    set printable_pattern [make_pattern_printable [lindex $args 1]]
+    set testname "$testcase scan-[lindex $args 0]-dump-times $suf \"$printable_pattern\" [lindex $args 2]"
+    set src [file tail $filename]
+    set dumpbase [dump-base $src [lindex $args 4]]
+
+    set pattern "$dumpbase.[lindex $args 3]"
+    set output_file "[glob-dump-file $testcase $pattern]"
+    if { $output_file == "" } {
+	unresolved "$testname"
+	return
+    }
+
+    set fd [open $output_file r]
+    set text [read $fd]
+    close $fd
+
+    set result_count [llength [regexp -inline -all -- [lindex $args 1] $text]]
+    if {$result_count == $times} {
+        pass "$testname"
+    } else {
+	verbose -log "$testcase: pattern found $result_count times"
+        fail "$testname"
+    }
+}
+
+# Call pass if pattern is not present, otherwise fail.
+#
+# Argument 0 is the type of dump we are searching (rtl, tree, ipa)
+# Argument 1 is the regexp to match.
+# Argument 2 is the suffix for the dump file
+# Argument 3 is the suffix of the dump base
+# Argument 4 handles expected failures and the like
+proc scan-dump-not { args } {
+
+    if { [llength $args] >= 5 } {
+	switch [dg-process-target [lindex $args 4]] {
+	    "S" { }
+	    "N" { return }
+	    "F" { setup_xfail "*-*-*" }
+	    "P" { }
+	}
+    }
+
+    set testcase [testname-for-summary]
+    # The name might include a list of options; extract the file name.
+    set filename [lindex $testcase 0]
+    set printable_pattern [make_pattern_printable [lindex $args 1]]
+    set suf [dump-suffix [lindex $args 2]]
+    set testname "$testcase scan-[lindex $args 0]-dump-not $suf \"$printable_pattern\""
+    set src [file tail $filename]
+    set dumpbase [dump-base $src [lindex $args 3]]
+
+    set pattern "$dumpbase.[lindex $args 2]"
+    set output_file "[glob-dump-file $testcase $pattern]"
+    if { $output_file == "" } {
+	unresolved "$testname"
+	return
+    }
+
+    set fd [open $output_file r]
+    set text [read $fd]
+    close $fd
+
+    if ![regexp -- [lindex $args 1] $text] {
+	pass "$testname"
+    } else {
+	fail "$testname"
+    }
+}
+
+# Utility for scanning demangled compiler result, invoked via dg-final.
+# Call pass if pattern is present, otherwise fail.
+#
+# Argument 0 is the type of dump we are searching (rtl, tree, ipa)
+# Argument 1 is the regexp to match.
+# Argument 2 is the suffix for the dump file
+# Argument 3 is the suffix of the dump base
+# Argument 4 handles expected failures and the like
+proc scan-dump-dem { args } {
+    global cxxfilt
+    global base_dir
+
+    if { [llength $args] >= 5 } {
+	switch [dg-process-target [lindex $args 4]] {
+	    "S" { }
+	    "N" { return }
+	    "F" { setup_xfail "*-*-*" }
+	    "P" { }
+	}
+    }
+
+    # Find c++filt like we find g++ in g++.exp.
+    if ![info exists cxxfilt]  {
+	set cxxfilt [findfile $base_dir/../../../binutils/cxxfilt \
+		     $base_dir/../../../binutils/cxxfilt \
+	             [findfile $base_dir/../../c++filt $base_dir/../../c++filt \
+		      [findfile $base_dir/c++filt $base_dir/c++filt \
+		       [transform c++filt]]]]
+	verbose -log "c++filt is $cxxfilt"
+    }
+
+    set testcase [testname-for-summary]
+    # The name might include a list of options; extract the file name.
+    set filename [lindex $testcase 0]
+    set printable_pattern [make_pattern_printable [lindex $args 1]]
+    set suf [dump-suffix [lindex $args 2]]
+    set testname "$testcase scan-[lindex $args 0]-dump-dem $suf \"$printable_pattern\""
+    set src [file tail $filename]
+    set dumpbase [dump-base $src [lindex $args 3]]
+
+    set pattern "$dumpbase.[lindex $args 2]"
+    set output_file "[glob-dump-file $testcase $pattern]"
+    if { $output_file == "" } {
+	unresolved "$testname"
+	return
+    }
+
+    set fd [open "| $cxxfilt < $output_file" r]
+    set text [read $fd]
+    close $fd
+
+    if [regexp -- [lindex $args 1] $text] {
+	pass "$testname"
+    } else {
+	fail "$testname"
+    }
+}
+
+# Call pass if demangled pattern is not present, otherwise fail.
+#
+# Argument 0 is the type of dump we are searching (rtl, tree, ipa)
+# Argument 1 is the regexp to match.
+# Argument 2 is the suffix for the dump file
+# Argument 3 is the suffix of the dump base
+# Argument 4 handles expected failures and the like
+proc scan-dump-dem-not { args } {
+    global cxxfilt
+    global base_dir
+
+    if { [llength $args] >= 5 } {
+	switch [dg-process-target [lindex $args 4]] {
+	    "S" { }
+	    "N" { return }
+	    "F" { setup_xfail "*-*-*" }
+	    "P" { }
+	}
+    }
+
+    # Find c++filt like we find g++ in g++.exp.
+    if ![info exists cxxfilt]  {
+	set cxxfilt [findfile $base_dir/../../../binutils/cxxfilt \
+		     $base_dir/../../../binutils/cxxfilt \
+		     [findfile $base_dir/../../c++filt $base_dir/../../c++filt \
+		      [findfile $base_dir/c++filt $base_dir/c++filt \
+		       [transform c++filt]]]]
+	verbose -log "c++filt is $cxxfilt"
+    }
+
+    set testcase [testname-for-summary]
+    # The name might include a list of options; extract the file name.
+    set filename [lindex $testcase 0]
+    set printable_pattern [make_pattern_printable [lindex $args 1]]
+    set suf [dump-suffix [lindex $args 2]]
+    set testname "$testcase scan-[lindex $args 0]-dump-dem-not $suf \"$printable_pattern\""
+    set src [file tail $filename]
+    set dumpbase [dump-base $src [lindex $args 3]]
+
+    set pattern "$dumpbase.[lindex $args 2]"
+    set output_file "[glob-dump-file $testcase $pattern]"
+    if { $output_file == "" } {
+	unresolved "$testname"
+	return
+    }
+
+    set fd [open "| $cxxfilt < $output_file" r]
+    set text [read $fd]
+    close $fd
+
+    if ![regexp -- [lindex $args 1] $text] {
+	pass "$testname"
+    } else {
+	fail "$testname"
+    }
+}

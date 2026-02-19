@@ -1,0 +1,50 @@
+# Top level configure fragment for GNU Ada (GNAT).
+#   Copyright (C) 1994-2026 Free Software Foundation, Inc.
+
+#This file is part of GCC.
+
+#GCC is free software; you can redistribute it and/or modify
+#it under the terms of the GNU General Public License as published by
+#the Free Software Foundation; either version 3, or (at your option)
+#any later version.
+
+#GCC is distributed in the hope that it will be useful,
+#but WITHOUT ANY WARRANTY; without even the implied warranty of
+#MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#GNU General Public License for more details.
+
+#You should have received a copy of the GNU General Public License
+#along with GCC; see the file COPYING3.  If not see
+#<http://www.gnu.org/licenses/>.
+
+# Configure looks for the existence of this file to auto-config each language.
+# We define several parameters used by configure:
+#
+# language	- name of language as it would appear in $(LANGUAGES)
+# gcc_subdir	- where the gcc integration files are to be found
+# boot_language	- "yes" if we need to build this language in stage1
+# compilers	- value to add to $(COMPILERS)
+
+language="ada"
+gcc_subdir="ada/gcc-interface"
+boot_language=yes
+compilers="gnat1\$(exeext)"
+
+gtfiles="\$(srcdir)/ada/gcc-interface/ada-tree.h \$(srcdir)/ada/gcc-interface/gigi.h \$(srcdir)/ada/gcc-interface/decl.cc \$(srcdir)/ada/gcc-interface/trans.cc \$(srcdir)/ada/gcc-interface/utils.cc \$(srcdir)/ada/gcc-interface/misc.cc"
+
+outputs="ada/gcc-interface/Makefile ada/Makefile"
+
+# gnattools native builds use both $(CC) and $(CXX), see PR81878.
+# This is not too onerous: C is always enabled anyway, and C++ is
+# always enabled for bootstrapping.  Use here the same logic used in
+# gnattools/configure to decide whether to use -native or -cross tools
+# for the build.
+if test "x$cross_compiling/$build/$host" = "xno/$host/$target" ; then
+  lang_requires="c c++"
+fi
+
+target_libs="target-libada"
+lang_dirs="gnattools"
+
+# Ada is not enabled by default for the time being.
+build_by_default=no

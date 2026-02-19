@@ -1,0 +1,239 @@
+#   Copyright (C) 2009-2026 Free Software Foundation, Inc.
+
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+# 
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+# 
+# You should have received a copy of the GNU General Public License
+# along with GCC; see the file COPYING3.  If not see
+# <http://www.gnu.org/licenses/>.
+
+# Test the functionality of the GCC plugin support
+
+load_lib target-supports.exp
+load_lib gcc-dg.exp
+
+global ENABLE_PLUGIN
+
+# Check whether the host supports plugins.
+if { ![info exists ENABLE_PLUGIN] } {
+    return
+}
+
+# If a testcase doesn't have special options, use these.
+global DEFAULT_CFLAGS
+if ![info exists DEFAULT_CFLAGS] then {
+    set DEFAULT_CFLAGS " -ansi -pedantic-errors"
+}
+
+# The procedures in plugin-support.exp need these parameters.
+set default_flags $DEFAULT_CFLAGS
+
+if $tracelevel then {
+    strace $tracelevel
+}
+
+# Load support procs.
+load_lib plugin-support.exp
+
+# These tests don't run runtest_file_p consistently if it
+# doesn't return the same values, so disable parallelization
+# of this *.exp file.  The first parallel runtest to reach
+# this will run all the tests serially.
+if ![gcc_parallel_test_run_p plugin] {
+    return
+}
+gcc_parallel_test_enable 0
+
+# Specify the plugin source file and the associated test files in a list.
+# plugin_test_list={ {plugin1 test1 test2 ...} {plugin2 test1 ...} ... }
+set plugin_test_list [list \
+    { selfassign.cc self-assign-test-1.c self-assign-test-2.c } \
+    { ggcplug.cc ggcplug-test-1.c } \
+    { one_time_plugin.cc one_time-test-1.c } \
+    { start_unit_plugin.cc start_unit-test-1.c } \
+    { finish_unit_plugin.cc finish_unit-test-1.c } \
+    { wide-int_plugin.cc wide-int-test-1.c } \
+    { poly-int-01_plugin.cc poly-int-test-1.c } \
+    { poly-int-02_plugin.cc poly-int-test-1.c } \
+    { poly-int-03_plugin.cc poly-int-test-1.c } \
+    { poly-int-04_plugin.cc poly-int-test-1.c } \
+    { poly-int-05_plugin.cc poly-int-test-1.c } \
+    { poly-int-06_plugin.cc poly-int-test-1.c } \
+    { poly-int-07_plugin.cc poly-int-test-1.c } \
+    { crash_test_plugin.cc \
+	  crash-test-ice-in-header-sarif-2.1.c \
+	  crash-test-ice-in-header-sarif-2.2.c \
+	  crash-test-ice-sarif.c \
+	  crash-test-ice-stderr.c \
+	  crash-test-nested-ice.c \
+	  crash-test-nested-write-through-null.c \
+	  crash-test-write-through-null-sarif.c \
+	  crash-test-write-through-null-stderr.c } \
+    { diagnostic_group_plugin.cc \
+	  diagnostic-group-test-1.c } \
+    { diagnostic_plugin_test_show_locus.cc \
+	  diagnostic-test-show-locus-bw.c \
+	  diagnostic-test-show-locus-color.c \
+	  diagnostic-test-show-locus-no-labels.c \
+	  diagnostic-test-show-locus-bw-line-numbers.c \
+	  diagnostic-test-show-locus-bw-line-numbers-2.c \
+	  diagnostic-test-show-locus-color-line-numbers.c \
+	  diagnostic-test-show-locus-parseable-fixits.c \
+	  diagnostic-test-show-locus-GCC_EXTRA_DIAGNOSTIC_OUTPUT-fixits-v1.c \
+	  diagnostic-test-show-locus-GCC_EXTRA_DIAGNOSTIC_OUTPUT-fixits-v2.c \
+	  diagnostic-test-show-locus-generate-patch.c }\
+    { diagnostic_plugin_test_tree_expression_range.cc \
+	  diagnostic-test-expressions-1.c } \
+    { diagnostic_plugin_show_trees.cc \
+	  diagnostic-test-show-trees-1.c } \
+    { diagnostic_plugin_test_string_literals.cc \
+	  diagnostic-test-string-literals-1.c \
+	  diagnostic-test-string-literals-2.c \
+	  diagnostic-test-string-literals-3.c \
+	  diagnostic-test-string-literals-4.c } \
+    { diagnostic_plugin_test_inlining.cc \
+	  diagnostic-test-inlining-1.c \
+	  diagnostic-test-inlining-2.c \
+	  diagnostic-test-inlining-3.c \
+	  diagnostic-test-inlining-4.c } \
+    { diagnostic_plugin_test_metadata.cc
+	  diagnostic-test-metadata.c \
+	  diagnostic-test-metadata-html.c \
+	  diagnostic-test-metadata-sarif.c } \
+    { diagnostic_plugin_test_graphs.cc
+	  diagnostic-test-graphs.c \
+	  diagnostic-test-graphs-html.c \
+	  diagnostic-test-graphs-sarif.c } \
+    { diagnostic_plugin_test_nesting.cc \
+	  diagnostic-test-nesting-show-nesting.c \
+	  diagnostic-test-nesting-no-show-nesting.c \
+	  diagnostic-test-nesting-text-plain.c \
+	  diagnostic-test-nesting-text-indented.c \
+	  diagnostic-test-nesting-text-indented-show-levels.c \
+	  diagnostic-test-nesting-text-indented-unicode.c \
+	  diagnostic-test-nesting-html.c \
+	  diagnostic-test-nesting-sarif.c } \
+    { diagnostic_plugin_test_paths.cc \
+	  diagnostic-test-paths-1.c \
+	  diagnostic-test-paths-2.c \
+	  diagnostic-test-paths-4.c \
+	  diagnostic-test-paths-5.c \
+	  diagnostic-test-paths-multithreaded-inline-events.c \
+	  diagnostic-test-paths-multithreaded-sarif.c \
+	  diagnostic-test-paths-multithreaded-separate-events.c \
+	  diagnostic-path-format-plain.c \
+	  diagnostic-path-format-none.c \
+	  diagnostic-path-format-separate-events.c \
+	  diagnostic-path-format-inline-events-1.c \
+	  diagnostic-path-format-inline-events-2.c \
+	  diagnostic-path-format-inline-events-3.c } \
+    { diagnostic_plugin_test_text_art.cc \
+	  diagnostic-test-text-art-none.c \
+	  diagnostic-test-text-art-ascii-bw.c \
+	  diagnostic-test-text-art-ascii-color.c \
+	  diagnostic-test-text-art-unicode-bw.c \
+	  diagnostic-test-text-art-unicode-color.c } \
+    { location_overflow_plugin.cc \
+	  location-overflow-test-1.c \
+	  location-overflow-test-2.c \
+	  location-overflow-test-3.c \
+	  location-overflow-test-pr83173.c \
+	  location-overflow-test-pr116047.c \
+	  location-overflow-test-pr120061.c } \
+    { must_tail_call_plugin.cc \
+	  must-tail-call-1.c \
+	  must-tail-call-2.c } \
+    { expensive_selftests_plugin.cc \
+	  expensive-selftests-1.c } \
+    { dump_plugin.cc \
+	  dump-1.c \
+	  dump-2.c } \
+    { analyzer_gil_plugin.cc \
+	  gil-1.c } \
+    { analyzer_known_fns_plugin.cc \
+	  known-fns-1.c } \
+    { analyzer_kernel_plugin.cc \
+	  copy_from_user-1.c \
+	  infoleak-1.c \
+	  infoleak-2.c \
+	  infoleak-3.c \
+	  infoleak-CVE-2011-1078-1.c \
+	  infoleak-CVE-2011-1078-2.c \
+	  infoleak-CVE-2017-18549-1.c \
+	  infoleak-CVE-2017-18550-1.c \
+	  infoleak-antipatterns-1.c \
+	  infoleak-fixit-1.c \
+	  infoleak-pr112969.c \
+	  infoleak-uninit-size-1.c \
+	  infoleak-uninit-size-2.c \
+	  infoleak-net-ethtool-ioctl.c \
+	  infoleak-vfio_iommu_type1.c \
+	  taint-CVE-2011-0521-1-fixed.c \
+	  taint-CVE-2011-0521-1.c \
+	  taint-CVE-2011-0521-2-fixed.c \
+	  taint-CVE-2011-0521-2.c \
+	  taint-CVE-2011-0521-3-fixed.c \
+	  taint-CVE-2011-0521-3.c \
+	  taint-CVE-2011-0521-4.c \
+	  taint-CVE-2011-0521-5.c \
+	  taint-CVE-2011-0521-5-fixed.c \
+	  taint-CVE-2011-0521-6.c \
+	  taint-antipatterns-1.c \
+	  taint-modulus.c \
+	  taint-pr112850.c \
+	  taint-pr112850-precise.c \
+	  taint-pr112850-too-complex.c \
+	  taint-pr112850-unsanitized.c \
+	  taint-pr112927.c \
+	  taint-pr112974.c \
+	  taint-pr112975.c \
+	  taint-pr112977.c } \
+    { analyzer_cpython_plugin.cc \
+	  cpython-plugin-test-no-Python-h.c \
+	  cpython-plugin-test-PyList_Append.c \
+	  cpython-plugin-test-PyList_New.c \
+	  cpython-plugin-test-PyLong_FromLong.c } \
+    { progress_notifications_plugin.cc } \
+]
+
+foreach plugin_test $plugin_test_list {
+    # Replace each source file with its full-path name
+    for {set i 0} {$i < [llength $plugin_test]} {incr i} {
+	set basename [lindex $plugin_test $i]
+	set plugin_test [lreplace $plugin_test $i $i $srcdir/$subdir/$basename]
+    }
+    set plugin_src [lindex $plugin_test 0]
+    # If we're only testing specific files and this isn't one of them, skip it.
+    if ![runtest_file_p $runtests $plugin_src] then {
+        continue
+    }
+    # Skip tail call tests on targets that do not have sibcall_epilogue.
+    if {[regexp ".*must_tail_call_plugin.c" $plugin_src]
+	&& [istarget arm*-*-*]
+	&& [check_effective_target_arm_thumb1]} then {
+	continue
+    }
+    set plugin_input_tests [lreplace $plugin_test 0 0]
+    plugin-test-execute $plugin_src $plugin_input_tests
+}
+
+# run the plugindir tests
+
+# Initialize `dg'.
+dg-init
+
+# Main loop.
+dg-runtest [lsort [glob -nocomplain $srcdir/$subdir/plugindir*.\[cSi\]]] \
+	"" $DEFAULT_CFLAGS
+
+# All done.
+dg-finish
+
+gcc_parallel_test_enable 1

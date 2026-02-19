@@ -1,0 +1,425 @@
+; Options for the RISC-V port of the compiler
+;
+; Copyright (C) 2011-2026 Free Software Foundation, Inc.
+;
+; This file is part of GCC.
+;
+; GCC is free software; you can redistribute it and/or modify it under
+; the terms of the GNU General Public License as published by the Free
+; Software Foundation; either version 3, or (at your option) any later
+; version.
+;
+; GCC is distributed in the hope that it will be useful, but WITHOUT
+; ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+; or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+; License for more details.
+;
+; You should have received a copy of the GNU General Public License
+; along with GCC; see the file COPYING3.  If not see
+; <http://www.gnu.org/licenses/>.
+
+HeaderInclude
+config/riscv/riscv-opts.h
+
+mbig-endian
+Target RejectNegative Mask(BIG_ENDIAN)
+Assume target CPU is configured as big endian.
+
+mlittle-endian
+Target RejectNegative InverseMask(BIG_ENDIAN)
+Assume target CPU is configured as little endian.
+
+mbranch-cost=
+Target RejectNegative Joined UInteger Var(riscv_branch_cost)
+-mbranch-cost=N	Set the cost of branches to roughly N instructions.
+
+mplt
+Target Alias(fplt) Undocumented
+This option is deprecated; use -fplt or -fno-plt instead.
+
+mabi=
+Target RejectNegative Joined Enum(abi_type) Var(riscv_abi) Init(ABI_ILP32) Negative(mabi=)
+Specify integer and floating-point calling convention.
+
+mpreferred-stack-boundary=
+Target RejectNegative Joined UInteger Var(riscv_preferred_stack_boundary_arg)
+Attempt to keep stack aligned to this power of 2.
+
+Enum
+Name(abi_type) Type(enum riscv_abi_type)
+Supported ABIs (for use with the -mabi= option):
+
+EnumValue
+Enum(abi_type) String(ilp32) Value(ABI_ILP32)
+
+EnumValue
+Enum(abi_type) String(ilp32e) Value(ABI_ILP32E)
+
+EnumValue
+Enum(abi_type) String(ilp32f) Value(ABI_ILP32F)
+
+EnumValue
+Enum(abi_type) String(ilp32d) Value(ABI_ILP32D)
+
+EnumValue
+Enum(abi_type) String(lp64) Value(ABI_LP64)
+
+EnumValue
+Enum(abi_type) String(lp64e) Value(ABI_LP64E)
+
+EnumValue
+Enum(abi_type) String(lp64f) Value(ABI_LP64F)
+
+EnumValue
+Enum(abi_type) String(lp64d) Value(ABI_LP64D)
+
+mfdiv
+Target Mask(FDIV)
+Use hardware floating-point divide and square root instructions.
+
+mdiv
+Target Mask(DIV)
+Use hardware instructions for integer division.
+
+march=
+Target RejectNegative Joined Negative(march=) Var(riscv_arch_string) Save
+-march=	Generate code for given RISC-V ISA (e.g. RV64IM).  ISA strings must be
+lower-case.
+
+march=help
+Target RejectNegative
+-march=help	Print supported -march extensions.
+
+; -print-supported-extensions and --print-supported-extensions are added for
+; clang compatibility.
+print-supported-extensions
+Target Undocumented RejectNegative Alias(march=help)
+
+-print-supported-extensions
+Target Undocumented RejectNegative Alias(march=help)
+
+mtune=
+Target RejectNegative Joined Var(riscv_tune_string) Save
+-mtune=PROCESSOR	Optimize the output for PROCESSOR.
+
+mcpu=
+Target RejectNegative Joined Var(riscv_cpu_string) Save
+-mcpu=PROCESSOR	Use architecture of and optimize the output for PROCESSOR.
+
+msmall-data-limit=
+Target Joined UInteger Var(g_switch_value) Init(8) RejectNegative
+-msmall-data-limit=N	Put global and static data smaller than <number> bytes into a special section (on some targets).
+
+msave-restore
+Target Mask(SAVE_RESTORE)
+Use smaller but slower prologue and epilogue code.
+
+mshorten-memrefs
+Target Var(riscv_mshorten_memrefs) Init(1)
+Convert BASE + LARGE_OFFSET addresses to NEW_BASE + SMALL_OFFSET to allow more
+memory accesses to be generated as compressed instructions.  Currently targets
+32-bit integer load/stores.
+
+mcmodel=
+Target RejectNegative Joined Enum(code_model) Var(riscv_cmodel) Init(TARGET_DEFAULT_CMODEL) Save
+Specify the code model.
+
+mstrict-align
+Target Mask(STRICT_ALIGN) Save
+Do not generate unaligned memory accesses.
+
+mscalar-strict-align
+Target Save Alias(mstrict-align)
+Do not generate unaligned scalar memory accesses.
+
+mvector-strict-align
+Target Save Var(rvv_vector_strict_align) Init(1)
+Do not create element-misaligned vector memory accesses.
+
+Enum
+Name(code_model) Type(enum riscv_code_model)
+Known code models (for use with the -mcmodel= option):
+
+EnumValue
+Enum(code_model) String(medlow) Value(CM_MEDLOW)
+
+EnumValue
+Enum(code_model) String(medany) Value(CM_MEDANY)
+
+EnumValue
+Enum(code_model) String(large) Value(CM_LARGE)
+
+mexplicit-relocs
+Target Mask(EXPLICIT_RELOCS)
+Use %reloc() operators, rather than assembly macros, to load addresses.
+
+mrelax
+Target Var(riscv_mrelax) Init(1)
+Take advantage of linker relaxations to reduce the number of instructions
+required to materialize symbol addresses.
+
+mcsr-check
+Target Var(riscv_mcsr_check) Init(0)
+Enable the CSR checking for the ISA-dependent CSR and the read-only CSR.
+The ISA-dependent CSR are only valid when the specific ISA is set.  The
+read-only CSR can not be written by the CSR instructions.
+
+momit-leaf-frame-pointer
+Target Mask(OMIT_LEAF_FRAME_POINTER) Save
+Omit the frame pointer in leaf functions.
+
+TargetVariable
+int riscv_isa_flags
+
+Mask(64BIT) Var(riscv_isa_flags)
+
+Mask(VECTOR) Var(riscv_isa_flags)
+
+Mask(FULL_V) Var(riscv_isa_flags)
+
+mriscv-attribute
+Target Var(riscv_emit_attribute_p) Init(-1)
+Emit RISC-V ELF attribute.
+
+malign-data=
+Target RejectNegative Joined Var(riscv_align_data_type) Enum(riscv_align_data) Init(riscv_align_data_type_xlen)
+Use the given data alignment.
+
+Enum
+Name(riscv_align_data) Type(enum riscv_align_data)
+Known data alignment choices (for use with the -malign-data= option):
+
+EnumValue
+Enum(riscv_align_data) String(xlen) Value(riscv_align_data_type_xlen)
+
+EnumValue
+Enum(riscv_align_data) String(natural) Value(riscv_align_data_type_natural)
+
+mstack-protector-guard=
+Target RejectNegative Joined Enum(stack_protector_guard) Var(riscv_stack_protector_guard) Init(SSP_GLOBAL)
+Use given stack-protector guard.
+
+Enum
+Name(stack_protector_guard) Type(enum stack_protector_guard)
+Valid arguments to -mstack-protector-guard=:
+
+EnumValue
+Enum(stack_protector_guard) String(tls) Value(SSP_TLS)
+
+EnumValue
+Enum(stack_protector_guard) String(global) Value(SSP_GLOBAL)
+
+mstack-protector-guard-reg=
+Target RejectNegative Joined Var(riscv_stack_protector_guard_reg_str)
+Use the given base register for addressing the stack-protector guard.
+
+TargetVariable
+int riscv_stack_protector_guard_reg = 0
+
+mstack-protector-guard-offset=
+Target RejectNegative Joined Integer Var(riscv_stack_protector_guard_offset_str)
+Use the given offset for addressing the stack-protector guard.
+
+TargetVariable
+long riscv_stack_protector_guard_offset = 0
+
+TargetVariable
+int riscv_vector_elen_flags
+
+Mask(VECTOR_ELEN_32)    Var(riscv_vector_elen_flags)
+
+Mask(VECTOR_ELEN_64)    Var(riscv_vector_elen_flags)
+
+Mask(VECTOR_ELEN_FP_32) Var(riscv_vector_elen_flags)
+
+Mask(VECTOR_ELEN_FP_64) Var(riscv_vector_elen_flags)
+
+Mask(VECTOR_ELEN_FP_16) Var(riscv_vector_elen_flags)
+
+Mask(VECTOR_ELEN_BF_16) Var(riscv_vector_elen_flags)
+
+TargetVariable
+int riscv_fmv_priority = 0
+
+Enum
+Name(isa_spec_class) Type(enum riscv_isa_spec_class)
+Supported ISA specs (for use with the -misa-spec= option):
+
+EnumValue
+Enum(isa_spec_class) String(2.2) Value(ISA_SPEC_CLASS_2P2)
+
+EnumValue
+Enum(isa_spec_class) String(20190608) Value(ISA_SPEC_CLASS_20190608)
+
+EnumValue
+Enum(isa_spec_class) String(20191213) Value(ISA_SPEC_CLASS_20191213)
+
+misa-spec=
+Target RejectNegative Joined Enum(isa_spec_class) Var(riscv_isa_spec) Init(TARGET_DEFAULT_ISA_SPEC)
+Set the version of RISC-V ISA spec.
+
+mmovcc
+Target Var(TARGET_MOVCC)
+Enable conditional moves unconditionally.
+
+minline-atomics
+Target Var(TARGET_INLINE_SUBWORD_ATOMIC) Init(1)
+Always inline subword atomic operations.
+
+minline-strcmp
+Target Var(riscv_inline_strcmp) Init(1)
+Inline strcmp calls if possible.
+
+minline-strncmp
+Target Var(riscv_inline_strncmp) Init(1)
+Inline strncmp calls if possible.
+
+minline-strlen
+Target Var(riscv_inline_strlen) Init(1)
+Inline strlen calls if possible.
+
+-param=riscv-strcmp-inline-limit=
+Target RejectNegative Joined UInteger Var(riscv_strcmp_inline_limit) Init(64)
+Max number of bytes to compare as part of inlined strcmp/strncmp routines (default: 64).
+
+-param=gpr2vr-cost=
+Target RejectNegative Joined UInteger Var(gpr2vr_cost) Init(GPR2VR_COST_UNPROVIDED)
+Set the cost value of the rvv instruction when operate from GPR to VR.
+
+-param=vr2gpr-cost=
+Target RejectNegative Joined UInteger Var(vr2gpr_cost) Init(VR2GPR_COST_UNPROVIDED)
+Set the cost value of the rvv instruction when operate from VR to GPR .
+
+-param=fpr2vr-cost=
+Target RejectNegative Joined UInteger Var(fpr2vr_cost) Init(FPR2VR_COST_UNPROVIDED)
+Set the cost value of the rvv instruction when operate from FPR to VR.
+
+-param=vr2fpr-cost=
+Target RejectNegative Joined UInteger Var(vr2fpr_cost) Init(VR2FPR_COST_UNPROVIDED)
+Set the cost value of the rvv instruction when operate from VR to FPR.
+
+-param=riscv-autovec-mode=
+Target Undocumented RejectNegative Joined Var(riscv_autovec_mode) Save
+Set the only autovec mode to try.
+
+Enum
+Name(rvv_max_lmul) Type(enum rvv_max_lmul_enum)
+The RVV possible LMUL (-mrvv-max-lmul=):
+
+EnumValue
+Enum(rvv_max_lmul) String(m1) Value(RVV_M1)
+
+EnumValue
+Enum(rvv_max_lmul) String(m2) Value(RVV_M2)
+
+EnumValue
+Enum(rvv_max_lmul) String(m4) Value(RVV_M4)
+
+EnumValue
+Enum(rvv_max_lmul) String(m8) Value(RVV_M8)
+
+EnumValue
+Enum(rvv_max_lmul) String(dynamic) Value(RVV_DYNAMIC)
+
+EnumValue
+Enum(rvv_max_lmul) String(conv-dynamic) Value(RVV_CONV_DYNAMIC)
+
+mrvv-max-lmul=
+Target RejectNegative Joined Enum(rvv_max_lmul) Var(rvv_max_lmul) Init(RVV_M1)
+-mrvv-max-lmul=<string>	Set the RVV LMUL of auto-vectorization.
+
+madjust-lmul-cost
+Target Var(TARGET_ADJUST_LMUL_COST) Init(0)
+
+Enum
+Name(vsetvl_strategy) Type(enum vsetvl_strategy_enum)
+Valid arguments to -param=vsetvl-strategy=:
+
+EnumValue
+Enum(vsetvl_strategy) String(optim) Value(VSETVL_OPT)
+
+EnumValue
+Enum(vsetvl_strategy) String(simple) Value(VSETVL_SIMPLE)
+
+EnumValue
+Enum(vsetvl_strategy) String(optim-no-fusion) Value(VSETVL_OPT_NO_FUSION)
+
+-param=vsetvl-strategy=
+Target Undocumented RejectNegative Joined Enum(vsetvl_strategy) Var(vsetvl_strategy) Init(VSETVL_OPT)
+-param=vsetvl-strategy=<string>	Set the optimization level of VSETVL insert pass.
+
+-param=riscv-two-source-permutes
+Target Undocumented Uinteger Var(riscv_two_source_permutes) Init(0)
+-param=riscv-two-source-permutes Enable permutes with two source vectors.
+
+mmax-vectorization
+Target Var(riscv_max_vectorization) Save
+Override the scalar cost model such that vectorization is always profitable.
+
+Enum
+Name(stringop_strategy) Type(enum stringop_strategy_enum)
+Valid arguments to -mstringop-strategy=:
+
+EnumValue
+Enum(stringop_strategy) String(auto) Value(STRATEGY_AUTO)
+
+EnumValue
+Enum(stringop_strategy) String(libcall) Value(STRATEGY_LIBCALL)
+
+EnumValue
+Enum(stringop_strategy) String(scalar) Value(STRATEGY_SCALAR)
+
+EnumValue
+Enum(stringop_strategy) String(vector) Value(STRATEGY_VECTOR)
+
+mstringop-strategy=
+Target RejectNegative Joined Enum(stringop_strategy) Var(stringop_strategy) Init(STRATEGY_AUTO)
+Specify stringop expansion strategy.
+
+-param=memcpy-size-threshold=
+Target Joined UInteger Var(riscv_memcpy_size_threshold) Init(-1) Param
+Constant memcpy size in bytes above which to start using libcalls over inlining.
+
+-param=memmove-size-threshold=
+Target Joined UInteger Var(riscv_memmove_size_threshold) Init(-1) Param
+Constant memmove size in bytes above which to start using libcalls over inlining.
+
+-param=memset-size-threshold=
+Target Joined UInteger Var(riscv_memset_size_threshold) Init(-1) Param
+Constant memset size in bytes above which to start using libcalls over inlining.
+
+Enum
+Name(rvv_vector_bits) Type(enum rvv_vector_bits_enum)
+The possible RVV vector register lengths:
+
+EnumValue
+Enum(rvv_vector_bits) String(scalable) Value(RVV_VECTOR_BITS_SCALABLE)
+
+EnumValue
+Enum(rvv_vector_bits) String(zvl) Value(RVV_VECTOR_BITS_ZVL)
+
+mrvv-vector-bits=
+Target RejectNegative Joined Enum(rvv_vector_bits) Var(rvv_vector_bits) Init(RVV_VECTOR_BITS_SCALABLE)
+-mrvv-vector-bits=<string>	Set the kind of bits for an RVV vector register.
+
+Enum
+Name(tls_type) Type(enum riscv_tls_type)
+The possible TLS dialects:
+
+EnumValue
+Enum(tls_type) String(trad) Value(TLS_TRADITIONAL)
+
+EnumValue
+Enum(tls_type) String(desc) Value(TLS_DESCRIPTORS)
+
+mtls-dialect=
+Target RejectNegative Joined Enum(tls_type) Var(riscv_tls_dialect) Init(TLS_TRADITIONAL) Save
+Specify TLS dialect.
+
+mfence-tso
+Target Var(TARGET_FENCE_TSO) Init(1)
+Specifies whether the fence.tso instruction should be used.
+
+mautovec-segment
+Target Integer Var(riscv_mautovec_segment) Init(1)
+Enable (default) or disable generation of vector segment load/store instructions.

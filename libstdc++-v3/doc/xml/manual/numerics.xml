@@ -1,0 +1,146 @@
+<chapter xmlns="http://docbook.org/ns/docbook" version="5.0"
+	 xml:id="std.numerics" xreflabel="Numerics">
+<?dbhtml filename="numerics.html"?>
+
+<info><title>
+  Numerics
+  <indexterm><primary>Numerics</primary></indexterm>
+</title>
+  <keywordset>
+    <keyword>ISO C++</keyword>
+    <keyword>library</keyword>
+  </keywordset>
+</info>
+
+
+
+<!-- Sect1 01 : Complex -->
+<section xml:id="std.numerics.complex" xreflabel="complex"><info><title>Complex</title></info>
+<?dbhtml filename="complex.html"?>
+
+  <para>
+  </para>
+  <section xml:id="numerics.complex.processing" xreflabel="complex Processing"><info><title>complex Processing</title></info>
+
+    <para>
+    </para>
+   <para>Using <code>complex&lt;&gt;</code> becomes even more comple- er, sorry,
+      <emphasis>complicated</emphasis>, with the not-quite-gratuitously-incompatible
+      addition of complex types to the C language.  David Tribble has
+      compiled a list of C++98 and C99 conflict points; his description of
+      C's new type versus those of C++ and how to get them playing together
+      nicely is
+<link xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="http://david.tribble.com/text/cdiffs.htm#C99-complex">here</link>.
+   </para>
+   <para><code>complex&lt;&gt;</code> is intended to be instantiated with a
+      floating-point type.  As long as you meet that and some other basic
+      requirements, then the resulting instantiation has all of the usual
+      math operators defined, as well as definitions of <code>op&lt;&lt;</code>
+      and <code>op&gt;&gt;</code> that work with iostreams: <code>op&lt;&lt;</code>
+      prints <code>(u,v)</code> and <code>op&gt;&gt;</code> can read <code>u</code>,
+      <code>(u)</code>, and <code>(u,v)</code>.
+   </para>
+   <para>As an extension to C++11 and for increased compatibility with C,
+      <code>&lt;complex.h&gt;</code> includes both <code>&lt;complex&gt;</code>
+      and the C99 <code>&lt;complex.h&gt;</code> (if the C library provides
+      it).
+   </para>
+
+  </section>
+</section>
+
+<!-- Sect1 02 : Generalized Operations -->
+<section xml:id="std.numerics.generalized_ops" xreflabel="Generalized Ops"><info><title>Generalized Operations</title></info>
+<?dbhtml filename="generalized_numeric_operations.html"?>
+
+  <para>
+  </para>
+
+   <para>There are four generalized functions in the &lt;numeric&gt; header
+      that follow the same conventions as those in &lt;algorithm&gt;.  Each
+      of them is overloaded:  one signature for common default operations,
+      and a second for fully general operations.  Their names are
+      self-explanatory to anyone who works with numerics on a regular basis:
+   </para>
+   <itemizedlist>
+      <listitem><para><code>accumulate</code></para></listitem>
+      <listitem><para><code>inner_product</code></para></listitem>
+      <listitem><para><code>partial_sum</code></para></listitem>
+      <listitem><para><code>adjacent_difference</code></para></listitem>
+   </itemizedlist>
+   <para>Here is a simple example of the two forms of <code>accumulate</code>.
+   </para>
+<programlisting>
+   int   ar[50];
+   int   someval = somefunction();
+
+   // ...initialize members of ar to something...
+
+   int  sum       = std::accumulate(ar,ar+50,0);
+   int  sum_stuff = std::accumulate(ar,ar+50,someval);
+   int  product   = std::accumulate(ar,ar+50,1,std::multiplies&lt;int&gt;());
+</programlisting>
+   <para>The first call adds all the members of the array, using zero as an
+      initial value for <code>sum</code>.  The second does the same, but uses
+      <code>someval</code> as the starting value (thus, <code>sum_stuff == sum +
+      someval</code>).  The final call uses the second of the two signatures,
+      and multiplies all the members of the array; here we must obviously
+      use 1 as a starting value instead of 0.
+   </para>
+   <para>The other three functions have similar dual-signature forms.
+   </para>
+
+</section>
+
+<!-- Sect1 03 : Interacting with C -->
+<section xml:id="std.numerics.c" xreflabel="Interacting with C"><info><title>Interacting with C</title></info>
+<?dbhtml filename="numerics_and_c.html"?>
+
+
+  <section xml:id="numerics.c.array" xreflabel="Numerics vs. Arrays"><info><title>Numerics vs. Arrays</title></info>
+
+
+   <para>One of the major reasons why FORTRAN can chew through numbers so well
+      is that it is defined to be free of pointer aliasing, an assumption
+      that C89 is not allowed to make, and neither is C++98.  C99 adds a new
+      keyword, <code>restrict</code>, to apply to individual pointers.  The
+      C++ solution is contained in the library rather than the language
+      (although many vendors can be expected to add this to their compilers
+      as an extension).
+   </para>
+   <para>That library solution is a set of two classes, five template classes,
+      and "a whole bunch" of functions.  The classes are required
+      to be free of pointer aliasing, so compilers can optimize the
+      daylights out of them the same way that they have been for FORTRAN.
+      They are collectively called <code>valarray</code>, although strictly
+      speaking this is only one of the five template classes, and they are
+      designed to be familiar to people who have worked with the BLAS
+      libraries before.
+   </para>
+
+  </section>
+
+  <section xml:id="numerics.c.c99" xreflabel="C99"><info><title>C99</title></info>
+
+
+   <para>In addition to the other topics on this page, we'll note here some
+      of the C99 features that appear in libstdc++.
+   </para>
+   <para>The C99 features depend on the <code>--enable-c99</code> configure flag.
+      This flag is already on by default, but it can be disabled by the
+      user.  Also, the configuration machinery will disable it if the
+      necessary support for C99 (e.g., header files) cannot be found.
+   </para>
+   <para>As of GCC 3.0, C99 support includes classification functions
+      such as <code>isnormal</code>, <code>isgreater</code>,
+      <code>isnan</code>, etc.
+      The functions used for 'long long' support such as <code>strtoll</code>
+      are supported, as is the <code>lldiv_t</code> typedef.  Also supported
+      are the wide character functions using 'long long', like
+      <code>wcstoll</code>.
+   </para>
+
+  </section>
+</section>
+
+</chapter>

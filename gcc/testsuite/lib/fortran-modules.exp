@@ -1,0 +1,195 @@
+#   Copyright (C) 2012-2026 Free Software Foundation, Inc.
+
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with GCC; see the file COPYING3.  If not see
+# <http://www.gnu.org/licenses/>.
+
+# helper to deal with fortran modules
+
+# Remove files for specified Fortran modules.
+# This includes both .mod and .smod files.
+proc cleanup-modules { modlist } {
+    global clean
+    foreach mod [concat $modlist $clean] {
+	set m [string tolower $mod].mod
+	verbose "cleanup-module `$m'" 2
+	if [is_remote host] {
+	    remote_file host delete $m
+	}
+	remote_file build delete $m
+    }
+    cleanup-submodules $modlist
+}
+
+# Remove files for specified Fortran submodules.
+proc cleanup-submodules { modlist } {
+    global clean
+    foreach mod [concat $modlist $clean] {
+	set m [string tolower $mod].smod
+	verbose "cleanup-submodule `$m'" 2
+	if [is_remote host] {
+	    remote_file host delete $m
+	}
+	remote_file build delete $m
+    }
+}
+
+proc keep-modules { modlist } {
+    global clean
+    # if the modlist is empty, keep everything
+    if {[llength $modlist] < 1} {
+	set clean {}
+    } else {
+	set cleansed {}
+	foreach cl $clean {
+	    if {[lsearch $cl $modlist] < 0} {
+		lappend cleansed $cl
+	    }
+	}
+	if {[llength $clean] == [llength $cleansed]} {
+	    warning "keep-modules had no effect?! Possible typo in module name."
+	}
+	set clean $cleansed
+    }
+}
+
+# collect all module names from a source-file
+proc list-module-names { files } {
+    global clean
+    set clean {}
+    foreach file $files {
+	foreach mod [list-module-names-1 $file] {
+	    if {[lsearch $clean $mod] < 0} {
+		lappend clean $mod
+	    }
+	}
+    }
+    return [join $clean " "]
+}
+
+proc list-module-names-1 { file } {
+    set result {}
+    if {[file isdirectory $file]} {return}
+    # Find lines containing INCLUDE, MODULE, and SUBMODULE, excluding the lines containing
+    # MODULE [PURE|(IMPURE\s+)?ELEMENTAL|RECURSIVE] (PROCEDURE|FUNCTION|SUBROUTINE)
+    set pat {^\s*((#)?\s*include|(sub)?module(?!\s+((pure|(impure\s+)?elemental|recursive)\s+)?(procedure|function|subroutine)[:\s]+))\s*.*}
+    set tmp [igrep $file $pat line]
+    if {![string match "" $tmp]} {
+	foreach i $tmp {
+	    regexp -nocase {(\d+)\s+#?\s*include\s+["']([^"']*)["']} $i dummy lineno include_file
+	    if {[info exists include_file]} {
+		set dir [file dirname $file]
+		set inc "$dir/$include_file"
+		unset include_file
+		if {![file readable $inc]} {
+		    # We do not currently use include path search logic, punt
+		    continue
+		}
+		verbose "Line $lineno includes `$inc'" 3
+		foreach mod [list-module-names-1 $inc] {
+		    if {[lsearch $result $mod] < 0} {
+			lappend result $mod
+		    }
+		}
+		continue
+	    }
+	    regexp -nocase {(\d+)\s+(module|submodule)\s*([^;]*)} $i i lineno keyword mod
+	    if {![info exists mod]} {
+		continue
+	    }
+	    # Generates the file name mod_name@submod_name from
+	    # (\s*mod_name[:submod_name]\s*)\s*submod_name\s*[! comment]
+	    regsub {\s*!.*} $mod "" mod
+	    regsub {:[^)]*} $mod "" mod
+	    regsub {\(\s*} $mod "" mod
+	    regsub {\s*\)\s*} $mod "@" mod
+	    verbose "Line $lineno mentions module `$mod'" 3
+	    if {[lsearch $result $mod] < 0} {
+		lappend result $mod
+	    }
+	}
+    }
+    return $result
+}
+
+# Looks for case insensitive occurrences of a string in a file.
+#     return:list of lines that matched or NULL if none match.
+#     args:  first arg is the filename,
+#            second is the pattern,
+#            third are any options.
+#     Options: line  - puts line numbers of match in list
+#
+proc igrep { args } {
+
+    set file [lindex $args 0]
+    set pattern [lindex $args 1]
+
+    verbose "Grepping $file for the pattern \"$pattern\"" 3
+
+    set argc [llength $args]
+    if { $argc > 2 } {
+        for { set i 2 } { $i < $argc } { incr i } {
+            append options [lindex $args $i]
+            append options " "
+        }
+    } else {
+        set options ""
+    }
+
+    set i 0
+    set fd [open $file r]
+    while { [gets $fd cur_line]>=0 } {
+        incr i
+        if {[regexp -nocase -- "$pattern" $cur_line match]} {
+            if {![string match "" $options]} {
+                foreach opt $options {
+                    switch $opt {
+                        "line" {
+                            lappend grep_out [concat $i $match]
+                        }
+                    }
+                }
+            } else {
+                lappend grep_out $match
+            }
+        }
+    }
+    close $fd
+    unset fd
+    unset i
+    if {![info exists grep_out]} {
+        set grep_out ""
+    }
+    return $grep_out
+}
+
+# If the code has any "open" statements for numbered units, make sure
+# no corresponding output file remains.  Redundant remove operations
+# are ok, but duplicate removals look sloppy, so track for uniqueness.
+proc fortran-delete-unit-files { src } {  
+    set openpat {open *\( *(?:unit *= *)?([0-9]+)}
+    set openmatches [igrep $src $openpat]
+    if {![string match "" $openmatches]} {
+	# verbose -log "Found \"$openmatches\""
+	set deleted_units {}
+	foreach openmatch $openmatches {
+	    regexp -nocase -- "$openpat" $openmatch match unit
+	    if {[lsearch $deleted_units $unit] < 0} {
+		set rmfile "fort.$unit"
+		verbose -log "Deleting $rmfile"
+		remote_file target delete "fort.$unit"
+		lappend deleted_units $unit
+	    }
+	}
+    }
+}

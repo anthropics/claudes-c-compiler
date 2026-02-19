@@ -1,0 +1,85 @@
+# Copyright (C) 2008-2026 Free Software Foundation, Inc.
+#
+# This file is part of GCC.
+#
+# GCC is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3, or (at your option)
+# any later version.
+#
+# GCC is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with GCC; see the file COPYING3.  If not see
+# <http://www.gnu.org/licenses/>.
+
+OPTIONS_H_EXTRA += $(srcdir)/config/i386/stringop.def
+TM_H += $(srcdir)/config/i386/x86-tune.def \
+	$(srcdir)/common/config/i386/i386-cpuinfo.h \
+	$(srcdir)/config/i386/i386-isa.def
+PASSES_EXTRA += $(srcdir)/config/i386/i386-passes.def
+
+i386-c.o: $(srcdir)/config/i386/i386-c.cc
+	  $(COMPILE) $<
+	  $(POSTCOMPILE)
+
+x86-tune-sched.o: $(srcdir)/config/i386/x86-tune-sched.cc
+	  $(COMPILE) $<
+	  $(POSTCOMPILE)
+
+x86-tune-sched-bd.o: $(srcdir)/config/i386/x86-tune-sched-bd.cc
+	  $(COMPILE) $<
+	  $(POSTCOMPILE)
+
+x86-tune-sched-atom.o: $(srcdir)/config/i386/x86-tune-sched-atom.cc
+	  $(COMPILE) $<
+	  $(POSTCOMPILE)
+
+x86-tune-sched-core.o: $(srcdir)/config/i386/x86-tune-sched-core.cc
+	  $(COMPILE) $<
+	  $(POSTCOMPILE)
+
+i386-d.o: $(srcdir)/config/i386/i386-d.cc
+	$(COMPILE) $<
+	$(POSTCOMPILE)
+
+i386-rust.o: $(srcdir)/config/i386/i386-rust.cc
+	$(COMPILE) $<
+	$(POSTCOMPILE)
+
+i386-jit.o: $(srcdir)/config/i386/i386-jit.cc
+	$(COMPILE) $<
+	$(POSTCOMPILE)
+
+i386-options.o: $(srcdir)/config/i386/i386-options.cc
+	$(COMPILE) $<
+	$(POSTCOMPILE)
+
+i386-builtins.o: $(srcdir)/config/i386/i386-builtins.cc
+	$(COMPILE) $<
+	$(POSTCOMPILE)
+
+i386-expand.o: $(srcdir)/config/i386/i386-expand.cc
+	$(COMPILE) $<
+	$(POSTCOMPILE)
+
+i386-features.o: $(srcdir)/config/i386/i386-features.cc
+	$(COMPILE) $<
+	$(POSTCOMPILE)
+
+# i386-builtin-types.inc is included into i386-builtins.h.
+# Below are direct users of i386-builtins.h:
+i386.o: i386-builtin-types.inc
+i386-builtins.o: i386-builtin-types.inc
+i386-expand.o: i386-builtin-types.inc
+i386-features.o: i386-builtin-types.inc
+
+i386-builtin-types.inc: s-i386-bt ; @true
+s-i386-bt: $(srcdir)/config/i386/i386-builtin-types.awk \
+  $(srcdir)/config/i386/i386-builtin-types.def
+	$(AWK) -f $^ > tmp-bt.inc
+	$(SHELL) $(srcdir)/../move-if-change tmp-bt.inc i386-builtin-types.inc
+	$(STAMP) $@

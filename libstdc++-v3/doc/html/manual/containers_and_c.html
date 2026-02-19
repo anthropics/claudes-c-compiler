@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Interacting with C</title><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><meta name="keywords" content="ISO C++, library" /><meta name="keywords" content="ISO C++, runtime, library" /><link rel="home" href="../index.html" title="The GNU C++ Library" /><link rel="up" href="containers.html" title="Chapter 9.  Containers" /><link rel="prev" href="unordered_associative.html" title="Unordered Associative" /><link rel="next" href="iterators.html" title="Chapter 10.  Iterators" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">Interacting with C</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="unordered_associative.html">Prev</a> </td><th width="60%" align="center">Chapter 9. 
+  Containers
+  
+</th><td width="20%" align="right"> <a accesskey="n" href="iterators.html">Next</a></td></tr></table><hr /></div><div class="section"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a id="std.containers.c"></a>Interacting with C</h2></div></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a id="containers.c.vs_array"></a>Containers vs. Arrays</h3></div></div></div><p>
+     You're writing some code and can't decide whether to use builtin
+     arrays or some kind of container.  There are compelling reasons
+     to use one of the container classes, but you're afraid that
+     you'll eventually run into difficulties, change everything back
+     to arrays, and then have to change all the code that uses those
+     data types to keep up with the change.
+   </p><p>
+     If your code makes use of the standard algorithms, this isn't as
+     scary as it sounds.  The algorithms don't know, nor care, about
+     the kind of <span class="quote">“<span class="quote">container</span>”</span> on which they work, since
+     the algorithms are only given endpoints to work with.  For the
+     container classes, these are iterators (usually
+     <code class="code">begin()</code> and <code class="code">end()</code>, but not always).
+     For builtin arrays, these are the address of the first element
+     and the <a class="link" href="iterators.html#iterators.predefined.end" title="One Past the End">past-the-end</a> element.
+   </p><p>
+     Some very simple wrapper functions can hide all of that from the
+     rest of the code.  For example, a pair of functions called
+     <code class="code">beginof</code> can be written, one that takes an array,
+     another that takes a vector.  The first returns a pointer to the
+     first element, and the second returns the vector's
+     <code class="code">begin()</code> iterator.
+   </p><p>
+     The functions should be made template functions, and should also
+     be declared inline.  As pointed out in the comments in the code
+     below, this can lead to <code class="code">beginof</code> being optimized out
+     of existence, so you pay absolutely nothing in terms of increased
+     code size or execution time.
+   </p><p>
+     The result is that if all your algorithm calls look like
+   </p><pre class="programlisting">
+   std::transform(beginof(foo), endof(foo), beginof(foo), SomeFunction);
+</pre><p>
+     then the type of foo can change from an array of ints to a vector
+     of ints to a deque of ints and back again, without ever changing
+     any client code.
+   </p><pre class="programlisting">
+// beginof
+template&lt;typename T&gt;
+  inline typename vector&lt;T&gt;::iterator
+  beginof(vector&lt;T&gt; &amp;v)
+  { return v.begin(); }
+
+template&lt;typename T, unsigned int sz&gt;
+  inline T*
+  beginof(T (&amp;array)[sz]) { return array; }
+
+// endof
+template&lt;typename T&gt;
+  inline typename vector&lt;T&gt;::iterator
+  endof(vector&lt;T&gt; &amp;v)
+  { return v.end(); }
+
+template&lt;typename T, unsigned int sz&gt;
+  inline T*
+  endof(T (&amp;array)[sz]) { return array + sz; }
+
+// lengthof
+template&lt;typename T&gt;
+  inline typename vector&lt;T&gt;::size_type
+  lengthof(vector&lt;T&gt; &amp;v)
+  { return v.size(); }
+
+template&lt;typename T, unsigned int sz&gt;
+  inline unsigned int
+  lengthof(T (&amp;)[sz]) { return sz; }
+</pre><p>
+     Astute readers will notice two things at once: first, that the
+     container class is still a <code class="code">vector&lt;T&gt;</code> instead
+     of a more general <code class="code">Container&lt;T&gt;</code>.  This would
+     mean that three functions for <code class="code">deque</code> would have to be
+     added, another three for <code class="code">list</code>, and so on.  This is
+     due to problems with getting template resolution correct; I find
+     it easier just to give the extra three lines and avoid confusion.
+   </p><p>
+     Second, the line
+   </p><pre class="programlisting">
+    inline unsigned int lengthof (T (&amp;)[sz]) { return sz; }
+</pre><p>
+     looks just weird!  Hint:  unused parameters can be left nameless.
+   </p></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="unordered_associative.html">Prev</a> </td><td width="20%" align="center"><a accesskey="u" href="containers.html">Up</a></td><td width="40%" align="right"> <a accesskey="n" href="iterators.html">Next</a></td></tr><tr><td width="40%" align="left" valign="top">Unordered Associative </td><td width="20%" align="center"><a accesskey="h" href="../index.html">Home</a></td><td width="40%" align="right" valign="top"> Chapter 10. 
+  Iterators
+  
+</td></tr></table></div></body></html>

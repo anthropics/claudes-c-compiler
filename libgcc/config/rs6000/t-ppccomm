@@ -1,0 +1,22 @@
+LIB2ADD += $(srcdir)/config/rs6000/ibm-ldouble.c \
+	   $(srcdir)/config/rs6000/tramp.S
+
+# This can't end up in shared libgcc
+LIB2ADD_ST += \
+	   $(srcdir)/config/rs6000/eabi.S
+
+# We build {e,n}crti.o and {e,n}crtn.o, which serve to add begin and
+# end labels to all of the special sections used when we link using gcc.
+
+# Assemble startup files.
+ecrti$(objext): $(srcdir)/config/rs6000/eabi-ci.S
+	$(crt_compile) -c $<
+
+ecrtn$(objext): $(srcdir)/config/rs6000/eabi-cn.S
+	$(crt_compile) -c $<
+
+ncrti$(objext): $(srcdir)/config/rs6000/sol-ci.S
+	$(crt_compile) -c $<
+
+ncrtn$(objext): $(srcdir)/config/rs6000/sol-cn.S
+	$(crt_compile) -c $<

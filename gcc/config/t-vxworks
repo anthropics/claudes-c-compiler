@@ -1,0 +1,69 @@
+# Copyright (C) 2002-2026 Free Software Foundation, Inc.
+#
+# This file is part of GCC.
+#
+# GCC is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3, or (at your option)
+# any later version.
+#
+# GCC is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with GCC; see the file COPYING3.  If not see
+# <http://www.gnu.org/licenses/>.
+
+vxworks-driver.o: $(srcdir)/config/vxworks-driver.cc
+	$(COMPILE) $<
+	$(POSTCOMPILE)
+
+vxworks.o: $(srcdir)/config/vxworks.cc
+	$(COMPILE) $<
+	$(POSTCOMPILE)
+
+vxworks-c.o: $(srcdir)/config/vxworks-c.cc
+	$(COMPILE) $<
+	$(POSTCOMPILE)
+
+vxworks-rust.o: $(srcdir)/config/vxworks-rust.cc
+	$(COMPILE) $<
+	$(POSTCOMPILE)
+
+# We leverage $sysroot to find target system headers only, distributed
+# in a VxWorks (a)typical fashion with a different set of headers for
+# rtp vs kernel mode.  We setup SYSROOT_HEADERS_SUFFIX_SPEC to handle
+# this, and need to clear NATIVE_SYSTEM_HEADER_DIR to prevent it from
+# interfering.
+
+NATIVE_SYSTEM_HEADER_DIR =
+
+# Both the kernel and RTP headers provide limits.h.  They embed VxWorks
+# specificities and are dated on some configurations so we both need to
+# provide our own version and make sure the system one gets exposed.
+
+LIMITS_H_TEST = true
+
+# VxWorks system environments have been GCC based for a long time and
+# we need to make sure that our files and the system ones use distinct
+# macro names to protect against recursive inclusions.  We achieve
+# this by modifying the GLIMITS_H fragment that goes into limits.h
+# with some version indication in the inclusion-protection macro
+# names.
+
+T_GLIMITS_H = vxw-glimits.h
+
+vxw-glimits.h: $(srcdir)/glimits.h
+	ID=`echo $(BASEVER_c) | sed -e 's/\./_/g'` && \
+	sed -e "s/_LIMITS_H___/_LIMITS_H__$${ID}_/" < $< > $@T
+	mv $@T $@
+
+# Arrange to "provide" a tailored version of stdint-gcc.h
+
+T_STDINT_GCC_H = vxw-stdint-gcc.h
+
+vxw-stdint-gcc.h: $(srcdir)/ginclude/stdint-gcc.h
+	sed -e "/#define _GCC_STDINT_H/ a #include <_yvals.h>" < $< > $@T
+	mv $@T $@

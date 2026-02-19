@@ -1,0 +1,2 @@
+*cpp_unique_options:
++ %{tfoo: -DFOO}

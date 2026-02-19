@@ -1,0 +1,272 @@
+/* Copyright (C) 2006-2026 Free Software Foundation, Inc.
+
+This file is part of GCC.
+
+GCC is free software; you can redistribute it and/or modify it under
+the terms of the GNU General Public License as published by the Free
+Software Foundation; either version 3, or (at your option) any later
+version.
+
+GCC is distributed in the hope that it will be useful, but WITHOUT ANY
+WARRANTY; without even the implied warranty of MERCHANTABILITY or
+FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+for more details.
+
+You should have received a copy of the GNU General Public License
+along with GCC; see the file COPYING3.  If not see
+<http://www.gnu.org/licenses/>.  */
+
+/* This file contains the definition of the types provided by the
+   Fortran 2003 ISO_C_BINDING intrinsic module.  The ordering of
+   the entries matters for the *.mod backwards compatibility.  */
+
+#ifndef NAMED_INTCST
+# define NAMED_INTCST(a,b,c,d)
+#endif
+
+#ifndef NAMED_REALCST
+# define NAMED_REALCST(a,b,c,d)
+#endif
+
+#ifndef NAMED_CMPXCST
+# define NAMED_CMPXCST(a,b,c,d)
+#endif
+
+#ifndef NAMED_LOGCST
+# define NAMED_LOGCST(a,b,c)
+#endif
+
+#ifndef NAMED_CHARKNDCST
+# define NAMED_CHARKNDCST(a,b,c)
+#endif
+
+#ifndef NAMED_FUNCTION
+# define NAMED_FUNCTION(a,b,c,d)
+#endif
+
+#ifndef NAMED_SUBROUTINE
+# define NAMED_SUBROUTINE(a,b,c,d)
+#endif
+
+#ifndef NAMED_UINTCST
+# define NAMED_UINTCST(a,b,c,d)
+#endif
+
+/* The arguments to NAMED_*CST are:
+     -- an internal name
+     -- the symbol name in the module, as seen by Fortran code
+     -- the value it has, for use in trans-types.cc
+     -- the standard that supports this type  */
+
+NAMED_INTCST (ISOCBINDING_INT, "c_int", gfc_c_int_kind, GFC_STD_F2003)
+NAMED_INTCST (ISOCBINDING_SHORT, "c_short", \
+              get_int_kind_from_node (short_integer_type_node), GFC_STD_F2003)
+NAMED_INTCST (ISOCBINDING_LONG, "c_long", \
+              get_int_kind_from_node (long_integer_type_node), GFC_STD_F2003)
+NAMED_INTCST (ISOCBINDING_LONG_LONG, "c_long_long", \
+              get_int_kind_from_node (long_long_integer_type_node), GFC_STD_F2003)
+
+NAMED_INTCST (ISOCBINDING_INTMAX_T, "c_intmax_t", \
+              get_int_kind_from_name (INTMAX_TYPE), GFC_STD_F2003)
+NAMED_INTCST (ISOCBINDING_INTPTR_T, "c_intptr_t", \
+              get_int_kind_from_name (INTPTR_TYPE), GFC_STD_F2003)
+NAMED_INTCST (ISOCBINDING_PTRDIFF_T, "c_ptrdiff_t", \
+              get_int_kind_from_name (PTRDIFF_TYPE), GFC_STD_F2018)
+NAMED_INTCST (ISOCBINDING_SIZE_T, "c_size_t", \
+              gfc_index_integer_kind, GFC_STD_F2003)
+NAMED_INTCST (ISOCBINDING_SIGNED_CHAR, "c_signed_char", \
+              get_int_kind_from_node (signed_char_type_node), GFC_STD_F2003)
+
+NAMED_INTCST (ISOCBINDING_INT8_T, "c_int8_t", \
+              get_int_kind_from_name (INT8_TYPE), GFC_STD_F2003)
+NAMED_INTCST (ISOCBINDING_INT16_T, "c_int16_t", \
+              get_int_kind_from_name (INT16_TYPE), GFC_STD_F2003)
+NAMED_INTCST (ISOCBINDING_INT32_T, "c_int32_t", \
+              get_int_kind_from_name (INT32_TYPE), GFC_STD_F2003)
+NAMED_INTCST (ISOCBINDING_INT64_T, "c_int64_t", \
+              get_int_kind_from_name (INT64_TYPE), GFC_STD_F2003)
+/* GNU Extension.  */
+NAMED_INTCST (ISOCBINDING_INT128_T, "c_int128_t", \
+              get_int_kind_from_width (128), GFC_STD_GNU)
+
+NAMED_INTCST (ISOCBINDING_INT_LEAST8_T, "c_int_least8_t", \
+              get_int_kind_from_name (INT_LEAST8_TYPE), GFC_STD_F2003)
+NAMED_INTCST (ISOCBINDING_INT_LEAST16_T, "c_int_least16_t", \
+              get_int_kind_from_name (INT_LEAST16_TYPE), GFC_STD_F2003)
+NAMED_INTCST (ISOCBINDING_INT_LEAST32_T, "c_int_least32_t", \
+              get_int_kind_from_name (INT_LEAST32_TYPE), GFC_STD_F2003)
+NAMED_INTCST (ISOCBINDING_INT_LEAST64_T, "c_int_least64_t", \
+              get_int_kind_from_name (INT_LEAST64_TYPE), GFC_STD_F2003)
+/* GNU Extension.  */
+NAMED_INTCST (ISOCBINDING_INT_LEAST128_T, "c_int_least128_t", \
+              get_int_kind_from_minimal_width (128), GFC_STD_GNU)
+
+NAMED_INTCST (ISOCBINDING_INT_FAST8_T, "c_int_fast8_t", \
+              get_int_kind_from_name (INT_FAST8_TYPE), GFC_STD_F2003)
+NAMED_INTCST (ISOCBINDING_INT_FAST16_T, "c_int_fast16_t", \
+              get_int_kind_from_name (INT_FAST16_TYPE), GFC_STD_F2003)
+NAMED_INTCST (ISOCBINDING_INT_FAST32_T, "c_int_fast32_t", \
+              get_int_kind_from_name (INT_FAST32_TYPE), GFC_STD_F2003)
+NAMED_INTCST (ISOCBINDING_INT_FAST64_T, "c_int_fast64_t", \
+              get_int_kind_from_name (INT_FAST64_TYPE), GFC_STD_F2003)
+/* GNU Extension.  */
+NAMED_INTCST (ISOCBINDING_INT_FAST128_T, "c_int_fast128_t",
+	      get_int_kind_from_width (128), GFC_STD_GNU)
+
+NAMED_REALCST (ISOCBINDING_FLOAT, "c_float", \
+               get_real_kind_from_node (float_type_node), GFC_STD_F2003)
+NAMED_REALCST (ISOCBINDING_DOUBLE, "c_double", \
+               get_real_kind_from_node (double_type_node), GFC_STD_F2003)
+NAMED_REALCST (ISOCBINDING_LONG_DOUBLE, "c_long_double", \
+               get_real_kind_from_node (long_double_type_node), GFC_STD_F2003)
+
+/* GNU Extension.  Note that the equivalence here is specifically to
+   the IEEE 128-bit type _Float128; if that does not map onto a type
+   otherwise supported by the Fortran front end, get_real_kind_from_node
+   will reject it as unsupported.  */
+NAMED_REALCST (ISOCBINDING_FLOAT128, "c_float128", \
+		(float128_type_node == NULL_TREE \
+		 ? -4 : get_real_kind_from_node (float128_type_node)), \
+	       GFC_STD_GNU)
+NAMED_CMPXCST (ISOCBINDING_FLOAT_COMPLEX, "c_float_complex", \
+               get_real_kind_from_node (float_type_node), GFC_STD_F2003)
+NAMED_CMPXCST (ISOCBINDING_DOUBLE_COMPLEX, "c_double_complex", \
+               get_real_kind_from_node (double_type_node), GFC_STD_F2003)
+NAMED_CMPXCST (ISOCBINDING_LONG_DOUBLE_COMPLEX, "c_long_double_complex", \
+               get_real_kind_from_node (long_double_type_node), GFC_STD_F2003)
+
+/* GNU Extension.  Similar issues to c_float128 above.  */
+NAMED_CMPXCST (ISOCBINDING_FLOAT128_COMPLEX, "c_float128_complex", \
+		(float128_type_node == NULL_TREE \
+		 ? -4 : get_real_kind_from_node (float128_type_node)), \
+	       GFC_STD_GNU)
+
+NAMED_LOGCST (ISOCBINDING_BOOL, "c_bool", \
+              get_int_kind_from_width (BOOL_TYPE_SIZE))
+
+NAMED_CHARKNDCST (ISOCBINDING_CHAR, "c_char", gfc_default_character_kind)
+
+#ifndef NAMED_CHARCST
+# define NAMED_CHARCST(a,b,c)
+#endif
+
+/* Use langhooks to deal with host to target translations.  */
+NAMED_CHARCST (ISOCBINDING_NULL_CHAR, "c_null_char", \
+	       lang_hooks.to_target_charset ('\0'))
+NAMED_CHARCST (ISOCBINDING_ALERT, "c_alert", \
+	       lang_hooks.to_target_charset ('\a'))
+NAMED_CHARCST (ISOCBINDING_BACKSPACE, "c_backspace", \
+	       lang_hooks.to_target_charset ('\b'))
+NAMED_CHARCST (ISOCBINDING_FORM_FEED, "c_form_feed", \
+	       lang_hooks.to_target_charset ('\f'))
+NAMED_CHARCST (ISOCBINDING_NEW_LINE, "c_new_line", \
+	       lang_hooks.to_target_charset ('\n'))
+NAMED_CHARCST (ISOCBINDING_CARRIAGE_RETURN, "c_carriage_return", \
+	       lang_hooks.to_target_charset ('\r'))
+NAMED_CHARCST (ISOCBINDING_HORIZONTAL_TAB, "c_horizontal_tab", \
+	       lang_hooks.to_target_charset ('\t'))
+NAMED_CHARCST (ISOCBINDING_VERTICAL_TAB, "c_vertical_tab", \
+	       lang_hooks.to_target_charset ('\v'))
+
+#ifndef DERIVED_TYPE
+# define DERIVED_TYPE(a,b,c)
+#endif
+
+DERIVED_TYPE (ISOCBINDING_PTR, "c_ptr", \
+              get_int_kind_from_node (ptr_type_node))
+DERIVED_TYPE (ISOCBINDING_NULL_PTR, "c_null_ptr", \
+              get_int_kind_from_node (ptr_type_node))
+DERIVED_TYPE (ISOCBINDING_FUNPTR, "c_funptr", \
+              get_int_kind_from_node (ptr_type_node))
+DERIVED_TYPE (ISOCBINDING_NULL_FUNPTR, "c_null_funptr", \
+              get_int_kind_from_node (ptr_type_node))
+
+/* The arguments to NAMED_FUNCTIONS and NAMED_SUBROUTINES are:
+     -- the ISYM
+     -- the symbol name in the module, as seen by Fortran code
+     -- the Fortran standard  */
+
+NAMED_SUBROUTINE (ISOCBINDING_F_POINTER, "c_f_pointer",
+                  GFC_ISYM_C_F_POINTER, GFC_STD_F2003)
+NAMED_SUBROUTINE (ISOCBINDING_F_PROCPOINTER, "c_f_procpointer",
+                  GFC_ISYM_C_F_PROCPOINTER, GFC_STD_F2003)
+
+NAMED_FUNCTION (ISOCBINDING_ASSOCIATED, "c_associated",
+		GFC_ISYM_C_ASSOCIATED, GFC_STD_F2003)
+NAMED_FUNCTION (ISOCBINDING_FUNLOC, "c_funloc",
+                GFC_ISYM_C_FUNLOC, GFC_STD_F2003)
+NAMED_FUNCTION (ISOCBINDING_LOC, "c_loc",
+                GFC_ISYM_C_LOC, GFC_STD_F2003)
+
+NAMED_FUNCTION (ISOCBINDING_C_SIZEOF, "c_sizeof", \
+                GFC_ISYM_C_SIZEOF, GFC_STD_F2008)
+
+NAMED_FUNCTION (ISOCBINDING_F_C_STRING, "f_c_string", \
+                GFC_ISYM_F_C_STRING, GFC_STD_F2023)
+
+/* UNSIGNED.  */
+NAMED_UINTCST (ISOCBINDING_UINT, "c_unsigned", gfc_c_uint_kind, \
+	       GFC_STD_UNSIGNED)
+NAMED_UINTCST (ISOCBINDING_USHORT, "c_unsigned_short", \
+	       get_unsigned_kind_from_node (short_unsigned_type_node), \
+	       GFC_STD_UNSIGNED)
+NAMED_UINTCST (ISOCBINDING_UCHAR, "c_unsigned_char", \
+	       get_unsigned_kind_from_node (unsigned_char_type_node), \
+	       GFC_STD_UNSIGNED)
+NAMED_UINTCST (ISOCBINDING_ULONG, "c_unsigned_long", \
+	       get_unsigned_kind_from_node (long_unsigned_type_node), \
+	       GFC_STD_UNSIGNED)
+NAMED_UINTCST (ISOCBINDING_ULONGLONG, "c_unsigned_long_long", \
+	       get_unsigned_kind_from_node (long_long_unsigned_type_node), \
+	       GFC_STD_UNSIGNED)
+NAMED_UINTCST (ISOCBINDING_UINTMAX_T, "c_uintmax_t", \
+	       get_uint_kind_from_name (UINTMAX_TYPE), GFC_STD_UNSIGNED)
+NAMED_UINTCST (ISOCBINDING_UINT8_T, "c_uint8_t", \
+	       get_uint_kind_from_name (UINT8_TYPE), GFC_STD_UNSIGNED)
+NAMED_UINTCST (ISOCBINDING_UINT16_T, "c_uint16_t", \
+	       get_uint_kind_from_name (UINT16_TYPE), GFC_STD_UNSIGNED)
+NAMED_UINTCST (ISOCBINDING_UINT32_T, "c_uint32_t", \
+	       get_uint_kind_from_name (UINT32_TYPE), GFC_STD_UNSIGNED)
+NAMED_UINTCST (ISOCBINDING_UINT64_T, "c_uint64_t", \
+	       get_uint_kind_from_name (UINT64_TYPE), GFC_STD_UNSIGNED)
+NAMED_UINTCST (ISOCBINDING_UINT128_T, "c_uint128_t", \
+	       get_uint_kind_from_width (128), GFC_STD_UNSIGNED)
+NAMED_UINTCST (ISOCBINDING_UINT_LEAST8_T, "c_uint_least8_t", \
+	       get_uint_kind_from_name (UINT_LEAST8_TYPE), \
+	       GFC_STD_UNSIGNED)
+NAMED_UINTCST (ISOCBINDING_UINT_LEAST16_T, "c_uint_least16_t", \
+	       get_uint_kind_from_name (UINT_LEAST16_TYPE), \
+	       GFC_STD_UNSIGNED)
+NAMED_UINTCST (ISOCBINDING_UINT_LEAST32_T, "c_uint_least32_t", \
+	       get_uint_kind_from_name (UINT_LEAST32_TYPE),\
+	       GFC_STD_UNSIGNED)
+NAMED_UINTCST (ISOCBINDING_UINT_LEAST64_T, "c_uint_least64_t", \
+	       get_uint_kind_from_name (UINT_LEAST64_TYPE),\
+	       GFC_STD_UNSIGNED)
+NAMED_UINTCST (ISOCBINDING_UINT_LEAST128_T, "c_uint_least128_t", \
+	       get_uint_kind_from_width (128), GFC_STD_UNSIGNED)
+NAMED_UINTCST (ISOCBINDING_UINT_FAST8_T, "c_uint_fast8_t", \
+	       get_uint_kind_from_name (UINT_FAST8_TYPE), \
+	       GFC_STD_UNSIGNED)
+NAMED_UINTCST (ISOCBINDING_UINT_FAST16_T, "c_uint_fast16_t", \
+	       get_uint_kind_from_name (UINT_FAST16_TYPE), \
+	       GFC_STD_UNSIGNED)
+NAMED_UINTCST (ISOCBINDING_UINT_FAST32_T, "c_uint_fast32_t", \
+	       get_uint_kind_from_name (UINT_FAST32_TYPE),\
+	       GFC_STD_UNSIGNED)
+NAMED_UINTCST (ISOCBINDING_UINT_FAST64_T, "c_uint_fast64_t", \
+	       get_uint_kind_from_name (UINT_FAST64_TYPE),\
+	       GFC_STD_UNSIGNED)
+NAMED_UINTCST (ISOCBINDING_UINT_FAST128_T, "c_uint_fast128_t", \
+	       get_uint_kind_from_width (128), GFC_STD_UNSIGNED)
+
+#undef NAMED_INTCST
+#undef NAMED_UINTCST
+#undef NAMED_REALCST
+#undef NAMED_CMPXCST
+#undef NAMED_LOGCST
+#undef NAMED_CHARCST
+#undef NAMED_CHARKNDCST
+#undef DERIVED_TYPE
+#undef NAMED_FUNCTION
+#undef NAMED_SUBROUTINE

@@ -1,0 +1,1538 @@
+2026-01-26  Pietro Monteiro  <pietro@sociotechnical.xyz>
+
+	* update_web_docs_git (MANUALS): Add ga68-coding-guidelines.
+
+2025-12-21  Gerald Pfeifer  <gerald@pfeifer.com>
+
+	* update_web_docs_git: Avoid redirects from Sphinx stylesheets.
+
+2025-12-16  Pietro Monteiro  <pietro@sociotechnical.xyz>
+
+	* update_web_docs_git (MANUALS): Add ga68 and ga68-internals.
+
+2025-09-01  Gerald Pfeifer  <gerald@pfeifer.com>
+
+	* update_web_docs_libstdcxx_git: Copy our "inner" documentation
+	into the web area using rsync instead of cpio and remove orphaned
+	files.
+
+2025-07-04  Richard Biener  <rguenther@suse.de>
+
+	* crontab: Stop doing GCC 12 snapshots.
+
+2025-05-23  Richard Biener  <rguenther@suse.de>
+
+	* update_web_docs_git: Conditionalize libgdiagnostic processing
+	on presence.
+
+2025-04-25  Jakub Jelinek  <jakub@redhat.com>
+
+	* gcc_release: Allow optional \[[0-9]+\] before GCC major.minor
+	in the NEWS file.
+
+2025-04-17  Jakub Jelinek  <jakub@redhat.com>
+
+	* crontab: Snapshots from trunk are now GCC 16 related.
+	Add GCC 15 snapshots from the respective branch.
+
+2025-04-07  Jakub Jelinek  <jakub@redhat.com>
+
+	PR web/119227
+	* update_web_docs_git: Rename mdoc2pdf_html to cobol_mdoc2pdf_html,
+	perform mkdir -p $DOCSDIR/gcobol gcobol, remove $d/ from pdf and in
+	html replace it with gcobol/; update uses of the renamed function.
+
+2025-03-31  Jakub Jelinek  <jakub@redhat.com>
+
+	PR other/119510
+	* gcc_release: Use --enable-languages=c,c++,lto and if m2 is available,
+	with,m2 appended to that.  Check for all possible languages and run
+	make $lang.srcextra $lang.srcinfo $lang.srcman for those.  Add
+	libffi/doc/libffi.info.
+
+2025-03-28  Richard Biener  <rguenther@suse.de>
+
+	PR other/119510
+	* gcc_release: Use --enable-languages=default,cobol
+	when building generated files.
+
+2025-03-11  James K. Lowden  <jklowden@symas.com>
+
+	* update_web_docs_git: Add libgcobol module and cobol language.
+
+2024-12-03  David Malcolm  <dmalcolm@redhat.com>
+
+	PR web/117883
+	* update_web_docs_git: Introduce SPHINX_VENV to make
+	it easier to test the script.  Add the libgdiagnostics docs
+	and testsuite to the files to be preserved.  Use sphinx to build
+	the libgdiagnostics docs as HTML.  Copy them into $DOCSDIR.
+
+2024-12-03  David Malcolm  <dmalcolm@redhat.com>
+
+	* update_web_docs_git: Add the jit testsuite to the files to
+	be preserved, since this is used by the jit docs.
+
+2024-07-19  Richard Biener  <rguenther@suse.de>
+
+	* crontab: Remove entry for gcc-11 branch.
+
+2024-07-07  Gerald Pfeifer  <gerald@pfeifer.com>
+
+	* update_web_docs_git (BUGURL): Switch to https.
+
+2024-04-26  Jakub Jelinek  <jakub@redhat.com>
+
+	* crontab: Snapshots from trunk are now GCC 15 related.
+	Add GCC 14 snapshots from the respective branch.
+
+2023-11-14  Sam James  <sam@gentoo.org>
+
+	* gcc_release: Cleanup whitespace.
+
+2023-11-14  Sam James  <sam@gentoo.org>
+
+	* gcc_release: Use HTTPS for links.
+
+2023-07-07  Richard Biener  <rguenther@suse.de>
+
+	* crontab: Remove entry for GCC 10.
+
+2023-04-20  Arsen Arsenović  <arsen@aarsen.me>
+
+	* update_web_docs_git: Add a mechanism to override makeinfo,
+	texi2dvi and texi2pdf, and default them to
+	/home/gccadmin/texinfo/install-git/bin/${tool}, if present.
+
+2023-04-17  Jakub Jelinek  <jakub@redhat.com>
+
+	* crontab: Snapshots from trunk are now GCC 14 related.
+	Add GCC 13 snapshots from the respective branch.
+
+2023-03-21  Arsen Arsenović  <arsen@aarsen.me>
+
+	* update_web_docs_git: Set CONTENTS_OUTPUT_LOCATION=inline in
+	order to put @shortcontents above contents.
+
+2023-03-21  Arsen Arsenović  <arsen@aarsen.me>
+
+	* update_web_docs_git (CSS): Update CSS reference to point to
+	/texinfo-manuals.css.
+
+2023-03-16  Gaius Mulley  <gaiusmod2@gmail.com>
+
+	* update_web_docs_git (MANUALS): Add gm2.
+	Add include path for gm2 manual.
+
+2023-03-16  Gerald Pfeifer  <gerald@pfeifer.com>
+
+	* update_web_docs_git (BUGURL): Introduce and use throughout.
+
+2022-11-30  Iain Buclaw  <ibuclaw@gdcproject.org>
+
+	PR web/107749
+	* update_web_docs_git: Add gdc to MANUALS.
+
+2022-11-23  Sam James  <sam@gentoo.org>
+
+	* gcc_release (XZ): Add -T0.
+
+2022-11-14  Martin Liska  <mliska@suse.cz>
+
+	Revert:
+	2022-11-09  Martin Liska  <mliska@suse.cz>
+
+	* update_web_docs_git.py: New file.
+
+2022-11-14  Martin Liska  <mliska@suse.cz>
+
+	Revert:
+	2022-11-14  Martin Liska  <mliska@suse.cz>
+
+	* update_web_docs_git.py: Simplify.
+
+2022-11-14  Martin Liska  <mliska@suse.cz>
+
+	Revert:
+	2022-11-09  Martin Liska  <mliska@suse.cz>
+
+	* crontab: Use new script for documentation of master branch.
+
+2022-11-14  Martin Liska  <mliska@suse.cz>
+
+	Revert:
+	2022-11-09  Martin Liska  <mliska@suse.cz>
+
+	* update_web_docs_git.py: Create sources tarball.
+
+2022-11-14  Martin Liska  <mliska@suse.cz>
+
+	Revert:
+	2022-11-10  Martin Liska  <mliska@suse.cz>
+
+	* crontab: Fix superfluous 'sh' for Python script.
+
+2022-11-10  Martin Liska  <mliska@suse.cz>
+
+	* crontab: Fix superfluous 'sh' for Python script.
+
+2022-11-09  Martin Liska  <mliska@suse.cz>
+
+	* update_web_docs_git.py: Create sources tarball.
+
+2022-11-09  Martin Liska  <mliska@suse.cz>
+
+	* crontab: Use new script for documentation of master branch.
+
+2022-11-09  Martin Liska  <mliska@suse.cz>
+
+	* update_web_docs_git.py: Simplify.
+
+2022-11-09  Martin Liska  <mliska@suse.cz>
+
+	* update_web_docs_git.py: New file.
+
+2022-07-28  Martin Liska  <mliska@suse.cz>
+
+	* update_web_docs_git: Use sphinx-build from a venv so that
+	we can use a recent version.
+
+2022-05-20  Richard Biener  <rguenther@suse.de>
+
+	* crontab: Disable snapshots from the gcc-9 branch.
+
+2022-04-28  Jakub Jelinek  <jakub@redhat.com>
+
+	* crontab: Snapshots from trunk are now GCC 13 related.
+	Add GCC 12 snapshots from the respective branch.
+
+2021-05-14  Jakub Jelinek  <jakub@redhat.com>
+
+	* crontab: Stop doing gcc-8 snapshots.
+
+2021-04-20  Jakub Jelinek  <jakub@redhat.com>
+
+	* crontab: Snapshots from trunk are now GCC 12 related.
+	Add GCC 11 snapshots from the respective branch.
+
+2021-04-09  Martin Liska  <mliska@suse.cz>
+
+	* branch_changer.py: Generate URL only when emitting
+	to terminal.
+
+2021-04-09  Martin Liska  <mliska@suse.cz>
+
+	* branch_changer.py: Mention closing candidates and emit
+	console links to bugzilla.
+
+2021-04-09  Martin Liska  <mliska@suse.cz>
+
+	* branch_changer.py: Document more how the script behaves.
+
+2021-04-09  Martin Liska  <mliska@suse.cz>
+
+	* branch_changer.py: Fix usage of Version class.
+
+2021-04-09  Martin Liska  <mliska@suse.cz>
+
+	* branch_changer.py: Use new version scheme in --help output.
+
+2021-04-08  Jonathan Wakely  <jwakely@redhat.com>
+
+	* generate_libstdcxx_web_docs: Add --disable-multilib to
+	configure command.
+
+2021-04-08  Martin Liska  <mliska@suse.cz>
+
+	* branch_changer.py: Fix wrongly converted assert.
+
+2021-04-08  Martin Liska  <mliska@suse.cz>
+
+	* branch_changer.py: Modernize and fix flake8 issues.
+	* setup.cfg: New file.
+
+2020-12-16  Jakub Jelinek  <jakub@redhat.com>
+
+	* update_version_git: Put BASEDIR into /sourceware/snapshot-tmp/gcc
+	if it exist.
+
+2020-05-29  Martin Liska  <mliska@suse.cz>
+
+	* bugzilla-close-candidate.py: Fix sorting of branches.
+
+2020-05-29  Martin Liska  <mliska@suse.cz>
+
+	* bugzilla-close-candidate.py: Fix parsing of SVN revisions.
+	Fix skipping of PRs that contain Can be closed message.
+
+2020-05-29  Martin Liska  <mliska@suse.cz>
+
+	* bugzilla-close-candidate.py: Support both SVN and GIT messages
+	in PRs. Remove need of usage of the bugzilla API key.
+
+2020-05-27  Jakub Jelinek  <jakub@redhat.com>
+
+	* update_version_git: Rewrite using
+	contrib/gcc-changelog/git_update_version.py.
+
+2020-04-30  Jakub Jelinek  <jakub@redhat.com>
+
+	* crontab: Snapshots from trunk are now GCC 11 related.
+	Add GCC 10 snapshots from the respective branch.
+
+2020-03-12  Jakub Jelinek  <jakub@redhat.com>
+
+	* gcc_release (upload_files): Without -l, pass -m 755 to the mkdir
+	command invoked through ssh.
+
+	* update_web_docs_git: Drop SPHINXBUILD=/usr/bin/sphinx-1.0-build.
+
+2020-02-27  Jakub Jelinek  <jakub@redhat.com>
+
+	* gcc_release: Add support for -b local-git-repo argument.
+
+2020-01-13  Jonathan Wakely  <jwakely@redhat.com>
+
+	* update_web_docs_libstdcxx_git: New file.
+	* update_web_docs_libstdcxx_svn: Remove.
+	* crontab: Use update_web_docs_libstdcxx_git.
+
+2020-01-13  Joseph Myers  <joseph@codesourcery.com>
+
+	* update_web_docs_git: New file.
+	* update_web_docs_svn: Remove.
+	* crontab: Use update_web_docs_svn.
+
+2020-01-13  Joseph Myers  <joseph@codesourcery.com>
+
+	* gcc_release: Use git instead of SVN.
+	* crontab: Update gcc_release calls.
+
+2020-01-13  Joseph Myers  <joseph@codesourcery.com>
+
+	* update_version_git: New file.
+	* update_version:svn: Remove.
+	* crontab: Use update_version_git.
+
+2019-11-20  Janne Blomqvist  <jb@gcc.gnu.org>
+
+	* gcc_release: Use https for gcc.gnu.org.
+
+2019-11-14  Richard Biener  <rguenther@suse.de>
+
+	* update_version_svn (IGNORE_BRANCHES): Add 7.
+
+2019-10-05  Richard Biener  <rguenther@suse.de>
+
+	* crontab: Disable snapshots from gcc-7-branch.
+
+2019-08-05  David Malcolm  <dmalcolm@redhat.com>
+
+	* update_web_docs_svn: Proceed even if the invocation of
+	sphinx fails.
+
+2019-05-04  Gerald Pfeifer  <gerald@pfeifer.com>
+
+	* crontab: Snapshots from trunk are now GCC 10 related.
+	Add GCC 9 snapshots from the respective branch.
+
+2019-02-23  Jonathan Wakely  <jwakely@redhat.com>
+
+	* generate_libstdcxx_web_docs: Improve error output.
+
+2018-11-22  Martin Liska  <mliska@suse.cz>
+
+	* bugzilla-close-candidate.py: New file.
+
+2018-10-26  Jakub Jelinek  <jakub@redhat.com>
+
+	* update_version_svn (IGNORE_BRANCHES): Add gcc-6-branch.
+	* crontab: Remove gcc-6-branch entry.
+
+	* gcc_release (error, inform): Use $@ instead of $1.
+	(build_sources): Check for ^[[:blank:]]*GCC in both index.html
+	and changes.html, rather than for GCC in one and ^GCC in another one.
+
+2018-05-03  Jakub Jelinek  <jakub@redhat.com>
+
+	PR other/85622
+	* gcc_release: For -f, verify contrib/gennews has the major version
+	pages listed and both index.html and changes.html have been updated
+	for the new release.
+
+2018-04-25  Jakub Jelinek  <jakub@redhat.com>
+
+	* crontab: Enable snapshots from gcc-8-branch.
+
+2018-01-25  Richard Biener  <rguenther@suse.de>
+
+	* gcc_release (build_sources): Use getconf to get at the number
+	of cores in the system and pass -jN to gcc_build.
+
+2017-10-10  Jakub Jelinek  <jakub@redhat.com>
+
+	* update_version_svn: Ignore the GCC 5 branch.
+	* crontab: Remove entry for the GCC 5 branch.
+
+2017-05-23  Matthias Klose  <doko@ubuntu.com>
+
+	* gcc_release (XZ): Default to xz --best.
+
+2017-05-18  Matthias Klose  <doko@ubuntu.com>
+
+	* gcc_release (build_gzip): Build xz tarball instead of bz2 tarball.
+	(build_diffs): Handle building diffs from either bz2 or xz tarballs,
+	compress diffs using xz instead of bz2.
+	(build_diff): Likewise.
+	(upload_files): Check for *.xz files instead of *.bz2 files.
+	(announce_snapshot): Announce xz tarball instead of bz2 tarball.
+	(XZ): New definition.
+	(<toplevel>): Look for both bz2 and xz compressed old tarballs.
+
+2017-04-20  Jakub Jelinek  <jakub@redhat.com>
+
+	* crontab: Enable snapshots from gcc-7-branch.
+
+2017-03-03  Gerald Pfeifer  <gerald@pfeifer.com>
+
+	* gcc_release (snapshot_print): Replace md5 checksum by sha256.
+
+2017-02-28  Gerald Pfeifer  <gerald@pfeifer.com>
+
+	* update_web_docs_svn: Remove a reference to GCC 3.1.  Describe
+	settings to tweak if running on a host different from gcc.gnu.org.
+	(WWWBASE): Allow override via the environment.  Also check for
+	existance.
+
+2017-02-08  Gerald Pfeifer  <gerald@pfeifer.com>
+
+	* update_web_docs_svn (MANUALS): Add libitm.
+
+2016-09-04  Gerald Pfeifer  <gerald@pfeifer.com>
+
+	PR documentation/50642
+	* update_web_docs_svn (CSS): Introduce.
+	Have generated files refer to it.
+
+2016-08-17  Martin Liska  <mliska@suse.cz>
+
+	* branch_changer.py: Describe the script. Add sample usage
+	of the script.
+
+2016-08-03  Martin Liska  <mliska@suse.cz>
+
+	* branch_changer.py: New file.
+
+2016-07-26  Richard Biener  <rguenther@suse.de>
+
+	* update_version_svn: Ignore the GCC 4.9 branch.
+
+2016-07-26  Richard Biener  <rguenther@suse.de>
+
+	* crontab: Remove entry for the GCC 4.9 branch.
+
+2016-06-13  Jonathan Wakely  <jwakely@redhat.com>
+
+	* generate_libstdcxx_web_docs: Use realpath to get absolute path.
+	Add comment about LaTeX errors.
+
+2016-04-15  Jakub Jelinek  <jakub@redhat.com>
+
+	* crontab: Enable snapshots from gcc-6-branch.
+
+2015-06-23  Richard Biener  <rguenther@suse.de>
+
+	* update_version_svn: Add gcc-4_8-branch to IGNORE_BRANCHES.
+
+2015-06-14  Richard Biener  <rguenther@suse.de>
+
+	* crontab: Disable snapshots from the 4.8 branch.
+
+2015-04-13  Jakub Jelinek  <jakub@redhat.com>
+
+	* update_version_svn: Update DATESTAMP also on
+	branches/gcc-[0-9]+-branch.
+
+	* gcc_release: Fix up thinko in the last commit, improve error
+	message.  Commit all ChangeLog, DEV-PHASE and BASE-VER changes
+	together, rather than doing dozens of separate commits.
+
+2015-04-12  Jakub Jelinek  <jakub@redhat.com>
+
+	* gcc_release: For RELEASE_MAJOR 5+ only use the major
+	number in branch name.  When doing final release of 5+,
+	if BASE-VER doesn't match release, but is *.*.1 for the
+	one smaller minor version, bump BASE-VER.
+
+	* crontab: Enable snapshots from gcc-5-branch.
+
+2015-04-07  Gerald Pfeifer  <gerald@pfeifer.com>
+
+	* update_web_docs_libstdcxx_svn (FILTER): Introduce.
+	Use to filter output of the copying process.
+
+2015-02-25  Arnaud Charlet  <charlet@adacore.com>
+
+	* update_web_docs_svn: Preserve gcc/ada/*.png. Update comments.
+
+2015-02-25  Arnaud Charlet  <charlet@adacore.com>
+
+	* update_web_docs_svn: Add -I gcc/gcc/ada/doc/gnat_ugn for gnat_ugn
+
+2015-02-06  David Malcolm  <dmalcolm@redhat.com>
+
+	PR jit/64257
+	* update_web_docs_svn: When copying up files for the built jit
+	documentation, also copy up .txt files.
+
+2015-02-04  David Malcolm  <dmalcolm@redhat.com>
+
+	PR jit/64257
+	* update_web_docs_svn: Update build of jit docs to use EPEL6
+	variant install of sphinx 1.0.8, rather than 0.6.6.
+
+2015-01-26  David Malcolm  <dmalcolm@redhat.com>
+
+	PR jit/64257
+	* update_web_docs_svn: Don't delete gcc/jit/docs or
+	gcc/jit/jit-common.h, gcc/jit/notes.txt. Special case the
+	building of the JIT docs (using sphinx-build).  Special case
+	copying them up.
+
+2014-08-14  Richard Biener  <rguenther@suse.de>
+
+	* crontab: Change trunk snapshots from 4.10 to 5.
+
+2014-08-01  Arnaud Charlet  <charlet@adacore.com>
+
+	* update_web_docs_svn: Simplify build of gnat_ugn.
+
+2014-06-12  Richard Biener  <rguenther@suse.de>
+
+	* crontab: Remove 4.7 snapshot entry.
+	* update_version_svn: Update IGNORE_BRANCHES.
+
+2014-05-30  Jonathan Wakely  <jwakely@redhat.com>
+
+	* generate_libstdcxx_web_docs: New script.
+
+2014-04-11  Jakub Jelinek  <jakub@redhat.com>
+
+	* crontab: Enable snapshots from gcc-4_9-branch.
+
+2014-02-01  Dmitry Gorbachev  <d.g.gorbachev@gmail.com>
+
+	PR other/56653
+	* gcc_release: Avoid printing empty line to generated MD5SUMS files.
+	Bump copyright year.
+
+2013-12-02  Gerald Pfeifer  <gerald@pfeifer.com>
+
+	* update_web_docs_svn: Work around makeinfo generated file names
+	and references with "_002d" instead of "-".
+
+2013-04-12  Jakub Jelinek  <jakub@redhat.com>
+
+	* crontab: Disable snapshots from gcc-4_6-branch.
+	* update_version_svn: Ignore gcc-4_6-branch.
+
+2013-04-07  Gerald Pfeifer  <gerald@pfeifer.com>
+
+	* update_web_docs_libstdcxx_svn: No longer ignore all output from
+	the actual copy process.
+	Check the exit code of the actual copy process; diagnose problems.
+
+2013-03-16  Jakub Jelinek  <jakub@redhat.com>
+
+	* crontab: Enable snapshots from gcc-4_8-branch.
+
+2012-07-02  Richard Guenther  <rguenther@suse.de>
+
+	* crontab: Disable snapshots from gcc-4_5-branch.
+	* update_version_svn: Ingore gcc-4_5-branch.
+
+2012-03-23  Richard Guenther  <rguenther@suse.de>
+
+	* crontab: Enable snapshots from gcc-4_7-branch.
+
+2012-03-13  Jakub Jelinek  <jakub@redhat.com>
+
+	* crontab: Remove 4.4 branch from the list of snapshots to make.
+	* update_version_svn (IGNORE_BRANCHES): Add gcc-4_4-branch.
+
+2012-03-05  Richard Guenther  <rguenther@suse.de>
+
+	* crontab: Remove 4.3 branch from the list of snapshots to make.
+
+2012-03-02  Richard Guenther  <rguenther@suse.de>
+
+	* crontab: Fix day-of-week.
+
+2012-03-02  Richard Guenther  <rguenther@suse.de>
+
+	* crontab: Update for 4.7 branching.
+
+2011-11-21  Gerald Pfeifer  <gerald@pfeifer.com>
+
+	* update_web_docs_svn: Make $DOCSDIR group writable after
+	creating it.
+
+2011-06-27  Richard Guenther  <rguenther@suse.de>
+
+	* update_version_svn (IGNORE_BRANCHES): Add gcc-4_3-branch.
+
+2011-05-22  Joseph Myers  <joseph@codesourcery.com>
+
+	* gcc_release (adjust_dirs, maybe_build_tarfile): Remove.
+	(build_tarfiles): Don't build separate files for languages and
+	core.
+	(build_diffs): Only build one set of diffs.
+	(announce_snapshot): Only announce one tar file.
+	(ADA_DIRS, CPLUSPLUS_DIRS, FORTRAN95_DIRS, GO_DIRS, JAVA_DIRS,
+	OBJECTIVEC_DIRS, TESTSUITE_DIRS): Remove.  Don't adjust names
+	relative to WORKING_DIRECTORY.
+
+2011-04-21  Jakub Jelinek  <jakub@redhat.com>
+
+	* gcc_release (maybe_build_tarfile): Don't build a tarfile if
+	the first directory doesn't exist.
+
+2011-03-14  Jakub Jelinek  <jakub@redhat.com>
+
+	* crontab: Enable 4.7 snapshots, switch 4.6 snapshots to
+	4.6 branch.
+
+2011-02-07  Joseph Myers  <joseph@codesourcery.com>
+
+	* update_web_docs_svn: Generate libquadmath-vers.texi.
+
+2011-01-31  Gerald Pfeifer  <gerald@pfeifer.com>
+
+	* update_version_svn (FILES): Merge with datestamp_FILES.
+	(SVNROOT2): Introduce and use.
+	
+2011-01-30  Gerald Pfeifer  <gerald@pfeifer.com>
+
+	* update_version_svn (SVN): Remove obsolete comment.
+	(CURR_DATE): Fix description.
+	Fix description of checkout procedure.
+
+2010-12-18  Tobias Burnus  <burnus@net-b.de>
+
+	* update_web_docs_svn (MANUALS): Add libquadmath.
+
+2010-12-08  Ian Lance Taylor  <iant@google.com>
+
+	* gcc_release: Add support for releasing Go as a separate
+	tarball.
+
+2010-12-08  Ian Lance Taylor  <iant@google.com>
+
+	* update_web_docs_svn (MANUALS): Add gccgo.
+
+2010-12-08  Ian Lance Taylor  <iant@google.com>
+
+	* README: Change "CVS" to "Subversion".
+
+2010-08-23  Gerald Pfeifer  <gerald@pfeifer.com>
+
+	* gcc_release (snapshot_print): Also include an sha1 hash for
+	every tarball.  Slightly tweak indentation.
+
+2010-08-15  Gerald Pfeifer  <gerald@pfeifer.com>
+
+	* gcc_release (CVSROOT): Remove all occurrences.
+
+2010-08-14  Gerald Pfeifer  <gerald@pfeifer.com>
+
+	* gcc_release (snapshot_print): Include md5 hash for every tarball
+	in the README file and notification mail.
+
+2010-08-01  Gerald Pfeifer  <gerald@pfeifer.com>
+
+	* update_web_docs_libstdcxx_svn: Do not compress generated .html
+	files any more.
+
+2010-06-24  Joseph Myers  <joseph@codesourcery.com>
+
+	* update_web_docs_svn: Also pass -I option pointing to ada/ source
+	directory for Ada manual.
+
+2010-04-16  Joseph Myers  <joseph@codesourcery.com>
+
+	* crontab: Enable 4.6 snapshots.
+
+2010-04-07  Joseph Myers  <joseph@codesourcery.com>
+
+	* crontab: Switch 4.5 snapshots to 4.5 branch.
+
+2010-03-31  Joseph Myers  <joseph@codesourcery.com>
+
+	* gcc_release (build_tarfiles): Make directories mode 755, not
+	777.
+
+2009-10-10  Gerald Pfeifer  <gerald@pfeifer.com>
+
+	* update_web_docs_svn: Update BUGURL to http://gcc.gnu.org/bugs/.
+
+2009-10-03  Diego Novillo  <dnovillo@google.com>
+
+	* gcc_release (JAVA_DIRS): Remove zlib.
+
+2009-04-23  Gerald Pfeifer  <gerald@pfeifer.com>
+
+	* update_web_docs_svn: Redirect output of texi2dvi to /dev/null.
+
+2009-04-09  Jakub Jelinek  <jakub@redhat.com>
+
+	* gcc_release: Change copyright header to refer to version
+	3 of the GNU General Public License and to point readers at the
+	COPYING3 file and the FSF's license web page.
+	* maintainer-addresses: Likewise.
+
+2009-04-08  Gerald Pfeifer  <gerald@pfeifer.com>
+
+	* update_web_docs_svn: Run this script under plain /bin/sh
+	as opposed to /bin/sh -x.
+
+2009-03-30  Joseph Myers  <joseph@codesourcery.com>
+
+	* update_version_svn (IGNORE_BRANCHES): Add 4.2 branch.
+
+2009-03-28  Gerald Pfeifer  <gerald@pfeifer.com>
+
+	* crontab: Stop 4.2 snapshots.
+	Spread out 4.3, 4.4, and 4.5 snapshots more evenly.
+
+2009-03-27  Mark Mitchell  <mark@codesourcery.com>
+
+	* crontab: Add 4.4 branch snapshots.
+
+2009-02-21  Gerald Pfeifer  <gerald@pfeifer.com>
+
+	* update_version_svn (ADD_BRANCHES): Remove autovect-branch
+	and document format.
+
+2009-01-17  Richard Guenther  <rguenther@suse.de>
+
+	* gcc_release (JAVA_DIRS): Remove fastjar.
+
+2008-10-04  Gerald Pfeifer  <gerald@pfeifer.com>
+
+	* gcc_release: Fix a couple of comments.
+
+2008-07-04  Joseph Myers  <joseph@codesourcery.com>
+
+	* crontab: Remove 4.1 snapshots job.
+	* update_version: Remove.
+	* gcc_release: Remove support for g77 and release status in
+	version.c.
+	* update_version_svn: Ignore 4.1 branch.  Remove support for
+	updating files other than DATESTAMP.
+	* update_web_docs_svn: Remove support for g77 manual.
+
+2008-02-18  Jakub Jelinek  <jakub@redhat.com>
+
+	* crontab: Add 4.3 branch.  Set trunk to 4.4.
+
+2008-01-28  Joseph Myers  <joseph@codesourcery.com>
+
+	* gcc_release (build_sources): Pass --disable-multilib to
+	gcc_build.
+	(SVN): Don't use full path.
+
+2008-01-21  Jonathan Wakely  <jwakely.gcc@gmail.com>
+
+	* update_web_docs_libstdcxx_svn: "docs" dir moved to "doc".
+
+2007-10-01  Gerald Pfeifer  <gerald@pfeifer.com>
+
+	* gcc_release: Do not include copies of faq.html in releases,
+	and remove all the explicit support code to pull in web pages.
+
+2007-08-21  Paul Brook  <paul@codesourcery.com>
+	    Nathan Sidwell  <nathan@codesourcery.com>
+	    Mark Mitchell  <mark@codesourcery.com>
+	    Joseph Myers  <joseph@codesourcery.com>
+
+	* gcc_release: Do not include copies of bugs.html in releases.
+	* update_web_docs_svn: Set VERSION_PACKAGE and BUGURL in
+	gcc-vers.texi.
+
+2007-07-06  Joseph Myers  <joseph@codesourcery.com>
+
+	* update_web_docs_svn: Use -o with makeinfo, texi2dvi and texi2pdf
+	commands.
+
+2007-06-28  Mike Stump  <mrs@apple.com>
+
+	* gcc_release: Update for Objective-C++.
+
+2007-05-28  Mark Mitchell  <mark@codesourcery.com>
+
+	* gcc_release: Adjust placement of release candidates.
+
+2007-04-01  Gerald Pfeifer  <gerald@pfeifer.com>
+
+	* update_web_docs_svn (MANUALS): Move towards the top of the
+	script.  Reformat for easier editing/diffing.
+
+2006-03-31  Tobias Burnus  <burnus@net-b.de>
+
+	* update_web_docs_svn: Build also gfc-internals.
+
+2007-02-25  Gerald Pfeifer  <gerald@pfeifer.com>
+
+	* update_version_svn (IGNORE_BRANCHES): Add 4_0-branch.
+
+2007-01-29  Gerald Pfeifer  <gerald@pfeifer.com>
+
+	* crontab: No longer build snapshots for 4.0.x.
+
+2007-01-21  Tobias Burnus  <burnus@net-b.de>
+
+	* update_web_docs_svn: Build also libgomp documentation.
+
+2007-01-05  Gerald Pfeifer  <gerald@pfeifer.com>
+
+	* crontab: Spread snapshots more evenly throughout the week, and
+	in "ascending" order.  Build all at the same time of the day.
+
+2006-10-20  Mark Mitchell  <mark@codesourcery.com>
+
+	* crontab: Add 4.2 branch.  Set trunk to 4.3.
+
+2006-09-17  Gerald Pfeifer  <gerald@pfeifer.com>
+
+	* gcc_release (LC_ALL): Default to C.
+
+2006-03-11  Gabriel Dos Reis  <gdr@integrable-solutions.net>
+
+	* crontab: Don't build snapshot for 3.4.x anymore.
+	* update_version_svn (IGNORE_BRANCHES): Add 3_4-branch.
+
+2006-01-12  Ben Elliston  <bje@au.ibm.com>
+
+	* update_version_svn (ADD_BRANCHES): Remove dfp-branch.
+
+2005-12-16  Joseph S. Myers  <joseph@codesourcery.com>
+
+	* update_web_docs_svn: Remove unnecessary files from source tree.
+	Use set -e.
+	* doc_exclude, update_web_docs, update_web_docs_libstdcxx: Remove.
+
+2005-12-16  Mark Mitchell  <mark@codesourcery.com>
+
+	* update_web_docs_svn: Set @srcdir in gcc-vers.texi. 
+	
+2005-11-18  Mark Mitchell  <mark@codesourcery.com>
+
+	* crontab: Add 4.1 branch entry.
+
+2005-11-06  Joseph S. Myers  <joseph@codesourcery.com>
+
+	* gcc_release: Further update for SVN.  Don't set EXPORTTAG or
+	EXPORTDATE; always determine SVNREV the same way.  Correct message
+	about what sources are being retrived.  Include branch information
+	in LAST_UPDATED.
+	* crontab: Don't include initial / in branch name.
+
+2005-11-05  Daniel Berlin  <dberlin@dberlin.org>
+
+	* gcc_release:  Always determine revision number from date or tag,
+	and use that, instead of fragile date based export.
+	Put back setting of non-local CVSROOT.
+
+2005-11-05  Daniel Berlin  <dberlin@dberlin.org>
+
+	* gcc_release: Make tags go in /tags.
+	Don't tag for snapshots.
+	Determine revision number of export and put into snapshot
+	announcement.
+
+2005-11-03  Daniel Berlin  <dberlin@dberlin.org>
+
+	* gcc_release: Update for SVN
+	* crontab: Update for new gcc_release
+
+2005-10-26  Daniel Berlin  <dberlin@dberlin.org>
+
+	* update_web_docs_svn: Use -q to quiet svn.
+
+2005-10-26  Daniel Berlin  <dberlin@dberlin.org>
+
+	* crontab: Update to reflect reality
+
+2005-10-01  Mark Mitchell  <mark@codesourcery.com>
+
+	* gcc_release (build_sources): If trying to apply a tag that
+	already exists, issue an error message and exit.
+
+2005-09-30  Joseph S. Myers  <joseph@codesourcery.com>
+
+	PR other/23693
+	* update_web_docs: Add PDF support.  Correct check of DEV-PHASE.
+
+2005-09-30  Joseph S. Myers  <joseph@codesourcery.com>
+
+	* update_web_docs_old: Remove.
+
+2005-08-14  Kelley Cook  <kcook@gcc.gnu.org>
+
+	* gcc_release: Update with FSF address.
+
+2005-07-26  Janis Johnson  <janis187@us.ibm.com>
+
+	* update_version (ADD_BRANCHES): Add dfp-branch.
+
+2005-05-21  Gerald Pfeifer  <gerald@pfeifer.com>
+
+	* crontab: Spread snapshot building more evenly throughout the
+	week.
+
+2005-05-19  Joseph S. Myers  <joseph@codesourcery.com>
+
+	* crontab: Don't build 3.3 branch snapshots.
+	* update_version (IGNORE_BRANCHES): Add gcc-3_3-branch.
+
+2005-03-15  Zack Weinberg  <zack@codesourcery.com>
+
+	* README: Update.
+	* gcc_release: Update gcc/DEV-PHASE if that file exists, instead
+	of gcc/version.c.
+	* update_version: Handle updating gcc/DATESTAMP.
+	* update_web_docs: Generate gcc-vers.texi first.
+
+2005-03-10  Ranjit Mathew  <rmathew@hotmail.com>
+
+	* gcc_release (ADA_DIRS): Add "gnattools".
+
+2005-02-25  Mark Mitchell  <mark@codesourcery.com>
+
+	* crontab: Adjust for 4.0 branch.
+
+2004-12-30  Sebastian Pop  <pop@cri.ensmp.fr>
+
+	* update_version (ADD_BRANCHES): Replace lno-branch with
+	autovect-branch.
+
+2004-09-11  Gerald Pfeifer  <gerald@pfeifer.com>
+
+	* crontab: Rename GCC 3.5 snapshots to GCC 4.0 snapshots.
+
+2004-08-14  Kelley Cook  <kcook@gcc.gnu.org>
+
+	* gcc_release (build_sources): Add comment header to generated
+	MD5SUMS.
+
+2004-08-06  Kelley Cook  <kcook@gcc.gnu.org>
+
+	* gcc_release (snapshot_print): Accept arguments.  Don't use echo -e.
+	(announce_snapshot):  Update for above.  Don't use echo -e.
+
+2004-08-03 Kelley Cook  <kcook@gcc.gnu.org>
+
+	* maintainer-scripts (snapshot_print): New function.
+	(announce_snapshot): Generate announcment on the fly.
+	Use a directory link for LATEST.
+	* snapshot-README: Delete.
+	* snapshot-index.html: Delete.
+
+2004-06-09  Paolo Bonzini  <bonzini@gnu.org>
+
+	* gcc_release (build_sources): Move the libcpp gmo files
+	to the source directory.
+
+2004-06-03  Joseph S. Myers  <jsm@polyomino.org.uk>
+
+	* gcc_release (maybe_build_tarfile): New function.
+	(build_tarfiles): Use maybe_build_tarfile.
+
+2004-05-21  Paolo Carlini  <pcarlini@suse.de>
+
+	* gcc_release (build_sources): Generate the NEWS file in toplevel.
+
+2004-05-17  Kelley Cook  <kcook@gcc.gnu.org>
+
+	* gcc_release (build_sources): Change CRCs from brik to md5sum.
+
+2004-05-16  Gerald Pfeifer  <gerald@pfeifer.com>
+
+	* crontab: Add GCC 3.5 snapshots, currenty run on Sundays.
+
+2004-05-13  Joseph S. Myers  <jsm@polyomino.org.uk>
+
+	* update_web_docs: Also remove old .gz files from subdirectories
+	on the 15th of the month.
+
+2004-05-13  Joseph S. Myers  <jsm@polyomino.org.uk>
+
+	* update_web_docs (MANUALS): Add gfortran.
+
+2004-05-13  Arnaud Charlet  <charlet@act-europe.fr>
+
+	* update_web_docs: Fix generation of Ada docs.
+
+2004-05-13  Joseph S. Myers  <jsm@polyomino.org.uk>
+
+	* update_version (ADD_BRANCHES): Remove tree-ssa-20020619-branch.
+
+	* gcc_release (DIFF): Remove -3 option.
+
+2003-07-26  Paul Brook  <paul@nowt.org>
+
+	* gcc_release: Add gcc-fortran.
+	* snapshot-README: Ditto.
+	* snapshot-index.html: Ditto.
+
+2004-05-02  Gerald Pfeifer  <gerald@pfeifer.com>
+
+	* crontab: Move GCC 3.4 snapshots from Wednesday afternoon to
+	Friday night, where gcc.gnu.org has less load.
+
+2004-05-02  Gerald Pfeifer  <gerald@pfeifer.com>
+
+	* crontab: Adjust temporary directory used for snapshot generation.
+	Move GCC 3.3 snapshots to Wednesday 22:32, where gcc.gnu.org has
+	less load.
+
+2004-04-19  Mark Mitchell  <mark@codesourcery.com>
+
+	* gcc_release (build_sources): Do not use "-F" to tag sources.
+
+2004-04-07  Mark Mitchell  <mark@codesourcery.com>
+
+	* gcc_release (build_sources): Do not use "-r" and "-D" at the
+	same time with "cvs export".
+
+2004-03-27  Gerald Pfeifer  <gerald@pfeifer.com>
+
+	* gcc_release: Fix sanity check for argument of -p command-line
+	options.  In snapshot mode, only generate diffs against the previous
+	snapshot if the user did not specify any old tarball explictly.
+
+2004-03-25  Gerald Pfeifer  <gerald@pfeifer.com>
+
+	* gcc_release (FTP_PATH): Use /var/ftp instead of ~ftp, and
+	only set at a single place.
+
+2004-03-14  Gerald Pfeifer  <gerald@pfeifer.com>
+
+	* gcc_release (SNAPSHOTS_DIR): New variable.  Use it.
+	(announce_snapshot): Use it.
+
+2004-03-14  Gerald Pfeifer  <gerald@pfeifer.com>
+
+	* gcc_release (announce_snapshot): Use changedir instead of
+	plain cd.
+
+2004-02-10  Arnaud Charlet  <charlet@act-europe.fr>
+
+	* gcc_release: Add libada as part of ADA_DIRS.
+
+2004-01-21  Gerald Pfeifer  <gerald@pfeifer.com>
+
+	* crontab: Make 3.4 snapshots from the new 3.4 release branch.
+
+2004-01-20  Kelley Cook  <kcook@gcc.gnu.org>
+
+	* gcc_release (build_sources): Delete call to make f77.rebuilt.
+
+2004-01-17  Gerald Pfeifer  <gerald@pfeifer.com>
+
+	* snapshot-README: Mention how the snapshot was generated.
+	* snapshot-index.html: Ditto.  Further sync with snapshot-README.
+
+2004-01-03  Joseph S. Myers  <jsm@polyomino.org.uk>
+
+	* update_web_docs: Create tarballs of documentation sources and
+	HTML docs.
+
+2004-01-02  Gerald Pfeifer  <gp@suse.de>
+
+	* update_version: Add some documentation.
+
+2004-01-02  Pop Sébastian  <pop@gauvain.u-strasbg.fr>
+
+	* update_version (ADD_BRANCHES): Add lno-branch.
+
+2003-11-02  Gerald Pfeifer  <gerald@pfeifer.com>
+
+	* maintainer-addresses: New script.
+
+2003-10-24  Kelley Cook  <kcook@gcc.gnu.org>
+
+	* gcc_release (build_sources): Use --enable-generated-files-in-srcdir.
+
+2003-09-22  Gerald Pfeifer  <gerald@pfeifer.com>
+
+	* gcc_release (announce_snapshot): Restructure processing
+	of snapshot-README and snapshot-index.html and add a new
+	substitution for @EXPORT@.
+
+2003-08-24  Gerald Pfeifer  <gerald@pfeifer.com>
+
+	* gcc_release (build_sources): Create/update the LAST_UPDATED file
+	in the source directory with information how sources were obtained.
+
+2003-08-16  Gerald Pfeifer  <gerald@pfeifer.com>
+
+	* gcc_release (build_sources): Use two new variables EXPORTTAG and
+	EXPORTDATE to make the extraction of sources more transparent and
+	also allow snapshots (off mainline) without a tag.
+
+2003-08-08  Mark Mitchell  <mark@codesourcery.com>
+
+	* gcc_release: Correct logic for updating version.c.  Put
+	prereleases into a subdirectory.
+
+2003-07-29  Gerald Pfeifer  <pfeifer@dbai.tuwien.ac.at>
+
+	* crontab: Update invocation of gcc_release according to the
+	previous changes there.  Add automatic 3.4 snapshots from mainline.
+
+2003-07-23  Gerald Pfeifer  <pfeifer@dbai.tuwien.ac.at>
+
+	* gcc_release (usage): Document that -s now takes symbolic name
+	and branch of the snapshot as parameters.
+	Implement this as part of command-line processing.
+	(BRANCH): Remove default initialization for snapshots.
+	(CVSBRANCH): Ditto.
+	Do not lay down a CVS tag if generating a snapshot from mainline.
+
+2003-07-19  Gerald Pfeifer  <pfeifer@dbai.tuwien.ac.at>
+
+	* gcc_release (announce_snapshot): Use ${RELEASE} instead
+	of ${BRANCH}-${DATE} to refer to the snapshot directory.
+	Put README file into the snapshot directory.
+
+	(RELEASE): Define as ${BRANCH}-${DATE} for snapshots.
+	(FTP_PATH): Use ${RELEASE} in case of snapshots.
+	(TAG): Ditto.
+	(OLD_TARS): Adjust to new directory scheme for snapshots.
+
+2003-07-14  Gerald Pfeifer  <pfeifer@dbai.tuwien.ac.at>
+
+	* gcc_release (announce_snapshot): Add substitution of @RELEASE@
+	for README and index.html.
+	* snapshot-README: Use it.
+	* snapshot-index.html: Ditto.
+
+2003-07-09  Gerald Pfeifer  <pfeifer@dbai.tuwien.ac.at>
+
+	* gcc_release (announce_snapshot): Add substitution of @BRANCH@
+	for README and index.html.  Remove substitution of @LONG_DATE@.
+	Put index.html into the respective snapshot directory.
+	Adjust subject of the notification mail to the new naming scheme
+	for CVS tags.
+	Adjust name of the LATEST-IS-... files to the new naming scheme
+	for snapshot directories.
+	(FTP_PATH): Ditto.
+	(LAST_DIR): Ditto.
+	(LAST_LONG_DATE): Remove.
+
+	* snapshot-README: Adjust to the new naming schemes for directories
+	and snapshots per se.
+	Dynamically fill in the respective branch instead of hardcoding it.
+
+	* snapshot-index.html: Replace individual links to diffs with a
+	general link to the diff/ subdirectory.
+	Mention the concrete snapshot in <title> and <h1>.
+	Adjust links to the new location of index.html.
+
+2003-07-08  Gerald Pfeifer  <pfeifer@dbai.tuwien.ac.at>
+
+	* gcc_release: Move handling of complex modes directly after
+	switch handling.
+	(TAG): Include the branch name as part of snapshot CVS tags.
+
+2003-07-04  Gerald Pfeifer  <pfeifer@dbai.tuwien.ac.at>
+
+	* gcc_release: Execute gcc.gnu.org-only operations which are
+	related to diff generation only if diffs have been requested.
+	(build_sources): Improve tracing and an error message related
+	to tagging.
+
+2003-07-01  Gerald Pfeifer  <pfeifer@dbai.tuwien.ac.at>
+
+	* gcc_release (BRANCH): Rename to...
+	(CVSBRANCH): ...new macro, and use BRANCH for the variant users
+	will see.
+	(FTP_BRANCH): For snapshots, include ${BRANCH} in the last part
+	of the directory name.
+	Use .snapshot_date-${BRANCH} instead of .snapshot_date.
+
+2003-06-28  Gerald Pfeifer  <pfeifer@dbai.tuwien.ac.at>
+
+	* gcc_release: Command "all" now creates .gz files only for
+	releases and pre-releases.
+
+2003-06-27  Gerald Pfeifer  <pfeifer@dbai.tuwien.ac.at>
+
+	* gcc_release (build_sources): Do not include gnats.html any longer.
+	Make an error message more descriptive.
+
+2003-06-25  Gerald Pfeifer  <pfeifer@dbai.tuwien.ac.at>
+
+	* gcc_release: Factor the updating of links and READMEs on the
+	FTP server and sending mail for snapshots into a...
+	(announce_snapshot): ...new function.
+	Add informative output for both.
+
+2003-06-18  Gerald Pfeifer  <pfeifer@dbai.tuwien.ac.at>
+
+	* gcc_release: Do not update gcc_latest_snapshot tag any longer.
+
+2003-06-18  Gerald Pfeifer  <pfeifer@dbai.tuwien.ac.at>
+
+	* snapshot-index.html: Use F77 instead of G77 front end.
+	Remove link to CodeSourcery snapshots which was not up-to-date.
+	Do not refer to gcc-bugs@gcc.gnu.org any longer.
+
+	* snapshot-README: Use F77 front end instead of G77 language.
+
+2003-06-17  Gerald Pfeifer  <pfeifer@dbai.tuwien.ac.at>
+
+	* gcc_release (build_tarfile): Build .bz2 files instead of .gz files.
+	(build_bz2): Rename to build_gzip and create .gz files from .bz2
+	files instead of the other way around.
+	(build_gzip): New function.
+	(build_diffs): Build .bz2 files instead of .gz files.
+	(build_diff): Use .bz2 files instead of .gz files.
+	Make an error message independent of the compression format.
+	(MODE_BZIP2): Rename to MODE_GZIP.  Related changes to the
+	invocation of this script.
+	(MODE_GZIP): New variable.
+	(OLD_TARS): Use .bz2 archive of the previous snapshot.
+
+2003-06-14  Gerald Pfeifer  <pfeifer@dbai.tuwien.ac.at>
+
+	* snapshot-README: Use GCC instead of gcc, C++ front end instead of
+	g++ language, and note that Java includes a run time.
+	* snapshot.index.html: Ditto.
+
+2003-06-10  Gerald Pfeifer  <pfeifer@dbai.tuwien.ac.at>
+
+	* gcc_release (build_diff): Properly use ${TAR} instead of
+	hard-coded tar.
+
+2003-05-28  Gerald Pfeifer  <pfeifer@dbai.tuwien.ac.at>
+
+	* snapshot-index.html: Refer to .bz2 files instead of .gz files.
+	Simplify the note on not using unannounced snapshots.
+
+2003-05-28  Gerald Pfeifer  <pfeifer@dbai.tuwien.ac.at>
+
+	* snapshot-README: Refer to .bz2 files instead of .gz files.
+	Add a note on where to find the diff files.
+	Simplify the note on not using unannounced snapshots.
+	Remove documentation of the gcc_latest_snapshot tag.
+
+2003-05-27  Gerald Pfeifer  <pfeifer@dbai.tuwien.ac.at>
+
+	* gcc_release (build_diffs): Add diagnostics in case we cannot
+	generate a specific diff file.
+
+2003-05-24  Gerald Pfeifer  <pfeifer@dbai.tuwien.ac.at>
+
+	* gcc_release (build_sources): Only update ChangeLog files which
+	do not yet contain the entry we are going to add.
+	Fix typo in added ChangeLog entries.
+
+2003-05-20  Gerald Pfeifer  <pfeifer@dbai.tuwien.ac.at>
+
+	* gcc_release (upload_files): Put diff files into a "diffs"
+	subdirectory
+
+2003-05-18  Nathanael Nerode  <neroden@gcc.gnu.org>
+
+	* gcc_release: GNU CC -> GCC.
+
+2003-05-12  Gerald Pfeifer  <pfeifer@dbai.tuwien.ac.at>
+
+	* gcc_release (usage): Print more detailed description of all
+	command-line options.
+
+2003-05-09  Gerald Pfeifer  <pfeifer@dbai.tuwien.ac.at>
+
+	* update_version (ADD_BRANCHES): Add, set to MAIN and
+	tree-ssa-20020619-branch.
+	(BRANCHES): Always consider branches given by $ADD_BRANCHES.
+
+2003-05-04  Gerald Pfeifer  <pfeifer@dbai.tuwien.ac.at>
+
+	* update_version (textstring_FILES): Only version.c needs to be
+	updated, now that we do not consider older branches any more.
+
+2003-05-02  Gerald Pfeifer  <pfeifer@dbai.tuwien.ac.at>
+
+	* update_version (IGNORE_BRANCHES): Add.
+	(BRANCHES): Do not consider branches matching $IGNORE_BRANCHES.
+
+2003-05-02  Gerald Pfeifer  <pfeifer@dbai.tuwien.ac.at>
+
+	* update_version: Add a trace of which branch we are currently
+	working on.
+
+2002-12-16  Mark Mitchell  <mark@codesourcery.com>
+
+	* gcc_release: Make snapshots from the GCC 3.3 branch.
+	* snapshot-README: Update.
+
+2002-09-23  Zack Weinberg  <zack@codesourcery.com>
+
+	* update_version: Do not check in files which are unchanged.
+	* gcc_release: Only update the version in gcc/version.c.
+
+2002-09-17  Joseph S. Myers  <jsm@polyomino.org.uk>
+
+	* update_web_docs (MANUALS): Add fastjar.
+
+2002-09-08  Joseph S. Myers  <jsm@polyomino.org.uk>
+
+	* gcc_release: Make snapshots come from the mainline.
+	* snapshot-README: Update.
+
+2002-08-28  Joseph S. Myers  <jsm@polyomino.org.uk>
+
+	* update_web_docs: Remove support for generating g77_news.html and
+	g77_bugs.html.
+	* update_web_docs_old: Likewise.  Remove support for generating
+	thanks.html.
+
+2002-07-28  Andreas Jaeger  <aj@suse.de>
+
+	* gcc_release: Update comment.
+
+	* snapshot-README: Snapshots are taken from GCC 3.2 branch.
+
+2002-07-28  Mark Mitchell  <mark@codesourcery.com>
+
+	* gcc_release: Use the 3.2 branch for snapshots.
+
+2002-05-31  Florian Weimer  <fw@deneb.enyo.de>
+
+	* update_web_docs (MANUALS): Include various flavours of the GNAT
+	User Guide.
+
+2002-05-27  Joseph S. Myers  <jsm28@cam.ac.uk>
+
+	* update_version (textstring_FILES): Change gcc/ada/gnatvsn.ads to
+	gcc/gcc/ada/gnatvsn.ads.
+
+2002-05-26  Joseph S. Myers  <jsm28@cam.ac.uk>
+
+	* gcc_release: Add gcc/ada/gnatvsn.ads to list of files in which
+	release status is updated.
+	* update_version (textstring_FILES): Add gcc/ada/gnatvsn.ads.
+
+2002-05-21  Joseph S. Myers  <jsm28@cam.ac.uk>
+
+	* gcc_release: Do upload files when local.
+
+	* snapshot-README, snapshot-index.html: Remove chill.
+
+2002-05-08  Mark Mitchell  <mark@codesourcery.com>
+
+	* gcc_release: Correct upload handling.
+
+2002-04-22  Mark Mitchell  <mark@codesourcery.com>
+
+	* gcc_release (build_diffs): Remove reference to Chill.
+
+2002-04-21  Joseph S. Myers  <jsm28@cam.ac.uk>
+
+	* update_web_docs (MANUALS): Remove chill.  Add gnat_rm.
+
+2002-04-19  Kelley R. Cook (kelly.r.cook@gm.com)
+
+	* gcc_release: Set TZ to UTC0.
+
+2002-04-15  Mark Mitchell  <mark@codesourcery.com>
+
+	* gcc_release (build_tarfiles): Do not build Chill tarfiles.
+	(CHILL_DIRS): Remove.
+
+2002-03-10  Joseph S. Myers  <jsm28@cam.ac.uk>
+
+	* gcc_release: Build diffs for ada and chill.  Make "bzip2" a new
+	major mode.
+
+2002-03-06  Phil Edwards  <pme@gcc.gnu.org>
+
+	* update_version:  Don't indent the version string.
+
+2002-03-05  Joseph S. Myers  <jsm28@cam.ac.uk>
+
+	* snapshot-README: Note that snapshots come from the 3.1 branch.
+	Update list of files.
+
+2002-03-03  Joseph S. Myers  <jsm28@cam.ac.uk>
+
+	* gcc_release: Make snapshots come from the 3.1 branch.
+
+2002-02-25  Mark Mitchell  <mark@codesourcery.com>
+
+	* update_version: Automatically update version files on all
+	branches.
+	* crontab: Only invoke update_version once.
+
+2002-02-23  Joseph S. Myers  <jsm28@cam.ac.uk>
+
+	* gcc_release: Revert change to -p interface.  Allow for local and
+	remote cases in creating directories.  Give an error if -p
+	argument names a directory.
+
+2002-02-21  Mark Mitchell  <mark@codesourcery.com>
+
+	* gcc_release: Correct handling of diff-generation.  Add
+	"diffs" major mode.
+
+2002-02-08  Joseph S. Myers  <jsm28@cam.ac.uk>
+
+	* gcc_release: Substitute dates in snapshot-README and
+	snapshot-index.html files rather than directly using the old files
+	on the FTP site.  Set QMAILHOST.
+
+2002-02-08  Gerald Pfeifer  <pfeifer@dbai.tuwien.ac.at>
+
+	* snapshot-index.html: Improve markup.
+
+2002-01-29  Joseph S. Myers  <jsm28@cam.ac.uk>
+
+	* snapshot-README, snapshot-index.html: Use expressions such as
+	@DATE@ rather than hardcoded dates.
+
+	* snapshot-README, snapshot-index.html: New files.
+
+2002-01-06  Gerald Pfeifer  <pfeifer@dbai.tuwien.ac.at>
+
+	* update_web_docs (contrib_file): Remove.
+	Also removing special handling of thanks.html.
+
+2001-12-17  Joseph S. Myers  <jsm28@cam.ac.uk>
+
+	* update_web_docs: Use makeinfo --html instead of texi2html.
+	Remove support for pre-3.1 GCC versions.  Build online docs for
+	gccint manual.
+
+2001-12-17  Joseph S. Myers  <jsm28@cam.ac.uk>
+
+	* update_web_docs_old: Copy from update_web_docs.  Add comment
+	that this is for GCC 3.0.x and earlier versions.
+
+2001-11-19  Joseph S. Myers  <jsm28@cam.ac.uk>
+
+	* gcc_release: Add /usr/local/bin to path when local.
+
+2001-11-06  Joseph S. Myers  <jsm28@cam.ac.uk>
+
+	* update_web_docs: Set SOURCEDIR so that install manual can be
+	found when running install.texi2html.
+
+	* gcc_release: Don't require a username if running locally.
+
+2001-11-05  Joseph S. Myers  <jsm28@cam.ac.uk>
+
+	* update_web_docs: Eliminate warnings about keeping files from web
+	page preprocessing.
+
+	* update_web_docs: Allow for the same file name in different
+	directories.
+
+2001-10-29  Joseph S. Myers  <jsm28@cam.ac.uk>
+
+	* update_web_docs: Generate libiberty and gnat-style manuals.
+
+2001-10-24  Joseph S. Myers  <jsm28@cam.ac.uk>
+
+	* gcc_release: Build snapshots from mainline.  Generate Ada and
+	Chill tarballs.  Correct error check when building diffs.  Check
+	for errors when building bzip2 files.
+	* crontab: Use /sourceware/snapshot-tmp for building snapshots.
+
+2001-10-08  Joseph S. Myers  <jsm28@cam.ac.uk>
+
+	* crontab: Build weekly snapshots.
+
+	* gcc_release: Copy from 3.0 branch.  Add support for building the
+	weekly snapshots on gcc.gnu.org.
+
+2001-08-28  Joseph S. Myers  <jsm28@cam.ac.uk>
+
+	* update_web_docs: Also check out texinfo.tex from
+	gcc/doc/include.
+
+2001-08-06  Gerald Pfeifer  <pfeifer@dbai.tuwien.ac.at>
+
+	* update_web_docs (PREPROCESS): Rename to WWWPREPROCESS.
+	Preprocess the entire web site, not just the install docs.
+
+2001-06-25  Phil Edwards  <pme@sources.redhat.com>
+
+	* update_version:  Add command-line argument capability, also
+	bump version for libstdc++-v3, and exit with the return code from
+	the cvs commit.
+	* crontab:  Call update_version with arguments instead of
+	calling update_branch_version.
+	* update_branch_version:  Remove.
+
+2001-06-08  Gerald Pfeifer  <pfeifer@dbai.tuwien.ac.at>
+
+	* update_web_docs: Only update the install documentation for the
+	CVS HEAD.
+
+2001-06-07  Joseph S. Myers  <jsm28@cam.ac.uk>
+
+	* update_web_docs, doc_exclude: Check out files that may be in the
+	Attic.  Check out texinfo.tex.  Don't generate anything from
+	c-tree.texi.  Generate PostScript output from manuals.
+
+2001-06-04  Gerald Pfeifer  <pfeifer@dbai.tuwien.ac.at>
+
+	* update_web_docs (WWWBASE_PREFORMATTED, PREPROCESS): New
+	variables.
+	Fix a comment and add another one.
+	Generate the installation documentation in HTML format from
+	gcc/doc/install.texi.
+
+2001-05-03  Joseph S. Myers  <jsm28@cam.ac.uk>
+
+	* update_web_docs: Don't generate HTML from gxxint.texi.  Don't
+	run texi2html on manuals that aren't present.
+
+2001-03-18  Phil Edwards  <pme@sources.redhat.com>
+
+	* update_web_docs_libstdcxx:  New script.
+	* crontab:  Call said script.
+
+2001-03-18  Joseph S. Myers  <jsm28@cam.ac.uk>
+
+	* update_version, update_branch_version: Check out with gcc
+	directory instead of using egcs link.
+
+2001-03-17  Joseph S. Myers  <jsm28@cam.ac.uk>
+
+	* update_web_docs: Don't strip leading -r from argument following
+	-r, or leading -d from argument following -d.  Bug pointed out by
+	Matt Kraai.
+
+	* update_web_docs: Handle -r and -d options to generate docs for a
+	release or branch in a subdirectory.  Determine names of G77 news
+	and bugs files and contributors file after updated docs have been
+	installed, not before.  Don't remove files from a subdirectory.
+	Don't generate manuals for gcov (included in the GCC manual) or
+	iostream (obsolete).  Do generate manuals for cppinternals, gcj
+	and porting.  Update regular expressions for detecting whether
+	files have really changed when regenerated.
+
+2001-03-15  Joseph S. Myers  <jsm28@cam.ac.uk>
+
+	* update_web_docs: Use /usr/local/bin/texi2html rather than
+	gccadmin's local copy.
+
+2001-03-10  Joseph S. Myers  <jsm28@cam.ac.uk>
+
+	* crontab, doc_exclude, update_branch_version, update_version,
+	update_web_docs: New files (as currently used by gccadmin).
+	* README: New file.

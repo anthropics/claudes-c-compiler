@@ -1,0 +1,223 @@
+# Copyright (C) 2015-2026 Free Software Foundation, Inc.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+# clang-format 7.0.1 is required
+#
+# To utilize the tool to lines just touched by a patch, use
+# clang-format-diff script that is usually also packaged with clang-format.
+#
+# Example of usage:
+# git diff -U0 --no-color | clang-format-diff -p1
+# (here the tool will generate a patch)
+# git diff -U0 --no-color | clang-format-diff -p1 -i
+# (modifications are applied)
+
+---
+Language: Cpp
+AccessModifierOffset: -2
+AlwaysBreakAfterReturnType: TopLevelDefinitions
+BinPackArguments: true
+BinPackParameters: true
+BraceWrapping:
+  AfterClass: true
+  AfterCaseLabel: true
+  AfterControlStatement: true
+  AfterEnum: true
+  AfterFunction: true
+  AfterNamespace: false
+  AfterObjCDeclaration: true
+  AfterStruct: true
+  AfterUnion: true
+  BeforeCatch: true
+  BeforeElse: true
+  BeforeWhile: true
+  IndentBraces: true
+  SplitEmptyFunction: false
+BreakBeforeBinaryOperators: All
+BreakBeforeBraces: Custom
+BreakBeforeTernaryOperators: true
+ColumnLimit: 80
+ConstructorInitializerIndentWidth: 2
+ContinuationIndentWidth: 2
+ForEachMacros: [
+'FOR_ALL_BB_FN',
+'FOR_ALL_EH_REGION',
+'FOR_ALL_EH_REGION_AT',
+'FOR_ALL_EH_REGION_FN',
+'FOR_ALL_INHERITED_FIELDS',
+'FOR_ALL_PREDICATES',
+'FOR_BB_BETWEEN',
+'FOR_BB_INSNS',
+'FOR_BB_INSNS_REVERSE',
+'FOR_BB_INSNS_REVERSE_SAFE',
+'FOR_BB_INSNS_SAFE',
+'FOR_BODY',
+'FOR_COND',
+'FOR_EACH_2XWIDER_MODE',
+'FOR_EACH_ACTUAL_CHILD',
+'FOR_EACH_AGGR_INIT_EXPR_ARG',
+'FOR_EACH_ALIAS',
+'FOR_EACH_ALLOCNO',
+'FOR_EACH_ALLOCNO_CONFLICT',
+'FOR_EACH_ALLOCNO_IN_ALLOCNO_SET',
+'FOR_EACH_ALLOCNO_OBJECT',
+'FOR_EACH_ARTIFICIAL_DEF',
+'FOR_EACH_ARTIFICIAL_USE',
+'FOR_EACH_BB',
+'FOR_EACH_BB_FN',
+'FOR_EACH_BB_IN_BITMAP',
+'FOR_EACH_BB_IN_BITMAP_REV',
+'FOR_EACH_BB_IN_REGION',
+'FOR_EACH_BB_IN_SBITMAP',
+'FOR_EACH_BB_REVERSE',
+'FOR_EACH_BB_REVERSE_FN',
+'FOR_EACH_BB_REVERSE_IN_REGION',
+'FOR_EACH_BIT_IN_MINMAX_SET',
+'FOR_EACH_BSI_IN_REVERSE',
+'FOR_EACH_CALL_EXPR_ARG',
+'FOR_EACH_CHILD',
+'FOR_EACH_CLONE',
+'FOR_EACH_CODE_MAPPING',
+'FOR_EACH_COND_FN_PAIR',
+'FOR_EACH_CONFLICT',
+'FOR_EACH_CONST_CALL_EXPR_ARG',
+'FOR_EACH_CONSTRUCTOR_ELT',
+'FOR_EACH_CONSTRUCTOR_VALUE',
+'FOR_EACH_COPY',
+'FOR_EACH_DEF',
+'FOR_EACH_DEFINED_FUNCTION',
+'FOR_EACH_DEFINED_SYMBOL',
+'FOR_EACH_DEFINED_VARIABLE',
+'FOR_EACH_DEP',
+'FOR_EACH_DEP_LINK',
+'FOR_EACH_EDGE',
+'FOR_EACH_ELEMENT',
+'FOR_EACH_ELIM_GRAPH_PRED',
+'FOR_EACH_ELIM_GRAPH_SUCC',
+'FOR_EACH_EXPR',
+'FOR_EACH_EXPR_1',
+'FOR_EACH_EXPR_ID_IN_SET',
+'FOR_EACH_FLOAT_OPERATOR',
+'FOR_EACH_FP_TYPE',
+'FOR_EACH_FUNCTION',
+'FOREACH_FUNCTION_ARGS',
+'FOREACH_FUNCTION_ARGS_PTR',
+'FOR_EACH_FUNCTION_WITH_GIMPLE_BODY',
+'FOR_EACH_GORI_EXPORT_NAME',
+'FOR_EACH_GORI_IMPORT_NAME',
+'FOR_EACH_HASH_TABLE_ELEMENT',
+'FOR_EACH_HTAB_ELEMENT',
+'FOR_EACH_IMM_USE_FAST',
+'FOR_EACH_IMM_USE_ON_STMT',
+'FOR_EACH_IMM_USE_SAFE',
+'FOR_EACH_IMM_USE_STMT',
+'FOR_EACH_INSN',
+'FOR_EACH_INSN_1',
+'FOR_EACH_INSN_DEF',
+'FOR_EACH_INSN_EQ_USE',
+'FOR_EACH_INSN_INFO_DEF',
+'FOR_EACH_INSN_INFO_EQ_USE',
+'FOR_EACH_INSN_INFO_MW',
+'FOR_EACH_INSN_INFO_USE',
+'FOR_EACH_INSN_USE',
+'FOR_EACH_INT_OPERATOR',
+'FOR_EACH_INT_TYPE',
+'FOR_EACH_INV',
+'FOR_EACH_LOAD_BROADCAST',
+'FOR_EACH_LOAD_BROADCAST_IMM',
+'FOR_EACH_LOCAL_DECL',
+'FOR_EACH_LOG_LINK',
+'FOR_EACH_LOOP',
+'FOR_EACH_LOOP_BREAK',
+'FOR_EACH_LOOP_FN',
+'FOR_EACH_MODE',
+'FOR_EACH_MODE_FROM',
+'FOR_EACH_MODE_IN_CLASS',
+'FOR_EACH_MODE_UNTIL',
+'FOR_EACH_NEST_INFO',
+'FOR_EACH_OBJECT',
+'FOR_EACH_OBJECT_CONFLICT',
+'FOR_EACH_OP',
+'FOR_EACH_PARTITION_PAIR',
+'FOR_EACH_PHI',
+'FOR_EACH_PHI_ARG',
+'FOR_EACH_PHI_OR_STMT_DEF',
+'FOR_EACH_PHI_OR_STMT_USE',
+'FOR_EACH_POP',
+'FOR_EACH_PREF',
+'FOR_EACH_REF',
+'FOR_EACH_REFERENCED_VAR',
+'FOR_EACH_REFERENCED_VAR_IN_BITMAP',
+'FOR_EACH_REFERENCED_VAR_SAFE',
+'FOR_EACH_REF_REV',
+'FOR_EACH_REGNO',
+'FOR_EACH_SCALAR',
+'FOR_EACH_SIGNED_TYPE',
+'FOR_EACH_SSA',
+'FOR_EACH_SSA_DEF_OPERAND',
+'FOR_EACH_SSA_MAYDEF_OPERAND',
+'FOR_EACH_SSA_MUST_AND_MAY_DEF_OPERAND',
+'FOR_EACH_SSA_MUSTDEF_OPERAND',
+'FOR_EACH_SSA_NAME',
+'FOR_EACH_SSA_TREE_OPERAND',
+'FOR_EACH_SSA_USE_OPERAND',
+'FOR_EACH_SSA_VDEF_OPERAND',
+'FOR_EACH_STATIC_INITIALIZER',
+'FOR_EACH_STATIC_VARIABLE',
+'FOR_EACH_STMT_IN_REVERSE',
+'FOR_EACH_SUBINSN',
+'FOR_EACH_SUBRTX',
+'FOR_EACH_SUBRTX_PTR',
+'FOR_EACH_SUBRTX_VAR',
+'FOR_EACH_SUCC',
+'FOR_EACH_SUCC_1',
+'FOR_EACH_SYMBOL',
+'FOR_EACH_TYPE',
+'FOR_EACH_UNSIGNED_TYPE',
+'FOR_EACH_VALUE_ID_IN_SET',
+'FOR_EACH_VARIABLE',
+'FOR_EACH_VEC_ELT',
+'FOR_EACH_VEC_ELT_FROM',
+'FOR_EACH_VEC_ELT_REVERSE',
+'FOR_EACH_VEC_SAFE_ELT',
+'FOR_EACH_VEC_SAFE_ELT_REVERSE',
+'FOR_EACH_WIDER_MODE',
+'FOR_EXPR',
+'FOR_INIT_STMT',
+'FOR_SCOPE',
+'EXECUTE_IF_SET_IN_BITMAP',
+'EXECUTE_IF_AND_IN_BITMAP',
+'EXECUTE_IF_AND_COMPL_IN_BITMAP',
+'EXECUTE_IF_SET_IN_REG_SET',
+'EXECUTE_IF_SET_IN_HARD_REG_SET',
+'EXECUTE_IF_AND_COMPL_IN_REG_SET',
+'EXECUTE_IF_AND_IN_REG_SET',
+'EXECUTE_IF_SET_IN_SPARSESET'
+]
+IndentCaseLabels: false
+NamespaceIndentation: None
+PenaltyBreakBeforeFirstCallParameter: 100
+PointerAlignment: Right
+SortIncludes: false
+SpaceAfterCStyleCast: true
+SpaceBeforeParens: Always
+SpacesBeforeTrailingComments: 1
+UseTab: Always
+AlignEscapedNewlines: Right
+AlignTrailingComments: true
+AllowShortFunctionsOnASingleLine: All
+AlwaysBreakTemplateDeclarations: MultiLine
+KeepEmptyLinesAtTheStartOfBlocks: false
+Standard: Auto

@@ -1,0 +1,1256 @@
+/* config.h.in.  Generated from configure.ac by autoheader.  */
+
+/* Define to 0 if the target shouldn't use #pragma weak */
+#undef GTHREAD_USE_WEAK
+
+/* Define to 1 if you have the `access' function. */
+#undef HAVE_ACCESS
+
+/* Define to 1 if you have the `acos' function. */
+#undef HAVE_ACOS
+
+/* Define to 1 if you have the `acosf' function. */
+#undef HAVE_ACOSF
+
+/* Define to 1 if you have the `acosf128' function. */
+#undef HAVE_ACOSF128
+
+/* Define to 1 if you have the `acosh' function. */
+#undef HAVE_ACOSH
+
+/* Define to 1 if you have the `acoshf' function. */
+#undef HAVE_ACOSHF
+
+/* Define to 1 if you have the `acoshf128' function. */
+#undef HAVE_ACOSHF128
+
+/* Define to 1 if you have the `acoshl' function. */
+#undef HAVE_ACOSHL
+
+/* Define to 1 if you have the `acosl' function. */
+#undef HAVE_ACOSL
+
+/* Define to 1 if you have the `alarm' function. */
+#undef HAVE_ALARM
+
+/* Define to 1 if you have the `asin' function. */
+#undef HAVE_ASIN
+
+/* Define to 1 if you have the `asinf' function. */
+#undef HAVE_ASINF
+
+/* Define to 1 if you have the `asinf128' function. */
+#undef HAVE_ASINF128
+
+/* Define to 1 if you have the `asinh' function. */
+#undef HAVE_ASINH
+
+/* Define to 1 if you have the `asinhf' function. */
+#undef HAVE_ASINHF
+
+/* Define to 1 if you have the `asinhf128' function. */
+#undef HAVE_ASINHF128
+
+/* Define to 1 if you have the `asinhl' function. */
+#undef HAVE_ASINHL
+
+/* Define to 1 if you have the `asinl' function. */
+#undef HAVE_ASINL
+
+/* Define to 1 if you have the `atan' function. */
+#undef HAVE_ATAN
+
+/* Define to 1 if you have the `atan2' function. */
+#undef HAVE_ATAN2
+
+/* Define to 1 if you have the `atan2f' function. */
+#undef HAVE_ATAN2F
+
+/* Define to 1 if you have the `atan2f128' function. */
+#undef HAVE_ATAN2F128
+
+/* Define to 1 if you have the `atan2l' function. */
+#undef HAVE_ATAN2L
+
+/* Define to 1 if you have the `atanf' function. */
+#undef HAVE_ATANF
+
+/* Define to 1 if you have the `atanf128' function. */
+#undef HAVE_ATANF128
+
+/* Define to 1 if you have the `atanh' function. */
+#undef HAVE_ATANH
+
+/* Define to 1 if you have the `atanhf' function. */
+#undef HAVE_ATANHF
+
+/* Define to 1 if you have the `atanhf128' function. */
+#undef HAVE_ATANHF128
+
+/* Define to 1 if you have the `atanhl' function. */
+#undef HAVE_ATANHL
+
+/* Define to 1 if you have the `atanl' function. */
+#undef HAVE_ATANL
+
+/* Define to 1 if the target supports __atomic_fetch_add */
+#undef HAVE_ATOMIC_FETCH_ADD
+
+/* Define to 1 if the target supports __attribute__((alias(...))). */
+#undef HAVE_ATTRIBUTE_ALIAS
+
+/* Define to 1 if the target supports __attribute__((visibility(...))). */
+#undef HAVE_ATTRIBUTE_VISIBILITY
+
+/* Define if AVX instructions can be compiled. */
+#undef HAVE_AVX
+
+/* Define if -mprefer-avx128 is supported. */
+#undef HAVE_AVX128
+
+/* Define if AVX2 instructions can be compiled. */
+#undef HAVE_AVX2
+
+/* Define if AVX512f instructions can be compiled. */
+#undef HAVE_AVX512F
+
+/* Define to 1 if you have the `cabs' function. */
+#undef HAVE_CABS
+
+/* Define to 1 if you have the `cabsf' function. */
+#undef HAVE_CABSF
+
+/* Define to 1 if you have the `cabsf128' function. */
+#undef HAVE_CABSF128
+
+/* Define to 1 if you have the `cabsl' function. */
+#undef HAVE_CABSL
+
+/* Define to 1 if you have the `cacos' function. */
+#undef HAVE_CACOS
+
+/* Define to 1 if you have the `cacosf' function. */
+#undef HAVE_CACOSF
+
+/* Define to 1 if you have the `cacosf128' function. */
+#undef HAVE_CACOSF128
+
+/* Define to 1 if you have the `cacosh' function. */
+#undef HAVE_CACOSH
+
+/* Define to 1 if you have the `cacoshf' function. */
+#undef HAVE_CACOSHF
+
+/* Define to 1 if you have the `cacoshf128' function. */
+#undef HAVE_CACOSHF128
+
+/* Define to 1 if you have the `cacoshl' function. */
+#undef HAVE_CACOSHL
+
+/* Define to 1 if you have the `cacosl' function. */
+#undef HAVE_CACOSL
+
+/* Define to 1 if you have the `carg' function. */
+#undef HAVE_CARG
+
+/* Define to 1 if you have the `cargf' function. */
+#undef HAVE_CARGF
+
+/* Define to 1 if you have the `cargf128' function. */
+#undef HAVE_CARGF128
+
+/* Define to 1 if you have the `cargl' function. */
+#undef HAVE_CARGL
+
+/* Define to 1 if you have the `casin' function. */
+#undef HAVE_CASIN
+
+/* Define to 1 if you have the `casinf' function. */
+#undef HAVE_CASINF
+
+/* Define to 1 if you have the `casinf128' function. */
+#undef HAVE_CASINF128
+
+/* Define to 1 if you have the `casinh' function. */
+#undef HAVE_CASINH
+
+/* Define to 1 if you have the `casinhf' function. */
+#undef HAVE_CASINHF
+
+/* Define to 1 if you have the `casinhf128' function. */
+#undef HAVE_CASINHF128
+
+/* Define to 1 if you have the `casinhl' function. */
+#undef HAVE_CASINHL
+
+/* Define to 1 if you have the `casinl' function. */
+#undef HAVE_CASINL
+
+/* Define to 1 if you have the `catan' function. */
+#undef HAVE_CATAN
+
+/* Define to 1 if you have the `catanf' function. */
+#undef HAVE_CATANF
+
+/* Define to 1 if you have the `catanf128' function. */
+#undef HAVE_CATANF128
+
+/* Define to 1 if you have the `catanh' function. */
+#undef HAVE_CATANH
+
+/* Define to 1 if you have the `catanhf' function. */
+#undef HAVE_CATANHF
+
+/* Define to 1 if you have the `catanhf128' function. */
+#undef HAVE_CATANHF128
+
+/* Define to 1 if you have the `catanhl' function. */
+#undef HAVE_CATANHL
+
+/* Define to 1 if you have the `catanl' function. */
+#undef HAVE_CATANL
+
+/* Define to 1 if you have the `ccos' function. */
+#undef HAVE_CCOS
+
+/* Define to 1 if you have the `ccosf' function. */
+#undef HAVE_CCOSF
+
+/* Define to 1 if you have the `ccosf128' function. */
+#undef HAVE_CCOSF128
+
+/* Define to 1 if you have the `ccosh' function. */
+#undef HAVE_CCOSH
+
+/* Define to 1 if you have the `ccoshf' function. */
+#undef HAVE_CCOSHF
+
+/* Define to 1 if you have the `ccoshf128' function. */
+#undef HAVE_CCOSHF128
+
+/* Define to 1 if you have the `ccoshl' function. */
+#undef HAVE_CCOSHL
+
+/* Define to 1 if you have the `ccosl' function. */
+#undef HAVE_CCOSL
+
+/* Define to 1 if you have the `ceil' function. */
+#undef HAVE_CEIL
+
+/* Define to 1 if you have the `ceilf' function. */
+#undef HAVE_CEILF
+
+/* Define to 1 if you have the `ceilf128' function. */
+#undef HAVE_CEILF128
+
+/* Define to 1 if you have the `ceill' function. */
+#undef HAVE_CEILL
+
+/* Define to 1 if you have the `cexp' function. */
+#undef HAVE_CEXP
+
+/* Define to 1 if you have the `cexpf' function. */
+#undef HAVE_CEXPF
+
+/* Define to 1 if you have the `cexpf128' function. */
+#undef HAVE_CEXPF128
+
+/* Define to 1 if you have the `cexpl' function. */
+#undef HAVE_CEXPL
+
+/* Define to 1 if you have the `chdir' function. */
+#undef HAVE_CHDIR
+
+/* Define to 1 if you have the `chsize' function. */
+#undef HAVE_CHSIZE
+
+/* Define to 1 if you have the `clock_gettime' function. */
+#undef HAVE_CLOCK_GETTIME
+
+/* Define to 1 if you have the `clock_gettime' function in librt. */
+#undef HAVE_CLOCK_GETTIME_LIBRT
+
+/* libm includes clog */
+#undef HAVE_CLOG
+
+/* Define to 1 if you have the `clog10' function. */
+#undef HAVE_CLOG10
+
+/* Define to 1 if you have the `clog10f' function. */
+#undef HAVE_CLOG10F
+
+/* Define to 1 if you have the `clog10f128' function. */
+#undef HAVE_CLOG10F128
+
+/* Define to 1 if you have the `clog10l' function. */
+#undef HAVE_CLOG10L
+
+/* Define to 1 if you have the `clogf' function. */
+#undef HAVE_CLOGF
+
+/* Define to 1 if you have the `clogf128' function. */
+#undef HAVE_CLOGF128
+
+/* Define to 1 if you have the `clogl' function. */
+#undef HAVE_CLOGL
+
+/* Define to 1 if you have the <complex.h> header file. */
+#undef HAVE_COMPLEX_H
+
+/* Define to 1 if you have the `copysign' function. */
+#undef HAVE_COPYSIGN
+
+/* Define to 1 if you have the `copysignf' function. */
+#undef HAVE_COPYSIGNF
+
+/* Define to 1 if you have the `copysignf128' function. */
+#undef HAVE_COPYSIGNF128
+
+/* Define to 1 if you have the `copysignl' function. */
+#undef HAVE_COPYSIGNL
+
+/* Define to 1 if you have the `cos' function. */
+#undef HAVE_COS
+
+/* Define to 1 if you have the `cosf' function. */
+#undef HAVE_COSF
+
+/* Define to 1 if you have the `cosf128' function. */
+#undef HAVE_COSF128
+
+/* Define to 1 if you have the `cosh' function. */
+#undef HAVE_COSH
+
+/* Define to 1 if you have the `coshf' function. */
+#undef HAVE_COSHF
+
+/* Define to 1 if you have the `coshf128' function. */
+#undef HAVE_COSHF128
+
+/* Define to 1 if you have the `coshl' function. */
+#undef HAVE_COSHL
+
+/* Define to 1 if you have the `cosl' function. */
+#undef HAVE_COSL
+
+/* Define to 1 if you have the `cpow' function. */
+#undef HAVE_CPOW
+
+/* Define to 1 if you have the `cpowf' function. */
+#undef HAVE_CPOWF
+
+/* Define to 1 if you have the `cpowf128' function. */
+#undef HAVE_CPOWF128
+
+/* Define to 1 if you have the `cpowl' function. */
+#undef HAVE_CPOWL
+
+/* Define if CRLF is line terminator. */
+#undef HAVE_CRLF
+
+/* Define to 1 if you have the `csin' function. */
+#undef HAVE_CSIN
+
+/* Define to 1 if you have the `csinf' function. */
+#undef HAVE_CSINF
+
+/* Define to 1 if you have the `csinf128' function. */
+#undef HAVE_CSINF128
+
+/* Define to 1 if you have the `csinh' function. */
+#undef HAVE_CSINH
+
+/* Define to 1 if you have the `csinhf' function. */
+#undef HAVE_CSINHF
+
+/* Define to 1 if you have the `csinhf128' function. */
+#undef HAVE_CSINHF128
+
+/* Define to 1 if you have the `csinhl' function. */
+#undef HAVE_CSINHL
+
+/* Define to 1 if you have the `csinl' function. */
+#undef HAVE_CSINL
+
+/* Define to 1 if you have the `csqrt' function. */
+#undef HAVE_CSQRT
+
+/* Define to 1 if you have the `csqrtf' function. */
+#undef HAVE_CSQRTF
+
+/* Define to 1 if you have the `csqrtf128' function. */
+#undef HAVE_CSQRTF128
+
+/* Define to 1 if you have the `csqrtl' function. */
+#undef HAVE_CSQRTL
+
+/* Define to 1 if you have the `ctan' function. */
+#undef HAVE_CTAN
+
+/* Define to 1 if you have the `ctanf' function. */
+#undef HAVE_CTANF
+
+/* Define to 1 if you have the `ctanf128' function. */
+#undef HAVE_CTANF128
+
+/* Define to 1 if you have the `ctanh' function. */
+#undef HAVE_CTANH
+
+/* Define to 1 if you have the `ctanhf' function. */
+#undef HAVE_CTANHF
+
+/* Define to 1 if you have the `ctanhf128' function. */
+#undef HAVE_CTANHF128
+
+/* Define to 1 if you have the `ctanhl' function. */
+#undef HAVE_CTANHL
+
+/* Define to 1 if you have the `ctanl' function. */
+#undef HAVE_CTANL
+
+/* Define to 1 if you have the <dlfcn.h> header file. */
+#undef HAVE_DLFCN_H
+
+/* Define to 1 if you have the `dup' function. */
+#undef HAVE_DUP
+
+/* Define to 1 if you have the `erf' function. */
+#undef HAVE_ERF
+
+/* Define to 1 if you have the `erfc' function. */
+#undef HAVE_ERFC
+
+/* Define to 1 if you have the `erfcf' function. */
+#undef HAVE_ERFCF
+
+/* Define to 1 if you have the `erfcf128' function. */
+#undef HAVE_ERFCF128
+
+/* Define to 1 if you have the `erfcl' function. */
+#undef HAVE_ERFCL
+
+/* Define to 1 if you have the `erff' function. */
+#undef HAVE_ERFF
+
+/* Define to 1 if you have the `erff128' function. */
+#undef HAVE_ERFF128
+
+/* Define to 1 if you have the `exp' function. */
+#undef HAVE_EXP
+
+/* Define to 1 if you have the `expf' function. */
+#undef HAVE_EXPF
+
+/* Define to 1 if you have the `expf128' function. */
+#undef HAVE_EXPF128
+
+/* Define to 1 if you have the `expl' function. */
+#undef HAVE_EXPL
+
+/* Define to 1 if you have the `fabs' function. */
+#undef HAVE_FABS
+
+/* Define to 1 if you have the `fabsf' function. */
+#undef HAVE_FABSF
+
+/* Define to 1 if you have the `fabsf128' function. */
+#undef HAVE_FABSF128
+
+/* Define to 1 if you have the `fabsl' function. */
+#undef HAVE_FABSL
+
+/* Define to 1 if you have the `fcntl' function. */
+#undef HAVE_FCNTL
+
+/* libm includes feenableexcept */
+#undef HAVE_FEENABLEEXCEPT
+
+/* Define to 1 if you have the <fenv.h> header file. */
+#undef HAVE_FENV_H
+
+/* Define if target has usable _Float128 and __float128 types. */
+#undef HAVE_FLOAT128
+
+/* Define to 1 if you have the <floatingpoint.h> header file. */
+#undef HAVE_FLOATINGPOINT_H
+
+/* Define to 1 if you have the `floor' function. */
+#undef HAVE_FLOOR
+
+/* Define to 1 if you have the `floorf' function. */
+#undef HAVE_FLOORF
+
+/* Define to 1 if you have the `floorf128' function. */
+#undef HAVE_FLOORF128
+
+/* Define to 1 if you have the `floorl' function. */
+#undef HAVE_FLOORL
+
+/* Define to 1 if you have the `fma' function. */
+#undef HAVE_FMA
+
+/* Define if FMA3 instructions can be compiled. */
+#undef HAVE_FMA3
+
+/* Define if FMA4 instructions can be compiled. */
+#undef HAVE_FMA4
+
+/* Define to 1 if you have the `fmaf' function. */
+#undef HAVE_FMAF
+
+/* Define to 1 if you have the `fmaf128' function. */
+#undef HAVE_FMAF128
+
+/* Define to 1 if you have the `fmal' function. */
+#undef HAVE_FMAL
+
+/* Define to 1 if you have the `fmod' function. */
+#undef HAVE_FMOD
+
+/* Define to 1 if you have the `fmodf' function. */
+#undef HAVE_FMODF
+
+/* Define to 1 if you have the `fmodf128' function. */
+#undef HAVE_FMODF128
+
+/* Define to 1 if you have the `fmodl' function. */
+#undef HAVE_FMODL
+
+/* Define to 1 if you have the `fork' function. */
+#undef HAVE_FORK
+
+/* fpresetsticky is present */
+#undef HAVE_FPRESETSTICKY
+
+/* Define if you have fpsetmask. */
+#undef HAVE_FPSETMASK
+
+/* fpsetsticky is present */
+#undef HAVE_FPSETSTICKY
+
+/* Define to 1 if you have the <fptrap.h> header file. */
+#undef HAVE_FPTRAP_H
+
+/* Define to 1 if you have the <fpxcp.h> header file. */
+#undef HAVE_FPXCP_H
+
+/* fp_enable is present */
+#undef HAVE_FP_ENABLE
+
+/* Define to 1 if the system has the type `fp_except'. */
+#undef HAVE_FP_EXCEPT
+
+/* Define to 1 if the system has the type `fp_except_t'. */
+#undef HAVE_FP_EXCEPT_T
+
+/* Define to 1 if the system has the type `fp_rnd'. */
+#undef HAVE_FP_RND
+
+/* Define to 1 if the system has the type `fp_rnd_t'. */
+#undef HAVE_FP_RND_T
+
+/* fp_trap is present */
+#undef HAVE_FP_TRAP
+
+/* Define to 1 if you have the `freelocale' function. */
+#undef HAVE_FREELOCALE
+
+/* Define to 1 if you have the `frexp' function. */
+#undef HAVE_FREXP
+
+/* Define to 1 if you have the `frexpf' function. */
+#undef HAVE_FREXPF
+
+/* Define to 1 if you have the `frexpf128' function. */
+#undef HAVE_FREXPF128
+
+/* Define to 1 if you have the `frexpl' function. */
+#undef HAVE_FREXPL
+
+/* Define to 1 if you have the `fstat' function. */
+#undef HAVE_FSTAT
+
+/* Define to 1 if you have the `ftruncate' function. */
+#undef HAVE_FTRUNCATE
+
+/* Define to 1 if you have the `getcwd' function. */
+#undef HAVE_GETCWD
+
+/* Define to 1 if you have the `getegid' function. */
+#undef HAVE_GETEGID
+
+/* Define to 1 if you have the `getentropy' function. */
+#undef HAVE_GETENTROPY
+
+/* Define to 1 if you have the `geteuid' function. */
+#undef HAVE_GETEUID
+
+/* Define to 1 if you have the `getgid' function. */
+#undef HAVE_GETGID
+
+/* Define to 1 if you have the `gethostname' function. */
+#undef HAVE_GETHOSTNAME
+
+/* Define to 1 if you have the `getlogin' function. */
+#undef HAVE_GETLOGIN
+
+/* Define to 1 if you have the `getpid' function. */
+#undef HAVE_GETPID
+
+/* Define to 1 if you have the `getpwuid' function. */
+#undef HAVE_GETPWUID
+
+/* Define to 1 if you have the `getpwuid_r' function. */
+#undef HAVE_GETPWUID_R
+
+/* Define to 1 if you have the `getrusage' function. */
+#undef HAVE_GETRUSAGE
+
+/* Define to 1 if you have the `gettimeofday' function. */
+#undef HAVE_GETTIMEOFDAY
+
+/* Define to 1 if you have the `getuid' function. */
+#undef HAVE_GETUID
+
+/* Define to 1 if you have the `gmtime_r' function. */
+#undef HAVE_GMTIME_R
+
+/* Define to 1 if you have the `hypot' function. */
+#undef HAVE_HYPOT
+
+/* Define to 1 if you have the `hypotf' function. */
+#undef HAVE_HYPOTF
+
+/* Define to 1 if you have the `hypotf128' function. */
+#undef HAVE_HYPOTF128
+
+/* Define to 1 if you have the `hypotl' function. */
+#undef HAVE_HYPOTL
+
+/* Define to 1 if you have the <ieeefp.h> header file. */
+#undef HAVE_IEEEFP_H
+
+/* Define to 1 if `__builtin_copysign' is expanded inline. */
+#undef HAVE_INLINE_BUILTIN_COPYSIGN
+
+/* Define to 1 if `__builtin_copysignl' is expanded inline. */
+#undef HAVE_INLINE_BUILTIN_COPYSIGNL
+
+/* Define to 1 if `__builtin_fabs' is expanded inline. */
+#undef HAVE_INLINE_BUILTIN_FABS
+
+/* Define to 1 if `__builtin_fabsl' is expanded inline. */
+#undef HAVE_INLINE_BUILTIN_FABSL
+
+/* Define to 1 if the system has the type `intptr_t'. */
+#undef HAVE_INTPTR_T
+
+/* Define to 1 if you have the <inttypes.h> header file. */
+#undef HAVE_INTTYPES_H
+
+/* Define to 1 if you have the `j0' function. */
+#undef HAVE_J0
+
+/* Define to 1 if you have the `j0f' function. */
+#undef HAVE_J0F
+
+/* Define to 1 if you have the `j0f128' function. */
+#undef HAVE_J0F128
+
+/* Define to 1 if you have the `j1' function. */
+#undef HAVE_J1
+
+/* Define to 1 if you have the `j1f' function. */
+#undef HAVE_J1F
+
+/* Define to 1 if you have the `j1f128' function. */
+#undef HAVE_J1F128
+
+/* Define to 1 if you have the `jn' function. */
+#undef HAVE_JN
+
+/* Define to 1 if you have the `jnf' function. */
+#undef HAVE_JNF
+
+/* Define to 1 if you have the `jnf128' function. */
+#undef HAVE_JNF128
+
+/* Define to 1 if you have the `jnl' function. */
+#undef HAVE_JNL
+
+/* Define to 1 if you have the `kill' function. */
+#undef HAVE_KILL
+
+/* Define to 1 if you have the `ldexp' function. */
+#undef HAVE_LDEXP
+
+/* Define to 1 if you have the `ldexpf' function. */
+#undef HAVE_LDEXPF
+
+/* Define to 1 if you have the `ldexpf128' function. */
+#undef HAVE_LDEXPF128
+
+/* Define to 1 if you have the `ldexpl' function. */
+#undef HAVE_LDEXPL
+
+/* Define to 1 if you have the `lgamma' function. */
+#undef HAVE_LGAMMA
+
+/* Define to 1 if you have the `lgammaf' function. */
+#undef HAVE_LGAMMAF
+
+/* Define to 1 if you have the `lgammaf128' function. */
+#undef HAVE_LGAMMAF128
+
+/* Define to 1 if you have the `m' library (-lm). */
+#undef HAVE_LIBM
+
+/* Define to 1 if you have the `link' function. */
+#undef HAVE_LINK
+
+/* Define to 1 if you have the `llround' function. */
+#undef HAVE_LLROUND
+
+/* Define to 1 if you have the `llroundf' function. */
+#undef HAVE_LLROUNDF
+
+/* Define to 1 if you have the `llroundf128' function. */
+#undef HAVE_LLROUNDF128
+
+/* Define to 1 if you have the `llroundl' function. */
+#undef HAVE_LLROUNDL
+
+/* Define to 1 if you have the `localtime_r' function. */
+#undef HAVE_LOCALTIME_R
+
+/* Define to 1 if you have the `log' function. */
+#undef HAVE_LOG
+
+/* Define to 1 if you have the `log10' function. */
+#undef HAVE_LOG10
+
+/* Define to 1 if you have the `log10f' function. */
+#undef HAVE_LOG10F
+
+/* Define to 1 if you have the `log10f128' function. */
+#undef HAVE_LOG10F128
+
+/* Define to 1 if you have the `log10l' function. */
+#undef HAVE_LOG10L
+
+/* Define to 1 if you have the `logf' function. */
+#undef HAVE_LOGF
+
+/* Define to 1 if you have the `logf128' function. */
+#undef HAVE_LOGF128
+
+/* Define to 1 if you have the `logl' function. */
+#undef HAVE_LOGL
+
+/* Define to 1 if you have the `lround' function. */
+#undef HAVE_LROUND
+
+/* Define to 1 if you have the `lroundf' function. */
+#undef HAVE_LROUNDF
+
+/* Define to 1 if you have the `lroundf128' function. */
+#undef HAVE_LROUNDF128
+
+/* Define to 1 if you have the `lroundl' function. */
+#undef HAVE_LROUNDL
+
+/* Define to 1 if you have the `lstat' function. */
+#undef HAVE_LSTAT
+
+/* Define to 1 if you have the <math.h> header file. */
+#undef HAVE_MATH_H
+
+/* Define to 1 if you have the <memory.h> header file. */
+#undef HAVE_MEMORY_H
+
+/* Define if you have __mingw_snprintf. */
+#undef HAVE_MINGW_SNPRINTF
+
+/* Define to 1 if you have the `mkostemp' function. */
+#undef HAVE_MKOSTEMP
+
+/* Define to 1 if you have the `mkstemp' function. */
+#undef HAVE_MKSTEMP
+
+/* Define to 1 if you have the `newlocale' function. */
+#undef HAVE_NEWLOCALE
+
+/* Define to 1 if you have the `nextafter' function. */
+#undef HAVE_NEXTAFTER
+
+/* Define to 1 if you have the `nextafterf' function. */
+#undef HAVE_NEXTAFTERF
+
+/* Define to 1 if you have the `nextafterf128' function. */
+#undef HAVE_NEXTAFTERF128
+
+/* Define to 1 if you have the `nextafterl' function. */
+#undef HAVE_NEXTAFTERL
+
+/* Define to 1 if we have POSIX getpwuid_r which takes 5 arguments. */
+#undef HAVE_POSIX_GETPWUID_R
+
+/* Define to 1 if you have the `posix_spawn' function. */
+#undef HAVE_POSIX_SPAWN
+
+/* Define to 1 if you have the `pow' function. */
+#undef HAVE_POW
+
+/* Define to 1 if you have the `powf' function. */
+#undef HAVE_POWF
+
+/* Define to 1 if you have the `powf128' function. */
+#undef HAVE_POWF128
+
+/* Define to 1 if the system has the type `ptrdiff_t'. */
+#undef HAVE_PTRDIFF_T
+
+/* Define to 1 if you have the <pwd.h> header file. */
+#undef HAVE_PWD_H
+
+/* Define to 1 if you have REAL(KIND=17) */
+#undef HAVE_REAL_17
+
+/* Define to 1 if you have the `round' function. */
+#undef HAVE_ROUND
+
+/* Define to 1 if you have the `roundf' function. */
+#undef HAVE_ROUNDF
+
+/* Define to 1 if you have the `roundf128' function. */
+#undef HAVE_ROUNDF128
+
+/* Define to 1 if you have the `roundl' function. */
+#undef HAVE_ROUNDL
+
+/* Define to 1 if you have the `scalbn' function. */
+#undef HAVE_SCALBN
+
+/* Define to 1 if you have the `scalbnf' function. */
+#undef HAVE_SCALBNF
+
+/* Define to 1 if you have the `scalbnf128' function. */
+#undef HAVE_SCALBNF128
+
+/* Define to 1 if you have the `scalbnl' function. */
+#undef HAVE_SCALBNL
+
+/* Define to 1 if you have the `secure_getenv' function. */
+#undef HAVE_SECURE_GETENV
+
+/* Define to 1 if you have the `setmode' function. */
+#undef HAVE_SETMODE
+
+/* Define to 1 if you have the `sigaction' function. */
+#undef HAVE_SIGACTION
+
+/* Define to 1 if you have the `sin' function. */
+#undef HAVE_SIN
+
+/* Define to 1 if you have the `sinf' function. */
+#undef HAVE_SINF
+
+/* Define to 1 if you have the `sinf128' function. */
+#undef HAVE_SINF128
+
+/* Define to 1 if you have the `sinh' function. */
+#undef HAVE_SINH
+
+/* Define to 1 if you have the `sinhf' function. */
+#undef HAVE_SINHF
+
+/* Define to 1 if you have the `sinhf128' function. */
+#undef HAVE_SINHF128
+
+/* Define to 1 if you have the `sinhl' function. */
+#undef HAVE_SINHL
+
+/* Define to 1 if you have the `sinl' function. */
+#undef HAVE_SINL
+
+/* Define to 1 if you have the `sleep' function. */
+#undef HAVE_SLEEP
+
+/* Define to 1 if you have the `snprintf' function. */
+#undef HAVE_SNPRINTF
+
+/* Define to 1 if you have the `sqrt' function. */
+#undef HAVE_SQRT
+
+/* Define to 1 if you have the `sqrtf' function. */
+#undef HAVE_SQRTF
+
+/* Define to 1 if you have the `sqrtf128' function. */
+#undef HAVE_SQRTF128
+
+/* Define to 1 if you have the `sqrtl' function. */
+#undef HAVE_SQRTL
+
+/* Define to 1 if you have the `stat' function. */
+#undef HAVE_STAT
+
+/* Define to 1 if you have the <stdint.h> header file. */
+#undef HAVE_STDINT_H
+
+/* Define to 1 if you have the <stdlib.h> header file. */
+#undef HAVE_STDLIB_H
+
+/* Define to 1 if you have the `strerror_l' function. */
+#undef HAVE_STRERROR_L
+
+/* Define if strerror_r is available in <string.h>. */
+#undef HAVE_STRERROR_R
+
+/* Define if strerror_r takes two arguments and is available in <string.h>. */
+#undef HAVE_STRERROR_R_2ARGS
+
+/* Define to 1 if you have the `strfromf128' function. */
+#undef HAVE_STRFROMF128
+
+/* Define to 1 if you have the <strings.h> header file. */
+#undef HAVE_STRINGS_H
+
+/* Define to 1 if you have the <string.h> header file. */
+#undef HAVE_STRING_H
+
+/* Define to 1 if you have the `strndup' function. */
+#undef HAVE_STRNDUP
+
+/* Define to 1 if you have the `strnlen' function. */
+#undef HAVE_STRNLEN
+
+/* Define to 1 if you have the `strtof' function. */
+#undef HAVE_STRTOF
+
+/* Define to 1 if you have the `strtof128' function. */
+#undef HAVE_STRTOF128
+
+/* Define to 1 if you have the `strtold' function. */
+#undef HAVE_STRTOLD
+
+/* Define to 1 if `st_blksize' is a member of `struct stat'. */
+#undef HAVE_STRUCT_STAT_ST_BLKSIZE
+
+/* Define to 1 if `st_blocks' is a member of `struct stat'. */
+#undef HAVE_STRUCT_STAT_ST_BLOCKS
+
+/* Define to 1 if `st_rdev' is a member of `struct stat'. */
+#undef HAVE_STRUCT_STAT_ST_RDEV
+
+/* Define to 1 if you have the `symlink' function. */
+#undef HAVE_SYMLINK
+
+/* Define to 1 if you have the <sys/random.h> header file. */
+#undef HAVE_SYS_RANDOM_H
+
+/* Define to 1 if you have the <sys/resource.h> header file. */
+#undef HAVE_SYS_RESOURCE_H
+
+/* Define to 1 if you have the <sys/stat.h> header file. */
+#undef HAVE_SYS_STAT_H
+
+/* Define to 1 if you have the <sys/times.h> header file. */
+#undef HAVE_SYS_TIMES_H
+
+/* Define to 1 if you have the <sys/time.h> header file. */
+#undef HAVE_SYS_TIME_H
+
+/* Define to 1 if you have the <sys/types.h> header file. */
+#undef HAVE_SYS_TYPES_H
+
+/* Define to 1 if you have the <sys/uio.h> header file. */
+#undef HAVE_SYS_UIO_H
+
+/* Define to 1 if you have the <sys/wait.h> header file. */
+#undef HAVE_SYS_WAIT_H
+
+/* Define to 1 if you have the `tan' function. */
+#undef HAVE_TAN
+
+/* Define to 1 if you have the `tanf' function. */
+#undef HAVE_TANF
+
+/* Define to 1 if you have the `tanf128' function. */
+#undef HAVE_TANF128
+
+/* Define to 1 if you have the `tanh' function. */
+#undef HAVE_TANH
+
+/* Define to 1 if you have the `tanhf' function. */
+#undef HAVE_TANHF
+
+/* Define to 1 if you have the `tanhf128' function. */
+#undef HAVE_TANHF128
+
+/* Define to 1 if you have the `tanhl' function. */
+#undef HAVE_TANHL
+
+/* Define to 1 if you have the `tanl' function. */
+#undef HAVE_TANL
+
+/* Define to 1 if you have the `tgamma' function. */
+#undef HAVE_TGAMMA
+
+/* Define to 1 if you have the `tgammaf' function. */
+#undef HAVE_TGAMMAF
+
+/* Define to 1 if you have the `tgammaf128' function. */
+#undef HAVE_TGAMMAF128
+
+/* Define to 1 if you have the `times' function. */
+#undef HAVE_TIMES
+
+/* Define to 1 if you have the `trunc' function. */
+#undef HAVE_TRUNC
+
+/* Define to 1 if you have the `truncf' function. */
+#undef HAVE_TRUNCF
+
+/* Define to 1 if you have the `truncf128' function. */
+#undef HAVE_TRUNCF128
+
+/* Define to 1 if you have the `truncl' function. */
+#undef HAVE_TRUNCL
+
+/* Define to 1 if you have the `ttyname' function. */
+#undef HAVE_TTYNAME
+
+/* Define to 1 if you have the `ttyname_r' function. */
+#undef HAVE_TTYNAME_R
+
+/* Define to 1 if the system has the type `uintptr_t'. */
+#undef HAVE_UINTPTR_T
+
+/* Define to 1 if you have the `umask' function. */
+#undef HAVE_UMASK
+
+/* Define to 1 if you have the <unistd.h> header file. */
+#undef HAVE_UNISTD_H
+
+/* Define if target can unlink open files. */
+#undef HAVE_UNLINK_OPEN_FILE
+
+/* Define to 1 if you have the `uselocale' function. */
+#undef HAVE_USELOCALE
+
+/* Define to 1 if you have the `vsnprintf' function. */
+#undef HAVE_VSNPRINTF
+
+/* Define to 1 if you have the `waitpid' function. */
+#undef HAVE_WAITPID
+
+/* Define if target has a reliable stat. */
+#undef HAVE_WORKING_STAT
+
+/* Define to 1 if you have the `writev' function. */
+#undef HAVE_WRITEV
+
+/* Define to 1 if you have the <xlocale.h> header file. */
+#undef HAVE_XLOCALE_H
+
+/* Define to 1 if you have the `y0' function. */
+#undef HAVE_Y0
+
+/* Define to 1 if you have the `y0f' function. */
+#undef HAVE_Y0F
+
+/* Define to 1 if you have the `y0f128' function. */
+#undef HAVE_Y0F128
+
+/* Define to 1 if you have the `y1' function. */
+#undef HAVE_Y1
+
+/* Define to 1 if you have the `y1f' function. */
+#undef HAVE_Y1F
+
+/* Define to 1 if you have the `y1f128' function. */
+#undef HAVE_Y1F128
+
+/* Define to 1 if you have the `yn' function. */
+#undef HAVE_YN
+
+/* Define to 1 if you have the `ynf' function. */
+#undef HAVE_YNF
+
+/* Define to 1 if you have the `ynf128' function. */
+#undef HAVE_YNF128
+
+/* Define to 1 if you have the `ynl' function. */
+#undef HAVE_YNL
+
+/* Define to 1 if you have the `__acoshieee128' function. */
+#undef HAVE___ACOSHIEEE128
+
+/* Define to 1 if you have the `__acosieee128' function. */
+#undef HAVE___ACOSIEEE128
+
+/* Define to 1 if you have the `__asinhieee128' function. */
+#undef HAVE___ASINHIEEE128
+
+/* Define to 1 if you have the `__asinieee128' function. */
+#undef HAVE___ASINIEEE128
+
+/* Define to 1 if you have the `__atan2ieee128' function. */
+#undef HAVE___ATAN2IEEE128
+
+/* Define to 1 if you have the `__atanhieee128' function. */
+#undef HAVE___ATANHIEEE128
+
+/* Define to 1 if you have the `__atanieee128' function. */
+#undef HAVE___ATANIEEE128
+
+/* Define to 1 if you have the `__coshieee128' function. */
+#undef HAVE___COSHIEEE128
+
+/* Define to 1 if you have the `__cosieee128' function. */
+#undef HAVE___COSIEEE128
+
+/* Define to 1 if you have the `__erfieee128' function. */
+#undef HAVE___ERFIEEE128
+
+/* Define to 1 if you have the `__expieee128' function. */
+#undef HAVE___EXPIEEE128
+
+/* Define to 1 if you have the `__fabsieee128' function. */
+#undef HAVE___FABSIEEE128
+
+/* Define to 1 if you have the `__jnieee128' function. */
+#undef HAVE___JNIEEE128
+
+/* Define to 1 if you have the `__log10ieee128' function. */
+#undef HAVE___LOG10IEEE128
+
+/* Define to 1 if you have the `__logieee128' function. */
+#undef HAVE___LOGIEEE128
+
+/* Define to 1 if you have the `__powieee128' function. */
+#undef HAVE___POWIEEE128
+
+/* Define to 1 if you have the `__secure_getenv' function. */
+#undef HAVE___SECURE_GETENV
+
+/* Define to 1 if you have the `__sinhieee128' function. */
+#undef HAVE___SINHIEEE128
+
+/* Define to 1 if you have the `__sinieee128' function. */
+#undef HAVE___SINIEEE128
+
+/* Define to 1 if you have the `__sqrtieee128' function. */
+#undef HAVE___SQRTIEEE128
+
+/* Define to 1 if you have the `__tanhieee128' function. */
+#undef HAVE___TANHIEEE128
+
+/* Define to 1 if you have the `__tanieee128' function. */
+#undef HAVE___TANIEEE128
+
+/* Define to 1 if you have the `__ynieee128' function. */
+#undef HAVE___YNIEEE128
+
+/* Define to the sub-directory in which libtool stores uninstalled libraries.
+   */
+#undef LT_OBJDIR
+
+/* Define to the address where bug reports for this package should be sent. */
+#undef PACKAGE_BUGREPORT
+
+/* Define to the full name of this package. */
+#undef PACKAGE_NAME
+
+/* Define to the full name and version of this package. */
+#undef PACKAGE_STRING
+
+/* Define to the one symbol short name of this package. */
+#undef PACKAGE_TARNAME
+
+/* Define to the home page for this package. */
+#undef PACKAGE_URL
+
+/* Define to the version of this package. */
+#undef PACKAGE_VERSION
+
+/* The size of `char', as computed by sizeof. */
+#undef SIZEOF_CHAR
+
+/* The size of `int', as computed by sizeof. */
+#undef SIZEOF_INT
+
+/* The size of `long', as computed by sizeof. */
+#undef SIZEOF_LONG
+
+/* The size of `short', as computed by sizeof. */
+#undef SIZEOF_SHORT
+
+/* The size of `void *', as computed by sizeof. */
+#undef SIZEOF_VOID_P
+
+/* Define to 1 if you have the ANSI C header files. */
+#undef STDC_HEADERS
+
+/* Define to 1 if the target supports #pragma weak */
+#undef SUPPORTS_WEAK
+
+/* Define to 1 if the target supports weakref */
+#undef SUPPORTS_WEAKREF
+
+/* Define if IEC 60559 *f128 APIs should be used for _Float128. */
+#undef USE_IEC_60559
+
+/* Enable extensions on AIX 3, Interix.  */
+#ifndef _ALL_SOURCE
+# undef _ALL_SOURCE
+#endif
+/* Enable GNU extensions on systems that have them.  */
+#ifndef _GNU_SOURCE
+# undef _GNU_SOURCE
+#endif
+/* Enable threading extensions on Solaris.  */
+#ifndef _POSIX_PTHREAD_SEMANTICS
+# undef _POSIX_PTHREAD_SEMANTICS
+#endif
+/* Enable extensions on HP NonStop.  */
+#ifndef _TANDEM_SOURCE
+# undef _TANDEM_SOURCE
+#endif
+/* Enable general extensions on Solaris.  */
+#ifndef __EXTENSIONS__
+# undef __EXTENSIONS__
+#endif
+
+
+/* Enable large inode numbers on Mac OS X 10.5.  */
+#ifndef _DARWIN_USE_64_BIT_INODE
+# define _DARWIN_USE_64_BIT_INODE 1
+#endif
+
+/* Number of bits in a file offset, on hosts where this is settable. */
+#undef _FILE_OFFSET_BITS
+
+/* Define for large files, on AIX-style hosts. */
+#undef _LARGE_FILES
+
+/* Define to 1 if on MINIX. */
+#undef _MINIX
+
+/* Define to 2 if the system does not provide POSIX.1 features except with
+   this defined. */
+#undef _POSIX_1_SOURCE
+
+/* Define to 1 if you need to in order for `stat' and other things to work. */
+#undef _POSIX_SOURCE
+
+/* Define to the type of a signed integer type wide enough to hold a pointer,
+   if such a type exists, and if the system does not define it. */
+#undef intptr_t
+
+/* Define to `long int' if <sys/types.h> does not define. */
+#undef off_t
+
+/* Define to the type of an unsigned integer type wide enough to hold a
+   pointer, if such a type exists, and if the system does not define it. */
+#undef uintptr_t

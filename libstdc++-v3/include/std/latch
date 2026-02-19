@@ -1,0 +1,128 @@
+// <latch> -*- C++ -*-
+
+// Copyright (C) 2020-2026 Free Software Foundation, Inc.
+//
+// This file is part of the GNU ISO C++ Library.  This library is free
+// software; you can redistribute it and/or modify it under the
+// terms of the GNU General Public License as published by the
+// Free Software Foundation; either version 3, or (at your option)
+// any later version.
+
+// This library is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+
+// Under Section 7 of GPL version 3, you are granted additional
+// permissions described in the GCC Runtime Library Exception, version
+// 3.1, as published by the Free Software Foundation.
+
+// You should have received a copy of the GNU General Public License and
+// a copy of the GCC Runtime Library Exception along with this program;
+// see the files COPYING3 and COPYING.RUNTIME respectively.  If not, see
+// <http://www.gnu.org/licenses/>.
+
+/** @file include/latch
+ *  This is a Standard C++ Library header.
+ */
+
+#ifndef _GLIBCXX_LATCH
+#define _GLIBCXX_LATCH 1
+
+#ifdef _GLIBCXX_SYSHDR
+#pragma GCC system_header
+#endif
+
+#include <bits/requires_hosted.h> // concurrency
+
+#define __glibcxx_want_latch
+#include <bits/version.h>
+
+#ifdef __cpp_lib_latch // C++ >= 20 && atomic_wait
+#include <bits/atomic_base.h>
+#include <ext/numeric_traits.h>
+#include <bits/intcmp.h> // cmp_equal, cmp_less_equal, etc.
+
+namespace std _GLIBCXX_VISIBILITY(default)
+{
+_GLIBCXX_BEGIN_NAMESPACE_VERSION
+
+  class latch
+  {
+  public:
+    static constexpr ptrdiff_t
+    max() noexcept
+    {
+      using __gnu_cxx::__int_traits;
+      constexpr auto __max = __int_traits<__detail::__platform_wait_t>::__max;
+      if constexpr (std::cmp_less(__max, __PTRDIFF_MAX__))
+	return __max;
+      return __PTRDIFF_MAX__;
+    }
+
+    constexpr explicit
+    latch(ptrdiff_t __expected) noexcept
+    : _M_counter(__expected)
+    { __glibcxx_assert(__expected >= 0 && __expected <= max()); }
+
+    ~latch() = default;
+
+    latch(const latch&) = delete;
+    latch& operator=(const latch&) = delete;
+
+    _GLIBCXX_ALWAYS_INLINE void
+    count_down(ptrdiff_t __update = 1)
+    {
+      __glibcxx_assert(__update >= 0 && __update <= max());
+      auto const __old = __atomic_impl::fetch_sub(&_M_counter, __update,
+						  memory_order::release);
+      if (std::cmp_equal(__old, __update))
+	__atomic_impl::notify_all(&_M_counter);
+      else
+	__glibcxx_assert(std::cmp_less(__update, __old));
+    }
+
+    _GLIBCXX_ALWAYS_INLINE bool
+    try_wait() const noexcept
+    { return __atomic_impl::load(&_M_counter, memory_order::acquire) == 0; }
+
+    _GLIBCXX_ALWAYS_INLINE void
+    wait() const noexcept
+    {
+      auto const __vfn = [this] {
+	return __atomic_impl::load(&_M_counter, memory_order::acquire);
+      };
+      auto const __pred = [](__detail::__platform_wait_t __v) {
+	return __v == 0;
+      };
+      std::__atomic_wait_address(&_M_counter, __pred, __vfn);
+    }
+
+    _GLIBCXX_ALWAYS_INLINE void
+    arrive_and_wait(ptrdiff_t __update = 1) noexcept
+    {
+      // The standard specifies this functions as count_down(update); wait();
+      // but we combine those two calls into one and avoid the wait() if we
+      // know the counter reached zero.
+
+      __glibcxx_assert(__update >= 0 && __update <= max());
+      // Use acq_rel here because an omitted wait() would have used acquire:
+      auto const __old = __atomic_impl::fetch_sub(&_M_counter, __update,
+						  memory_order::acq_rel);
+      if (std::cmp_equal(__old, __update))
+	__atomic_impl::notify_all(&_M_counter);
+      else
+	{
+	  __glibcxx_assert(std::cmp_less(__update, __old));
+	  wait();
+	}
+    }
+
+  private:
+    alignas(__detail::__platform_wait_alignment)
+      __detail::__platform_wait_t _M_counter;
+  };
+_GLIBCXX_END_NAMESPACE_VERSION
+} // namespace
+#endif // __cpp_lib_latch
+#endif // _GLIBCXX_LATCH

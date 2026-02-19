@@ -1,0 +1,624 @@
+# Copyright (C) 2001-2026 Free Software Foundation, Inc.
+
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+# 
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+# 
+# You should have received a copy of the GNU General Public License
+# along with GCC; see the file COPYING3.  If not see
+# <http://www.gnu.org/licenses/>.
+#
+# This script was submitted by Janis Johnson <janis187@us.ibm.com>.
+
+# Test the functionality and optionally, performance improvement, of
+# programs compiled with profile-directed optimizations.  Compile and
+# run a test with profile options, compile it with options using the
+# profile feedback, and then run the test again.  Optionally compile
+# and run a third time without the profile-directed optimization and
+# compare timing results of the program with normal optimization and
+# with the profile-directed optimization. Each test is run using
+# multiple sets of optimization and/or code generation options in
+# addition to the profiling and feedback options.
+
+# If perf_ext is defined and the performance value for the
+# profile-directed test run is nonzero then the performance check will
+# be done.
+
+load_lib dg.exp
+load_lib gcc-dg.exp
+
+global PROFOPT_OPTIONS perf_delta
+
+# The including .exp file must define these.
+global tool profile_option feedback_option prof_ext profile_wrapper
+if ![info exists tool] {
+    error "Tools is not specified."
+}
+if ![info exists prof_ext] {
+    error "No profile data file extensions specified."
+}
+
+# The maximum perforance degradation can be defined in the including file.
+if ![info exists perf_delta] {
+    set perf_delta 4
+}
+
+# The default option list can be overridden by
+# PROFOPT_OPTIONS="{ { list1 } ... { list2 } }"
+
+if ![info exists PROFOPT_OPTIONS] {
+    set PROFOPT_OPTIONS [list \
+	{ -g } \
+	{ -O0 } \
+	{ -O1 } \
+	{ -O2 } \
+	{ -O3 } \
+	{ -O3 -g } \
+	{ -Os } ]
+}
+
+#
+# profopt-cleanup -- remove profiling or performance results files.
+#
+# TESTCASE is the name of the test
+# EXT is the extensions of files to remove
+#
+proc profopt-cleanup { testcase extlist } {
+    set basename [file tail $testcase]
+    set base [file rootname $basename]
+    foreach ext $extlist {
+	set files [glob -nocomplain $base.$ext]
+	if { $files != "" } {
+	    eval "remote_file build delete $files"
+	}
+    }
+}
+
+#
+# profopt-target-cleanup -- remove profiling result files.
+#
+# DIR is the name of the directory
+# TESTCASE is the name of the test
+# EXT is the extensions of files to remove
+#
+proc profopt-target-cleanup { dir testcase ext } {
+    global additional_sources_used
+    set basename [file tail $testcase]
+    set base [file rootname $basename]
+    set file "$dir/$base.$ext"
+    eval "remote_file target delete $file"
+
+    if [info exists additional_sources_used] {
+	foreach srcfile $additional_sources_used {
+	    set basename [file tail $srcfile]
+	    set base [file rootname $basename]
+	    set file "$dir/$base.$ext"
+	    eval "remote_file target delete $file"
+	}
+    }
+}
+
+#
+# profopt-perf-value -- get performance value for a test
+#
+# TESTCASE is the name of the test
+# PERF_EXT is the extension of the performance result file
+# OPTSTR is the string of compiler options
+#
+proc profopt-perf-value { testcase perf_ext optstr } {
+    set basename [file tail $testcase]
+    set base [file rootname $basename]
+    set files [glob -nocomplain $base.$perf_ext]
+    # The file doesn't exist; let the caller decide if that's a problem.
+    if { $files == "" } {
+        return -2 
+    }
+    remote_upload host $base.$perf_ext $base.$perf_ext
+    set fd [open $base.$perf_ext r]
+    gets $fd line
+    set val -2
+    if [regexp "TIME" $line] {
+        if [regexp "TIME -1" $line] {
+	    fail "$testcase perf check: no consistent time available, $optstr"
+	    set val -1
+	} elseif ![regexp "(\[0-9\]+)" "$line" val] {
+	    set val -2
+	}
+    }
+    # Report problems with an existing file.
+    if { $val == -2 } {
+	fail "$testcase perf check: file $base.$perf_ext has wrong format, $optstr"
+    }
+    close $fd
+    profopt-cleanup $testcase $perf_ext
+    return $val
+}
+
+#
+# dg-final-generate -- process code to run after the profile-generate step
+#
+# ARGS is the line number of the directive followed by the commands.
+#
+proc dg-final-generate { args } {
+    global generate_final_code
+
+    if { [llength $args] > 2 } {
+	error "[lindex $args 0]: too many arguments"
+	return
+    }
+    append generate_final_code "[lindex $args 1]\n"
+}
+
+#
+# dg-final-use -- process code to run after the profile-use step
+#
+# ARGS is the line number of the directive followed by the commands.
+#
+proc dg-final-use { args } {
+    global use_final_code
+
+    if { [llength $args] > 2 } {
+	error "[lindex $args 0]: too many arguments"
+	return
+    }
+    append use_final_code "[lindex $args 1]\n"
+}
+
+#
+# dg-final-use-not-autofdo -- process code to run after the profile-use step
+# but only if not running autofdo
+# ARGS is the line number of the directive followed by the commands.
+#
+proc dg-final-use-not-autofdo { args } {
+    global use_final_code
+    global run_autofdo
+
+    if { [llength $args] > 2 } {
+	error "[lindex $args 0]: too many arguments"
+	return
+    }
+
+    if { $run_autofdo == 1 } {
+        return
+    }
+    append use_final_code "[lindex $args 1]\n"
+}
+
+#
+# dg-final-use-autofdo -- process code to run after the profile-use step
+# but only if running autofdo
+# ARGS is the line number of the directive followed by the commands.
+#
+
+proc dg-final-use-autofdo { args } {
+    global use_final_code
+    global run_autofdo
+
+    if { [llength $args] > 2 } {
+	error "[lindex $args 0]: too many arguments"
+	return
+    }
+
+    if { $run_autofdo != 1 } {
+        return
+    }
+    append use_final_code "[lindex $args 1]\n"
+}
+
+#
+# profopt-final-code -- run final code
+#
+# WHICH is "generate" or "use".
+# FINAL_CODE is the TCL code to run.
+# TESTCASE is the name of the test, for error messages.
+#
+proc profopt-final-code { which final_code name } {
+    # This is copied from dg-test in dg.exp of DejaGnu.
+    regsub -all "\\\\(\[{}\])" $final_code "\\1" final_code
+    proc profopt-final-proc { args } $final_code
+    if [catch "profopt-final-proc $name" errmsg] {
+	perror "$name: error executing dg-final-${which}: $errmsg"
+	unresolved "$name: Error executing dg-final-${which}: $errmsg"
+    }
+}
+
+#
+# profopt-get-options -- process test directives
+#
+# SRC is the full pathname of the testcase.
+#
+proc profopt-get-options { src } {
+    # dg-options sets a variable called dg-extra-tool-flags.
+    set dg-extra-tool-flags ""
+
+    # dg-require-* sets dg-do-what.
+    upvar dg-do-what dg-do-what 
+
+    # current_compiler_flags reads tool_flags from the same stack frame
+    # as dg-extra-tool-flags
+    set tool_flags ""
+
+    set tmp [dg-get-options $src]
+    foreach op $tmp {
+	set cmd [lindex $op 0]
+	if { ![string compare "dg-options" $cmd] \
+	     || ![string compare "dg-additional-options" $cmd] \
+	     || ![string compare "dg-add-options" $cmd] \
+	     || ![string compare "dg-skip-if" $cmd] \
+	     || ![string compare "dg-final-generate" $cmd] \
+	     || ![string compare "dg-final-use" $cmd] \
+	     || ![string compare "dg-final-use-not-autofdo" $cmd] \
+	     || ![string compare "dg-final-use-autofdo" $cmd] \
+             || ![string compare "dg-additional-sources" $cmd] \
+	     || [string match "dg-require-*" $cmd]  } {
+	    set status [catch "$op" errmsg]
+	    if { $status != 0 } {
+		perror "$src: $errmsg for \"$op\"\n"
+		unresolved "$src: $errmsg for \"$op\""
+		return
+	    }
+	} else {
+	    # Ignore unrecognized dg- commands, but warn about them.
+	    warning "profopt.exp does not support $cmd"
+	}
+    }
+
+    # Return flags to use for compiling the primary source file and for
+    # linking.
+    return ${dg-extra-tool-flags}
+}
+
+# auto-profopt-execute -- Compile for auto profiling and then feedback,
+# then normal. SRC is the full path name of the testcase.
+proc auto-profopt-execute { src } {
+    global profile_wrapper
+    global profile_option
+    global feedback_option
+    global run_autofdo
+    global srcdir
+
+    if { ! [check_profiling_available "-fauto-profile"] } {
+        regsub "(?q)$srcdir/" $src "" testcase
+        unsupported "$testcase -fauto-profile"
+        return
+    }
+    set profile_wrapper [profopt-perf-wrapper]
+    set profile_option "-g -DFOR_AUTOFDO_TESTING"
+    set feedback_option "-fauto-profile -DFOR_AUTOFDO_TESTING -fearly-inlining"
+    set run_autofdo 1
+    profopt-execute $src
+    unset profile_wrapper
+    unset profile_option
+    unset feedback_option
+    unset run_autofdo
+}
+
+#
+# c-prof-execute -- compile for profiling and then feedback, then normal
+#
+# SRC is the full pathname of the testcase.
+#
+proc profopt-execute { src } {
+    global srcdir tmpdir
+    global PROFOPT_OPTIONS
+    global tool profile_option feedback_option prof_ext perf_ext perf_delta
+    global profile_wrapper run_autofdo ld_library_path
+    global generate_final_code use_final_code
+    global verbose
+    global testname_with_flags
+    global additional_sources_used
+
+    if ![info exists profile_option] {
+        error "No profile option specified for first compile."
+    }
+    if ![info exists feedback_option] {
+        error "No feedback option specified for second compile."
+    }
+    if ![info exists profile_wrapper] {
+	set profile_wrapper ""
+    }
+    if ![info exists run_autofdo] {
+	set run_autofdo ""
+    }
+
+    # Use the default option list or one defined for a set of tests.
+    if ![info exists PROFOPT_OPTIONS] {
+         error "PROFOPT_OPTIONS is not defined"
+    }
+    set prof_option_list $PROFOPT_OPTIONS
+
+    regsub "(?q)$srcdir/" $src "" testcase
+    # If we couldn't rip $srcdir out of `src' then just do the best we can.
+    # The point is to reduce the unnecessary noise in the logs.  Don't strip
+    # out too much because different testcases with the same name can confuse
+    # `test-tool'.
+    if [string match "/*" $testcase] {
+	set testcase "[file tail [file dirname $src]]/[file tail $src]"
+    }
+
+    # Several procedures access the name of the test with torture flags,
+    # normally defined in dg-test.  Profile optimization tests don't
+    # use dg-test, so define it here to make it accessible via
+    # testname-for-summary.
+    set testname_with_flags $testcase
+
+    set executable $tmpdir/[file tail [file rootname $src].x]
+    set basename [file tail $testcase]
+    set base [file rootname $basename]
+
+    set count 0
+    foreach option $prof_option_list {
+	# We pass -dumpbase-ext ${execext}[123] to the compile&link
+	# commands so as to avoid the combination of the executable
+	# with the source name in the aux outputs.
+	set execext ".x${count}"
+	set execname1 "${executable}${count}1"
+	set execname2 "${executable}${count}2"
+	set execname3 "${executable}${count}3"
+	incr count
+
+	remote_file build delete $execname1
+	remote_file build delete $execname2
+	remote_file build delete $execname3
+	verbose "Testing $testcase, $option" 1
+
+	# Remove old performance data files.
+	if [info exists perf_ext] {
+	    profopt-cleanup $testcase $perf_ext
+	}
+
+	# Process test directives.
+
+	set generate_final_code ""
+	set use_final_code ""
+	set dg-do-what [list "run" "" P]
+	set extra_flags [profopt-get-options $src]
+	if { [lindex ${dg-do-what} 1 ] == "N" } {
+	    unsupported "$testcase"
+	    unset testname_with_flags
+	    verbose "$src not supported on this target, skipping it" 3
+	    cleanup-after-saved-dg-test
+	    return
+	}
+
+	# schedule removal of dump files et al
+	# Do this before the call below destroys additional_sources..
+	append use_final_code [schedule-cleanups "$option $extra_flags"]
+        set extra_options [dg-additional-files-options "" "$src" $execname1 "executable"]
+
+	# Remove old profiling data files.  Make sure additional_sources_used is
+	# valid, by running it after dg-additional-files-options.
+	foreach ext $prof_ext {
+	    profopt-target-cleanup $tmpdir $base $ext
+	    profopt-target-cleanup $tmpdir $base "perf.data"
+	}
+
+	# Tree profiling requires TLS runtime support, which may need
+	# additional flags.
+	if { [string first "-fprofile-generate" $profile_option] >= 0 } {
+	    set extra_flags [add_options_for_tls $extra_flags]
+	}
+
+	# Compile for profiling.
+
+	set options "$extra_options"
+	lappend options "additional_flags=$option $extra_flags $profile_option -dumpbase-ext ${execext}1"
+	set optstr "$option $profile_option"
+	set comp_output [${tool}_target_compile "$src" "$execname1" executable $options]
+	if ![${tool}_check_compile "$testcase compilation" $optstr $execname1 $comp_output] {
+ 	    unresolved "$testcase execution,   $optstr"
+ 	    unresolved "$testcase compilation, $option $feedback_option"
+ 	    unresolved "$testcase execution,   $option $feedback_option"
+	    continue
+	}
+
+	# Run the profiled test.
+	if { $run_autofdo == 1 } {
+	    if { ![info exists ld_library_path]} {
+		set ld_library_path ""
+	    }
+	    set orig_ld_library_path "[getenv LD_LIBRARY_PATH]"
+	    setenv LD_LIBRARY_PATH "$ld_library_path:$orig_ld_library_path"
+	    verbose -log "Running $profile_wrapper -o $tmpdir/$base.perf.data $execname1"
+	    set id [remote_spawn "" "$profile_wrapper -o $tmpdir/$base.perf.data $execname1" "readonly"]
+	    setenv LD_LIBRARY_PATH $orig_ld_library_path
+	    if { $id < 0 } {
+		warning "Failed to run profiler"
+		set status "fail"
+	    } else {
+		set result [remote_wait "" 300]
+		set status [lindex $result 0]
+		verbose "perf result $result"
+		if { $status == 0 } {
+		    set status "pass"
+		} else {
+		    set status "fail"
+		}
+	    }
+	} else {
+	    set result [${tool}_load $execname1 "" ""]
+	    set status [lindex $result 0]
+	}
+
+	set missing_file 0
+        set bprefix ""
+	# Make sure the profile data was generated, and fail if not.
+	if { $status == "pass" } {
+	    # convert profile
+	    if { $run_autofdo == 1 } {
+                set bprefix "afdo."
+		set cmd "create_gcov --binary $execname1 --profile=$tmpdir/$base.perf.data --gcov_version=3 --gcov=$tmpdir/$bprefix$base.$ext"
+		verbose "Running $cmd"
+		set id [remote_spawn "" $cmd]
+		if { $id < 0 } {
+		    unsupported "$testcase -fauto-profile: cannot run create_gcov"
+		    unset testname_with_flags
+		    set status "fail"
+		    cleanup-after-saved-dg-test
+		    return
+		}
+		set status [remote_wait "" 300]
+		set status "pass"
+	    }
+
+	    foreach ext $prof_ext {
+		remote_upload target $tmpdir/$bprefix$base.$ext
+		set files [glob -nocomplain $bprefix$base.$ext]
+		if { $files == "" } {
+		    set status "fail"
+		    set missing_file 1
+		    fail "$testcase execution: file $bprefix$base.$ext does not exist, $option $profile_option"
+		}
+		if [info exists additional_sources_used] {
+		    foreach srcfile $additional_sources_used {
+			set add_basename [file tail $srcfile]
+			set add_base [file rootname $add_basename]
+			remote_upload target $tmpdir/$bprefix$add_base.$ext
+			set files [glob -nocomplain $bprefix$add_base.$ext]
+			if { $files == "" } {
+			    set status "fail"
+			    set missing_file 1
+			    fail "$testcase execution: file $bprefix$add_base.$ext does not exist, $option $profile_option"
+			}
+		    }
+		}
+	    }
+	}
+        if { $missing_file == 0 } {
+	    $status "$testcase execution,   $optstr"
+	}
+
+	# If there is dg-final code to execute for the generate step, do it
+	# even if it failed; it might clean up temporary files.
+	if ![string match $generate_final_code ""] {
+	    profopt-final-code "generate" $generate_final_code $testcase
+	}
+
+	remote_file build delete $execname1
+
+	# Quit for this round if it failed
+	if { $status != "pass" } {
+ 	    unresolved "$testcase compilation, $option $feedback_option"
+ 	    unresolved "$testcase execution,   $option $feedback_option"
+	    continue
+	}
+
+	# Compile with feedback-directed optimizations.
+
+	set options "$extra_options"
+	lappend options "additional_flags=$option $extra_flags $feedback_option -dumpbase-ext ${execext}2"
+	set optstr "$option $feedback_option"
+	if { [string first "-fauto-profile" $options] >= 0} {
+	    set options [regsub -- "-fauto-profile" $options "-fauto-profile=$tmpdir/$bprefix$base.$ext"]
+	}
+
+	set comp_output [${tool}_target_compile "$src" "$execname2" "executable" $options]
+
+	# Prune warnings we know are unwanted.
+	set comp_output [prune_warnings $comp_output]
+
+	if ![${tool}_check_compile "$testcase compilation" $optstr $execname2 $comp_output] {
+ 	    unresolved "$testcase execution,   $optstr"
+	    continue
+	}
+
+	# Run the profile-directed optimized test.
+
+	set result [${tool}_load "$execname2" "" ""]
+	set status [lindex $result 0]
+	$status "$testcase execution,   $optstr"
+
+	# If there is dg-final code to execute for the use step, do it.
+	if ![string match $use_final_code ""] {
+	    profopt-final-code "use" $use_final_code $testcase
+	}
+
+	# Remove the profiling data files.
+	foreach ext $prof_ext {
+	    profopt-target-cleanup $tmpdir "$bprefix$base" $ext
+	    profopt-target-cleanup $tmpdir $base "perf.data"
+	    profopt-target-cleanup $tmpdir $base "gcda.imports"
+	}
+
+	if { $status != "pass" } {
+	    continue
+	}
+
+	# If the test is not expected to produce performance data then
+	# we're done now.
+	if ![info exists perf_ext] {
+	    remote_file build delete $execname2
+	    continue
+	}
+
+	# Get the performance data from the test built with
+	# profile-directed optimization.  If the file doesn't exist or if
+	# the value is zero, skip the performance comparison.
+	set val2 [profopt-perf-value $testcase $perf_ext $optstr]
+	if { $val2 <= 0 } {
+	    remote_file build delete $execname2
+	    continue
+	}
+
+	# Compile with normal optimizations.
+
+	set options "$extra_options"
+	lappend options "additional_flags=$option -dumpbase-ext ${execext}3"
+	set optstr "$option"
+	set comp_output [${tool}_target_compile "$src" "$execname3" "executable" $options]
+	if ![${tool}_check_compile "$testcase compilation" $optstr $execname3 $comp_output] {
+ 	    unresolved "$testcase execution,   $optstr"
+	    unresolved "$testcase perf check,  $optstr"
+	    continue
+	}
+
+	# Run the test with normal optimizations.
+
+	set result [${tool}_load "$execname3" "" ""]
+	set status [lindex $result 0]
+	$status "$testcase execution,   $optstr"
+	if { $status != "pass" } {
+	    unresolved "$testcase perf check, $optstr"
+	    continue
+	}
+
+	# Get the performance data from the test built with normal
+	# optimization.
+	set val1 [profopt-perf-value $testcase $perf_ext $optstr]
+	if { $val1 < 0 } {
+	    if { $val1 == -2 } {
+		# The data file existed with the profile-directed
+		# optimization so this one should, too.
+		fail "$testcase perf check: file $base.$perf_ext does not exist, $optstr"
+	    }
+	    continue
+	}
+
+	# Compare results of the two runs and fail if the time with the
+	# profile-directed optimization is significantly more than the time
+	# without it.
+	set status "pass"
+	if { $val2 > $val1 } {
+	    # Check for a performance degration outside of allowable limits.
+	    if { [expr $val2 - $val1] > [expr [expr $val1 * $perf_delta] / 100] } {
+		set status "fail"
+	    }
+	}
+	if { $status == "fail" } {
+	    fail "$testcase perf check: orig: $val1  new: $val2, $optstr"
+	} else {
+	    $status "$testcase perf check,  $optstr"
+	    verbose "$testcase orig: $val1  new: $val2, $optstr" 2
+	    remote_file build delete $execname2
+	    remote_file build delete $execname3
+	}
+    }
+    unset testname_with_flags
+    cleanup-after-saved-dg-test
+}

@@ -1,0 +1,102 @@
+#  Copyright (C) 2009-2026 Free Software Foundation, Inc.
+#  Contributed by ARM Ltd.
+#
+#  This file is part of GCC.
+#
+#  GCC is free software; you can redistribute it and/or modify it
+#  under the terms of the GNU General Public License as published by
+#  the Free Software Foundation; either version 3, or (at your option)
+#  any later version.
+#
+#  GCC is distributed in the hope that it will be useful, but
+#  WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+#  General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with GCC; see the file COPYING3.  If not see
+#  <http://www.gnu.org/licenses/>.  */
+
+load_lib c-torture.exp
+load_lib target-supports.exp
+load_lib torture-options.exp
+
+if { ![istarget aarch64*-*-*] } then {
+  return
+}
+
+torture-init
+set-torture-options $C_TORTURE_OPTIONS
+set additional_flags "-W -Wall -Wno-abi -fno-pie -no-pie"
+
+# Test parameter passing.  This uses abitest.S which relies on weak
+# symbols.
+
+set additional_flags_for_abitest [add_options_for_weak_undefined ""]
+set additional_flags_for_abitest "$additional_flags $additional_flags_for_abitest"
+
+if { [check_effective_target_weak_undefined] } {
+    foreach src [lsort [glob -nocomplain $srcdir/$subdir/test_*.c]] {
+	if {[runtest_file_p $runtests $src]} {
+	    c-torture-execute [list $src \
+				    $srcdir/$subdir/abitest.S] \
+		$additional_flags_for_abitest
+	}
+    }
+}
+
+# Test parameter receiving.
+set additional_flags_for_rec $additional_flags
+append additional_flags_for_rec " -fno-inline"
+foreach src [lsort [glob -nocomplain $srcdir/$subdir/rec_*.c]] {
+    if {[runtest_file_p $runtests $src]} {
+	    c-torture-execute [list $src] \
+				    $additional_flags_for_rec
+    }
+}
+
+# Test unnamed argument retrieval via the va_arg macro.  This uses abitest.S
+# which relies on weak symbols.
+if { [check_effective_target_weak_undefined] } {
+    foreach src [lsort [glob -nocomplain $srcdir/$subdir/va_arg-*.c]] {
+	if {[runtest_file_p $runtests $src]} {
+	    c-torture-execute [list $src \
+				    $srcdir/$subdir/abitest.S] \
+		$additional_flags_for_abitest
+	}
+    }
+}
+
+# Test function return value.  This uses abitest.S which relies on
+# weak symbols.
+if { [check_effective_target_weak_undefined] } {
+    #   Disable -fipa-ra to prevent the compiler from generating
+    #   conflicting code.
+    set additional_flags_for_func_ret $additional_flags_for_abitest
+    append additional_flags_for_func_ret " -fno-ipa-ra"
+    foreach src [lsort [glob -nocomplain $srcdir/$subdir/func-ret-*.c]] {
+	if {[runtest_file_p $runtests $src]} {
+	    c-torture-execute [list $src \
+				    $srcdir/$subdir/abitest.S] \
+		$additional_flags_for_func_ret
+	}
+    }
+}
+
+# Test no internal compiler errors.
+foreach src [lsort [glob -nocomplain $srcdir/$subdir/ice_*.c]] {
+    if {[runtest_file_p $runtests $src]} {
+	    c-torture [list $src] \
+			    $additional_flags
+    }
+}
+
+# Test DFP support
+foreach src [lsort [glob -nocomplain $srcdir/$subdir/dfp*.c]] {
+    if {[runtest_file_p $runtests $src]} {
+	    c-torture [list $src] \
+			    $additional_flags
+    }
+}
+
+torture-finish

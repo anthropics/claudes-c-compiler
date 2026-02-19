@@ -1,0 +1,708 @@
+<section xmlns="http://docbook.org/ns/docbook" version="5.0"
+	 xml:id="manual.appendix.porting.backwards" xreflabel="backwards">
+<?dbhtml filename="backwards.html"?>
+
+<info><title>Backwards Compatibility</title>
+  <keywordset>
+    <keyword>ISO C++</keyword>
+    <keyword>backwards</keyword>
+  </keywordset>
+</info>
+
+
+
+<section xml:id="backwards.first"><info><title>First</title></info>
+
+
+<para>The first generation GNU C++ library was called libg++.  It was a
+separate GNU project, although reliably paired with GCC. Rumors imply
+that it had a working relationship with at least two kinds of
+dinosaur.
+</para>
+
+<para>Some background: libg++ was designed and created when there was no
+ISO standard to provide guidance.  Classes like linked lists are now
+provided for by <classname>std::list&lt;T&gt;</classname> and do not need to be
+created by <function>genclass</function>.  (For that matter, templates exist
+now and are well-supported, whereas genclass (mostly) predates them.)
+</para>
+
+<para>There are other classes in libg++ that are not specified in the
+ISO Standard (e.g., statistical analysis).  While there are a lot of
+really useful things that are used by a lot of people, the Standards
+Committee couldn't include everything, and so a lot of those
+<quote>obvious</quote> classes didn't get included.
+</para>
+
+<para>That project is no longer maintained or supported, and the sources
+archived. For the desperate, the
+<link xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="https://ftp.gnu.org/old-gnu/libg++/">ftp.gnu.org</link>
+server still has the libg++ source.
+</para>
+</section>
+
+<section xml:id="backwards.second"><info><title>Second</title></info>
+
+
+<para>
+  The second generation GNU C++ library was called libstdc++, or
+  libstdc++-v2. It spans the time between libg++ and pre-ISO C++
+  standardization and is usually associated with the following GCC
+  releases: egcs 1.x, gcc 2.95, and gcc 2.96.
+</para>
+
+<para>
+  The STL portions of that library are based on SGI/HP STL release 3.11.
+</para>
+
+<para>
+  That project is no longer maintained or supported, and the sources
+  archived.  The code was replaced and rewritten for libstdc++-v3.
+</para>
+
+</section>
+
+<section xml:id="backwards.third"><info><title>Third</title></info>
+
+
+<para> The third generation GNU C++ library is called libstdc++, or
+libstdc++-v3.
+</para>
+
+      <para>The subset commonly known as the Standard Template Library
+	 (clauses 23 through 25 in C++98, mostly) is adapted from the final release
+	 of the SGI STL (version 3.3), with extensive changes.
+      </para>
+
+      <para>A more formal description of the V3 goals can be found in the
+	 official <link linkend="contrib.design_notes">design document</link>.
+      </para>
+
+<para>Portability notes and known implementation limitations are as follows.</para>
+
+<section xml:id="backwards.third.headers"><info><title>Pre-ISO headers removed</title></info>
+
+
+<para> The pre-ISO C++ headers
+      (<filename class="headerfile">&lt;iostream.h&gt;</filename>,
+      <filename class="headerfile">&lt;defalloc.h&gt;</filename> etc.) are
+      not supported.
+</para>
+
+   <para>For those of you new to ISO C++ (welcome, time travelers!), the
+      ancient pre-ISO headers have new names.
+      The C++ FAQ has a good explanation in <link xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="https://isocpp.org/wiki/faq/coding-standards#std-headers">What's
+      the difference between &lt;xxx&gt; and &lt;xxx.h&gt; headers?</link>.
+   </para>
+
+<para>Porting between pre-ISO headers and ISO headers is simple: headers
+like <filename class="headerfile">&lt;vector.h&gt;</filename> can be replaced with <filename class="headerfile">&lt;vector&gt;</filename> and a using
+directive <code>using namespace std;</code> can be put at the global
+scope. This should be enough to get this code compiling, assuming the
+other usage is correct.
+</para>
+</section>
+
+<section xml:id="backwards.third.hash"><info><title>Extension headers hash_map, hash_set moved to ext or backwards</title></info>
+
+
+      <para>At this time most of the features of the SGI STL extension have been
+	 replaced by standardized libraries.
+	 In particular, the <classname>unordered_map</classname> and
+	 <classname>unordered_set</classname> containers of TR1 and C++ 2011
+	 are suitable replacements for the non-standard
+	 <classname>hash_map</classname> and <classname>hash_set</classname>
+	 containers in the SGI STL.
+      </para>
+<para> Header files <filename class="headerfile">&lt;hash_map&gt;</filename> and <filename class="headerfile">&lt;hash_set&gt;</filename> moved
+to <filename class="headerfile">&lt;ext/hash_map&gt;</filename> and  <filename class="headerfile">&lt;ext/hash_set&gt;</filename>,
+respectively. At the same time, all types in these files are enclosed
+in <code>namespace __gnu_cxx</code>. Later versions deprecate
+these files, and suggest using TR1's  <filename class="headerfile">&lt;unordered_map&gt;</filename>
+and  <filename class="headerfile">&lt;unordered_set&gt;</filename> instead.
+</para>
+
+      <para>The extensions are no longer in the global or <code>std</code>
+	 namespaces, instead they are declared in the <code>__gnu_cxx</code>
+	 namespace. For maximum portability, consider defining a namespace
+	 alias to use to talk about extensions, e.g.:
+      </para>
+<programlisting>
+      #ifdef __GNUC__
+      #if __GNUC__ &lt; 3
+	#include &lt;hash_map.h&gt;
+	namespace extension { using ::hash_map; }; // inherit globals
+      #else
+	#include &lt;backward/hash_map&gt;
+	#if __GNUC__ == 3 &amp;&amp; __GNUC_MINOR__ == 0
+	  namespace extension = std;               // GCC 3.0
+	#else
+	  namespace extension = ::__gnu_cxx;       // GCC 3.1 and later
+	#endif
+      #endif
+      #else      // ...  there are other compilers, right?
+	namespace extension = std;
+      #endif
+
+      extension::hash_map&lt;int,int&gt; my_map;
+</programlisting>
+      <para>This is a bit cleaner than defining typedefs for all the
+	 instantiations you might need.
+      </para>
+
+
+<para>The following autoconf tests check for working HP/SGI hash containers.
+</para>
+
+<programlisting>
+# AC_HEADER_EXT_HASH_MAP
+AC_DEFUN([AC_HEADER_EXT_HASH_MAP], [
+  AC_CACHE_CHECK(for ext/hash_map,
+  ac_cv_cxx_ext_hash_map,
+  [AC_LANG_SAVE
+  AC_LANG_CPLUSPLUS
+  ac_save_CXXFLAGS="$CXXFLAGS"
+  CXXFLAGS="$CXXFLAGS -Werror"
+  AC_TRY_COMPILE([#include &lt;ext/hash_map&gt;], [using __gnu_cxx::hash_map;],
+  ac_cv_cxx_ext_hash_map=yes, ac_cv_cxx_ext_hash_map=no)
+  CXXFLAGS="$ac_save_CXXFLAGS"
+  AC_LANG_RESTORE
+  ])
+  if test "$ac_cv_cxx_ext_hash_map" = yes; then
+    AC_DEFINE(HAVE_EXT_HASH_MAP,,[Define if ext/hash_map is present. ])
+  fi
+])
+</programlisting>
+
+<programlisting>
+# AC_HEADER_EXT_HASH_SET
+AC_DEFUN([AC_HEADER_EXT_HASH_SET], [
+  AC_CACHE_CHECK(for ext/hash_set,
+  ac_cv_cxx_ext_hash_set,
+  [AC_LANG_SAVE
+  AC_LANG_CPLUSPLUS
+  ac_save_CXXFLAGS="$CXXFLAGS"
+  CXXFLAGS="$CXXFLAGS -Werror"
+  AC_TRY_COMPILE([#include &lt;ext/hash_set&gt;], [using __gnu_cxx::hash_set;],
+  ac_cv_cxx_ext_hash_set=yes, ac_cv_cxx_ext_hash_set=no)
+  CXXFLAGS="$ac_save_CXXFLAGS"
+  AC_LANG_RESTORE
+  ])
+  if test "$ac_cv_cxx_ext_hash_set" = yes; then
+    AC_DEFINE(HAVE_EXT_HASH_SET,,[Define if ext/hash_set is present. ])
+  fi
+])
+</programlisting>
+</section>
+
+<section xml:id="backwards.third.nocreate_noreplace"><info><title>No <code>ios::nocreate/ios::noreplace</code>.
+</title></info>
+
+
+<para>Historically these flags were used with iostreams to control whether
+new files are created or not when opening a file stream, similar to the
+<code>O_CREAT</code> and <code>O_EXCL</code> flags for the
+<function>open(2)</function> system call. Because iostream modes correspond
+to <function>fopen(3)</function> modes these flags are not supported.
+For input streams a new file will not be created anyway, so
+<code>ios::nocreate</code> is not needed.
+For output streams, a new file will be created if it does not exist, which is
+consistent with the behaviour of <function>fopen</function>.
+</para>
+
+<para>When one of these flags is needed a possible alternative is to attempt
+to open the file using <type>std::ifstream</type> first to determine whether
+the file already exists or not. This may not be reliable however, because
+whether the file exists or not could change between opening the
+<type>std::istream</type> and re-opening with an output stream. If you need
+to check for existence and open a file as a single operation then you will
+need to use OS-specific facilities outside the C++ standard library, such
+as <function>open(2)</function>.
+</para>
+</section>
+
+<section xml:id="backwards.third.streamattach"><info><title>
+No <code>stream::attach(int fd)</code>
+</title></info>
+
+
+<para>
+      Phil Edwards writes: It was considered and rejected for the ISO
+      standard.  Not all environments use file descriptors.  Of those
+      that do, not all of them use integers to represent them.
+    </para>
+
+<para>
+      For a portable solution (among systems which use
+      file descriptors), you need to implement a subclass of
+      <code>std::streambuf</code> (or
+      <code>std::basic_streambuf&lt;..&gt;</code>) which opens a file
+      given a descriptor, and then pass an instance of this to the
+      stream-constructor.
+    </para>
+
+<para>
+      An extension is available that implements this.
+      <filename class="headerfile">&lt;ext/stdio_filebuf.h&gt;</filename>
+      contains a derived class called
+      <classname>__gnu_cxx::stdio_filebuf</classname>.
+      This class can be constructed from a C <code>FILE*</code> or a file
+      descriptor, and provides the <code>fd()</code> function.
+    </para>
+
+<para>
+ For another example of this, refer to
+      <link xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="http://www.josuttis.com/cppcode/fdstream.html">fdstream example</link>
+      by Nicolai Josuttis.
+</para>
+</section>
+
+<section xml:id="backwards.third.support_cxx98"><info><title>
+Support for C++98 dialect.
+</title></info>
+
+
+<para>Check for complete library coverage of the C++1998/2003 standard.
+</para>
+
+<programlisting>
+# AC_HEADER_STDCXX_98
+AC_DEFUN([AC_HEADER_STDCXX_98], [
+  AC_CACHE_CHECK(for ISO C++ 98 include files,
+  ac_cv_cxx_stdcxx_98,
+  [AC_LANG_SAVE
+  AC_LANG_CPLUSPLUS
+  AC_TRY_COMPILE([
+    #include &lt;cassert&gt;
+    #include &lt;cctype&gt;
+    #include &lt;cerrno&gt;
+    #include &lt;cfloat&gt;
+    #include &lt;ciso646&gt;
+    #include &lt;climits&gt;
+    #include &lt;clocale&gt;
+    #include &lt;cmath&gt;
+    #include &lt;csetjmp&gt;
+    #include &lt;csignal&gt;
+    #include &lt;cstdarg&gt;
+    #include &lt;cstddef&gt;
+    #include &lt;cstdio&gt;
+    #include &lt;cstdlib&gt;
+    #include &lt;cstring&gt;
+    #include &lt;ctime&gt;
+
+    #include &lt;algorithm&gt;
+    #include &lt;bitset&gt;
+    #include &lt;complex&gt;
+    #include &lt;deque&gt;
+    #include &lt;exception&gt;
+    #include &lt;fstream&gt;
+    #include &lt;functional&gt;
+    #include &lt;iomanip&gt;
+    #include &lt;ios&gt;
+    #include &lt;iosfwd&gt;
+    #include &lt;iostream&gt;
+    #include &lt;istream&gt;
+    #include &lt;iterator&gt;
+    #include &lt;limits&gt;
+    #include &lt;list&gt;
+    #include &lt;locale&gt;
+    #include &lt;map&gt;
+    #include &lt;memory&gt;
+    #include &lt;new&gt;
+    #include &lt;numeric&gt;
+    #include &lt;ostream&gt;
+    #include &lt;queue&gt;
+    #include &lt;set&gt;
+    #include &lt;sstream&gt;
+    #include &lt;stack&gt;
+    #include &lt;stdexcept&gt;
+    #include &lt;streambuf&gt;
+    #include &lt;string&gt;
+    #include &lt;typeinfo&gt;
+    #include &lt;utility&gt;
+    #include &lt;valarray&gt;
+    #include &lt;vector&gt;
+  ],,
+  ac_cv_cxx_stdcxx_98=yes, ac_cv_cxx_stdcxx_98=no)
+  AC_LANG_RESTORE
+  ])
+  if test "$ac_cv_cxx_stdcxx_98" = yes; then
+    AC_DEFINE(STDCXX_98_HEADERS,,[Define if ISO C++ 1998 header files are present. ])
+  fi
+])
+</programlisting>
+</section>
+
+<section xml:id="backwards.third.support_tr1"><info><title>
+Support for C++TR1 dialect.
+</title></info>
+
+
+<para>Check for library coverage of the TR1 standard.
+</para>
+
+<programlisting>
+# AC_HEADER_STDCXX_TR1
+AC_DEFUN([AC_HEADER_STDCXX_TR1], [
+  AC_CACHE_CHECK(for ISO C++ TR1 include files,
+  ac_cv_cxx_stdcxx_tr1,
+  [AC_LANG_SAVE
+  AC_LANG_CPLUSPLUS
+  AC_TRY_COMPILE([
+  #include &lt;tr1/array&gt;
+  #include &lt;tr1/ccomplex&gt;
+  #include &lt;tr1/cctype&gt;
+  #include &lt;tr1/cfenv&gt;
+  #include &lt;tr1/cfloat&gt;
+  #include &lt;tr1/cinttypes&gt;
+  #include &lt;tr1/climits&gt;
+  #include &lt;tr1/cmath&gt;
+  #include &lt;tr1/complex&gt;
+  #include &lt;tr1/cstdarg&gt;
+  #include &lt;tr1/cstdbool&gt;
+  #include &lt;tr1/cstdint&gt;
+  #include &lt;tr1/cstdio&gt;
+  #include &lt;tr1/cstdlib&gt;
+  #include &lt;tr1/ctgmath&gt;
+  #include &lt;tr1/ctime&gt;
+  #include &lt;tr1/cwchar&gt;
+  #include &lt;tr1/cwctype&gt;
+  #include &lt;tr1/functional&gt;
+  #include &lt;tr1/memory&gt;
+  #include &lt;tr1/random&gt;
+  #include &lt;tr1/regex&gt;
+  #include &lt;tr1/tuple&gt;
+  #include &lt;tr1/type_traits&gt;
+  #include &lt;tr1/unordered_set&gt;
+  #include &lt;tr1/unordered_map&gt;
+  #include &lt;tr1/utility&gt;
+  ],,
+  ac_cv_cxx_stdcxx_tr1=yes, ac_cv_cxx_stdcxx_tr1=no)
+  AC_LANG_RESTORE
+  ])
+  if test "$ac_cv_cxx_stdcxx_tr1" = yes; then
+    AC_DEFINE(STDCXX_TR1_HEADERS,,[Define if ISO C++ TR1 header files are present. ])
+  fi
+])
+</programlisting>
+
+<para>An alternative is to check just for specific TR1 includes, such as &lt;unordered_map&gt; and &lt;unordered_set&gt;.
+</para>
+
+<programlisting>
+# AC_HEADER_TR1_UNORDERED_MAP
+AC_DEFUN([AC_HEADER_TR1_UNORDERED_MAP], [
+  AC_CACHE_CHECK(for tr1/unordered_map,
+  ac_cv_cxx_tr1_unordered_map,
+  [AC_LANG_SAVE
+  AC_LANG_CPLUSPLUS
+  AC_TRY_COMPILE([#include &lt;tr1/unordered_map&gt;], [using std::tr1::unordered_map;],
+  ac_cv_cxx_tr1_unordered_map=yes, ac_cv_cxx_tr1_unordered_map=no)
+  AC_LANG_RESTORE
+  ])
+  if test "$ac_cv_cxx_tr1_unordered_map" = yes; then
+    AC_DEFINE(HAVE_TR1_UNORDERED_MAP,,[Define if tr1/unordered_map is present. ])
+  fi
+])
+</programlisting>
+
+<programlisting>
+# AC_HEADER_TR1_UNORDERED_SET
+AC_DEFUN([AC_HEADER_TR1_UNORDERED_SET], [
+  AC_CACHE_CHECK(for tr1/unordered_set,
+  ac_cv_cxx_tr1_unordered_set,
+  [AC_LANG_SAVE
+  AC_LANG_CPLUSPLUS
+  AC_TRY_COMPILE([#include &lt;tr1/unordered_set&gt;], [using std::tr1::unordered_set;],
+  ac_cv_cxx_tr1_unordered_set=yes, ac_cv_cxx_tr1_unordered_set=no)
+  AC_LANG_RESTORE
+  ])
+  if test "$ac_cv_cxx_tr1_unordered_set" = yes; then
+    AC_DEFINE(HAVE_TR1_UNORDERED_SET,,[Define if tr1/unordered_set is present. ])
+  fi
+])
+</programlisting>
+</section>
+
+
+<section xml:id="backwards.third.support_cxx11"><info><title>
+Support for C++11 dialect.
+</title></info>
+
+
+<para>Check for baseline language coverage in the compiler for the C++11 standard.
+</para>
+
+<programlisting>
+# AC_COMPILE_STDCXX_11
+AC_DEFUN([AC_COMPILE_STDCXX_11], [
+  AC_CACHE_CHECK(if g++ supports C++11 features without additional flags,
+  ac_cv_cxx_compile_cxx11_native,
+  [AC_LANG_SAVE
+  AC_LANG_CPLUSPLUS
+  AC_TRY_COMPILE([
+  template &lt;typename T&gt;
+    struct check final
+    {
+      static constexpr T value{ __cplusplus };
+    };
+
+    typedef check&lt;check&lt;bool&gt;&gt; right_angle_brackets;
+
+    int a;
+    decltype(a) b;
+
+    typedef check&lt;int&gt; check_type;
+    check_type c{};
+    check_type&amp;&amp; cr = static_cast&lt;check_type&amp;&amp;&gt;(c);
+
+    static_assert(check_type::value == 201103L, "C++11 compiler");],,
+  ac_cv_cxx_compile_cxx11_native=yes, ac_cv_cxx_compile_cxx11_native=no)
+  AC_LANG_RESTORE
+  ])
+
+  AC_CACHE_CHECK(if g++ supports C++11 features with -std=c++11,
+  ac_cv_cxx_compile_cxx11_cxx,
+  [AC_LANG_SAVE
+  AC_LANG_CPLUSPLUS
+  ac_save_CXXFLAGS="$CXXFLAGS"
+  CXXFLAGS="$CXXFLAGS -std=c++11"
+  AC_TRY_COMPILE([
+  template &lt;typename T&gt;
+    struct check final
+    {
+      static constexpr T value{ __cplusplus };
+    };
+
+    typedef check&lt;check&lt;bool&gt;&gt; right_angle_brackets;
+
+    int a;
+    decltype(a) b;
+
+    typedef check&lt;int&gt; check_type;
+    check_type c{};
+    check_type&amp;&amp; cr = static_cast&lt;check_type&amp;&amp;&gt;(c);
+
+    static_assert(check_type::value == 201103L, "C++11 compiler");],,
+  ac_cv_cxx_compile_cxx11_cxx=yes, ac_cv_cxx_compile_cxx11_cxx=no)
+  CXXFLAGS="$ac_save_CXXFLAGS"
+  AC_LANG_RESTORE
+  ])
+
+  AC_CACHE_CHECK(if g++ supports C++11 features with -std=gnu++11,
+  ac_cv_cxx_compile_cxx11_gxx,
+  [AC_LANG_SAVE
+  AC_LANG_CPLUSPLUS
+  ac_save_CXXFLAGS="$CXXFLAGS"
+  CXXFLAGS="$CXXFLAGS -std=gnu++11"
+  AC_TRY_COMPILE([
+  template &lt;typename T&gt;
+    struct check final
+    {
+      static constexpr T value{ __cplusplus };
+    };
+
+    typedef check&lt;check&lt;bool&gt;&gt; right_angle_brackets;
+
+    int a;
+    decltype(a) b;
+
+    typedef check&lt;int&gt; check_type;
+    check_type c{};
+    check_type&amp;&amp; cr = static_cast&lt;check_type&amp;&amp;&gt;(c);
+
+    static_assert(check_type::value == 201103L, "C++11 compiler");],,
+  ac_cv_cxx_compile_cxx11_gxx=yes, ac_cv_cxx_compile_cxx11_gxx=no)
+  CXXFLAGS="$ac_save_CXXFLAGS"
+  AC_LANG_RESTORE
+  ])
+
+  if test "$ac_cv_cxx_compile_cxx11_native" = yes ||
+     test "$ac_cv_cxx_compile_cxx11_cxx" = yes ||
+     test "$ac_cv_cxx_compile_cxx11_gxx" = yes; then
+    AC_DEFINE(HAVE_STDCXX_11,,[Define if g++ supports C++11 features. ])
+  fi
+])
+</programlisting>
+
+
+<para>Check for library coverage of the C++2011 standard.
+  (Some library headers are commented out in this check, they are
+  not currently provided by libstdc++).
+</para>
+
+<programlisting>
+# AC_HEADER_STDCXX_11
+AC_DEFUN([AC_HEADER_STDCXX_11], [
+  AC_CACHE_CHECK(for ISO C++11 include files,
+  ac_cv_cxx_stdcxx_11,
+  [AC_REQUIRE([AC_COMPILE_STDCXX_11])
+  AC_LANG_SAVE
+  AC_LANG_CPLUSPLUS
+  ac_save_CXXFLAGS="$CXXFLAGS"
+  CXXFLAGS="$CXXFLAGS -std=gnu++11"
+
+  AC_TRY_COMPILE([
+    #include &lt;cassert&gt;
+    #include &lt;ccomplex&gt;
+    #include &lt;cctype&gt;
+    #include &lt;cerrno&gt;
+    #include &lt;cfenv&gt;
+    #include &lt;cfloat&gt;
+    #include &lt;cinttypes&gt;
+    #include &lt;ciso646&gt;
+    #include &lt;climits&gt;
+    #include &lt;clocale&gt;
+    #include &lt;cmath&gt;
+    #include &lt;csetjmp&gt;
+    #include &lt;csignal&gt;
+    #include &lt;cstdalign&gt;
+    #include &lt;cstdarg&gt;
+    #include &lt;cstdbool&gt;
+    #include &lt;cstddef&gt;
+    #include &lt;cstdint&gt;
+    #include &lt;cstdio&gt;
+    #include &lt;cstdlib&gt;
+    #include &lt;cstring&gt;
+    #include &lt;ctgmath&gt;
+    #include &lt;ctime&gt;
+    // #include &lt;cuchar&gt;
+    #include &lt;cwchar&gt;
+    #include &lt;cwctype&gt;
+
+    #include &lt;algorithm&gt;
+    #include &lt;array&gt;
+    #include &lt;atomic&gt;
+    #include &lt;bitset&gt;
+    #include &lt;chrono&gt;
+    // #include &lt;codecvt&gt;
+    #include &lt;complex&gt;
+    #include &lt;condition_variable&gt;
+    #include &lt;deque&gt;
+    #include &lt;exception&gt;
+    #include &lt;forward_list&gt;
+    #include &lt;fstream&gt;
+    #include &lt;functional&gt;
+    #include &lt;future&gt;
+    #include &lt;initializer_list&gt;
+    #include &lt;iomanip&gt;
+    #include &lt;ios&gt;
+    #include &lt;iosfwd&gt;
+    #include &lt;iostream&gt;
+    #include &lt;istream&gt;
+    #include &lt;iterator&gt;
+    #include &lt;limits&gt;
+    #include &lt;list&gt;
+    #include &lt;locale&gt;
+    #include &lt;map&gt;
+    #include &lt;memory&gt;
+    #include &lt;mutex&gt;
+    #include &lt;new&gt;
+    #include &lt;numeric&gt;
+    #include &lt;ostream&gt;
+    #include &lt;queue&gt;
+    #include &lt;random&gt;
+    #include &lt;ratio&gt;
+    #include &lt;regex&gt;
+    #include &lt;scoped_allocator&gt;
+    #include &lt;set&gt;
+    #include &lt;sstream&gt;
+    #include &lt;stack&gt;
+    #include &lt;stdexcept&gt;
+    #include &lt;streambuf&gt;
+    #include &lt;string&gt;
+    #include &lt;system_error&gt;
+    #include &lt;thread&gt;
+    #include &lt;tuple&gt;
+    #include &lt;typeindex&gt;
+    #include &lt;typeinfo&gt;
+    #include &lt;type_traits&gt;
+    #include &lt;unordered_map&gt;
+    #include &lt;unordered_set&gt;
+    #include &lt;utility&gt;
+    #include &lt;valarray&gt;
+    #include &lt;vector&gt;
+  ],,
+  ac_cv_cxx_stdcxx_11=yes, ac_cv_cxx_stdcxx_11=no)
+  AC_LANG_RESTORE
+  CXXFLAGS="$ac_save_CXXFLAGS"
+  ])
+  if test "$ac_cv_cxx_stdcxx_11" = yes; then
+    AC_DEFINE(STDCXX_11_HEADERS,,[Define if ISO C++11 header files are present. ])
+  fi
+])
+</programlisting>
+
+<para>As is the case for TR1 support, these autoconf macros can be made for a finer-grained, per-header-file check. For
+<filename class="headerfile">&lt;unordered_map&gt;</filename>
+</para>
+
+<programlisting>
+# AC_HEADER_UNORDERED_MAP
+AC_DEFUN([AC_HEADER_UNORDERED_MAP], [
+  AC_CACHE_CHECK(for unordered_map,
+  ac_cv_cxx_unordered_map,
+  [AC_REQUIRE([AC_COMPILE_STDCXX_11])
+  AC_LANG_SAVE
+  AC_LANG_CPLUSPLUS
+  ac_save_CXXFLAGS="$CXXFLAGS"
+  CXXFLAGS="$CXXFLAGS -std=gnu++11"
+  AC_TRY_COMPILE([#include &lt;unordered_map&gt;], [using std::unordered_map;],
+  ac_cv_cxx_unordered_map=yes, ac_cv_cxx_unordered_map=no)
+  CXXFLAGS="$ac_save_CXXFLAGS"
+  AC_LANG_RESTORE
+  ])
+  if test "$ac_cv_cxx_unordered_map" = yes; then
+    AC_DEFINE(HAVE_UNORDERED_MAP,,[Define if unordered_map is present. ])
+  fi
+])
+</programlisting>
+
+<programlisting>
+# AC_HEADER_UNORDERED_SET
+AC_DEFUN([AC_HEADER_UNORDERED_SET], [
+  AC_CACHE_CHECK(for unordered_set,
+  ac_cv_cxx_unordered_set,
+  [AC_REQUIRE([AC_COMPILE_STDCXX_11])
+  AC_LANG_SAVE
+  AC_LANG_CPLUSPLUS
+  ac_save_CXXFLAGS="$CXXFLAGS"
+  CXXFLAGS="$CXXFLAGS -std=gnu++11"
+  AC_TRY_COMPILE([#include &lt;unordered_set&gt;], [using std::unordered_set;],
+  ac_cv_cxx_unordered_set=yes, ac_cv_cxx_unordered_set=no)
+  CXXFLAGS="$ac_save_CXXFLAGS"
+  AC_LANG_RESTORE
+  ])
+  if test "$ac_cv_cxx_unordered_set" = yes; then
+    AC_DEFINE(HAVE_UNORDERED_SET,,[Define if unordered_set is present. ])
+  fi
+])
+</programlisting>
+
+<para>
+  Some C++11 features first appeared in GCC 4.3 and could be enabled by
+  <option>-std=c++0x</option> and <option>-std=gnu++0x</option> for GCC
+  releases which pre-date the 2011 standard. Those C++11 features and GCC's
+  support for them were still changing until the 2011 standard was finished,
+  but the autoconf checks above could be extended to test for incomplete
+  C++11 support with <option>-std=c++0x</option> and
+  <option>-std=gnu++0x</option>.
+</para>
+
+</section>
+
+<section xml:id="backwards.third.iterator_type"><info><title>
+  <code>Container::iterator_type</code> is not necessarily <code>Container::value_type*</code>
+</title></info>
+
+
+<para>
+  This is a change in behavior from older versions. Now, most
+  <type>iterator_type</type> typedefs in container classes are POD
+  objects, not <type>value_type</type> pointers.
+</para>
+</section>
+
+</section>
+
+</section>

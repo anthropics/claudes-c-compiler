@@ -1,0 +1,326 @@
+; Options for the SPARC port of the compiler
+;
+; Copyright (C) 2005-2026 Free Software Foundation, Inc.
+;
+; This file is part of GCC.
+;
+; GCC is free software; you can redistribute it and/or modify it under
+; the terms of the GNU General Public License as published by the Free
+; Software Foundation; either version 3, or (at your option) any later
+; version.
+;
+; GCC is distributed in the hope that it will be useful, but WITHOUT
+; ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+; or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+; License for more details.
+;
+; You should have received a copy of the GNU General Public License
+; along with GCC; see the file COPYING3.  If not see
+; <http://www.gnu.org/licenses/>.
+
+HeaderInclude
+config/sparc/sparc-opts.h
+
+;; Debug flags
+TargetVariable
+unsigned int sparc_debug
+
+mfpu
+Target Mask(FPU)
+Use hardware FP.
+
+mhard-float
+Target RejectNegative Mask(FPU)
+Use hardware FP.
+
+msoft-float
+Target RejectNegative InverseMask(FPU)
+Do not use hardware FP.
+
+mflat
+Target Mask(FLAT)
+Use flat register window model.
+
+munaligned-doubles
+Target Mask(UNALIGNED_DOUBLES)
+Assume possible double misalignment.
+
+mapp-regs
+Target Mask(APP_REGS)
+Use ABI reserved registers.
+
+mhard-quad-float
+Target RejectNegative Mask(HARD_QUAD)
+Use hardware quad FP instructions.
+
+msoft-quad-float
+Target RejectNegative InverseMask(HARD_QUAD)
+Do not use hardware quad fp instructions.
+
+mv8plus
+Target Mask(V8PLUS)
+Compile for V8+ ABI.
+
+mvis
+Target Mask(VIS)
+Use UltraSPARC Visual Instruction Set version 1.0 extensions.
+
+mvis2
+Target Mask(VIS2)
+Use UltraSPARC Visual Instruction Set version 2.0 extensions.
+
+mvis3
+Target Mask(VIS3)
+Use UltraSPARC Visual Instruction Set version 3.0 extensions.
+
+mvis3b
+Target Mask(VIS3B)
+Use additional VIS 3 instructions introduced in OSA2011.
+
+mvis4
+Target Mask(VIS4)
+Use UltraSPARC Visual Instruction Set version 4.0 extensions.
+
+mvis4b
+Target Mask(VIS4B)
+Use additional VIS 4 instructions introduced in OSA2017.
+
+mcbcond
+Target Mask(CBCOND)
+Use UltraSPARC Compare-and-Branch extensions.
+
+mfmaf
+Target Mask(FMAF)
+Use UltraSPARC Fused Multiply-Add extensions.
+
+mfsmuld
+Target Mask(FSMULD)
+Use Floating-point Multiply Single to Double (FsMULd) instruction.
+
+mpopc
+Target Mask(POPC)
+Use UltraSPARC Population-Count instruction.
+
+msubxc
+Target Mask(SUBXC)
+Use UltraSPARC Subtract-Extended-with-Carry instruction.
+
+mptr64
+Target RejectNegative Mask(PTR64)
+Pointers are 64-bit.
+
+mptr32
+Target RejectNegative InverseMask(PTR64)
+Pointers are 32-bit.
+
+m64
+Target RejectNegative Mask(64BIT)
+Use 64-bit ABI.
+
+m32
+Target RejectNegative InverseMask(64BIT)
+Use 32-bit ABI.
+
+mstack-bias
+Target Mask(STACK_BIAS)
+Use stack bias.
+
+mfaster-structs
+Target Mask(FASTER_STRUCTS)
+Use structs on stronger alignment for double-word copies.
+
+mrelax
+Target
+Optimize tail call instructions in assembler and linker.
+
+muser-mode
+Target InverseMask(SV_MODE)
+Do not generate code that can only run in supervisor mode (default).
+
+mcpu=
+Target RejectNegative Joined Var(sparc_cpu_and_features) Enum(sparc_processor) Init(PROCESSOR_V7)
+Use instructions of and schedule code for given CPU.
+
+mtune=
+Target RejectNegative Joined Var(sparc_cpu) Enum(sparc_processor) Init(PROCESSOR_V7)
+Schedule code for given CPU.
+
+Enum
+Name(sparc_processor) Type(enum sparc_processor_type)
+
+EnumValue
+Enum(sparc_processor) String(native) Value(PROCESSOR_NATIVE) DriverOnly
+
+EnumValue
+Enum(sparc_processor) String(v7) Value(PROCESSOR_V7)
+
+EnumValue
+Enum(sparc_processor) String(cypress) Value(PROCESSOR_CYPRESS)
+
+EnumValue
+Enum(sparc_processor) String(v8) Value(PROCESSOR_V8)
+
+EnumValue
+Enum(sparc_processor) String(supersparc) Value(PROCESSOR_SUPERSPARC)
+
+EnumValue
+Enum(sparc_processor) String(hypersparc) Value(PROCESSOR_HYPERSPARC)
+
+EnumValue
+Enum(sparc_processor) String(leon) Value(PROCESSOR_LEON)
+
+EnumValue
+Enum(sparc_processor) String(leon3) Value(PROCESSOR_LEON3)
+
+EnumValue
+Enum(sparc_processor) String(leon3v7) Value(PROCESSOR_LEON3V7)
+
+EnumValue
+Enum(sparc_processor) String(leon5) Value(PROCESSOR_LEON5)
+
+EnumValue
+Enum(sparc_processor) String(sparclite) Value(PROCESSOR_SPARCLITE)
+
+EnumValue
+Enum(sparc_processor) String(f930) Value(PROCESSOR_F930)
+
+EnumValue
+Enum(sparc_processor) String(f934) Value(PROCESSOR_F934)
+
+EnumValue
+Enum(sparc_processor) String(sparclite86x) Value(PROCESSOR_SPARCLITE86X)
+
+EnumValue
+Enum(sparc_processor) String(sparclet) Value(PROCESSOR_SPARCLET)
+
+EnumValue
+Enum(sparc_processor) String(tsc701) Value(PROCESSOR_TSC701)
+
+EnumValue
+Enum(sparc_processor) String(v9) Value(PROCESSOR_V9)
+
+EnumValue
+Enum(sparc_processor) String(ultrasparc) Value(PROCESSOR_ULTRASPARC)
+
+EnumValue
+Enum(sparc_processor) String(ultrasparc3) Value(PROCESSOR_ULTRASPARC3)
+
+EnumValue
+Enum(sparc_processor) String(niagara) Value(PROCESSOR_NIAGARA)
+
+EnumValue
+Enum(sparc_processor) String(niagara2) Value(PROCESSOR_NIAGARA2)
+
+EnumValue
+Enum(sparc_processor) String(niagara3) Value(PROCESSOR_NIAGARA3)
+
+EnumValue
+Enum(sparc_processor) String(niagara4) Value(PROCESSOR_NIAGARA4)
+
+EnumValue
+Enum(sparc_processor) String(niagara7) Value(PROCESSOR_NIAGARA7)
+
+EnumValue
+Enum(sparc_processor) String(m8) Value(PROCESSOR_M8)
+
+mcmodel=
+Target RejectNegative Joined Var(sparc_code_model) Enum(sparc_code_model) Init(CM_32)
+Use given SPARC-V9 code model.
+
+Enum
+Name(sparc_code_model) Type(enum sparc_code_model_type)
+
+EnumValue
+Enum(sparc_code_model) String(32) Value(CM_32)
+
+EnumValue
+Enum(sparc_code_model) String(medlow) Value(CM_MEDLOW)
+
+EnumValue
+Enum(sparc_code_model) String(medmid) Value(CM_MEDMID)
+
+EnumValue
+Enum(sparc_code_model) String(medany) Value(CM_MEDANY)
+
+EnumValue
+Enum(sparc_code_model) String(embmedany) Value(CM_EMBMEDANY)
+
+mdebug=
+Target RejectNegative Joined Undocumented Var(sparc_debug_string)
+Enable debug output.
+
+mstd-struct-return
+Target Var(sparc_std_struct_return)
+Enable strict 32-bit psABI struct return checking.
+
+mfix-at697f
+Target RejectNegative Var(sparc_fix_at697f)
+Enable workaround for single erratum of AT697F processor
+(corresponding to erratum #13 of AT697E processor).
+
+mfix-ut699
+Target RejectNegative Var(sparc_fix_ut699)
+Enable workarounds for the errata of the UT699 processor.
+
+mfix-ut700
+Target RejectNegative Var(sparc_fix_ut700)
+Enable workarounds for the errata of the UT699E/UT700 processor.
+
+mfix-gr712rc
+Target RejectNegative Var(sparc_fix_gr712rc)
+Enable workarounds for the errata of the GR712RC processor.
+
+;; Enable workaround for back-to-back store errata
+TargetVariable
+unsigned int sparc_fix_b2bst
+
+;; Enable workaround for GRLIB-TN-0013 errata
+TargetVariable
+unsigned int sparc_fix_lost_divsqrt
+
+Mask(LONG_DOUBLE_128)
+;; Use 128-bit long double
+
+Mask(LEON)
+;; Generate code for LEON
+
+Mask(LEON3)
+;; Generate code for LEON3
+
+Mask(SPARCLITE)
+;; Generate code for SPARClite
+
+Mask(SPARCLET)
+;; Generate code for SPARClet
+
+Mask(V8)
+;; Generate code for SPARC-V8
+
+Mask(V9)
+;; Generate code for SPARC-V9
+
+Mask(DEPRECATED_V8_INSNS)
+;; Generate code that uses the V8 instructions deprecated
+;; in the V9 architecture.
+
+mmemory-model=
+Target RejectNegative Joined Var(sparc_memory_model) Enum(sparc_memory_model) Init(SMM_DEFAULT)
+Specify the memory model in effect for the program.
+
+Enum
+Name(sparc_memory_model) Type(enum sparc_memory_model_type)
+
+EnumValue
+Enum(sparc_memory_model) String(default) Value(SMM_DEFAULT)
+
+EnumValue
+Enum(sparc_memory_model) String(rmo) Value(SMM_RMO)
+
+EnumValue
+Enum(sparc_memory_model) String(pso) Value(SMM_PSO)
+
+EnumValue
+Enum(sparc_memory_model) String(tso) Value(SMM_TSO)
+
+EnumValue
+Enum(sparc_memory_model) String(sc) Value(SMM_SC)

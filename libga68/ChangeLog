@@ -1,0 +1,154 @@
+2026-01-30  Pietro Monteiro  <pietro@sociotechnical.xyz>
+
+	* ga68-alloc.c (_libga68_realloc_internal): New function.
+	* ga68-posix.c (_libga68_posixperror): Adjust calls to _libga68_u32_to_u8.
+	(_libga68_posixfopen): Likewise.
+	(_libga68_posixcreat): Likewise.
+	(_libga68_posixgetenv): Likewise.
+	(_libga68_posixfputs): Likewise.
+	(_libga68_posixfconnect): Likewise.
+	* ga68-unistr.c (_libga68_u32_to_u8): Use internal allocator.
+	* ga68.h (_libga68_realloc_internal): New prototype.
+	(_libga68_u32_to_u8): Update prototype.
+
+2026-01-24  Jose E. Marchesi  <jemarch@gnu.org>
+
+	PR algol68/123733
+	* configure.ac: Check for GC_is_init_called in libgc.
+	* configure: Regenerate.
+
+2026-01-20  Pietro Monteiro  <pietro@sociotechnical.xyz>
+
+	* ga68-alloc.c (_libga68_malloc_leaf): New function.
+	* ga68-posix.c (_libga68_posixfgets): Use _libga68_malloc_leaf
+	instead of _libga68_malloc.
+	* ga68-unistr.c (_libga68_u32_to_u8): Likewise.
+	(_libga68_u8_to_u32): Likewise.
+	* ga68.h (_libga68_malloc_leaf): New prototype.
+	* ga68.map: Add _libga68_malloc_leaf to the global map.
+
+2026-01-19  Mohammad-Reza Nabipoor  <mnabipoor@gnu.org>
+
+	* configure.ac (--enable-algol68-gc): Change default value to `auto'.
+	* configure: Re-generate.
+
+2026-01-12  Pietro Monteiro  <pietro@sociotechnical.xyz>
+
+	* configure: Regenerate.
+	* configure.ac: Add --enable-algol68-gc-debug option and
+	define GC_DEBUG accordingly.
+	* ga68-alloc.c (_libga68_realloc): Use the C macro version of
+	the GC function.
+	(_libga68_realloc_unchecked): Likewise.
+	(_libga68_malloc): Likewise.
+
+2026-01-10  Pietro Monteiro  <pietro@sociotechnical.xyz>
+
+	* ga68-posix.c (_libga68_posixexit): New function.
+	* ga68.h (_libga68_posixexit): New prototype.
+	(_libga68_set_exit_status): Delete prototype.
+	* ga68.map: Remove _libga68_set_exit_status from and add
+	_libga68_posixexit to the global map.
+	* libga68.c: include <stdlib.h>.
+	(_libga68_set_exit_status): Delete function.
+	(main): Return EXIT_SUCCESS.
+
+2026-01-02  Jose E. Marchesi  <jose.marchesi@oracle.com>
+
+	* sppp.awk: Avoid conditional expression.
+
+2026-01-01  Jose E. Marchesi  <jose.marchesi@oracle.com>
+
+	* sppp.awk: Fix non-portable uses of 'match'.
+
+2025-12-31  Pietro Monteiro  <pietro@sociotechnical.xyz>
+
+	* Makefile.in: Regenerate.
+
+2025-12-30  Jose E. Marchesi  <jose.marchesi@oracle.com>
+
+	* m4/autoconf.m4: New file.
+	* configure.ac: Expand AC_PROG_A68.
+	* configure: Regenerate.
+	* Makefile.am: Add rules to build Algol 68 sources and to
+	build the transput module.
+	* Makefile.in: Regenerate.
+	* acinclude.m4: Include m4/autoconf.m4.
+	* sppp.awk: New file.
+	* transput.a68.in: Likewise.
+
+2025-12-30  Pietro Monteiro  <pietro@sociotechnical.xyz>
+
+	* acinclude.m4: New file. Add visibility attribute test.
+	* configure.ac: Use the new test.
+	* Makefile.in: Regenerate.
+	* aclocal.m4: Likewise.
+	* config.h.in: Likewise.
+	* configure: Likewise.
+	* ga68.h (GA68_HIDDEN): New macro.
+	(_libga68_abort): Add visibility hidden attribute.
+	(_libga68_init_heap): Likewise.
+	(_libga68_malloc_internal): Likewise.
+	(_libga68_realloc): Likewise.
+	(_libga68_realloc_unchecked): Likewise.
+	(_libga68_free_internal): Likewise.
+	(_libga68_u8_uctomb): Likewise.
+	(_libga68_u8_mbtouc): Likewise.
+	(_libga68_u32_to_u8): Likewise.
+
+2025-12-29  Pietro Monteiro  <pietro@sociotechnical.xyz>
+
+	* configure.ac: New test to determine if symbol versioning is
+	supported.
+	* Makefile.am: Use result of above test to add appropriate linker
+	flags.
+	* Makefile.in: Regenerated.
+	* aclocal.m4: Likewise.
+	* configure: Likewise.
+	* ga68.map: New file.
+	* libtool-version: New file.
+
+2025-12-29  Rainer Orth  <ro@CeBiTec.Uni-Bielefeld.DE>
+
+	* configure: Regenerate.
+
+2025-12-27  Pietro Monteiro  <pietro@sociotechnical.xyz>
+
+	* ga68-alloc.c: Include ga68.h before all includes.
+	* ga68-error.c: Likewise.
+	* ga68-standenv.c: Likewise.
+	* ga68-unistr.c:  Likewise.
+
+2025-12-16  Pietro Monteiro  <pietro@sociotechnical.xyz>
+
+	* ga68-unistr.c (_libga68_u32_cmp): Add `static' specifier.
+	* ga68.h (_libga68_u32_cmp): Remove prototype.
+
+2025-11-30  Jose E. Marchesi  <jose.marchesi@oracle.com>
+
+	* Makefile.am: New file.
+	* configure.ac: Likewise.
+	* Makefile.in: Generate.
+	* aclocal.m4: Likewise.
+	* config.h.in: Regenerate.
+	* configure: Likewise.
+	* Makefile.in: Likewise.
+	* aclocal.m4: Likewise.
+
+2025-11-30  Jose E. Marchesi  <jose.marchesi@oracle.com>
+
+	* README: New file.
+	* ga68-alloc.c: Likewise.
+	* ga68-error.c: Likewise.
+	* ga68-posix.c: Likewise.
+	* ga68-standenv.c: Likewise.
+	* ga68-unistr.c: Likewise.
+	* ga68.h: Likewise.
+	* libga68.c: Likewise.
+	* libga68.spec.in: Likewise.
+
+Copyright (C) 2025-2026 Free Software Foundation, Inc.
+
+Copying and distribution of this file, with or without modification,
+are permitted in any medium without royalty provided the copyright
+notice and this notice are preserved.

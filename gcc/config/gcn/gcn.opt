@@ -1,0 +1,121 @@
+; Options for the GCN port of the compiler.
+
+; Copyright (C) 2016-2026 Free Software Foundation, Inc.
+;
+; This file is part of GCC.
+;
+; GCC is free software; you can redistribute it and/or modify it under
+; the terms of the GNU General Public License as published by the Free
+; Software Foundation; either version 3, or (at your option) any later
+; version.
+;
+; GCC is distributed in the hope that it will be useful, but WITHOUT ANY
+; WARRANTY; without even the implied warranty of MERCHANTABILITY or
+; FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+; for more details.
+;
+; You should have received a copy of the GNU General Public License
+; along with GCC; see the file COPYING3.  If not see
+; <http://www.gnu.org/licenses/>.
+
+HeaderInclude
+config/gcn/gcn-opts.h
+
+march=
+Target RejectNegative Negative(march=) Joined ToLower Enum(gpu_type) Var(gcn_arch) Init(PROCESSOR_GFX90A)
+Specify the name of the target GPU.
+
+mtune=
+Target RejectNegative Negative(mtune=) Joined ToLower Enum(gpu_type) Var(gcn_tune) Init(PROCESSOR_GFX90A)
+Specify the name of the target GPU.
+
+; mkoffload passes -m32, -m64, and -mgomp to the offload compiler, but
+; nothing in the offload compiler actually uses any of these flags.
+; Maybe they're there for compatibility with other offload backends,
+; or maybe we can just delete these.  In any case, there's no point in
+; documenting them for users.
+m32
+Target RejectNegative InverseMask(ABI64) Undocumented
+Generate code for a 32-bit ABI.
+
+m64
+Target RejectNegative Mask(ABI64) Undocumented
+Generate code for a 64-bit ABI.
+
+mgomp
+Target RejectNegative Undocumented
+Enable OpenMP GPU offloading.
+
+; This option seems not to ever have done anything useful, or to have
+; been documented.
+Variable
+bool flag_bypass_init_error = false
+
+mbypass-init-error
+Target RejectNegative Var(flag_bypass_init_error) Undocumented
+
+Variable
+int stack_size_opt = -1
+
+mstack-size=
+Target RejectNegative Joined UInteger Var(stack_size_opt) Init(-1) Undocumented
+Obsolete; use GCN_STACK_SIZE at runtime.
+
+Variable
+int gang_private_size_opt = -1
+
+mgang-private-size=
+Target RejectNegative Joined UInteger Var(gang_private_size_opt) Init(-1)
+Amount of local data-share (LDS) memory to reserve for gang-private variables.
+
+Wopenacc-dims
+Target Var(warn_openacc_dims) Warning
+Warn about invalid OpenACC dimensions.
+
+Enum
+Name(hsaco_attr_type) Type(enum hsaco_attr_type)
+SRAM-ECC and XNACK modes:
+
+EnumValue
+Enum(hsaco_attr_type) String(off) Value(HSACO_ATTR_OFF)
+
+EnumValue
+Enum(hsaco_attr_type) String(on) Value(HSACO_ATTR_ON)
+
+EnumValue
+Enum(hsaco_attr_type) String(any) Value(HSACO_ATTR_ANY)
+
+EnumValue
+Enum(hsaco_attr_type) String(default) Value(HSACO_ATTR_DEFAULT)
+
+mxnack=
+Target RejectNegative Joined ToLower Enum(hsaco_attr_type) Var(flag_xnack) Init(HSACO_ATTR_DEFAULT)
+Compile for devices requiring XNACK enabled. Default \"any\" if USM is supported.
+
+msram-ecc=
+Target RejectNegative Joined ToLower Enum(hsaco_attr_type) Var(flag_sram_ecc) Init(HSACO_ATTR_DEFAULT)
+Compile for devices with the SRAM ECC feature enabled, or not. Default \"any\".
+
+-param=gcn-preferred-vectorization-factor=
+Target Joined Enum(gcn_preferred_vectorization_factor) Var(gcn_preferred_vectorization_factor) Init(-1) Param
+--param=gcn-preferred-vectorization-factor=[default,32,64]	Preferred vectorization factor.
+
+Enum
+Name(gcn_preferred_vectorization_factor) Type(int)
+
+EnumValue
+Enum(gcn_preferred_vectorization_factor) String(default) Value(-1)
+
+EnumValue
+Enum(gcn_preferred_vectorization_factor) String(32) Value(32)
+
+EnumValue
+Enum(gcn_preferred_vectorization_factor) String(64) Value(64)
+
+mfake-exceptions
+Target Var(fake_exceptions) Init(0) Undocumented
+; With '-mfake-exceptions' enabled, the user-visible behavior in presence of
+; exception handling constructs changes such that the compile-time
+; 'sorry, unimplemented: exception handling not supported' is skipped, code
+; generation proceeds, and instead, exception handling constructs 'abort' at
+; run time.  (..., or don't, if they're in dead code.)

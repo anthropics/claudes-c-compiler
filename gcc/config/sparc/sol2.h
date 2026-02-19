@@ -1,0 +1,389 @@
+/* Definitions of target machine for GCC, for SPARC running Solaris 2
+   Copyright (C) 1992-2026 Free Software Foundation, Inc.
+   Contributed by Ron Guilmette (rfg@netcom.com).
+   Additional changes by David V. Henkel-Wallace (gumby@cygnus.com).
+
+This file is part of GCC.
+
+GCC is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 3, or (at your option)
+any later version.
+
+GCC is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with GCC; see the file COPYING3.  If not see
+<http://www.gnu.org/licenses/>.  */
+
+/* Solaris allows 64-bit out and global registers to be used in 32-bit mode.
+   sparc_override_options will disable V8+ if either not generating V9 code
+   or generating 64-bit code.  */
+#undef TARGET_DEFAULT
+#ifdef TARGET_64BIT_DEFAULT
+#define TARGET_DEFAULT \
+  (MASK_V9 + MASK_64BIT + MASK_PTR64 + MASK_STACK_BIAS + \
+   MASK_V8PLUS + MASK_APP_REGS + MASK_FPU + MASK_LONG_DOUBLE_128)
+#else
+#define TARGET_DEFAULT \
+  (MASK_V8PLUS + MASK_APP_REGS + MASK_FPU + MASK_LONG_DOUBLE_128)
+#endif
+
+/* The default code model used to be CM_MEDANY on Solaris
+   but even Sun eventually found it to be quite wasteful
+   and changed it to CM_MEDMID in the Studio 9 compiler.  */
+#undef SPARC_DEFAULT_CMODEL
+#define SPARC_DEFAULT_CMODEL CM_MEDMID
+
+/* Redue ggc-page.cc's chunk size to account for mmap red-zone pages.  */
+#define GGC_QUIRE_SIZE 510
+
+
+
+/* Supposedly the same as vanilla sparc svr4, except for the stuff below: */
+
+/* We switch to the explicit word size selection mechanism available both in
+   GNU as and Sun as, for the Niagara4 and above configurations.  */
+
+#if !HAVE_GNU_AS
+#undef ASM_ARCH32_SPEC
+#define ASM_ARCH32_SPEC "-m32"
+#undef ASM_ARCH64_SPEC
+#define ASM_ARCH64_SPEC "-m64"
+#endif
+
+/* Both Sun as and GNU as understand -K PIC.  */
+#undef ASM_SPEC
+#define ASM_SPEC ASM_SPEC_BASE " %(asm_arch)" ASM_PIC_SPEC
+
+#undef ASM_CPU32_DEFAULT_SPEC
+#define ASM_CPU32_DEFAULT_SPEC ""
+#undef ASM_CPU64_DEFAULT_SPEC
+#define ASM_CPU64_DEFAULT_SPEC "-xarch=v9"
+
+#if TARGET_CPU_DEFAULT == TARGET_CPU_v9
+#undef CPP_CPU64_DEFAULT_SPEC
+#define CPP_CPU64_DEFAULT_SPEC ""
+#undef ASM_CPU32_DEFAULT_SPEC
+#define ASM_CPU32_DEFAULT_SPEC "-xarch=v8plus"
+#endif
+
+#if TARGET_CPU_DEFAULT == TARGET_CPU_ultrasparc
+#undef CPP_CPU64_DEFAULT_SPEC
+#define CPP_CPU64_DEFAULT_SPEC ""
+#undef ASM_CPU32_DEFAULT_SPEC
+#define ASM_CPU32_DEFAULT_SPEC "-xarch=v8plusa"
+#undef ASM_CPU64_DEFAULT_SPEC
+#define ASM_CPU64_DEFAULT_SPEC "-xarch=v9a"
+#endif
+
+#if TARGET_CPU_DEFAULT == TARGET_CPU_ultrasparc3
+#undef CPP_CPU64_DEFAULT_SPEC
+#define CPP_CPU64_DEFAULT_SPEC ""
+#undef ASM_CPU32_DEFAULT_SPEC
+#define ASM_CPU32_DEFAULT_SPEC "-xarch=v8plusb"
+#undef ASM_CPU64_DEFAULT_SPEC
+#define ASM_CPU64_DEFAULT_SPEC "-xarch=v9b"
+#endif
+
+#if TARGET_CPU_DEFAULT == TARGET_CPU_niagara
+#undef CPP_CPU64_DEFAULT_SPEC
+#define CPP_CPU64_DEFAULT_SPEC ""
+#undef ASM_CPU32_DEFAULT_SPEC
+#define ASM_CPU32_DEFAULT_SPEC "-xarch=v8plusb"
+#undef ASM_CPU64_DEFAULT_SPEC
+#define ASM_CPU64_DEFAULT_SPEC "-xarch=v9b"
+#endif
+
+#if TARGET_CPU_DEFAULT == TARGET_CPU_niagara2
+#undef CPP_CPU64_DEFAULT_SPEC
+#define CPP_CPU64_DEFAULT_SPEC ""
+#undef ASM_CPU32_DEFAULT_SPEC
+#define ASM_CPU32_DEFAULT_SPEC "-xarch=v8plusb"
+#undef ASM_CPU64_DEFAULT_SPEC
+#define ASM_CPU64_DEFAULT_SPEC "-xarch=v9b"
+#endif
+
+#if TARGET_CPU_DEFAULT == TARGET_CPU_niagara3
+#undef CPP_CPU64_DEFAULT_SPEC
+#define CPP_CPU64_DEFAULT_SPEC ""
+#undef ASM_CPU32_DEFAULT_SPEC
+#define ASM_CPU32_DEFAULT_SPEC "-xarch=v8plusd"
+#undef ASM_CPU64_DEFAULT_SPEC
+#define ASM_CPU64_DEFAULT_SPEC "-xarch=v9d"
+#endif
+
+#if TARGET_CPU_DEFAULT == TARGET_CPU_niagara4
+#undef CPP_CPU64_DEFAULT_SPEC
+#define CPP_CPU64_DEFAULT_SPEC ""
+#undef ASM_CPU32_DEFAULT_SPEC
+#define ASM_CPU32_DEFAULT_SPEC "-xarch=sparc4"
+#undef ASM_CPU64_DEFAULT_SPEC
+#define ASM_CPU64_DEFAULT_SPEC "-xarch=sparc4"
+#endif
+
+#if TARGET_CPU_DEFAULT == TARGET_CPU_niagara7
+#undef CPP_CPU64_DEFAULT_SPEC
+#define CPP_CPU64_DEFAULT_SPEC ""
+#undef ASM_CPU32_DEFAULT_SPEC
+#define ASM_CPU32_DEFAULT_SPEC "-xarch=sparc5"
+#undef ASM_CPU64_DEFAULT_SPEC
+#define ASM_CPU64_DEFAULT_SPEC "-xarch=sparc5"
+#endif
+
+#if TARGET_CPU_DEFAULT == TARGET_CPU_m8
+#undef CPP_CPU64_DEFAULT_SPEC
+#define CPP_CPU64_DEFAULT_SPEC ""
+#undef ASM_CPU32_DEFAULT_SPEC
+#define ASM_CPU32_DEFAULT_SPEC "-xarch=sparc6"
+#undef ASM_CPU64_DEFAULT_SPEC
+#define ASM_CPU64_DEFAULT_SPEC "-xarch=sparc6"
+#endif
+
+#undef CPP_CPU_SPEC
+#define CPP_CPU_SPEC "\
+%{mcpu=sparclet|mcpu=tsc701:-D__sparclet__} \
+%{mcpu=sparclite|mcpu-f930|mcpu=f934:-D__sparclite__} \
+%{mcpu=v8:" DEF_ARCH32_SPEC("-D__sparcv8") "} \
+%{mcpu=supersparc:-D__supersparc__ " DEF_ARCH32_SPEC("-D__sparcv8") "} \
+%{mcpu=v9|mcpu=ultrasparc|mcpu=ultrasparc3|mcpu=niagara|mcpu=niagara2|mcpu=niagara3|mcpu=niagara4|mcpu=niagara7|mcpu=m8:" DEF_ARCH32_SPEC("-D__sparcv8") "} \
+%{!mcpu*:%(cpp_cpu_default)} \
+"
+
+#undef CPP_CPU_DEFAULT_SPEC
+#define CPP_CPU_DEFAULT_SPEC \
+(DEFAULT_ARCH32_P ? "\
+%{m64:" CPP_CPU64_DEFAULT_SPEC "} \
+%{!m64:" CPP_CPU32_DEFAULT_SPEC "} \
+" : "\
+%{m32:" CPP_CPU32_DEFAULT_SPEC "} \
+%{!m32:" CPP_CPU64_DEFAULT_SPEC "} \
+")
+
+#undef CPP_ARCH32_SPEC
+#define CPP_ARCH32_SPEC ""
+#undef CPP_ARCH64_SPEC
+#define CPP_ARCH64_SPEC "-D__arch64__ -D__sparcv9"
+
+#undef CPP_ARCH_SPEC
+#define CPP_ARCH_SPEC "\
+%{m32:%(cpp_arch32)} \
+%{m64:%(cpp_arch64)} \
+%{!m32:%{!m64:%(cpp_arch_default)}} \
+"
+
+/* -mcpu=native handling only makes sense with compiler running on
+   a SPARC chip.  */
+#if defined(__sparc__) && defined(__SVR4)
+extern const char *host_detect_local_cpu (int argc, const char **argv);
+# define EXTRA_SPEC_FUNCTIONS						\
+  { "local_cpu_detect", host_detect_local_cpu },
+
+# define MCPU_MTUNE_NATIVE_SPECS					\
+   " %{mcpu=native:%<mcpu=native %:local_cpu_detect(cpu)}"		\
+   " %{mtune=native:%<mtune=native %:local_cpu_detect(tune)}"
+#else
+# define MCPU_MTUNE_NATIVE_SPECS ""
+#endif
+
+#define DRIVER_SELF_SPECS MCPU_MTUNE_NATIVE_SPECS
+
+#undef	CC1_SPEC
+#if DEFAULT_ARCH32_P
+#define CC1_SPEC "\
+%{m64:%{m32:%emay not use both -m32 and -m64}} \
+%{m64:-mptr64 -mstack-bias -mno-v8plus \
+  %{!mcpu*:-%{!mv8plus:mcpu=v9}}} \
+" ASAN_CC1_SPEC SCTF_CC1_SPEC
+#else
+#define CC1_SPEC "\
+%{m32:%{m64:%emay not use both -m32 and -m64}} \
+%{m32:-mptr32 -mno-stack-bias \
+  %{!mcpu*:%{!mv8plus:-mcpu=v9}}} \
+%{mv8plus:-m32 -mptr32 -mno-stack-bias \
+  %{!mcpu*:-mcpu=v9}} \
+" ASAN_CC1_SPEC SCTF_CC1_SPEC
+#endif
+
+/* Support for a compile-time default CPU, et cetera.  The rules are:
+   --with-cpu is ignored if -mcpu is specified; likewise --with-cpu-32
+     and --with-cpu-64.
+   --with-tune is ignored if -mtune is specified; likewise --with-tune-32
+     and --with-tune-64.
+   --with-float is ignored if -mhard-float, -msoft-float, -mfpu, or -mno-fpu
+     are specified.
+   In the SPARC_BI_ARCH compiler we cannot pass %{!mcpu=*:-mcpu=%(VALUE)}
+   here, otherwise say -mcpu=v7 would be passed even when -m64.
+   CC1_SPEC above takes care of this instead.
+
+   Note that the order of the cpu* and tune* options matters: the
+   config.gcc file always sets with_cpu to some value, even if the
+   user didn't use --with-cpu when invoking the configure script.
+   This value is based on the target name.  Therefore we have to make
+   sure that --with-cpu-32 takes precedence to --with-cpu in < v9
+   systems, and that --with-cpu-64 takes precedence to --with-cpu in
+   >= v9 systems.  As for the tune* options, in some platforms
+   config.gcc also sets a default value for it if the user didn't use
+   --with-tune when invoking the configure script.  */
+#undef OPTION_DEFAULT_SPECS
+#if DEFAULT_ARCH32_P
+#define OPTION_DEFAULT_SPECS \
+  {"cpu_32", "%{!m64:%{!mcpu=*:-mcpu=%(VALUE)}}" }, \
+  {"cpu_64", "%{m64:%{!mcpu=*:-mcpu=%(VALUE)}}" }, \
+  {"cpu", "%{!m64:%{!mcpu=*:-mcpu=%(VALUE)}}" }, \
+  {"tune_32", "%{!m64:%{!mtune=*:-mtune=%(VALUE)}}" }, \
+  {"tune_64", "%{m64:%{!mtune=*:-mtune=%(VALUE)}}" }, \
+  {"tune", "%{!mtune=*:-mtune=%(VALUE)}" }, \
+  {"float", "%{!msoft-float:%{!mhard-float:%{!mfpu:%{!mno-fpu:-m%(VALUE)-float}}}}" }
+#else
+#define OPTION_DEFAULT_SPECS \
+  {"cpu_32", "%{m32:%{!mcpu=*:-mcpu=%(VALUE)}}" }, \
+  {"cpu_64", "%{!m32:%{!mcpu=*:-mcpu=%(VALUE)}}" }, \
+  {"cpu", "%{!m32:%{!mcpu=*:-mcpu=%(VALUE)}}" }, \
+  {"tune_32", "%{m32:%{!mtune=*:-mtune=%(VALUE)}}" },	\
+  {"tune_64", "%{!m32:%{!mtune=*:-mtune=%(VALUE)}}" },	\
+  {"tune", "%{!mtune=*:-mtune=%(VALUE)}" }, \
+  {"float", "%{!msoft-float:%{!mhard-float:%{!mfpu:%{!mno-fpu:-m%(VALUE)-float}}}}" }
+#endif
+
+#undef ASM_CPU_SPEC
+#define ASM_CPU_SPEC "\
+%{mcpu=v9:" DEF_ARCH32_SPEC("-xarch=v8plus") DEF_ARCH64_SPEC("-xarch=v9") "} \
+%{mcpu=ultrasparc:" DEF_ARCH32_SPEC("-xarch=v8plusa") DEF_ARCH64_SPEC("-xarch=v9a") "} \
+%{mcpu=ultrasparc3:" DEF_ARCH32_SPEC("-xarch=v8plusb") DEF_ARCH64_SPEC("-xarch=v9b") "} \
+%{mcpu=niagara:" DEF_ARCH32_SPEC("-xarch=v8plusb") DEF_ARCH64_SPEC("-xarch=v9b") "} \
+%{mcpu=niagara2:" DEF_ARCH32_SPEC("-xarch=v8plusb") DEF_ARCH64_SPEC("-xarch=v9b") "} \
+%{mcpu=niagara3:" DEF_ARCH32_SPEC("-xarch=v8plusd") DEF_ARCH64_SPEC("-xarch=v9d") "} \
+%{mcpu=niagara4:" DEF_ARCH32_SPEC("-xarch=sparc4") DEF_ARCH64_SPEC("-xarch=sparc4") "} \
+%{mcpu=niagara7:" DEF_ARCH32_SPEC("-xarch=sparc5") DEF_ARCH64_SPEC("-xarch=sparc5") "} \
+%{mcpu=m8:" DEF_ARCH32_SPEC("-xarch=sparc6") DEF_ARCH64_SPEC("-xarch=sparc6") "} \
+%{!mcpu=m8:%{!mcpu=niagara7:%{!mcpu=niagara4:%{!mcpu=niagara3:%{!mcpu=niagara2:%{!mcpu=niagara:%{!mcpu=ultrasparc3:%{!mcpu=ultrasparc:%{!mcpu=v9:%{mcpu*:" DEF_ARCH32_SPEC("-xarch=v8") DEF_ARCH64_SPEC("-xarch=v9") "}}}}}}}}}} \
+%{!mcpu*:%(asm_cpu_default)} \
+"
+
+#if HAVE_GNU_LD
+#define ARCH32_EMULATION "elf32_sparc_sol2"
+#define ARCH64_EMULATION "elf64_sparc_sol2"
+#endif
+
+#define ARCH64_SUBDIR "sparcv9"
+
+#define SUBTARGET_CPU_EXTRA_SPECS
+
+#define ENDFILE_ARCH_SPEC ""
+
+/* -fsanitize=address is currently only supported for 32-bit.  */
+#define ASAN_REJECT_SPEC \
+  DEF_ARCH64_SPEC("%e-fsanitize=address is not supported in this configuration")
+
+
+/* Register the Solaris-specific #pragma directives.  */
+#define REGISTER_TARGET_PRAGMAS() solaris_register_pragmas ()
+
+#undef  LOCAL_LABEL_PREFIX
+#define LOCAL_LABEL_PREFIX  "."
+
+/* The Solaris 2 assembler uses .skip, not .zero, so put this back.  */
+#undef ASM_OUTPUT_SKIP
+#define ASM_OUTPUT_SKIP(FILE,SIZE)  \
+  fprintf (FILE, "\t.skip %u\n", (int)(SIZE))
+
+/* This is how to store into the string LABEL
+   the symbol_ref name of an internal numbered label where
+   PREFIX is the class of label and NUM is the number within the class.
+   This is suitable for output with `assemble_name'.  */
+
+#undef  ASM_GENERATE_INTERNAL_LABEL
+#define ASM_GENERATE_INTERNAL_LABEL(LABEL,PREFIX,NUM)	\
+  sprintf ((LABEL), "*.L%s%lu", (PREFIX), (unsigned long)(NUM))
+
+/* The native TLS-enabled assembler requires the directive #tls_object
+   to be put on objects in TLS sections (as of v7.1).  This is not
+   required by GNU as but supported on SPARC.  */
+#undef  ASM_DECLARE_OBJECT_NAME
+#define ASM_DECLARE_OBJECT_NAME(FILE, NAME, DECL)		\
+  do								\
+    {								\
+      HOST_WIDE_INT size;					\
+								\
+      if (targetm.have_tls && DECL_THREAD_LOCAL_P (DECL))	\
+	ASM_OUTPUT_TYPE_DIRECTIVE (FILE, NAME, "tls_object");	\
+      else							\
+	ASM_OUTPUT_TYPE_DIRECTIVE (FILE, NAME, "object");	\
+								\
+      size_directive_output = 0;				\
+      if (!flag_inhibit_size_directive				\
+	  && (DECL) && DECL_SIZE (DECL))			\
+	{							\
+	  size_directive_output = 1;				\
+	  size = tree_to_uhwi (DECL_SIZE_UNIT (DECL));		\
+	  ASM_OUTPUT_SIZE_DIRECTIVE (FILE, NAME, size);		\
+	}							\
+								\
+      ASM_OUTPUT_LABEL (FILE, NAME);				\
+    }								\
+  while (0)
+
+/* Output a simple call for .init/.fini.  */
+#define ASM_OUTPUT_CALL(FILE, FN)				        \
+  do									\
+    {									\
+      fprintf (FILE, "\tcall\t");					\
+      targetm.asm_out.print_operand (FILE, XEXP (DECL_RTL (FN), 0), 0);	\
+      fprintf (FILE, "\n\tnop\n");					\
+    }									\
+  while (0)
+
+#if !HAVE_GNU_AS
+/* This is how to output an assembler line that says to advance
+   the location counter to a multiple of 2**LOG bytes using the
+   NOP instruction as padding.  The filler pattern doesn't work
+   with GNU as. */
+#define ASM_OUTPUT_ALIGN_WITH_NOP(FILE,LOG)   \
+  if ((LOG) != 0)                             \
+    fprintf (FILE, "\t.align %d,0x1000000\n", (1 << (LOG)))
+
+/* Use Solaris ELF section syntax with Sun as.  */
+#undef TARGET_ASM_NAMED_SECTION
+#define TARGET_ASM_NAMED_SECTION sparc_solaris_elf_asm_named_section
+
+/* Sun as requires doublequoted section names on SPARC.  While GNU as
+   supports that, too, we prefer the standard variant.  */
+#define SECTION_NAME_FORMAT	"\"%s\""
+#endif /* !HAVE_GNU_AS */
+
+/* Undefine this so that attribute((init_priority)) works with GNU ld.  */
+#if HAVE_GNU_LD
+#undef CTORS_SECTION_ASM_OP
+#undef DTORS_SECTION_ASM_OP
+#endif
+
+
+
+/* Define for support of TFmode long double.
+   SPARC ABI says that long double is 4 words.  */
+#define SPARC_LONG_DOUBLE_TYPE_SIZE 128
+
+/* Solaris's _Qp_* library routine implementation clobbers the output
+   memory before the inputs are fully consumed.  */
+
+#undef TARGET_BUGGY_QP_LIB
+#define TARGET_BUGGY_QP_LIB	1
+
+#undef SUN_CONVERSION_LIBFUNCS
+#define SUN_CONVERSION_LIBFUNCS 1
+
+#undef DITF_CONVERSION_LIBFUNCS
+#define DITF_CONVERSION_LIBFUNCS 1
+
+#undef SUN_INTEGER_MULTIPLY_64
+#define SUN_INTEGER_MULTIPLY_64 1
+
+#undef SPARC_LOW_FE_EXCEPT_VALUES
+#define SPARC_LOW_FE_EXCEPT_VALUES 1
+
+#undef SUN_V9_ABI_COMPATIBILITY
+#define SUN_V9_ABI_COMPATIBILITY 1

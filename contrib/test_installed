@@ -1,0 +1,173 @@
+#! /bin/sh
+
+# (C) 1998, 2000, 2002, 2003, 2007 Free Software Foundation
+# Originally by Alexandre Oliva <oliva@dcc.unicamp.br>
+
+# This script is Free Software, and it can be copied, distributed and
+# modified as defined in the GNU General Public License.  A copy of
+# its license can be downloaded from http://www.gnu.org/copyleft/gpl.html
+
+# This scripts assumes it lives in the contrib directory of the GCC
+# source tree, so it will find the testsuite tree from its location.
+# If you move it elsewhere, or want to use another testsuite tree, you
+# can override the defaults with --srcdir=/some/dir/GCC or
+# --testsuite=/some/dir/GCC/gcc/testsuite.  If you specify
+# --testsuite, --srcdir will be ignored; otherwise, `/gcc/testsuite'
+# will be appended to the srcdir.
+
+# You may specify where the binaries to be tested should be picked up
+# from.  If you specify --prefix=/some/dir, gcc, g++ and gfortran will be
+# looked for at /some/dir/bin.  Each one may be overridden by
+# specifying --with-gcc=/pathname/to/gcc, --with-g++=/pathname/to/g++
+# and --with-gfortran=/pathname/to/gfortran.  If you specify --without-gcc,
+# --without-g++ or --without-gfortran, the test for the specified program
+# will be skipped.  By default, gcc, g++ and gfortran will be searched in
+# the PATH.
+
+# An additional argument may specify --tmpdir=/some/dir; by default,
+# temporaries will be stored in the current directory, where the log
+# files will be stored.
+
+# The script will interpret arguments until it finds one it does not
+# understand.  The remaining ones will be passed to `runtest'.  A
+# double-dash can be used to explicitly separate the arguments to
+# `test_installed' from the ones to `runtest'.
+
+# This script should be run in an empty directory; it will refuse to
+# run if it finds a file named site.exp in the current directory.
+
+
+if test -f site.exp; then
+    echo site.exp already exists >&2
+    exit 1
+fi
+
+libiconv=-liconv
+while true; do
+  case "$1" in
+  --with-testsuite=*) testsuite=`echo "$1" | sed 's/[^=]*=//'`; shift;;
+  --srcdir=*) srcdir=`echo "$1" | sed 's/[^=]*=//'`; shift;;
+  --target=*) target=`echo "$1" | sed 's/[^=]*=//'`; shift;;
+  --prefix=*) prefix=`echo "$1" | sed 's/[^=]*=//'`; shift;;
+  --enable-plugin) ENABLE_PLUGIN=1; shift;;
+  --with-gcc=*) GCC_UNDER_TEST=`echo "$1" | sed 's/[^=]*=//'`; shift;;
+  --with-g++=*) GXX_UNDER_TEST=`echo "$1" | sed 's/[^=]*=//'`; shift;;
+  --with-gfortran=*) GFORTRAN_UNDER_TEST=`echo "$1" | sed 's/[^=]*=//'`; shift;;
+  --with-alt-cc=*) ALT_CC_UNDER_TEST=`echo "$1" | sed 's/[^=]*=//'`; shift;;
+  --with-alt-cxx=*) ALT_CXX_UNDER_TEST=`echo "$1" | sed 's/[^=]*=//'`; shift;;
+  --with-compat-options=*) COMPAT_OPTIONS=`echo "$1" | sed 's/[^=]*=//'`; shift;;
+  --with-libiconv=*) libiconv=`echo "$1" | sed 's/[^=]*=//'`; shift;;
+  --with-plugincc=*) PLUGINCC=`echo "$1" | sed 's/[^=]*=//'`; shift;;
+  --with-plugincflags=*) PLUGINCFLAGS=`echo "$1" | sed 's/[^=]*=//'`; shift;;
+  --with-gmpinc=*) GMPINC=`echo "$1" | sed 's/[^=]*=//'`; shift;;
+  --without-gcc) GCC_UNDER_TEST=no; shift;;
+  --without-g++) GXX_UNDER_TEST=no; shift;;
+  --without-gfortran) GFORTRAN_UNDER_TEST=no; shift;;
+  --without-objc) OBJC_UNDER_TEST=no; shift;;
+
+  --tmpdir=*) tmpdir=`echo "$1" | sed 's/[^=]*=//'`; shift;;
+
+  --help) cat <<\EOF
+Runs the testsuite for an installed version of gcc/g++/gfortran/objc
+Copyright (C) 1998-2026 Free Software Foundation, Inc.
+by Alexandre Oliva <oliva@dcc.unicamp.br>
+
+Supported arguments:
+
+--help                        prints this page
+
+--with-testsuite=/some/dir/gcc/testsuite   specify the testsuite directory
+--srcdir=/some/dir            same as --with-testsuite=/some/dir/gcc/testsuite
+                              [deduced from shell-script pathname]
+
+--target=triplet              The target architecture of the compiler being
+                              tested if different than the host.
+
+--prefix=/some/dir            use gcc, g++ and gfortran from /some/dir/bin [PATH]
+--enable-plugin               run GCC plugin tests
+--with-gcc=/some/dir/bin/gcc  use specified gcc program [gcc]
+--with-g++=/some/dir/bin/g++  use specified g++ program [g++]
+--with-gfortran=/some/dir/bin/gfortran  use specified gfortran program [gfortran]
+--with-alt-cc=/some/compiler  use specified alternative compiler in compat tests
+--with-alt-cxx=/some/compiler use specified alternative compiler in compat tests
+--with-compat-options=opts    use specified COMPAT_OPTIONS in compat tests
+--with-libiconv=linker-args   use given arguments to link with iconv [-liconv]
+--with-plugincc=/some/c++     use given host compiler to build plugins [g++]
+--with-plugincflags=args      use given options to build plugins [-g -O2]
+--with-gmpinc=args            use given options to find GMP for host []
+--without-gcc                 do not run gcc testsuite
+--without-g++                 do not run g++ testsuite
+--without-gfortran            do not run gfortran testsuite
+--without-objc                do not run objc testsuite
+
+--tmpdir=/some/dir            create temporaries and leave failed programs
+                              at specified directory [.]
+
+--   end of argument list; following arguments are passed to runtest
+EOF
+    exit
+  ;;
+  
+  --) shift; break;;
+  *) break;;
+  esac
+done
+
+# Determine the source directory to find config.sub, whether or not
+# that is also used to locate the testsuite sources.
+file=$0
+while [ -h $file ]; do
+  file=`ls -l $file | sed s/'.* -> '//`
+done
+top_srcdir=`CDPATH=. && cd \`echo "$file" | sed 's,/*[^/]*$,,;s,^$,.,'\`/.. >/dev/null && ${PWDCMD-pwd}`
+if test x"${testsuite+set}" != x"set" && test x"${srcdir+set}" != x"set"; then
+  srcdir=$top_srcdir
+fi
+
+cat >site.exp <<EOF
+set rootme "."
+set tmpdir "${tmpdir-`${PWDCMD-pwd}`}"
+set srcdir "${testsuite-${srcdir}/gcc/testsuite}"
+set libiconv "$libiconv"
+set CFLAGS ""
+set CXXFLAGS ""
+set GCC_UNDER_TEST "${GCC_UNDER_TEST-${prefix}${prefix+/bin/}\
+${target+$target-}gcc}"
+set GXX_UNDER_TEST "${GXX_UNDER_TEST-${prefix}${prefix+/bin/}\
+${target+$target-}g++}"
+set GFORTRAN_UNDER_TEST "${GFORTRAN_UNDER_TEST-${prefix}${prefix+/bin/}\
+${target+$target-}gfortran}"
+set OBJC_UNDER_TEST "${OBJC_UNDER_TEST-${prefix}${prefix+/bin/}\
+${target+$target-}gcc}"
+set HOSTCC "${HOSTCC-cc}"
+set HOSTCXX "${HOSTCXX-c++}"
+set HOSTCFLAGS ""
+set HOSTCXXFLAGS ""
+EOF
+if test x${target} != x; then
+  target_canonical=`$top_srcdir/config.sub $target`
+  echo "set target_triplet $target_canonical" >> site.exp
+  echo "set target_alias $target" >> site.exp
+fi
+if test x"$ALT_CC_UNDER_TEST" != x; then
+  echo "set ALT_CC_UNDER_TEST \"${ALT_CC_UNDER_TEST}\"" >> site.exp
+fi
+if test x"$ALT_CXX_UNDER_TEST" != x; then
+  echo "set ALT_CXX_UNDER_TEST \"${ALT_CXX_UNDER_TEST}\"" >> site.exp
+fi
+if test x"$COMPAT_OPTIONS" != x; then
+  echo "set COMPAT_OPTIONS \"${COMPAT_OPTIONS}\"" >> site.exp
+fi
+if test x"$ENABLE_PLUGIN" != x; then
+    echo "set ENABLE_PLUGIN \"${ENABLE_PLUGIN}\"" >> site.exp
+    echo "set PLUGINCC \"${PLUGINCC-g++}\"" >> site.exp
+    echo "set PLUGINCFLAGS \"${PLUGINCFLAGS--g -O2}\"" >> site.exp
+    echo "set GMPINC \"${GMPINC}\"" >> site.exp
+fi
+
+test x"${GCC_UNDER_TEST}" = x"no" || runtest --tool gcc ${1+"$@"}
+test x"${GXX_UNDER_TEST}" = x"no" || runtest --tool g++ ${1+"$@"}
+test x"${GFORTRAN_UNDER_TEST}" = x"no" || runtest --tool gfortran ${1+"$@"}
+test x"${OBJC_UNDER_TEST}" = x"no" || runtest --tool objc ${1+"$@"}
+
+exit 0

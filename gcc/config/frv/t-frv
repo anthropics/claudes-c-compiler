@@ -1,0 +1,36 @@
+# Copyright (C) 2002-2026 Free Software Foundation, Inc.
+#
+# This file is part of GCC.
+#
+# GCC is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3, or (at your option)
+# any later version.
+#
+# GCC is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with GCC; see the file COPYING3.  If not see
+# <http://www.gnu.org/licenses/>.
+
+# Enable the following if multilibs are needed.
+# See gcc/genmultilib, gcc/gcc.texi and gcc/tm.texi for a
+# description of the options and their values.
+#
+#MULTILIB_OPTIONS	= mcpu=fr500/mcpu=tomcat/mcpu=simple/mcpu=frv msoft-float mdword/mno-dword
+#MULTILIB_DIRNAMES	= fr500 tomcat simple frv nof dw no-dw
+#MULTILIB_MATCHES	= mcpu?simple=mcpu?fr300 mno-double=mcpu?fr500 mcpu?frv=mdouble
+#MULTILIB_EXCEPTIONS	= *mcpu=simple/*msoft-float* *mcpu=frv/*msoft-float*
+#MULTILIB_EXTRA_OPTS	= mlibrary-pic
+
+MULTILIB_OPTIONS	= mcpu=fr400/mcpu=fr550 mno-pack mlibrary-pic/mfdpic
+MULTILIB_DIRNAMES	= fr400 fr550 unpacked pic fdpic
+MULTILIB_MATCHES	= mcpu?simple=mcpu?fr300 \
+			  mlibrary-pic=multilib-library-pic \
+			  mcpu?fr400=mcpu?fr405 mcpu?fr400=mcpu?fr450
+MULTILIB_EXCEPTIONS	= mcpu=frv/mno-pack* mcpu=simple/mno-pack*
+
+EXTRA_HEADERS = $(srcdir)/config/frv/frv-asm.h

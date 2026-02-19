@@ -1,0 +1,161 @@
+2023-11-23  Hans-Peter Nilsson  <hp@axis.com>
+
+	* btest-gcc.sh (--handle-xpass-as-fail): New option.
+
+2023-11-23  Hans-Peter Nilsson  <hp@axis.com>
+
+	* btest-gcc.sh (Option handling): Break out shifts from each
+	option alternative.
+
+2023-11-23  Hans-Peter Nilsson  <hp@axis.com>
+
+	* btest-gcc.sh (Option handling): Handle multiple options.
+
+2023-02-16  Hans-Peter Nilsson  <hp@axis.com>
+
+	* objs-gcc.sh: Only bootstrap if source-directory contains gcc.
+
+2012-08-26  Hans-Peter Nilsson  <hp@axis.com>
+
+	* btest-gcc.sh (TESTLOGS): Make gfortran.sum optional.
+
+	* btest-gcc.sh (TESTLOGS): Add libmudflap.sum, if it exists.
+
+2009-09-02  Geoff Keating  <geoffk@apple.com>
+
+	* btest-gcc.sh: Continue after bootstrap comparison failure.
+
+2008-11-27  Geoff Keating  <geoffk@geoffk.org>
+
+	* mkindex.pl: New.
+
+2007-12-24  Geoff Keating  <geoffk@geoffk.org>
+
+	* objs-gcc.sh: Revert previous change.
+
+2007-12-23  Geoff Keating  <geoffk@geoffk.org>
+
+	* objs-gcc.sh: Set up the GDB testsuite even if the gdb installed
+	is just called 'gdb'.
+
+2007-12-22  Geoff Keating  <geoffk@geoffk.org>
+
+	* btest-gcc.sh (TESTLOGS): Add gfortran, and optionally libgomp.
+
+	* GCC_Regression_Tester.wdgt/widget.html: Mark as HTML 4.01,
+	which it now is, rather than XHTML, which it never was.
+	(<head>): Mark as UTF-8.  Add title.  Move CSS to top of
+	document, specify type.  Mark script as 'defer'.
+	(updateContents): If loaded from HTTP, look for status in same
+	place as widget.
+	(gotContents): Use DOM methods to change text rather than innerHTML.
+	(<body>): Eliminate unnecessary DIV element.
+	* GCC_Regression_Tester.wdgt/Info.plist: Update version, copyright
+	notice.
+
+2006-09-05  Geoffrey Keating  <geoffk@apple.com>
+
+	* btest-gcc.sh: .bad_compare has moved to toplevel from gcc/.
+
+2006-01-18  Andrew Pinski  <pinskia@physics.uc.edu>
+
+	* btest-gcc.sh: gcc.sum has moved to gcc/testsuite/gcc/gcc.sum.
+	g++.sum has moved to gcc/testsuite/g++/g++.sum.
+	objc.sum has moved to gcc/testsuite/objc/objc.sum.
+
+2005-12-20  Geoffrey Keating  <geoffk@apple.com>
+
+	* btest-gcc.sh: Support -j option.
+
+2005-11-28  Geoffrey Keating  <geoffk@geoffk.org>
+
+	* GCC Regression Tester.wdgt: Rename to GCC_Regression_Tester.wdgt.
+	* GCC_Regression_Tester.wdgt/Info.plist
+	(CFBundleDisplayName): Update for rename.
+	(CFBundleName): Use shorter name.
+	(CFBundleVersion): Update to 1.0.1.
+	(CFBundleShortVersionString): Update to 1.0.1.
+	(LSHasLocalizedDisplayName): New.
+	(NSHumanReadableCopyright): New.
+	* GCC_Regression_Tester.wdgt/de.lproj/InfoPlist.strings: New.
+	* GCC_Regression_Tester.wdgt/en.lproj/InfoPlist.strings: New.
+	* GCC_Regression_Tester.wdgt/ja.lproj/InfoPlist.strings: New.
+
+	* GCC_Regression_Tester.wdgt/widget.html: Use max-age=30
+	to help out intermediate caches.
+
+2005-11-23  Geoffrey Keating  <geoffk@geoffk.org>
+
+	* GCC Regression Tester.wdgt/widget.html: New file.
+	* GCC Regression Tester.wdgt/Info.plist: New file.
+	* GCC Regression Tester.wdgt/Icon.png: New file.
+	* GCC Regression Tester.wdgt/Default.png: New file.
+	* README: Describe new files.
+
+2005-06-07  Hans-Peter Nilsson  <hp@bitrange.com>
+
+	* btest-gcc.sh: Add support for option
+	--add-passes-despite-regression.
+
+2005-06-06  Hans-Peter Nilsson  <hp@axis.com>
+
+	* btest-gcc.sh <Build>: Don't pass --with-newlib when target is
+	"*-linux*".
+
+	* btest-gcc.sh (TESTLOGS): Make libstdc++.sum optional.
+
+2004-11-07  James A. Morrison  <phython@gcc.gnu.org>
+
+	* README: Update website URL.
+
+2004-10-27  Geoffrey Keating  <geoffk@apple.com>
+
+	* btest-gcc.sh (TESTLOGS): The libstdc++-v3 test log is called
+	libstd++.sum not libstdc++-v3.sum.
+
+2004-10-26  Geoffrey Keating  <geoffk@apple.com>
+
+	* btest-gcc.sh (TESTLOGS): Examine regressions in libstdc++,
+	libffi, and libjava.
+
+2004-05-13  Andrew Pinski  <pinskia@physics.uc.edu>
+
+	* btest-gcc.sh: Remove g77.sum from TESTLOGS.
+
+2003-09-18  Andreas Tobler  <a.tobler@schweiz.ch>
+
+	* btest-gcc.sh: Add make check-target-libffi.
+
+2003-07-31  Andreas Tobler  <a.tobler@schweiz.ch>
+
+	* btest-gcc.sh: Add make check-target-libjava.
+
+2002-10-22  Geoffrey Keating  <geoffk@apple.com>
+
+	* btest-gcc.sh: Add gdb.sum to TESTLOGS only when GDB testsuite is run.
+
+2002-10-11  Geoffrey Keating  <geoffk@apple.com>
+
+	* objs-gcc.sh: Don't install GDB testsuite if GDB was not built.
+	* btest-gcc.sh: Don't run GDB testsuite if it doesn't exist.
+
+2002-10-09  Phil Edwards  <pme@gcc.gnu.org>
+
+	* btest-gcc.sh, objs-gcc.sh:  Update TARGET comments.
+
+2002-10-09  Geoffrey Keating  <geoffk@apple.com>
+
+	* objs-gcc.sh: On (non-linux) native hosts, use 'make bootstrap'.
+
+2002-03-09  Geoffrey Keating  <geoffk@redhat.com>
+
+	* btest-gcc.sh: For crosses, assume newlib and GNU binutils.
+	* site.exp: Correct mips-elf triplet.
+
+2002-01-31  Geoffrey Keating  <geoffk@redhat.com>
+
+	* btest-gcc.sh: New file.
+	* objs-gcc.sh: New file.
+	* site.exp: New file.
+	* ChangeLog: New file.
+	* README: New file.

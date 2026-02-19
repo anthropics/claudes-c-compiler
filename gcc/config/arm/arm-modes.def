@@ -1,0 +1,129 @@
+/* Definitions of target machine for GNU compiler, for ARM.
+   Copyright (C) 2002-2026 Free Software Foundation, Inc.
+   Contributed by Pieter `Tiggr' Schoenmakers (rcpieter@win.tue.nl)
+   and Martin Simmons (@harleqn.co.uk).
+   More major hacks by Richard Earnshaw (rearnsha@arm.com)
+   Minor hacks by Nick Clifton (nickc@cygnus.com)
+
+   This file is part of GCC.
+
+   GCC is free software; you can redistribute it and/or modify it
+   under the terms of the GNU General Public License as published
+   by the Free Software Foundation; either version 3, or (at your
+   option) any later version.
+
+   GCC is distributed in the hope that it will be useful, but WITHOUT
+   ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+   or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+   License for more details.
+
+   You should have received a copy of the GNU General Public License
+   along with GCC; see the file COPYING3.  If not see
+   <http://www.gnu.org/licenses/>.  */
+
+
+/* Half-precision floating point */
+FLOAT_MODE (HF, 2, 0);
+ADJUST_FLOAT_FORMAT (HF, ((arm_fp16_format == ARM_FP16_FORMAT_ALTERNATIVE)
+			  ? &arm_half_format : &ieee_half_format));
+
+/* CCFPEmode should be used with floating inequalities,
+   CCFPmode should be used with floating equalities.
+   CC_NZmode should be used if only the N and Z bits are set correctly.
+   CC_Zmode should be used if only the Z flag is set correctly
+   CC_Cmode should be used if only the C flag is set correctly, after an
+     addition.
+   CC_Nmode should be used if only the N (sign) flag is set correctly
+   CC_NVmode should be used if only the N and V bits are set correctly,
+     (used for signed comparisons when the carry is propagated in).
+   CC_RSBmode should be used where the comparison is set by an RSB immediate,
+     or NEG instruction.  The form of the comparison for (const - reg) will
+     be (COMPARE (not (reg)) (~const)).
+   CC_Bmode should be used if only the C flag is correct after a subtract
+     (eg after an unsigned borrow with carry-in propagation).
+   (used for DImode signed comparisons).
+   CC_ADCmode is used when the carry is formed from the output of ADC for an
+     addtion.  In this case we cannot use the trick of comparing the sum
+     against one of the other operands.
+   CCmode should be used otherwise.  */
+
+CC_MODE (CC_NZ);
+CC_MODE (CC_Z);
+CC_MODE (CC_NV);
+CC_MODE (CC_SWP);
+CC_MODE (CC_RSB);
+CC_MODE (CCFP);
+CC_MODE (CCFPE);
+CC_MODE (CC_DNE);
+CC_MODE (CC_DEQ);
+CC_MODE (CC_DLE);
+CC_MODE (CC_DLT);
+CC_MODE (CC_DGE);
+CC_MODE (CC_DGT);
+CC_MODE (CC_DLEU);
+CC_MODE (CC_DLTU);
+CC_MODE (CC_DGEU);
+CC_MODE (CC_DGTU);
+CC_MODE (CC_C);
+CC_MODE (CC_B);
+CC_MODE (CC_N);
+CC_MODE (CC_V);
+CC_MODE (CC_ADC);
+
+/* Vector modes.  */
+VECTOR_MODES (INT, 4);        /*            V4QI V2HI */
+VECTOR_MODES (INT, 8);        /*       V8QI V4HI V2SI */
+VECTOR_MODES (INT, 16);       /* V16QI V8HI V4SI V2DI */
+VECTOR_MODES (FLOAT, 8);      /*            V4HF V2SF */
+VECTOR_MODES (FLOAT, 16);     /*       V8HF V4SF V2DF */
+VECTOR_MODE (FLOAT, HF, 2);   /*                 V2HF */
+
+FLOAT_MODE (BF, 2, 0);
+ADJUST_FLOAT_FORMAT (BF, &arm_bfloat_half_format);
+VECTOR_MODE (FLOAT, BF, 2);   /*                 V2BF.  */
+VECTOR_MODE (FLOAT, BF, 4);   /*		 V4BF.  */
+VECTOR_MODE (FLOAT, BF, 8);   /*		 V8BF.  */
+
+/* Predicates for MVE.  */
+BOOL_MODE (B2I, 2, 1);
+BOOL_MODE (B4I, 4, 1);
+
+VECTOR_BOOL_MODE (V16BI, 16, BI, 2);
+VECTOR_BOOL_MODE (V8BI, 8, B2I, 2);
+VECTOR_BOOL_MODE (V4BI, 4, B4I, 2);
+VECTOR_MODE (INT, QI, 2);
+
+/* Fraction and accumulator vector modes.  */
+VECTOR_MODES (FRACT, 4);      /* V4QQ  V2HQ */
+VECTOR_MODES (UFRACT, 4);     /* V4UQQ V2UHQ */
+VECTOR_MODES (ACCUM, 4);      /*       V2HA */
+VECTOR_MODES (UACCUM, 4);     /*       V2UHA */
+
+/* Opaque integer modes for 3, 4, 6 or 8 Neon double registers (2 is
+   TImode).  */
+INT_MODE (EI, 24);
+INT_MODE (OI, 32);
+INT_MODE (CI, 48);
+INT_MODE (XI, 64);
+
+/* Define MVE modes for structures of 2 and 4 q-registers.  */
+#define MVE_STRUCT_MODES(NVECS, VB, VH, VS, VD)		\
+  VECTOR_MODES_WITH_PREFIX (V##NVECS##x, INT, 16, 3);	\
+  VECTOR_MODES_WITH_PREFIX (V##NVECS##x, FLOAT, 16, 3);	\
+  \
+  ADJUST_NUNITS (VB##QI, NVECS * 16);	\
+  ADJUST_NUNITS (VH##HI, NVECS * 8);	\
+  ADJUST_NUNITS (VS##SI, NVECS * 4);	\
+  ADJUST_NUNITS (VD##DI, NVECS * 2);	\
+  ADJUST_NUNITS (VH##HF, NVECS * 8);	\
+  ADJUST_NUNITS (VS##SF, NVECS * 4);	\
+  \
+  ADJUST_ALIGNMENT (VB##QI, 16); \
+  ADJUST_ALIGNMENT (VH##HI, 16); \
+  ADJUST_ALIGNMENT (VS##SI, 16); \
+  ADJUST_ALIGNMENT (VD##DI, 16); \
+  ADJUST_ALIGNMENT (VH##HF, 16); \
+  ADJUST_ALIGNMENT (VS##SF, 16);
+
+MVE_STRUCT_MODES (2, V2x16, V2x8, V2x4, V2x2)
+MVE_STRUCT_MODES (4, V4x16, V4x8, V4x4, V4x2)

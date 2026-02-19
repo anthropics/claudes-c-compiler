@@ -1,0 +1,114 @@
+; Options for the eBPF compiler port.
+
+; Copyright (C) 2019-2026 Free Software Foundation, Inc.
+;
+; This file is part of GCC.
+;
+; GCC is free software; you can redistribute it and/or modify it under
+; the terms of the GNU General Public License as published by the Free
+; Software Foundation; either version 3, or (at your option) any later
+; version.
+;
+; GCC is distributed in the hope that it will be useful, but WITHOUT ANY
+; WARRANTY; without even the implied warranty of MERCHANTABILITY or
+; FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+; for more details.
+;
+; You should have received a copy of the GNU General Public License
+; along with GCC; see the file COPYING3.  If not see
+; <http://www.gnu.org/licenses/>.
+
+HeaderInclude
+config/bpf/bpf-opts.h
+
+; Use xBPF extensions.
+
+mxbpf
+Target Mask(XBPF)
+Generate xBPF.
+
+; Selecting big endian or little endian targets.
+
+mbig-endian
+Target RejectNegative Mask(BIG_ENDIAN)
+Generate big-endian eBPF.
+
+mlittle-endian
+Target RejectNegative InverseMask(BIG_ENDIAN)
+Generate little-endian eBPF.
+
+mframe-limit=
+Target Joined RejectNegative UInteger IntegerRange(0, 32767) Var(bpf_frame_limit) Init(32767)
+Set a hard limit for the size of each stack frame, in bytes.
+
+mco-re
+Target Mask(BPF_CORE)
+Generate all necessary information for BPF Compile Once - Run Everywhere.
+
+; Selecting BPF ISA features and versions
+
+mjmpext
+Target Var(bpf_has_jmpext) Init(-1)
+Enable extra conditional-branch instructions j(s)lt and j(s)le.
+
+malu32
+Target Var(bpf_has_alu32) Init(-1)
+Enable 32-bit ALU instructions.
+
+mjmp32
+Target Var(bpf_has_jmp32) Init(-1)
+Enable 32-bit jump instructions.
+
+mv3-atomics
+Target Var(bpf_has_v3_atomics) Init(-1)
+Enable general atomic operations introduced in v3 ISA.
+
+mbswap
+Target Var(bpf_has_bswap) Init(-1)
+Enable byte swap instructions.
+
+msdiv
+Target Var(bpf_has_sdiv) Init(-1)
+Enable signed division and modulus instructions.
+
+msmov
+Target Var(bpf_has_smov) Init(-1)
+Enable signed move and memory load instructions.
+
+mcpu=
+Target RejectNegative Joined Var(bpf_isa) Enum(bpf_isa) Init(ISA_V4)
+Select the eBPF ISA version to target in code generation.
+
+Enum
+Name(bpf_isa) Type(enum bpf_isa_version)
+Valid ISA versions (for use with the -mcpu= option)
+
+EnumValue
+Enum(bpf_isa) String(v1) Value(ISA_V1)
+
+EnumValue
+Enum(bpf_isa) String(v2) Value(ISA_V2)
+
+EnumValue
+Enum(bpf_isa) String(v3) Value(ISA_V3)
+
+EnumValue
+Enum(bpf_isa) String(v4) Value(ISA_V4)
+
+masm=
+Target RejectNegative Joined Var(asm_dialect) Enum(asm_dialect) Init(ASM_PSEUDOC)
+Use given assembler dialect.
+
+Enum
+Name(asm_dialect) Type(enum bpf_asm_dialect)
+Known assembler dialects (for use with the -masm= option)
+
+EnumValue
+Enum(asm_dialect) String(normal) Value(ASM_NORMAL)
+
+EnumValue
+Enum(asm_dialect) String(pseudoc) Value(ASM_PSEUDOC)
+
+minline-memops-threshold=
+Target RejectNegative Joined UInteger Var(bpf_inline_memops_threshold) Init(1024)
+-minline-memops-threshold=<number> Maximum size of memset/memmove/memcpy to inline, larger sizes will use a library call.

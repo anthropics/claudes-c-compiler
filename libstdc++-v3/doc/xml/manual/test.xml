@@ -1,0 +1,1321 @@
+<section xmlns="http://docbook.org/ns/docbook" version="5.0"
+	 xml:id="manual.intro.setup.test" xreflabel="Testing">
+<?dbhtml filename="test.html"?>
+
+<info><title>Testing</title>
+  <keywordset>
+    <keyword>ISO C++</keyword>
+    <keyword>test</keyword>
+    <keyword>testsuite</keyword>
+    <keyword>performance</keyword>
+    <keyword>conformance</keyword>
+    <keyword>ABI</keyword>
+    <keyword>exception safety</keyword>
+  </keywordset>
+</info>
+
+<para>
+The libstdc++ testsuite includes testing for standard conformance,
+regressions, ABI, and performance.
+</para>
+
+<section xml:id="test.organization" xreflabel="Test Organization"><info><title>Test Organization</title></info>
+
+
+<section xml:id="test.organization.layout" xreflabel="Directory Layout"><info><title>Directory Layout</title></info>
+
+
+<para>
+  The directory
+  <filename class="directory"><replaceable>gccsrcdir</replaceable>/libstdc++-v3/testsuite</filename>
+  contains the individual test cases organized in sub-directories
+  corresponding to clauses of the C++ standard (detailed below),
+  the DejaGnu test harness support files, and sources to various
+  testsuite utilities that are packaged in a separate testing library.
+</para>
+
+<para>
+  All test cases for functionality required by the runtime components
+  of the C++ standard (ISO 14882) are files within the following
+  directories:
+
+<programlisting>
+    17_intro
+    18_support
+    19_diagnostics
+    20_util
+    21_strings
+    22_locale
+    23_containers
+    24_iterators
+    25_algorithms
+    26_numerics
+    27_io
+    28_regex
+    29_atomics
+    30_threads
+</programlisting>
+</para>
+
+   <para>
+      In addition, the following directories include test files:
+
+<variablelist spacing="compact">
+<varlistentry>
+  <term><filename class="directory">tr1</filename></term>
+  <listitem>Tests for components as described by the Technical Report
+    on Standard Library Extensions (<link linked="status.iso.tr1">TR1</link>).
+  </listitem>
+</varlistentry>
+<varlistentry>
+  <term><filename class="directory">backward</filename></term>
+  <listitem>Tests for backwards compatibility and deprecated features.
+  </listitem>
+</varlistentry>
+<varlistentry>
+  <term><filename class="directory">demangle</filename></term>
+  <listitem>Tests for <function>__cxa_demangle</function>, the IA-64 C++ ABI
+    demangler.
+  </listitem>
+</varlistentry>
+<varlistentry>
+  <term><filename class="directory">ext</filename></term>
+  <listitem>Tests for extensions.</listitem>
+</varlistentry>
+<varlistentry>
+  <term><filename class="directory">performance</filename></term>
+  <listitem>Tests for performance analysis, and performance regressions.
+  </listitem>
+</varlistentry>
+</variablelist>
+   </para>
+
+   <para>
+      Some directories don't have test files, but instead contain
+      auxiliary information:
+
+<variablelist spacing="compact">
+<varlistentry>
+  <term><filename class="directory">config</filename></term>
+  <listitem>Files for the DejaGnu test harness.</listitem>
+</varlistentry>
+<varlistentry>
+  <term><filename class="directory">lib</filename></term>
+  <listitem>Files for the DejaGnu test harness.</listitem>
+</varlistentry>
+<varlistentry>
+  <term><filename class="directory">libstdc++*</filename></term>
+  <listitem>Files for the DejaGnu test harness.</listitem>
+</varlistentry>
+<varlistentry>
+  <term><filename class="directory">data</filename></term>
+  <listitem>Sample text files for testing input and output.</listitem>
+</varlistentry>
+<varlistentry>
+  <term><filename class="directory">util</filename></term>
+  <listitem>Files for libtestc++, utilities and testing routines.</listitem>
+</varlistentry>
+</variablelist>
+   </para>
+
+   <para>
+      Within a directory that includes test files, there may be
+      additional subdirectories, or files.  Originally, test cases
+      were appended to one file that represented a particular section
+      of the chapter under test, and was named accordingly. For
+      instance, to test items related to <code> 21.3.6.1 -
+      <function>basic_string::find</function> [lib.string::find]</code>
+      in the standard, the following was used:
+<programlisting>    21_strings/find.cc </programlisting>
+      However, that practice soon became a liability as the test cases
+      became huge and unwieldy, and testing new or extended
+      functionality (like wide characters or named locales) became
+      frustrating, leading to aggressive pruning of test cases on some
+      platforms that covered up implementation errors. Now, the test
+      suite has a policy of one file, one test case, which solves the
+      above issues and gives finer grained results and more manageable
+      error debugging. As an example, the test case quoted above
+      becomes:
+<programlisting>    21_strings/basic_string/find/char/1.cc
+    21_strings/basic_string/find/char/2.cc
+    21_strings/basic_string/find/char/3.cc
+    21_strings/basic_string/find/wchar_t/1.cc
+    21_strings/basic_string/find/wchar_t/2.cc
+    21_strings/basic_string/find/wchar_t/3.cc</programlisting>
+   </para>
+
+   <para>
+      All new tests should be written with the policy of "one test
+      case, one file" in mind.
+   </para>
+</section>
+
+
+<section xml:id="test.organization.naming" xreflabel="Naming Conventions"><info><title>Naming Conventions</title></info>
+
+
+   <para>
+      In addition, there are some special names and suffixes that are
+      used within the testsuite to designate particular kinds of
+      tests.
+   </para>
+
+<variablelist>
+<varlistentry>
+  <term><filename class="extension">_xin.cc</filename></term>
+  <listitem>
+      This test case expects some kind of interactive input in order
+      to finish or pass. At the moment, the interactive tests are not
+      run by default. Instead, they are run by hand, like:
+<programlisting>
+g++ 27_io/objects/char/3_xin.cc
+cat 27_io/objects/char/3_xin.in | a.out</programlisting>
+  </listitem>
+</varlistentry>
+<varlistentry>
+  <term><filename class="extension">.in</filename></term>
+  <listitem>
+      This file contains the expected input for the corresponding <emphasis>
+      _xin.cc</emphasis> test case.
+  </listitem>
+</varlistentry>
+<varlistentry>
+  <term><filename class="extension">_neg.cc</filename></term>
+  <listitem>
+      This test case is expected to fail: it's a negative test. At the
+      moment, these are almost always compile time errors.
+  </listitem>
+</varlistentry>
+<varlistentry>
+  <term><filename class="directory">char</filename></term>
+  <listitem>
+      This can either be a directory name or part of a longer file
+      name, and indicates that this file, or the files within this
+      directory are testing the <code>char</code> instantiation of a
+      template.
+  </listitem>
+</varlistentry>
+<varlistentry>
+  <term><filename class="directory">wchar_t</filename></term>
+  <listitem>
+      This can either be a directory name or part of a longer file
+      name, and indicates that this file, or the files within this
+      directory are testing the <code>wchar_t</code> instantiation of
+      a template. Some hosts do not support <code>wchar_t</code>
+      functionality, so for these targets, all of these tests will not
+      be run.
+  </listitem>
+</varlistentry>
+<varlistentry>
+  <term><filename class="directory">thread</filename></term>
+  <listitem>
+      This can either be a directory name or part of a longer file
+      name, and indicates that this file, or the files within this
+      directory are testing situations where multiple threads are
+      being used.
+  </listitem>
+</varlistentry>
+<varlistentry>
+  <term><filename class="directory">performance</filename></term>
+  <listitem>
+      This can either be an enclosing directory name or part of a
+      specific file name. This indicates a test that is used to
+      analyze runtime performance, for performance regression testing,
+      or for other optimization related analysis. At the moment, these
+      test cases are not run by default.
+  </listitem>
+</varlistentry>
+</variablelist>
+
+</section>
+</section>
+
+
+<section xml:id="test.run" xreflabel="Running the Testsuite"><info><title>Running the Testsuite</title></info>
+
+
+  <section xml:id="test.run.basic"><info><title>Basic</title></info>
+
+
+    <para>
+      You can check the status of the build without installing it
+      using the DejaGnu harness, much like the rest of the gcc
+      tools, i.e.
+   <userinput>make check</userinput>
+      in the
+      <filename class="directory"><replaceable>libbuilddir</replaceable></filename>
+      directory, or
+   <userinput>make check-target-libstdc++-v3</userinput>
+       in the
+      <filename class="directory"><replaceable>gccbuilddir</replaceable></filename>
+       directory.
+    </para>
+
+     <para>
+       These commands are functionally equivalent and will create a
+       '<filename class="directory">testsuite</filename>' directory underneath
+       <filename class="directory"><replaceable>libbuilddir</replaceable></filename>
+       containing the results of the
+       tests. Two results files will be generated:
+       <filename>libstdc++.sum</filename>, which is a PASS/FAIL summary
+       for each test, and
+       <filename>libstdc++.log</filename> which is a log of
+       the exact command-line passed to the compiler, the compiler
+       output, and the executable output (if any) for each test.
+     </para>
+
+     <para>
+       Archives of test results for various versions and platforms are
+       archived on a daily basis on the <link xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="http://gcc.gnu.org/ml/gcc-testresults/current">gcc-testresults</link>
+       mailing list. Please check there for a similar
+       combination of source version, operating system, and host CPU.
+     </para>
+  </section>
+
+  <section xml:id="test.run.variations"><info><title>Variations</title></info>
+
+    <para>
+      There are several options for running tests, including testing
+      the regression tests, testing a subset of the regression tests,
+      testing the performance tests, testing just compilation, testing
+      installed tools, etc. In addition, there is a special rule for
+      checking the exported symbols of the shared library.
+    </para>
+    <para>
+      To debug the DejaGnu test harness during runs, try invoking with a
+      specific argument to the variable <varname>RUNTESTFLAGS</varname>,
+      like so:
+<programlisting>
+    make check-target-libstdc++-v3 RUNTESTFLAGS="-v"
+</programlisting>
+      or
+<programlisting>
+    make check-target-libstdc++-v3 RUNTESTFLAGS="-v -v"
+</programlisting>
+    </para>
+
+    <para>
+      To run a subset of the library tests, you can either generate the
+      <filename>testsuite_files</filename> file (described below) by running
+      <userinput>make testsuite_files</userinput> in the
+      <filename class="directory"><replaceable>libbuilddir</replaceable>/testsuite</filename>
+      directory, then edit the
+      file to remove the tests you don't want and then run the testsuite as
+      normal, or you can specify a testsuite and a subset of tests in the
+      <varname>RUNTESTFLAGS</varname> variable.
+    </para>
+
+    <para>
+      For example, to run only the tests for containers you could use:
+
+<programlisting>
+    make check-target-libstdc++-v3 RUNTESTFLAGS="conformance.exp=23_containers/*"
+</programlisting>
+    </para>
+
+    <para>
+      When combining this with other options in <varname>RUNTESTFLAGS</varname>
+      the <option>testsuite.exp=testfiles</option> options must come first.
+    </para>
+
+    <para>
+      There are two ways to run on a simulator: set up <envar>DEJAGNU</envar>
+      to point to a specially crafted <filename>site.exp</filename>,
+      or pass down <option>--target_board</option> flags.
+    </para>
+
+    <para>
+    Example flags to pass down for various embedded builds are as follows:
+
+<programlisting>
+  --target=powerpc-eabisim <emphasis>(libgloss/sim)</emphasis>
+  make check-target-libstdc++-v3 RUNTESTFLAGS="--target_board=powerpc-sim"
+
+  --target=calmrisc32 <emphasis>(libgloss/sid)</emphasis>
+  make check-target-libstdc++-v3 RUNTESTFLAGS="--target_board=calmrisc32-sid"
+
+  --target=xscale-elf <emphasis>(newlib/sim)</emphasis>
+  make check-target-libstdc++-v3 RUNTESTFLAGS="--target_board=arm-sim"
+</programlisting>
+    </para>
+
+    <para>
+      Also, here is an example of how to run the libstdc++ testsuite
+      for a multilibed build directory with different ABI settings:
+
+<programlisting>
+    make check-target-libstdc++-v3 RUNTESTFLAGS='--target_board \"unix{-mabi=32,,-mabi=64}\"'
+</programlisting>
+    </para>
+
+    <para>
+      If you wish to run the testsuite in a freestanding configuration, you can
+      pass the <code>-ffreestanding</code> flag.  Doing so will run the tests
+      that do not require hosted features, and emit a
+      <literal>UNSUPPORTED</literal> for those that do.  To run tests in the
+      freestanding configuration, you still need to build for a target you can
+      run programs on, e.g. <code>x86_64-pc-linux-gnu</code>, as a few tests
+      still execute the code they build.  Here's an example of how to run the
+      testsuite with libstdc++ in freestanding mode:
+<programlisting>
+    make check-target-libstdc++-v3 RUNTESTFLAGS='--target_board=unix/-ffreestanding'
+</programlisting>
+    </para>
+
+    <para>
+      You can run the tests with a compiler and library that have
+      already been installed.  Make sure that the compiler (e.g.,
+      <command>g++</command>) is in your <envar>PATH</envar>.  If you are
+      using shared libraries, then you must also ensure that the
+      directory containing the shared version of libstdc++ is in your
+      <envar>LD_LIBRARY_PATH</envar>, or
+      <link linkend="manual.intro.using.linkage.dynamic">equivalent</link>.
+      If your GCC source tree is at
+      <filename class="directory">/path/to/gcc</filename>,
+      then you can run the tests as follows:
+
+<programlisting>
+    runtest --tool libstdc++ --srcdir=/path/to/gcc/libstdc++-v3/testsuite
+</programlisting>
+    </para>
+
+    <para>
+      The testsuite will create a number of files in the directory in
+      which you run this command.  Some of those files might use the
+      same name as files created by other testsuites (like the ones
+      for GCC and G++), so you should not try to run all the
+      testsuites in parallel from the same directory.
+    </para>
+
+    <para>
+      In addition, there are some testing options that are mostly of
+      interest to library maintainers and system integrators. As such,
+      these tests may not work on all CPU and host combinations, and
+      may need to be executed in the
+      <filename class="directory"><replaceable>libbuilddir</replaceable>/testsuite</filename>
+      directory.  These
+      options include, but are not necessarily limited to, the
+      following:
+    </para>
+
+<variablelist>
+<varlistentry>
+   <term><userinput>
+   make testsuite_files
+   </userinput></term>>
+
+  <listitem>
+  <para>
+    Five files are generated that determine what test files
+    are run. These files are:
+
+    <variablelist>
+    <varlistentry>
+      <term> <filename>testsuite_files</filename> </term>
+      <listitem>
+	 This is a list of all the test cases that will be run. Each
+	 test case is on a separate line, given with an absolute path
+	 from the
+         <filename class="directory"><replaceable>libsrcdir</replaceable>/testsuite</filename>
+         directory.
+      </listitem>
+    </varlistentry>
+
+    <varlistentry>
+      <term> <filename>testsuite_files_interactive</filename> </term>
+      <listitem>
+	 This is a list of all the interactive test cases, using the
+	 same format as the file list above. These tests are not run
+	 by default.
+      </listitem>
+    </varlistentry>
+
+    <varlistentry>
+      <term> <filename>testsuite_files_performance</filename> </term>
+      <listitem>
+	 This is a list of all the performance test cases, using the
+	 same format as the file list above. These tests are not run
+	 by default.
+      </listitem>
+    </varlistentry>
+
+    <varlistentry>
+      <term> <filename>testsuite_thread</filename> </term>
+      <listitem>
+	 This file indicates that the host system can run tests which
+	 involved multiple threads.
+      </listitem>
+    </varlistentry>
+
+    <varlistentry>
+      <term> <filename>testsuite_wchar_t</filename> </term>
+      <listitem>
+	 This file indicates that the host system can run the
+         <code>wchar_t</code> tests, and corresponds to the macro
+         definition <literal>_GLIBCXX_USE_WCHAR_T</literal> in the
+         file <filename>c++config.h</filename>.
+      </listitem>
+    </varlistentry>
+    </variablelist>
+  </para>
+  </listitem>
+</varlistentry>
+
+<varlistentry>
+   <term><userinput>
+   make check-abi
+   </userinput></term>>
+
+   <listitem>
+   <para>
+     The library ABI can be tested. This involves testing the shared
+     library against a baseline list of symbol exports that defines the
+     previous version of the ABI. The tests require that no exported
+     symbols are removed, no new symbols are added to the old symbol
+     versions, and any new symbols have the latest symbol version.
+     See <link linkend="abi.versioning">Versioning</link> for more details
+     of the ABI version history.
+   </para>
+   </listitem>
+</varlistentry>
+
+<varlistentry>
+   <term><userinput>
+   make new-abi-baseline
+   </userinput></term>>
+
+   <listitem>
+   <para>
+     Generate a new baseline set of symbols exported from the library
+     (written to a file under
+     <filename class="directory"><replaceable>libsrcdir</replaceable>/config/abi/post/<replaceable>target</replaceable>/</filename>).
+     A different baseline symbols file is needed for each architecture and
+     is used by the <literal>check-abi</literal> target described above.
+     The files are usually re-generated by target maintainers for releases.
+   </para>
+   </listitem>
+</varlistentry>
+
+<varlistentry>
+  <term><userinput>
+   make check-compile
+  </userinput></term>>
+
+   <listitem>
+   <para>
+     This rule compiles, but does not link or execute, the
+     <filename>testsuite_files</filename> test cases and displays the
+     output on stdout.
+   </para>
+   </listitem>
+</varlistentry>
+
+<varlistentry>
+   <term><userinput>
+   make check-performance
+   </userinput></term>>
+
+   <listitem>
+   <para>
+     This rule runs through the
+     <filename>testsuite_files_performance</filename> test cases and
+     collects information for performance analysis and can be used to
+     spot performance regressions. Various timing information is
+     collected, as well as number of hard page faults, and memory
+     used. This is not run by default, and the implementation is in
+     flux.
+   </para>
+   </listitem>
+</varlistentry>
+
+<varlistentry>
+   <term><userinput>
+   make check-debug
+   </userinput></term>>
+
+   <listitem>
+   <para>
+     This rule runs through the test suite under the
+     <link linkend="manual.ext.debug_mode">debug mode</link>.
+   </para>
+   </listitem>
+</varlistentry>
+
+<varlistentry>
+   <term><userinput>
+   make check-parallel
+   </userinput></term>>
+
+   <listitem>
+   <para>
+     This rule runs through the test suite under the
+     <link linkend="manual.ext.parallel_mode">parallel mode</link>.
+   </para>
+   </listitem>
+</varlistentry>
+
+</variablelist>
+
+   <para>
+      We are interested in any strange failures of the testsuite;
+      please email the main libstdc++ mailing list if you see
+      something odd or have questions.
+   </para>
+  </section>
+
+  <section xml:id="test.run.permutations"><info><title>Permutations</title></info>
+
+    <para>
+      The tests will be compiled with a set of default compiler flags defined
+      by the
+      <filename><replaceable>libbuilddir</replaceable>/scripts/testsuite_flags</filename>
+      file, as well as options specified in individual tests. You can run
+      the tests with different options by adding them to the output of
+      the <option>--cxxflags</option> option of that script, or by setting
+      the <varname>CXXFLAGS</varname> variable when running
+      <command>make</command>, or via options for the DejaGnu test framework
+      (described below). The latter approach uses the
+      <option>--target_board</option> option that was shown earlier,
+      but requires DejaGnu version 1.5.3 or newer to work reliably, so that the
+      <literal>dg-options</literal> in the test aren't overridden.
+      For example, to run the tests with
+      <option>-O1 -D_GLIBCXX_ASSERTIONS</option>
+      you could use:
+<programlisting>    make check RUNTESTFLAGS=--target_board=unix/-O1/-D_GLIBCXX_ASSERTIONS</programlisting>
+    </para>
+
+    <para>
+      Since GCC 14, the libstdc++ testsuite has built-in support for running
+      tests with more than one <option>-std</option>, similar to the G++ tests.
+      Adding <code>set v3_std_list { 11 17 23 }</code> to
+      <filename>~/.dejagnurc</filename> or to a file named by the
+      <envar>DEJAGNU</envar> environment variable will cause every test to
+      be run three times, using a different <option>-std</option> each time.
+      Alternatively, a list of standard versions to test with can be specified
+      as a comma-separated list in the <envar>GLIBCXX_TESTSUITE_STDS</envar>
+      environment variable, e.g. <envar>GLIBCXX_TESTSUITE_STDS=11,17,23</envar>
+      is equivalent to the <code>v3_std_list</code> value above.
+      Before GCC 14, the <option>--target_board</option> option could be
+      used to run the tests with different <option>-std</option> options,
+      but this no longer works.
+    </para>
+
+    <para>
+      To run the libstdc++ test suite under the
+      <link linkend="manual.ext.debug_mode">debug mode</link>, use
+      <userinput>make check-debug</userinput>. Alternatively, edit
+      <filename><replaceable>libbuilddir</replaceable>/scripts/testsuite_flags</filename>
+      to add the compile-time flag <option>-D_GLIBCXX_DEBUG</option> to the
+      result printed by the <option>--cxxflags</option>
+      option. Additionally, add the
+      <option>-D_GLIBCXX_DEBUG_PEDANTIC</option> flag to turn on
+      pedantic checking. The libstdc++ test suite should produce
+      the same results under debug mode that it does under release mode:
+      any deviation indicates an error in either the library or the test suite.
+      Note, however, that the number of tests that PASS may change, because
+      some test cases are skipped in normal mode, and some are skipped in
+      debug mode, as determined by the
+      <literal>dg-require-<replaceable>support</replaceable></literal>
+      directives described below.
+    </para>
+
+    <para>
+      The <link linkend="manual.ext.parallel_mode">parallel
+      mode</link> can be tested using
+      <userinput>make check-parallel</userinput>, or in much the same manner
+      as the debug mode, substituting
+      <option>-D_GLIBCXX_PARALLEL</option> for
+      <option>-D_GLIBCXX_DEBUG</option> in the previous paragraph.
+    </para>
+
+    <para>
+      Or, just run the testsuite
+      <option>-D_GLIBCXX_DEBUG</option> or <option>-D_GLIBCXX_PARALLEL</option>
+      in <varname>CXXFLAGS</varname> or <varname>RUNTESTFLAGS</varname>.
+    </para>
+  </section>
+</section>
+
+<section xml:id="test.new_tests"><info><title>Writing a new test case</title></info>
+
+
+   <para>
+    The first step in making a new test case is to choose the correct
+    directory and file name, given the organization as previously
+    described.
+   </para>
+
+   <para>
+    Historically all test files were copyright the FSF, and GPL licensed.
+    We no longer require that, because most tests are uninteresting
+    and contain no "original authorship", and so would not be protected
+    by copyright anyway.
+    Adding the FSF copyright notice to new tests is incorrect unless you
+    (or your employer) have a copyright assignment on file with the FSF,
+    or if the test contains code copied from another test under FSF copyright.
+    In particular, new tests that contain original code are not copyright FSF
+    if contributed under the <link xmlns:xlink="http://www.w3.org/1999/xlink"
+      xlink:href="https://gcc.gnu.org/dco.html">DCO</link> terms.
+    If new tests do add the FSF copyright notice and GPL licence text,
+    then the first copyright year should correspond to the date
+    the file was checked in to version control. If the test code is copied
+    from an existing file it should retain the copyright years from the
+    original file.
+   </para>
+
+   <para>
+     The DejaGnu instructions say to always return <literal>0</literal>
+     from <function>main</function> to indicate success. Strictly speaking
+     this is redundant in C++, since returning from <function>main</function>
+     is defined to return <literal>0</literal>. Most tests still have an
+     explicit return.
+   </para>
+
+   <para>
+   A bunch of utility functions and classes have already been
+   abstracted out into the testsuite utility library, <code>
+   libtestc++</code>. To use this functionality, just include the
+   appropriate header file: the library or specific object files will
+   automatically be linked in as part of the testsuite run.
+   </para>
+
+   <para>
+    Tests that need to perform runtime checks should use the
+    <literal>VERIFY</literal> macro, defined in the
+    <filename class="headerfile">&lt;testsuite_hooks.h&gt;</filename> header.
+    This expands to a custom assertion using
+    <function>__builtin_printf</function> and
+    <function>__builtin_abort</function>
+    (to avoid using <literal>assert</literal> and being affected by
+    <literal>NDEBUG</literal>).
+   </para>
+
+   <para>
+    The testsuite uses the DejaGnu framework to compile and run the tests.
+    Test cases are normal C++ files which contain special directives in
+    comments.  These directives look like <literal>{ dg-* ... }</literal>
+    and tell DejaGnu what to do and what kinds of behavior are to be expected
+    for a test.  The core DejaGnu directives are documented in the
+    <filename>dg.exp</filename> file installed by DejaGnu.
+    The GCC testsuites support additional directives
+    as described in the GCC internals documentation, see <link
+    xmlns:xlink="http://www.w3.org/1999/xlink"
+    xlink:href="https://gcc.gnu.org/onlinedocs/gccint/Directives.html">Syntax
+    and Descriptions of test directives</link>. GCC also defines many <link
+    xmlns:xlink="http://www.w3.org/1999/xlink"
+    xlink:href="https://gcc.gnu.org/onlinedocs/gccint/Effective-Target-Keywords.html">
+    Keywords describing target attributes</link> (a.k.a effective targets)
+    which can be used where a target <replaceable>selector</replaceable> can
+    appear.
+  </para>
+
+  <para>
+  Some directives commonly used in the libstdc++ testsuite are:
+
+<variablelist>
+<varlistentry>
+  <term><literal>{ dg-do <replaceable>do-what-keyword</replaceable> [{ target/xfail <replaceable>selector</replaceable> }] }</literal></term>
+  <listitem>Where <replaceable>do-what-keyword</replaceable> is usually
+    one of <literal>run</literal> (which is the default),
+    <literal>compile</literal>, or <literal>link</literal>,
+    and typical selectors are targets such as <literal>*-*-gnu*</literal>
+    or an effective target such as <literal>c++11</literal>.
+  </listitem>
+</varlistentry>
+<varlistentry>
+  <term><literal>{ dg-require-<replaceable>support</replaceable> args }</literal></term>
+  <listitem>Skip the test if the target does not provide the required support.
+    See below for values of <replaceable>support</replaceable>.
+  </listitem>
+</varlistentry>
+<varlistentry>
+  <term><literal>{ dg-options <replaceable>options</replaceable> [{ target <replaceable>selector</replaceable> }] }</literal></term>
+</varlistentry>
+<varlistentry>
+  <term><literal>{ dg-error <replaceable>regexp</replaceable> [ <replaceable>comment</replaceable> [{ target/xfail <replaceable>selector</replaceable> } [<replaceable>line</replaceable>] ]] }</literal></term>
+</varlistentry>
+<varlistentry>
+  <term><literal>{ dg-excess-errors <replaceable>comment</replaceable> [{ target/xfail <replaceable>selector</replaceable> }] }</literal></term>
+</varlistentry>
+</variablelist>
+  For full details of these and other directives see the main GCC DejaGnu
+  documentation in the internals manual.
+  </para>
+
+  <para>
+    Test cases that use features of a particular C++ standard should specify
+    the minimum required standard as an effective target:
+<programlisting>    // { dg-do run { target c++11 } }</programlisting>
+    or
+<programlisting>    // { dg-require-effective-target c++11 }</programlisting>
+    Specifying the minimum required standard for a test allows it to be run
+    using later standards, so that we can verify that C++11 components still
+    work correctly when compiled as C++14 or later. Specifying a minimum also
+    means the test will be skipped if the test is compiled using
+    an older standard, e.g. using
+    <option>RUNTESTFLAGS=--target_board=unix/-std=gnu++98</option>.
+  </para>
+
+  <para>
+    It is possible to indicate that a test should <emphasis>only</emphasis>
+    be run for a specific standard (and not later standards) using an
+    effective target like <literal>c++11_only</literal>. However, this means
+    the test will be skipped by default unless <option>-std=gnu++11</option>
+    or <option>-std=c++11</option> is explicitly specified, either via a
+    target board, the <varname>v3_std_list</varname> dejagnu variable,
+    or the <envar>GLIBCXX_TESTSUITE_STDS</envar> environment variable.
+    For tests that require a specific standard it is useful to also add a
+    <literal>dg-options</literal> directive:
+<programlisting>    // { dg-options "-std=gnu++11" }</programlisting>
+    This means the test will not get skipped by default, and will always use
+    the specific standard dialect that the test requires. This isn't needed
+    often, and most tests should use an effective target to specify a
+    minimum standard instead, to allow them to be tested for all
+    possible variations.
+  </para>
+
+  <para>
+    N.B. when a <literal>dg-options</literal> directive is used, it must come
+    first so dejagnu will include those options when checking against any
+    effective targets in <literal>dg-do</literal> and
+    <literal>dg-require-effective-target</literal> directives.
+  </para>
+
+  <para>
+    Since GCC 14, tests which depend on a newer standard than the default
+    do not need to specify that standard in a <literal>dg-options</literal>
+    directive. The testsuite will detect when a test requires a newer standard
+    and will automatically add a suitable <option>-std</option> flag.
+  </para>
+
+  <para>
+    If a testcase requires the use of a strict language dialect, e.g.
+    <option>-std=c++11</option> rather than <option>-std=gnu++11</option>,
+    the following directive will cause that to be used when the testsuite
+    decides which <option>-std</option> options to use for the test:
+<programlisting>    // { dg-add-options strict_std }</programlisting>
+  </para>
+
+<section xml:id="tests.dg.examples"><info><title>Examples of Test Directives</title></info>
+
+   <para>
+Example 1: Testing compilation only:
+<programlisting>
+// { dg-do compile }
+</programlisting>
+
+Example 2: Testing for expected warnings on line 36, which all targets fail:
+<programlisting>
+// { dg-warning "string literals" "" { xfail *-*-* } 36 }
+</programlisting>
+
+Example 3: Testing for expected warnings on line 36:
+<programlisting>
+// { dg-warning "string literals" "" { target *-*-* } 36 }
+</programlisting>
+
+Example 4: Testing for compilation errors on line 41:
+<programlisting>
+// { dg-do compile }
+// { dg-error "no match for" "" { target *-*-* } 41 }
+</programlisting>
+
+Example 5: Testing with special command line settings, or without the
+use of pre-compiled headers, in particular the
+<filename class="headerfile">stdc++.h.gch</filename> file. Any
+options here will override the <varname>DEFAULT_CXXFLAGS</varname> and
+<varname>PCH_CXXFLAGS</varname> set up in the <filename>normal.exp</filename>
+file:
+<programlisting>
+// { dg-options "-O0" { target *-*-* } }
+</programlisting>
+
+Example 6: Compiling and linking a test only for C++14 and later, and only
+if Debug Mode is active:
+<programlisting>
+// { dg-do link { target c++14 } }
+// { dg-require-debug-mode "" }
+</programlisting>
+
+Example 7: Running a test only on x86 targets, and only for C++11 and later,
+with specific options, and additional options for 32-bit x86:
+<programlisting>
+// { dg-options "-fstrict-enums" }
+// { dg-additional-options "-march=i486" { target ia32 } }
+// { dg-do run { target { ia32 || x86_64-*-* } } }
+// { dg-require-effective-target "c++11" }
+</programlisting>
+   </para>
+
+   <para>
+    More examples can be found in the
+    <filename>libstdc++-v3/testsuite/*/*.cc</filename> files.
+   </para>
+</section>
+
+<section xml:id="tests.dg.directives"><info><title>Directives Specific to Libstdc++ Tests</title></info>
+
+  <para>
+    In addition to the usual <link
+    xmlns:xlink="http://www.w3.org/1999/xlink"
+    xlink:href="https://gcc.gnu.org/onlinedocs/gccint/Require-Support.html">Variants
+    of <literal>dg-require-<replaceable>support</replaceable></literal></link>
+    several more directives are available for use in libstdc++ tests,
+    including the following:
+   </para>
+
+  <variablelist>
+    <varlistentry><term><literal>dg-require-namedlocale</literal> <replaceable>name</replaceable></term>
+      <listitem><para>The named locale must be available.
+      </para></listitem>
+    </varlistentry>
+    <varlistentry><term><literal>dg-require-debug-mode ""</literal></term>
+      <listitem><para>Skip the test if the Debug Mode is not active
+	(as determined by the <literal>_GLIBCXX_DEBUG</literal> macro).
+      </para></listitem>
+    </varlistentry>
+    <varlistentry><term><literal>dg-require-parallel-mode ""</literal></term>
+      <listitem><para>Skip the test if the Parallel Mode is not active
+	(as determined by the <literal>_GLIBCXX_PARALLEL</literal> macro).
+      </para></listitem>
+    </varlistentry>
+    <varlistentry><term><literal>dg-require-normal-mode ""</literal></term>
+      <listitem><para>Skip the test if Debug or Parallel Mode is active.
+      </para></listitem>
+    </varlistentry>
+    <varlistentry><term><literal>dg-require-atomic-builtins ""</literal></term>
+      <listitem><para>Skip the test if atomic operations on <type>bool</type>
+      and <type>int</type> are not lock-free.
+      </para></listitem>
+    </varlistentry>
+    <varlistentry><term><literal>dg-require-gthreads ""</literal></term>
+      <listitem><para>Skip the test if the C++11 thread library is not
+      supported, as determined by the <literal>_GLIBCXX_HAS_GTHREADS</literal>
+      macro.
+      </para></listitem>
+    </varlistentry>
+    <varlistentry><term><literal>dg-require-gthreads-timed ""</literal></term>
+      <listitem><para>Skip the test if C++11 timed mutexes are not supported,
+      as determined by the <literal>_GLIBCXX_HAS_GTHREADS</literal> and
+      <literal>_GTHREAD_USE_MUTEX_TIMEDLOCK</literal> macros.
+      </para></listitem>
+    </varlistentry>
+    <varlistentry><term><literal>dg-require-string-conversions ""</literal></term>
+      <listitem><para>Skip the test if the C++11 <function>to_string</function>
+      and <function>stoi</function>, <function>stod</function> etc. functions
+      are not fully supported (including wide character versions).
+      </para></listitem>
+    </varlistentry>
+    <varlistentry><term><literal>dg-require-filesystem-ts ""</literal></term>
+      <listitem><para>Skip the test if the Filesystem TS is not supported.
+      </para></listitem>
+    </varlistentry>
+  </variablelist>
+</section>
+
+</section>
+
+
+<section xml:id="test.harness" xreflabel="Test Harness and Utilities"><info><title>Test Harness and Utilities</title></info>
+
+
+<section xml:id="test.harness.dejagnu"><info><title>DejaGnu Harness Details</title></info>
+
+  <para>
+    Underlying details of testing for conformance and regressions are
+    abstracted via the GNU DejaGnu package. This is similar to the
+    rest of GCC.
+  </para>
+
+
+<para>This is information for those looking at making changes to the testsuite
+structure, and/or needing to trace DejaGnu's actions with
+<option>--verbose</option>.
+This will not be useful to people who are "merely" adding new tests
+to the existing structure.
+</para>
+
+<para>The first key point when working with DejaGnu is the idea of a "tool".
+Files, directories, and functions are all implicitly used when they are
+named after the tool in use.  Here, the tool will always be "libstdc++".
+</para>
+
+<para>The <code>lib</code> subdir contains support routines.  The
+<code>lib/libstdc++.exp</code> file ("support library") is loaded
+automagically, and must explicitly load the others.  For example, files can
+be copied from the core compiler's support directory into <code>lib</code>.
+</para>
+
+<para>Some routines in <code>lib/libstdc++.exp</code> are callbacks, some are
+our own.  Callbacks must be prefixed with the name of the tool.  To easily
+distinguish the others, by convention our own routines are named "v3-*".
+</para>
+
+<para>The next key point when working with DejaGnu is "test files".  Any
+directory whose name starts with the tool name will be searched for test files.
+(We have only one.)  In those directories, any <code>.exp</code> file is
+considered a test file, and will be run in turn.  Our main test file is called
+<code>normal.exp</code>; it runs all the tests in testsuite_files using the
+callbacks loaded from the support library.
+</para>
+
+<para>The <code>config</code> directory is searched for any particular "target
+board" information unique to this library.  This is currently unused and sets
+only default variables.
+</para>
+
+</section>
+
+<section xml:id="test.harness.utils"><info><title>Utilities</title></info>
+
+  <para>
+  </para>
+  <para>
+   The testsuite directory also contains some files that implement
+   functionality that is intended to make writing test cases easier,
+   or to avoid duplication, or to provide error checking in a way that
+   is consistent across platforms and test harnesses. A stand-alone
+   executable, called <emphasis>abi_check</emphasis>, and a static
+   library called <emphasis>libtestc++</emphasis> are
+   constructed. Both of these items are not installed, and only used
+   during testing.
+  </para>
+
+  <para>
+  These files include the following functionality:
+  </para>
+
+  <itemizedlist>
+     <listitem>
+       <para>
+       <emphasis>testsuite_abi.h</emphasis>,
+       <emphasis>testsuite_abi.cc</emphasis>,
+       <emphasis>testsuite_abi_check.cc</emphasis>
+       </para>
+       <para>
+	Creates the executable <emphasis>abi_check</emphasis>.
+	Used to check correctness of symbol versioning, visibility of
+	exported symbols, and compatibility on symbols in the shared
+	library, for hosts that support this feature. More information
+	can be found in the ABI documentation <link linkend="appendix.porting.abi">here</link>
+       </para>
+     </listitem>
+     <listitem>
+       <para>
+       <emphasis>testsuite_allocator.h</emphasis>,
+       <emphasis>testsuite_allocator.cc</emphasis>
+       </para>
+       <para>
+	Contains specialized allocators that keep track of construction
+	and destruction. Also, support for overriding global new and
+	delete operators, including verification that new and delete
+	are called during execution, and that allocation over max_size
+	fails.
+       </para>
+     </listitem>
+     <listitem>
+       <para>
+       <emphasis>testsuite_character.h</emphasis>
+       </para>
+       <para>
+	Contains <code>std::char_traits</code> and
+	<code>std::codecvt</code> specializations for a user-defined
+	POD.
+       </para>
+     </listitem>
+     <listitem>
+       <para>
+       <emphasis>testsuite_hooks.h</emphasis>,
+       <emphasis>testsuite_hooks.cc</emphasis>
+       </para>
+       <para>
+       A large number of utilities, including:
+       </para>
+       <itemizedlist>
+	 <listitem><para>VERIFY</para></listitem>
+	 <listitem><para>set_memory_limits</para></listitem>
+	 <listitem><para>verify_demangle</para></listitem>
+	 <listitem><para>run_tests_wrapped_locale</para></listitem>
+	 <listitem><para>run_tests_wrapped_env</para></listitem>
+	 <listitem><para>try_named_locale</para></listitem>
+	 <listitem><para>try_mkfifo</para></listitem>
+	 <listitem><para>func_callback</para></listitem>
+	 <listitem><para>counter</para></listitem>
+	 <listitem><para>copy_tracker</para></listitem>
+	 <listitem><para>copy_constructor</para></listitem>
+	 <listitem><para>assignment_operator</para></listitem>
+	 <listitem><para>destructor</para></listitem>
+	 <listitem>
+	 <para>pod_char, pod_int and associated char_traits specializations</para>
+	 </listitem>
+       </itemizedlist>
+     </listitem>
+     <listitem>
+       <para>
+	 <emphasis>testsuite_io.h</emphasis>
+       </para>
+       <para>
+       Error, exception, and constraint checking for
+       <code>std::streambuf, std::basic_stringbuf, std::basic_filebuf</code>.
+       </para>
+     </listitem>
+     <listitem>
+       <para>
+	 <emphasis>testsuite_iterators.h</emphasis>
+       </para>
+       <para>
+	 Wrappers for various iterators.
+       </para>
+     </listitem>
+     <listitem>
+       <para>
+	 <emphasis>testsuite_performance.h</emphasis>
+       </para>
+       <para>
+       A number of class abstractions for performance counters, and
+       reporting functions including:
+       </para>
+      <itemizedlist>
+	 <listitem><para>time_counter</para></listitem>
+	 <listitem><para>resource_counter</para></listitem>
+	 <listitem><para>report_performance</para></listitem>
+      </itemizedlist>
+     </listitem>
+  </itemizedlist>
+</section>
+
+</section>
+
+<section xml:id="test.special"><info><title>Special Topics</title></info>
+
+
+<section xml:id="test.exception.safety"><info><title>
+  Qualifying Exception Safety Guarantees
+  <indexterm>
+    <primary>Test</primary>
+    <secondary>Exception Safety</secondary>
+  </indexterm>
+</title></info>
+
+
+<section xml:id="test.exception.safety.overview"><info><title>Overview</title></info>
+
+
+       <para>
+	 Testing is composed of running a particular test sequence,
+	 and looking at what happens to the surrounding code when
+	 exceptions are thrown. Each test is composed of measuring
+	 initial state, executing a particular sequence of code under
+	 some instrumented conditions, measuring a final state, and
+	 then examining the differences between the two states.
+       </para>
+
+       <para>
+	 Test sequences are composed of constructed code sequences
+	 that exercise a particular function or member function, and
+	 either confirm no exceptions were generated, or confirm the
+	 consistency/coherency of the test subject in the event of a
+	 thrown exception.
+       </para>
+
+       <para>
+	 Random code paths can be constructed using the basic test
+	 sequences and instrumentation as above, only combined in a
+	 random or pseudo-random way.
+       </para>
+
+       <para> To compute the code paths that throw, test instruments
+	 are used that throw on allocation events
+	 (<classname>__gnu_cxx::throw_allocator_random</classname>
+	 and <classname>__gnu_cxx::throw_allocator_limit</classname>)
+	 and copy, assignment, comparison, increment, swap, and
+	 various operators
+	 (<classname>__gnu_cxx::throw_type_random</classname>
+	 and <classname>__gnu_cxx::throw_type_limit</classname>). Looping
+	 through a given test sequence and conditionally throwing in
+	 all instrumented places.  Then, when the test sequence
+	 completes without an exception being thrown, assume all
+	 potential error paths have been exercised in a sequential
+	 manner.
+       </para>
+</section>
+
+
+<section xml:id="test.exception.safety.status"><info><title>
+    Existing tests
+</title></info>
+
+
+  <itemizedlist>
+     <listitem>
+       <para>
+	 Ad Hoc
+       </para>
+       <para>
+	 For example,
+	 <filename>testsuite/23_containers/list/modifiers/3.cc</filename>.
+       </para>
+     </listitem>
+
+     <listitem>
+       <para>
+	 Policy Based Data Structures
+       </para>
+       <para>
+	 For example, take the test
+	 functor <classname>rand_reg_test</classname> in
+	 in <filename>testsuite/ext/pb_ds/regression/tree_no_data_map_rand.cc</filename>. This uses <classname>container_rand_regression_test</classname> in
+<filename>testsuite/util/regression/rand/assoc/container_rand_regression_test.h</filename>.
+
+       </para>
+
+       <para>
+	 Which has several tests for container member functions,
+Includes control and test container objects. Configuration includes
+random seed, iterations, number of distinct values, and the
+probability that an exception will be thrown. Assumes instantiating
+container uses an extension
+allocator, <classname>__gnu_cxx::throw_allocator_random</classname>,
+as the allocator type.
+       </para>
+     </listitem>
+
+     <listitem>
+       <para>
+	 C++11 Container Requirements.
+       </para>
+
+       <para>
+	 Coverage is currently limited to testing container
+	 requirements for exception safety,
+	 although <classname>__gnu_cxx::throw_type</classname> meets
+	 the additional type requirements for testing numeric data
+	 structures and instantiating algorithms.
+       </para>
+
+       <para>
+	 Of particular interest is extending testing to algorithms and
+	 then to parallel algorithms. Also io and locales.
+       </para>
+
+       <para>
+	 The test instrumentation should also be extended to add
+	 instrumentation to <classname>iterator</classname>
+	 and <classname>const_iterator</classname> types that throw
+	 conditionally on iterator operations.
+       </para>
+     </listitem>
+  </itemizedlist>
+</section>
+
+
+<section xml:id="test.exception.safety.containers"><info><title>
+C++11 Requirements Test Sequence Descriptions
+</title></info>
+
+
+  <itemizedlist>
+     <listitem>
+       <para>
+	 Basic
+       </para>
+
+       <para>
+	 Basic consistency on exception propagation tests. For
+	 each container, an object of that container is constructed,
+	 a specific member function is exercised in
+	 a <literal>try</literal> block, and then any thrown
+	 exceptions lead to error checking in the appropriate
+	 <literal>catch</literal> block. The container's use of
+	 resources is compared to the container's use prior to the
+	 test block. Resource monitoring is limited to allocations
+	 made through the container's <type>allocator_type</type>,
+	 which should be sufficient for container data
+	 structures. Included in these tests are member functions
+	 are <type>iterator</type> and <type>const_iterator</type>
+	 operations, <function>pop_front</function>, <function>pop_back</function>, <function>push_front</function>, <function>push_back</function>, <function>insert</function>, <function>erase</function>, <function>swap</function>, <function>clear</function>,
+	 and <function>rehash</function>. The container in question is
+	 instantiated with two instrumented template arguments,
+	 with <classname>__gnu_cxx::throw_allocator_limit</classname>
+	 as the allocator type, and
+	 with <classname>__gnu_cxx::throw_type_limit</classname> as
+	 the value type. This allows the test to loop through
+	 conditional throw points.
+       </para>
+
+     <para>
+	 The general form is demonstrated in
+	 <filename>testsuite/23_containers/list/requirements/exception/basic.cc
+	 </filename>. The instantiating test object is <classname>__gnu_test::basic_safety</classname> and is detailed in <filename>testsuite/util/exception/safety.h</filename>.
+       </para>
+     </listitem>
+
+
+     <listitem>
+       <para>
+	 Generation Prohibited
+       </para>
+
+       <para>
+	 Exception generation tests. For each container, an object of
+	 that container is constructed and all member functions
+	 required to not throw exceptions are exercised. Included in
+	 these tests are member functions
+	 are <type>iterator</type> and <type>const_iterator</type> operations, <function>erase</function>, <function>pop_front</function>, <function>pop_back</function>, <function>swap</function>,
+	 and <function>clear</function>. The container in question is
+	 instantiated with two instrumented template arguments,
+	 with <classname>__gnu_cxx::throw_allocator_random</classname>
+	 as the allocator type, and
+	 with <classname>__gnu_cxx::throw_type_random</classname> as
+	 the value type. This test does not loop, an instead is sudden
+	 death: first error fails.
+       </para>
+       <para>
+	 The general form is demonstrated in
+	 <filename>testsuite/23_containers/list/requirements/exception/generation_prohibited.cc
+	 </filename>. The instantiating test object is <classname>__gnu_test::generation_prohibited</classname> and is detailed in <filename>testsuite/util/exception/safety.h</filename>.
+       </para>
+     </listitem>
+
+
+     <listitem>
+       <para>
+	 Propagation Consistent
+       </para>
+
+       <para>
+	 Container rollback on exception propagation tests. For
+	 each container, an object of that container is constructed,
+	 a specific member function that requires rollback to a previous
+	 known good state is exercised in
+	 a <literal>try</literal> block, and then any thrown
+	 exceptions lead to error checking in the appropriate
+	 <literal>catch</literal> block. The container is compared to
+	 the container's last known good state using such parameters
+	 as size, contents, and iterator references. Included in these
+	 tests are member functions
+	 are <function>push_front</function>, <function>push_back</function>, <function>insert</function>,
+	 and <function>rehash</function>. The container in question is
+	 instantiated with two instrumented template arguments,
+	 with <classname>__gnu_cxx::throw_allocator_limit</classname>
+	 as the allocator type, and
+	 with <classname>__gnu_cxx::throw_type_limit</classname> as
+	 the value type. This allows the test to loop through
+	 conditional throw points.
+       </para>
+
+       <para>
+	 The general form demonstrated in
+	 <filename>testsuite/23_containers/list/requirements/exception/propagation_coherent.cc
+	 </filename>. The instantiating test object is <classname>__gnu_test::propagation_coherent</classname> and is detailed in <filename>testsuite/util/exception/safety.h</filename>.
+       </para>
+     </listitem>
+  </itemizedlist>
+
+</section>
+
+</section>
+
+</section>
+
+</section>

@@ -1,0 +1,79 @@
+# Defines the key strings for LoongArch compiler options.
+#
+# Copyright (C) 2021-2026 Free Software Foundation, Inc.
+#
+# This file is part of GCC.
+#
+# GCC is free software; you can redistribute it and/or modify it under
+# the terms of the GNU General Public License as published by the Free
+# Software Foundation; either version 3, or (at your option) any later
+# version.
+#
+# GCC is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+# or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+# License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with GCC; see the file COPYING3.  If not see
+# <http://www.gnu.org/licenses/>.
+
+# -march= / -mtune=
+OPTSTR_ARCH	      arch
+OPTSTR_TUNE	      tune
+
+STR_CPU_NATIVE	      native
+STR_ARCH_ABI_DEFAULT  abi-default
+STR_TUNE_GENERIC      generic
+STR_CPU_LOONGARCH64   loongarch64
+STR_CPU_LA464	      la464
+STR_CPU_LA664	      la664
+STR_ARCH_LA64V1_0     la64v1.0
+STR_ARCH_LA64V1_1     la64v1.1
+
+STR_ARCH_LA32V1_0     la32v1.0
+STR_ARCH_LA32RV1_0    la32rv1.0
+
+STR_TUNE_LOONGARCH32  loongarch32 # No loongarch32 arch, only loongarch32 tune
+
+# Base architecture
+STR_ISA_BASE_LA32 la32
+STR_ISA_BASE_LA32R la32r
+STR_ISA_BASE_LA64 la64
+
+# -mfpu
+OPTSTR_ISA_EXT_FPU    fpu
+STR_NONE	      none
+STR_ISA_EXT_FPU0      0
+STR_ISA_EXT_FPU32     32
+STR_ISA_EXT_FPU64     64
+
+OPTSTR_SOFT_FLOAT     soft-float
+OPTSTR_SINGLE_FLOAT   single-float
+OPTSTR_DOUBLE_FLOAT   double-float
+
+# SIMD extensions
+OPTSTR_ISA_EXT_SIMD   simd
+STR_ISA_EXT_LSX       lsx
+STR_ISA_EXT_LASX      lasx
+
+# -mabi=
+OPTSTR_ABI_BASE	      abi
+STR_ABI_BASE_ILP32D   ilp32d
+STR_ABI_BASE_ILP32F   ilp32f
+STR_ABI_BASE_ILP32S   ilp32s
+STR_ABI_BASE_LP64D    lp64d
+STR_ABI_BASE_LP64F    lp64f
+STR_ABI_BASE_LP64S    lp64s
+
+# ABI extension types
+STR_ABI_EXT_BASE      base
+
+# -mcmodel=
+OPTSTR_CMODEL	      cmodel
+STR_CMODEL_NORMAL     normal
+STR_CMODEL_TINY	      tiny
+STR_CMODEL_TS	      tiny-static
+STR_CMODEL_MEDIUM     medium
+STR_CMODEL_LARGE      large
+STR_CMODEL_EXTREME    extreme

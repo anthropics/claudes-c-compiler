@@ -1,0 +1,289 @@
+/* Definitions of target machine for GNU compiler, for IBM S/390
+   Copyright (C) 2002-2026 Free Software Foundation, Inc.
+   Contributed by Hartmut Penner (hpenner@de.ibm.com) and
+                  Ulrich Weigand (uweigand@de.ibm.com).
+
+This file is part of GCC.
+
+GCC is free software; you can redistribute it and/or modify it under
+the terms of the GNU General Public License as published by the Free
+Software Foundation; either version 3, or (at your option) any later
+version.
+
+GCC is distributed in the hope that it will be useful, but WITHOUT ANY
+WARRANTY; without even the implied warranty of MERCHANTABILITY or
+FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+for more details.
+
+You should have received a copy of the GNU General Public License
+along with GCC; see the file COPYING3.  If not see
+<http://www.gnu.org/licenses/>.  */
+
+/* 256-bit integer mode is needed for STACK_SAVEAREA_MODE.  */
+INT_MODE (OI, 32);
+
+/* 128-bit float stored in a VR on z14+ or a FPR pair on older machines.  */
+FLOAT_MODE (TF, 16, ieee_quad_format);
+
+/* 128-bit float stored in a FPR pair.  */
+FLOAT_MODE (FPRX2, 16, ieee_quad_format);
+
+FLOAT_MODE (HF, 2, ieee_half_format);
+
+/* Add any extra modes needed to represent the condition code.  */
+
+/*
+
+Condition Codes
+
+      CC0         CC1          CC2         CC3
+
+Check for zero
+
+CCZ:  EQ          NE           NE          NE
+CCZ1: EQ          NE                                  (CS)
+
+Unsigned compares
+
+CCU:  EQ          LTU          GTU         NE         (CLG/R, CL/R/Y, CLM/Y, CLI/Y)
+CCUR: EQ          GTU          LTU         NE         (CLGF/R)
+
+Signed compares
+
+CCS:  EQ          LT           GT          UNORDERED  (LTGFR, LTGR, LTR, ICM/Y,
+                                                       LTDBR, LTDR, LTEBR, LTER,
+                                                       CG/R, C/R/Y, CGHI, CHI,
+                                                       CDB/R, CD/R, CEB/R, CE/R,
+                                                       ADB/R, AEB/R, SDB/R, SEB/R,
+                                                       SRAG, SRA, SRDA)
+CCSR: EQ          GT           LT          UNORDERED  (CGF/R, CH/Y)
+CCSFPS: EQ        LT           GT          UNORDERED  (KEB/R, KDB/R, KXBR, KDTR,
+						       KXTR, WFK)
+
+Condition codes resulting from add with overflow
+
+CCA:  EQ          LT           GT          Overflow
+CCAP: EQ          LT           GT          LT         (AGHI, AHI)
+CCAN: EQ          LT           GT          GT         (AGHI, AHI)
+
+Condition codes for overflow checking resulting from signed adds/subs/mults
+
+CCO:  EQ          EQ           EQ          NE         (AGR, AGHI, SGR, MSC, ...)
+
+Condition codes of unsigned adds and subs
+
+CCL:  EQ          NE           EQ          NE         (ALGF/R, ALG/R, AL/R/Y,
+                                                       ALCG/R, ALC/R,
+                                                       SLGF/R, SLG/R, SL/R/Y,
+                                                       SLBG/R, SLB/R)
+CCL1: GEU         GEU          LTU         LTU        (ALG/R, AL/R/Y)
+CCL2: GTU         GTU          LEU         LEU        (SLG/R, SL/R/Y)
+CCL3: EQ          LTU          EQ          GTU        (SLG/R, SL/R/Y)
+
+Test under mask checks
+
+CCT:  EQ          NE           NE          NE         (ICM/Y, TML, CG/R, CGHI,
+                                                       C/R/Y, CHI, NG/R, N/R/Y,
+                                                       OG/R, O/R/Y, XG/R, X/R/Y)
+CCT1: NE          EQ           NE          NE         (TMH, TML)
+CCT2: NE          NE           EQ          NE         (TMH, TML)
+CCT3: NE          NE           NE          EQ         (TMH, TML)
+
+CCA and CCT modes are request only modes. These modes are never returned by
+s390_select_cc_mode. They are only intended to match other modes.
+
+Requested mode            -> Destination CC register mode
+
+CCS, CCU, CCT, CCSR, CCUR -> CCZ
+CCA                       -> CCAP, CCAN
+
+
+
+*** Comments ***
+
+CCAP, CCAN
+
+The CC obtained from add instruction usually can't be used for comparisons
+because its coupling with overflow flag. In case of an overflow the
+less than/greater than data are lost. Nevertheless a comparison can be done
+whenever immediate values are involved because they are known at compile time.
+If you know whether the used constant is positive or negative you can predict
+the sign of the result even in case of an overflow.
+
+
+CCO
+
+This mode is used to check whether there was an overflow condition in
+a signed add, sub, or mul operation.  See (addv<mode>4, subv<mode>4,
+mulv<mode>4 patterns).
+
+
+CCT, CCT1, CCT2, CCT3
+
+If bits of an integer masked with an AND instruction are checked, the test under
+mask instructions turn out to be very handy for a set of special cases.
+The simple cases are checks whether all masked bits are zero or ones:
+
+  int a;
+  if ((a & (16 + 128)) == 0)          -> CCT/CCZ
+  if ((a & (16 + 128)) == 16 + 128)   -> CCT3
+
+Using two extra modes makes it possible to do complete checks on two bits of an
+integer (This is possible on register operands only. TM does not provide the
+information necessary for CCT1 and CCT2 modes.):
+
+  int a;
+  if ((a & (16 + 128)) == 16)         -> CCT1
+  if ((a & (16 + 128)) == 128)        -> CCT2
+
+
+CCSR, CCUR
+
+There are several instructions comparing 32 bit with 64-bit unsigned/signed
+values. Such instructions can be considered to have a builtin zero/sign_extend.
+The problem is that in the RTL (to be canonical) the zero/sign extended operand
+has to be the first one but the machine instructions like it the other way
+around. The following both modes can be considered as CCS and CCU modes with
+exchanged operands.
+
+
+CCSFPS
+
+This mode is used for signaling rtxes: LT, LE, GT, GE and LTGT.
+
+
+CCL1, CCL2
+
+These modes represent the result of overflow checks.
+
+if (a + b < a) -> CCL1 state of the carry bit   (CC2 | CC3)
+if (a - b > a) -> CCL2 state of the borrow bit  (CC0 | CC1)
+
+They are used when multi word numbers are computed dealing one SImode part after
+another or whenever manual overflow checks like the examples above are
+compiled.
+
+
+CCL3
+
+A logical subtract instruction sets the borrow bit in case of an overflow.
+The resulting condition code of those instructions is represented by the
+CCL3 mode. Together with the CCU mode this mode is used for jumpless
+implementations of several if-constructs - see s390_expand_addcc for more
+details.
+
+CCZ1
+
+The compare and swap instructions sets the condition code to 0/1 if the
+operands were equal/unequal. The CCZ1 mode ensures the result can be
+effectively placed into a register.
+
+CCVIH, CCVIHU, CCVFH, CCVFHE
+
+These are condition code modes used in instructions setting the
+condition code.  The mode determines which comparison to perform (H -
+high, HU - high unsigned, HE - high or equal) and whether it is a
+floating point comparison or not (I - int, F - float).
+
+The comparison operation to be performed needs to be encoded into the
+condition code mode since the comparison operator is not available in
+compare style patterns (set cc (compare (op0) (op1))).  So the
+condition code mode is the only information to determine the
+instruction to be used.
+
+CCVIALL, CCVIANY, CCVFALL, CCVFANY
+
+These modes are used in instructions reading the condition code.
+Opposed to the CC producer patterns the comparison operator is
+available.  Hence the comparison operation does not need to be part of
+the CC mode.  However, we still need to know whether CC has been
+generated by a float or an integer comparison in order to be able to
+invert the condition correctly (int: GT -> LE, float: GT -> UNLE).
+
+The ALL and ANY variants differ only in the usage of CC1 which
+indicates a mixed result across the vector elements.  Be aware that
+depending on the comparison code the ALL and ANY variants might
+actually refer to their opposite meaning.  I.e. while inverting the
+comparison in (EQ (reg:CCVIALL 33) (const_int 0)) results in (NE
+(reg:CCVIALL 33) (const_int 0)) it in fact describes an ANY comparison
+(inverting "all equal" should be "any not equal") However, the
+middle-end does invert only the comparison operator without touching
+the mode.
+Hence, the ALL/ANY in the mode names refer to the meaning in the
+context of EQ, GT, GE while for the inverted codes it actually means
+ANY/ALL.
+
+CCRAW
+
+The cc mode generated by a non-compare instruction.  The condition
+code mask for the CC consumer is determined by the comparison operator
+(only EQ and NE allowed) and the immediate value given as second
+operand to the operator.  For the other CC modes this value used to be
+0.
+
+*/
+
+
+CC_MODE (CCZ);
+CC_MODE (CCZ1);
+CC_MODE (CCA);
+CC_MODE (CCAP);
+CC_MODE (CCAN);
+CC_MODE (CCO);
+CC_MODE (CCL);
+CC_MODE (CCL1);
+CC_MODE (CCL2);
+CC_MODE (CCL3);
+CC_MODE (CCU);
+CC_MODE (CCUR);
+CC_MODE (CCS);
+CC_MODE (CCSR);
+CC_MODE (CCSFPS);
+CC_MODE (CCT);
+CC_MODE (CCT1);
+CC_MODE (CCT2);
+CC_MODE (CCT3);
+CC_MODE (CCRAW);
+
+CC_MODE (CCVEQ);
+
+CC_MODE (CCVIH);
+CC_MODE (CCVIHU);
+
+CC_MODE (CCVFH);
+CC_MODE (CCVFHE);
+
+CC_MODE (CCVIALL);
+CC_MODE (CCVIANY);
+
+CC_MODE (CCVFALL);
+CC_MODE (CCVFANY);
+
+/* Vector modes.  */
+
+VECTOR_MODES (INT, 2);        /*                       V2QI */
+VECTOR_MODES (INT, 4);        /*                  V4QI V2HI */
+VECTOR_MODES (INT, 8);        /*             V8QI V4HI V2SI */
+VECTOR_MODES (INT, 16);       /*       V16QI V8HI V4SI V2DI */
+VECTOR_MODES (INT, 32);       /* V32QI V16HI V8SI V4DI V2TI */
+
+VECTOR_MODE (FLOAT, HF, 2);   /* V2HF */
+VECTOR_MODE (FLOAT, HF, 4);   /* V4HF */
+VECTOR_MODE (FLOAT, HF, 8);   /* V8HF */
+VECTOR_MODE (FLOAT, HF, 16);  /* V16HF */
+VECTOR_MODE (FLOAT, SF, 2);   /* V2SF */
+VECTOR_MODE (FLOAT, SF, 4);   /* V4SF */
+VECTOR_MODE (FLOAT, SF, 8);   /* V8SF */
+VECTOR_MODE (FLOAT, DF, 2);   /* V2DF */
+VECTOR_MODE (FLOAT, DF, 4);   /* V4DF */
+
+VECTOR_MODE (INT, QI, 1);     /* V1QI */
+VECTOR_MODE (INT, HI, 1);     /* V1HI */
+VECTOR_MODE (INT, SI, 1);     /* V1SI */
+VECTOR_MODE (INT, DI, 1);     /* V1DI */
+VECTOR_MODE (INT, TI, 1);     /* V1TI */
+
+VECTOR_MODE (FLOAT, HF, 1);   /* V1HF */
+VECTOR_MODE (FLOAT, SF, 1);   /* V1SF */
+VECTOR_MODE (FLOAT, DF, 1);   /* V1DF */
+VECTOR_MODE (FLOAT, TF, 1);   /* V1TF */

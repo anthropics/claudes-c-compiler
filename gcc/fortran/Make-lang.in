@@ -1,0 +1,328 @@
+# -*- makefile -*-
+# Top level makefile fragment for GNU gfortran, the GNU Fortran 95 compiler.
+# Copyright (C) 2002-2026 Free Software Foundation, Inc.
+# Contributed by Paul Brook <paul@nowt.org
+# and Steven Bosscher <s.bosscher@student.tudelft.nl>
+
+#This file is part of GCC.
+
+#GCC is free software; you can redistribute it and/or modify
+#it under the terms of the GNU General Public License as published by
+#the Free Software Foundation; either version 3, or (at your option)
+#any later version.
+
+#GCC is distributed in the hope that it will be useful,
+#but WITHOUT ANY WARRANTY; without even the implied warranty of
+#MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#GNU General Public License for more details.
+
+#You should have received a copy of the GNU General Public License
+#along with GCC; see the file COPYING3.  If not see
+#<http://www.gnu.org/licenses/>.
+
+# This file provides the language dependent support in the main Makefile.
+# Each language makefile fragment must provide the following targets:
+#
+# foo.all.cross, foo.start.encap, foo.rest.encap,
+# foo.install-common, foo.install-man, foo.install-info, foo.install-pdf,
+# foo.install-html, foo.info, foo.dvi, foo.pdf, foo.html, foo.uninstall,
+# foo.mostlyclean, foo.clean, foo.distclean,
+# foo.maintainer-clean, foo.stage1, foo.stage2, foo.stage3, foo.stage4
+#
+# where `foo' is the name of the language.
+#
+# It should also provide rules for:
+#
+# - making any compiler driver (eg: gfortran)
+# - the compiler proper (eg: f951)
+# - define the names for selecting the language in LANGUAGES.
+# $(srcdir) must be set to the gcc/ source directory (*not* gcc/fortran/).
+
+# Actual name to use when installing a native compiler.
+GFORTRAN_INSTALL_NAME := $(shell echo gfortran|sed '$(program_transform_name)')
+GFORTRAN_TARGET_INSTALL_NAME := $(target_noncanonical)-$(shell echo gfortran|sed '$(program_transform_name)')
+
+#^L
+
+# Use strict warnings for this front end.
+fortran-warn = $(STRICT_WARN)
+
+# These are the groups of object files we have.  The F95_PARSER_OBJS are
+# all the front end files, the F95_OBJS are the files for the translation
+# from the parse tree to GENERIC
+
+F95_PARSER_OBJS = fortran/arith.o fortran/array.o fortran/bbt.o \
+    fortran/check.o fortran/class.o fortran/coarray.o fortran/constructor.o \
+    fortran/cpp.o fortran/data.o fortran/decl.o fortran/dump-parse-tree.o \
+    fortran/error.o fortran/expr.o fortran/interface.o fortran/intrinsic.o \
+    fortran/io.o fortran/iresolve.o fortran/match.o fortran/matchexp.o \
+    fortran/misc.o fortran/module.o fortran/openmp.o fortran/options.o \
+    fortran/parse.o fortran/primary.o fortran/resolve.o fortran/scanner.o \
+    fortran/simplify.o fortran/st.o fortran/symbol.o fortran/target-memory.o
+
+F95_OBJS = $(F95_PARSER_OBJS) $(FORTRAN_TARGET_OBJS) \
+    fortran/convert.o fortran/dependency.o fortran/f95-lang.o \
+    fortran/trans.o fortran/trans-array.o fortran/trans-common.o \
+    fortran/trans-const.o fortran/trans-decl.o fortran/trans-expr.o \
+    fortran/trans-intrinsic.o fortran/trans-io.o fortran/trans-openmp.o \
+    fortran/trans-stmt.o fortran/trans-types.o fortran/frontend-passes.o
+
+fortran_OBJS = $(F95_OBJS) fortran/gfortranspec.o
+
+#
+# Define the names for selecting gfortran in LANGUAGES.
+fortran: f951$(exeext)
+fortran.serial = f951$(exeext)
+
+# Tell GNU make to ignore files by these names if they exist.
+.PHONY: fortran
+
+CFLAGS-fortran/gfortranspec.o += $(DRIVER_DEFINES)
+
+# Create the compiler driver gfortran.
+GFORTRAN_D_OBJS = $(GCC_OBJS) fortran/gfortranspec.o
+gfortran$(exeext): $(GFORTRAN_D_OBJS) $(EXTRA_GCC_OBJS) libcommon-target.a \
+	$(LIBDEPS)
+	+$(LINKER) $(ALL_LINKERFLAGS) $(LDFLAGS) -o $@ \
+	  $(GFORTRAN_D_OBJS) $(EXTRA_GCC_OBJS) libcommon-target.a \
+	  $(EXTRA_GCC_LIBS) $(LIBS)
+
+# Create a version of the gfortran driver which calls the cross-compiler.
+gfortran-cross$(exeext): gfortran$(exeext)
+	-rm -f gfortran-cross$(exeext)
+	cp gfortran$(exeext) gfortran-cross$(exeext)
+
+# The compiler itself is called f951.
+f951$(exeext): $(F95_OBJS) $(BACKEND) $(LIBDEPS) attribs.o $(fortran.prev)
+	@$(call LINK_PROGRESS,$(INDEX.fortran),start)
+	+$(LLINKER) $(ALL_LINKERFLAGS) $(LDFLAGS) -o $@ \
+		$(F95_OBJS) $(BACKEND) $(ZLIB) $(LIBS) attribs.o \
+		$(BACKENDLIBS)
+	@$(call LINK_PROGRESS,$(INDEX.fortran),end)
+
+gt-fortran-trans.h    : s-gtype; @true
+#
+# Build hooks:
+
+fortran.all.cross: gfortran-cross$(exeext)
+
+fortran.start.encap: gfortran$(exeext)
+fortran.rest.encap:
+
+fortran.srcinfo: doc/gfortran.info
+	-cp -p $^ $(srcdir)/fortran
+
+fortran.tags: force
+	cd $(srcdir)/fortran; $(ETAGS) -o TAGS.sub *.cc *.h; \
+	$(ETAGS) --include TAGS.sub --include ../TAGS.sub
+
+fortran.info: doc/gfortran.info doc/gfc-internals.info
+
+F95_DVIFILES = doc/gfortran.dvi
+
+fortran.dvi: $(F95_DVIFILES) doc/gfc-internals.dvi
+
+fortran.install-dvi: $(F95_DVIFILES)
+	@$(NORMAL_INSTALL)
+	test -z "$(dvidir)/gcc" || $(mkinstalldirs) "$(DESTDIR)$(dvidir)/gcc"
+	@list='$(F95_DVIFILES)'; for p in $$list; do \
+	  if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
+	  f=$(dvi__strip_dir) \
+	  echo " $(INSTALL_DATA) '$$d$$p' '$(DESTDIR)$(dvidir)/gcc/$$f'"; \
+	  $(INSTALL_DATA) "$$d$$p" "$(DESTDIR)$(dvidir)/gcc/$$f"; \
+	done
+
+F95_HTMLFILES = $(build_htmldir)/gfortran
+
+fortran.html: $(F95_HTMLFILES)/index.html
+
+fortran.install-html: $(F95_HTMLFILES)
+	@$(NORMAL_INSTALL)
+	test -z "$(htmldir)" || $(mkinstalldirs) "$(DESTDIR)$(htmldir)"
+	@list='$(F95_HTMLFILES)'; for p in $$list; do \
+	  if test -f "$$p" || test -d "$$p"; then d=""; else d="$(srcdir)/"; fi; \
+	  f=$(html__strip_dir) \
+	  if test -d "$$d$$p"; then \
+	    echo " $(mkinstalldirs) '$(DESTDIR)$(htmldir)/$$f'"; \
+	    $(mkinstalldirs) "$(DESTDIR)$(htmldir)/$$f" || exit 1; \
+	    echo " $(INSTALL_DATA) '$$d$$p'/* '$(DESTDIR)$(htmldir)/$$f'"; \
+	    $(INSTALL_DATA) "$$d$$p"/* "$(DESTDIR)$(htmldir)/$$f"; \
+	  else \
+	    echo " $(INSTALL_DATA) '$$d$$p' '$(DESTDIR)$(htmldir)/$$f'"; \
+	    $(INSTALL_DATA) "$$d$$p" "$(DESTDIR)$(htmldir)/$$f"; \
+	  fi; \
+	done
+
+F95_PDFFILES = doc/gfortran.pdf
+
+fortran.pdf: $(F95_PDFFILES) doc/gfc-internals.pdf
+
+fortran.install-pdf: $(F95_PDFFILES)
+	@$(NORMAL_INSTALL)
+	test -z "$(pdfdir)/gcc" || $(mkinstalldirs) "$(DESTDIR)$(pdfdir)/gcc"
+	@list='$(F95_PDFFILES)'; for p in $$list; do \
+	  if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
+	  f=$(pdf__strip_dir) \
+	  echo " $(INSTALL_DATA) '$$d$$p' '$(DESTDIR)$(pdfdir)/gcc/$$f'"; \
+	  $(INSTALL_DATA) "$$d$$p" "$(DESTDIR)$(pdfdir)/gcc/$$f"; \
+	done
+
+F95_MANFILES = doc/gfortran.1
+
+fortran.man: $(F95_MANFILES)
+
+fortran.srcman: $(F95_MANFILES)
+	-cp -p $^ $(srcdir)/doc
+
+fortran.srcextra:
+
+check-f95 : check-gfortran
+check-fortran : check-gfortran
+check-f95-subtargets : check-gfortran-subtargets
+check-fortran-subtargets : check-gfortran-subtargets
+lang_checks += check-gfortran
+lang_checks_parallelized += check-gfortran
+# For description see the check_$lang_parallelize comment in gcc/Makefile.in.
+check_gfortran_parallelize = 10000
+
+# No fortran-specific selftests
+selftest-fortran:
+
+# GFORTRAN documentation.
+GFORTRAN_TEXI = \
+  $(srcdir)/fortran/gfortran.texi \
+  $(srcdir)/fortran/intrinsic.texi \
+  $(srcdir)/fortran/invoke.texi \
+  $(srcdir)/doc/include/fdl.texi \
+  $(srcdir)/doc/include/gpl_v3.texi \
+  $(srcdir)/doc/include/funding.texi \
+  $(srcdir)/doc/include/gcc-common.texi \
+  gcc-vers.texi
+
+doc/gfortran.info: $(GFORTRAN_TEXI)
+	if [ x$(BUILD_INFO) = xinfo ]; then \
+	  rm -f doc/gfortran.info-*; \
+	  $(MAKEINFO) -I $(srcdir)/doc/include -I $(srcdir)/fortran \
+	    -o $@ $<; \
+	else true; fi
+
+doc/gfortran.dvi: $(GFORTRAN_TEXI)
+	$(TEXI2DVI) -I $(srcdir)/fortran -I $(abs_docdir)/include -o $@ $<
+
+doc/gfortran.pdf: $(GFORTRAN_TEXI)
+	$(TEXI2PDF) -I $(srcdir)/fortran -I $(abs_docdir)/include -o $@ $<
+
+$(build_htmldir)/gfortran/index.html: $(GFORTRAN_TEXI)
+	$(mkinstalldirs) $(@D)
+	rm -f $(@D)/*
+	$(TEXI2HTML) -I $(gcc_docdir)/include -I $(srcdir)/fortran -o $(@D) $<
+
+.INTERMEDIATE: gfortran.pod
+
+gfortran.pod: $(GFORTRAN_TEXI)
+	-$(TEXI2POD) -DBUGURL="$(BUGURL_TEXI)" \
+	  < $(srcdir)/fortran/invoke.texi > $@
+
+# GFORTRAN internals documentation.
+GFC_INTERNALS_TEXI = \
+  $(srcdir)/fortran/gfc-internals.texi \
+  $(srcdir)/doc/include/fdl.texi \
+  $(srcdir)/doc/include/gcc-common.texi \
+  gcc-vers.texi
+
+doc/gfc-internals.info: $(GFC_INTERNALS_TEXI)
+	if [ x$(BUILD_INFO) = xinfo ]; then \
+	  rm -f doc/gfc-internals.info-*; \
+	  $(MAKEINFO) -I $(srcdir)/doc/include -I $(srcdir)/fortran \
+	    -o $@ $<; \
+	else true; fi
+
+doc/gfc-internals.dvi: $(GFC_INTERNALS_TEXI)
+	$(TEXI2DVI) -I $(srcdir)/fortran -I $(abs_docdir)/include -o $@ $<
+
+doc/gfc-internals.pdf: $(GFC_INTERNALS_TEXI)
+	$(TEXI2PDF) -I $(srcdir)/fortran -I $(abs_docdir)/include -o $@ $<
+
+# Create or recreate the gfortran private include file directory.
+install-finclude-dir: installdirs
+	$(mkinstalldirs) -m 0755 $(DESTDIR)$(libsubdir)/finclude
+#
+# Install hooks:
+# f951 is installed elsewhere as part of $(COMPILERS).
+
+# Install the driver program as $(target)-gfortran, and also as gfortran
+# if native.
+fortran.install-common: install-finclude-dir installdirs
+	-if test "$(enable_as_accelerator)" != "yes" ; then \
+	  if [ -f f951$(exeext) ] ; then \
+	    rm -f $(DESTDIR)$(bindir)/$(GFORTRAN_INSTALL_NAME)$(exeext); \
+	    $(INSTALL_PROGRAM) gfortran$(exeext) $(DESTDIR)$(bindir)/$(GFORTRAN_INSTALL_NAME)$(exeext); \
+	    chmod a+x $(DESTDIR)$(bindir)/$(GFORTRAN_INSTALL_NAME)$(exeext); \
+	    if [ ! -f gfortran-cross$(exeext) ] ; then \
+	      rm -f $(DESTDIR)$(bindir)/$(GFORTRAN_TARGET_INSTALL_NAME)$(exeext); \
+	      $(LN) $(DESTDIR)$(bindir)/$(GFORTRAN_INSTALL_NAME)$(exeext) $(DESTDIR)$(bindir)/$(GFORTRAN_TARGET_INSTALL_NAME)$(exeext); \
+	    fi ; \
+	  fi; \
+	fi
+
+fortran.install-plugin:
+
+fortran.install-info: $(DESTDIR)$(infodir)/gfortran.info
+
+fortran.install-man: $(DESTDIR)$(man1dir)/$(GFORTRAN_INSTALL_NAME)$(man1ext)
+
+$(DESTDIR)$(man1dir)/$(GFORTRAN_INSTALL_NAME)$(man1ext): doc/gfortran.1 \
+		installdirs
+	-rm -f $@
+	-$(INSTALL_DATA) $< $@
+	-chmod a-x $@
+
+fortran.uninstall:
+	if $(SHELL) -c 'install-info --version | sed 1q | grep -s -v -i debian' >/dev/null 2>&1; then \
+	  echo " install-info --delete --info-dir=$(DESTDIR)$(infodir) $(DESTDIR)$(infodir)/gfortran.info"; \
+	  install-info --delete --info-dir=$(DESTDIR)$(infodir) $(DESTDIR)$(infodir)/gfortran.info || : ; \
+	else : ; fi; \
+	rm -rf $(DESTDIR)$(bindir)/$(GFORTRAN_INSTALL_NAME)$(exeext); \
+	rm -rf $(DESTDIR)$(man1dir)/$(GFORTRAN_INSTALL_NAME)$(man1ext); \
+	rm -rf $(DESTDIR)$(bindir)/$(GFORTRAN_TARGET_INSTALL_NAME)$(exeext); \
+	rm -rf $(DESTDIR)$(infodir)/gfortran.info*
+
+#
+# Clean hooks:
+# A lot of the ancillary files are deleted by the main makefile.
+# We just have to delete files specific to us.
+
+fortran.mostlyclean:
+	-rm -f gfortran$(exeext) gfortran-cross$(exeext) f951$(exeext)
+	-rm -f fortran/*.o
+
+fortran.clean:
+fortran.distclean:
+	-rm -f fortran/config.status fortran/Makefile
+
+fortran.extraclean:
+fortran.maintainer-clean:
+	-rm -f doc/gfortran.info* fortran/gfortran.*aux
+	-rm -f $(docobjdir)/gfortran.1
+
+#
+# Stage hooks:
+# The toplevel makefile has already created stage?/fortran at this point.
+
+fortran.stage1: stage1-start
+	-mv fortran/*$(objext) stage1/fortran
+fortran.stage2: stage2-start
+	-mv fortran/*$(objext) stage2/fortran
+fortran.stage3: stage3-start
+	-mv fortran/*$(objext) stage3/fortran
+fortran.stage4: stage4-start
+	-mv fortran/*$(objext) stage4/fortran
+fortran.stageprofile: stageprofile-start
+	-mv fortran/*$(objext) stageprofile/fortran
+fortran.stagefeedback: stageprofile-start
+	-mv fortran/*$(objext) stagefeedback/fortran
+
+#
+
+CFLAGS-fortran/cpp.o += $(TARGET_SYSTEM_ROOT_DEFINE)
+CFLAGS-fortran/module.o += $(ZLIBINC)

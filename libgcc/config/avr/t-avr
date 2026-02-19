@@ -1,0 +1,303 @@
+LIB1ASMSRC = avr/lib1funcs.S
+LIB1ASMFUNCS = \
+	_mulqi3 \
+	_mulhi3 \
+	_mulqihi3 _umulqihi3 \
+	_mulpsi3 \
+	_mulhisi3 _umulhisi3 \
+	_mulsi3 \
+	_udivmodqi4 \
+	_divmodqi4 \
+	_udivmodhi4 \
+	_divmodhi4 \
+	_divmodpsi4 _udivmodpsi4 \
+	_udivmodsi4 \
+	_divmodsi4 \
+	_negsi2 \
+	_exit \
+	_cleanup \
+	_tablejump2 \
+	_copy_data \
+	_clear_bss \
+	_ctors \
+	_dtors \
+	_ffssi2 \
+	_ffshi2 \
+	_loop_ffsqi2 \
+	_ctzsi2 \
+	_ctzhi2 \
+	_clzsi2 \
+	_clzhi2 \
+	_paritysi2 \
+	_parityhi2 \
+	_popcounthi2 \
+	_popcountsi2 \
+	_popcountqi2 \
+	_bswapsi2 \
+	_fmul _fmuls _fmulsu \
+	_mulqq3 \
+	_mulhq3 _muluhq3 \
+	_mulha3 _muluha3 _muluha3_round \
+	_usmuluha3 _ssmulha3 \
+	_divqq3 _udivuqq3 _divqq_helper \
+	_divhq3 _udivuhq3 \
+	_divha3 _udivuha3 \
+	_ssneg_2 \
+	_ssabs_1 _ssabs_2 \
+	_mask1 _ret \
+	_roundqq3 _rounduqq3 \
+	_round_s2 _round_u2 _round_2_const _addmask_2 \
+
+# The below functions either use registers that are not present
+# in tiny core, or use a different register convention (don't save
+# callee saved regs, for example)
+# All *di funcs - use regs < R16 or expect args in regs < R20
+# _prologue and _epilogue save registers < R16
+# _load, __fload and _xload variations - expect lpm and elpm support
+# _movmemx and _movmemf - expect elpm/lpm
+
+FUNCS_notiny = \
+	_mulsqipsi3 \
+	_usmulhisi3 \
+	_muluhisi3 \
+	_mulshisi3 \
+	_muldi3 _muldi3_6 \
+	_mulsidi3 _umulsidi3 \
+	_divdi3 _udivdi3 \
+	_udivmod64 \
+	_negdi2 \
+	_prologue \
+	_epilogue \
+	_load_3 _load_4 \
+	_xload_1 _xload_2 _xload_3 _xload_4 \
+	_fload_1 _fload_2 _fload_3 _fload_4 \
+	_movmemx _movmemf \
+	_strlen_memx \
+	_clzdi2 \
+	_paritydi2 \
+	_popcountdi2 \
+	_bswapdi2 \
+	_ashldi3 _ashrdi3 _lshrdi3 _rotldi3 \
+	_adddi3 _adddi3_s8 _subdi3 \
+	_cmpdi2 _cmpdi2_s8 \
+	_powif
+
+# Fixed point routines in avr/lib1funcs-fixed.S
+FUNCS_notiny += \
+	_fractqqsf _fractuqqsf \
+	_fracthqsf _fractuhqsf _fracthasf _fractuhasf \
+	_fractsasf _fractusasf _fractsqsf _fractusqsf \
+	\
+	_fractsfqq _fractsfuqq \
+	_fractsfhq _fractsfuhq _fractsfha _fractsfuha \
+	_fractsfsq _fractsfusq _fractsfsa _fractsfusa \
+	_mulsa3 _mulusa3 \
+	_usmulusa3 _ssmulsa3 \
+	_divsa3 _udivusa3 \
+	_clr_8 \
+	_ssneg_4 _ssneg_8 \
+	_ssabs_4 _ssabs_8 \
+	_ssadd_8 _sssub_8 \
+	_usadd_8 _ussub_8 \
+	_round_s4 _round_u4 _round_4_const _addmask_4 \
+	_round_x8 \
+	_rounddq3 _roundudq3 \
+	_roundda3 _rounduda3 \
+	_roundta3 _rounduta3
+
+ifeq (,$(findstring avrtiny,$(MULTIDIR)))
+LIB1ASMFUNCS += $(FUNCS_notiny)
+endif
+
+LIB2FUNCS_EXCLUDE = \
+	_moddi3 _umoddi3 \
+	_clz \
+	_clrsbdi2 \
+	_powisf2
+
+ifneq (,$(findstring avrtiny,$(MULTIDIR)))
+LIB2FUNCS_EXCLUDE += $(FUNCS_notiny)
+endif
+
+ifeq ($(long_double_type_size),32)
+# We do not have the DFtype.
+HOST_LIBGCC2_CFLAGS += -DDF=SF
+endif
+
+# Most of the C functions in libgcc2 use almost all registers,
+# so use -mcall-prologues for smaller code size.
+HOST_LIBGCC2_CFLAGS += -Dinhibit_libc -mcall-prologues -Os
+
+# Extra 16-bit integer functions.
+intfuncs16 = _absvXX2 _addvXX3 _subvXX3 _mulvXX3 _negvXX2 _clrsbXX2
+
+hiintfuncs16 = $(subst XX,hi,$(intfuncs16))
+siintfuncs16 = $(subst XX,si,$(intfuncs16))
+
+iter-items := $(hiintfuncs16)
+iter-labels := $(siintfuncs16)
+iter-sizes := $(patsubst %,2,$(siintfuncs16)) $(patsubst %,2,$(hiintfuncs16))
+
+
+-include $(patsubst %,$(srcdir)/siditi-object.mk,$(iter-items))
+libgcc-objects += $(patsubst %,%$(objext),$(hiintfuncs16))
+
+ifeq ($(enable_shared),yes)
+libgcc-s-objects += $(patsubst %,%_s$(objext),$(hiintfuncs16))
+endif
+
+###
+
+conv_XY=$(conv)$(mode1)$(mode2)
+func_X=$(func)$(mode)
+
+# Compile C functions from lib2funcs.c and add them to libgcc.a.
+#
+# Some functions which are not performance.critical are more convenient
+# to implement in C than in assembler.  Most of them serve as implementation
+# for AVR-specific builtins in the case where the address of a builtin
+# function is taken or if there is no insn that implements the builtin.
+#
+# We don't use LIB2ADD because we want to iterate over the source for
+# different modes, fixed-point suffixes, etc.  See iter-labels and L_LABEL.
+# iter-label will get one more underscore in order to avoid too short
+# labels like -DLk and we use -DL_k instead.
+
+# Build roundFX functions from lib2funcs.c
+
+round_suffix :=  hr r lr uhr ur ulr  \
+		 hk k    uhk uk 
+round_funcs  := $(foreach func,_round,\
+		$(foreach mode,$(round_suffix),$(func_X)))
+
+iter-items  := $(round_funcs)
+iter-labels := $(round_suffix)
+iter-flags  := $(patsubst %,-DL_round,$(iter-items))
+
+-include $(patsubst %,$(srcdir)/config/avr/lib2-object.mk,$(iter-items))
+
+libgcc-objects += $(patsubst %,%$(objext),$(round_funcs))
+
+# Build clrsbXX functions from lib2funcs.c
+
+clrsb_modes := qi di
+clrsb_funcs := $(foreach func,_clrsb,\
+	       $(foreach mode,$(clrsb_modes),$(func_X)))
+
+iter-items  := $(clrsb_funcs)
+iter-labels := $(clrsb_funcs)
+iter-flags  := $(patsubst %,-DL_clrsb,$(iter-items))
+
+-include $(patsubst %,$(srcdir)/config/avr/lib2-object.mk,$(iter-items))
+
+libgcc-objects += $(patsubst %,%$(objext),$(clrsb_funcs))
+
+# Build signed countlsFX functions from lib2funcs.c
+
+countls_modes := qi hi si di
+countls_funcs := $(foreach func,_countls,\
+		 $(foreach mode,$(countls_modes),$(func_X)))
+
+iter-items  := $(countls_funcs)
+iter-labels := $(countls_modes)
+iter-flags  := $(patsubst %,-DL_countls,$(iter-items))
+
+-include $(patsubst %,$(srcdir)/config/avr/lib2-object.mk,$(iter-items))
+
+libgcc-objects += $(patsubst %,%$(objext),$(countls_funcs))
+
+# Build unsigned countlsFX functions from lib2funcs.c
+
+countlsu_modes := qi hi si di
+countlsu_funcs := $(foreach func,_countlsu,\
+		  $(foreach mode,$(countlsu_modes),$(func_X)))
+
+iter-items  := $(countlsu_funcs)
+iter-labels := $(countlsu_modes)
+iter-flags  := $(patsubst %,-DL_countlsu,$(iter-items))
+
+-include $(patsubst %,$(srcdir)/config/avr/lib2-object.mk,$(iter-items))
+
+libgcc-objects += $(patsubst %,%$(objext),$(countlsu_funcs))
+
+
+# Filter out supported conversions from fixed-bit.c
+# Also filter out TQ and UTQ.
+
+# Conversions supported by the compiler
+
+convf_modes =	 QI UQI QQ UQQ \
+		 HI UHI HQ UHQ HA UHA \
+		 SI USI SQ USQ SA USA \
+		 DI UDI DQ UDQ DA UDA \
+		 TI UTI TQ UTQ TA UTA
+
+LIB2FUNCS_EXCLUDE += \
+	$(foreach conv,_fract _fractuns,\
+	$(foreach mode1,$(convf_modes),\
+	$(foreach mode2,$(convf_modes),$(conv_XY))))
+
+# Conversions supported by lib1funcs-fixed.S
+
+conv_to_sf_modes   = QQ UQQ HQ UHQ HA UHA SQ USQ SA USA
+conv_from_sf_modes = QQ UQQ HQ UHQ HA UHA        SA USA
+
+LIB2FUNCS_EXCLUDE += \
+	$(foreach conv,_fract, \
+	$(foreach mode1,$(conv_to_sf_modes), \
+	$(foreach mode2,SF,$(conv_XY))))
+
+LIB2FUNCS_EXCLUDE += \
+	$(foreach conv,_fract,\
+	$(foreach mode1,SF,\
+	$(foreach mode2,$(conv_from_sf_modes),$(conv_XY))))
+
+# Arithmetik supported by the compiler
+
+allfix_modes = QQ UQQ HQ UHQ HA UHA SQ USQ SA USA DA UDA DQ UDQ TQ UTQ TA UTA
+
+LIB2FUNCS_EXCLUDE += \
+	$(foreach func,_add _sub,\
+	$(foreach mode,$(allfix_modes),$(func_X)))
+
+LIB2FUNCS_EXCLUDE += \
+	$(foreach func,_lshr _ashl _ashr _cmp,\
+	$(foreach mode,$(allfix_modes),$(func_X)))
+
+
+usat_modes = UQQ UHQ UHA USQ USA UDQ UDA UTQ UTA
+ssat_modes =  QQ  HQ  HA  SQ  SA  DQ  DA  TQ  TA
+
+LIB2FUNCS_EXCLUDE += \
+	$(foreach func,_ssadd _sssub _ssneg _ssabs,\
+	$(foreach mode,$(ssat_modes),$(func_X)))
+
+LIB2FUNCS_EXCLUDE += \
+	$(foreach func,_usadd _ussub _usneg,\
+	$(foreach mode,$(usat_modes),$(func_X)))
+
+
+smul_modes =  QQ  HQ  HA  SA
+umul_modes = UQQ UHQ UHA USA
+sdiv_modes =  QQ  HQ  HA  SA
+udiv_modes = UQQ UHQ UHA USA
+
+LIB2FUNCS_EXCLUDE += \
+	$(foreach func,_mul,\
+	$(foreach mode,$(smul_modes) $(umul_modes),$(func_X)))
+
+LIB2FUNCS_EXCLUDE += \
+	$(foreach func,_div,\
+	$(foreach mode,$(sdiv_modes) $(udiv_modes),$(func_X)))
+
+
+ssmul_modes =  HA  SA
+usmul_modes = UHA USA
+
+LIB2FUNCS_EXCLUDE += \
+	$(foreach func,_usmul,\
+	$(foreach mode,$(usmul_modes),$(func_X)))
+
+LIB2FUNCS_EXCLUDE += \
+	$(foreach func,_ssmul,\
+	$(foreach mode,$(ssmul_modes),$(func_X)))

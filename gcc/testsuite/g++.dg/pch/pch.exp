@@ -1,0 +1,41 @@
+#   Copyright (C) 1997-2026 Free Software Foundation, Inc.
+
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+# 
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+# 
+# You should have received a copy of the GNU General Public License
+# along with GCC; see the file COPYING3.  If not see
+# <http://www.gnu.org/licenses/>.
+
+# GCC testsuite for precompiled header interaction,
+# that uses the `dg.exp' driver.
+
+# Load support procs.
+load_lib "g++-dg.exp"
+load_lib dg-pch.exp
+
+# Initialize `dg'.
+dg-init
+pch-init
+
+set old_dg_do_what_default "${dg-do-what-default}"
+
+# Main loop.
+foreach test [lsort [glob -nocomplain $srcdir/$subdir/*.C]] {
+    # We don't try to use the loop-optimizing options, since they are highly
+    # unlikely to make any difference to PCH.
+    dg-flags-pch $subdir $test "-fno-modules" [list "-g" "-O2 -g" "-O2"] ".H"
+}
+
+set dg-do-what-default "$old_dg_do_what_default"
+
+# All done.
+pch-finish
+dg-finish

@@ -1,0 +1,49 @@
+; Options for the TPF-OS port of the compiler.
+
+; Copyright (C) 2005-2026 Free Software Foundation, Inc.
+;
+; This file is part of GCC.
+;
+; GCC is free software; you can redistribute it and/or modify it under
+; the terms of the GNU General Public License as published by the Free
+; Software Foundation; either version 3, or (at your option) any later
+; version.
+;
+; GCC is distributed in the hope that it will be useful, but WITHOUT ANY
+; WARRANTY; without even the implied warranty of MERCHANTABILITY or
+; FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+; for more details.
+;
+; You should have received a copy of the GNU General Public License
+; along with GCC; see the file COPYING3.  If not see
+; <http://www.gnu.org/licenses/>.
+
+mtpf-trace
+Target Mask(TPF_PROFILING)
+Enable TPF-OS tracing code.
+
+; Except for -mtpf-trace-skip, the other mtpf-trace-hook-* options are
+; for debugging purposes and are explicitly undocumented.
+mtpf-trace-hook-prologue-check=
+Target Undocumented RejectNegative Joined UInteger Var(s390_tpf_trace_hook_prologue_check) Init(TPF_TRACE_PROLOGUE_CHECK)
+Set the trace check address for prologue tpf hook
+
+mtpf-trace-hook-prologue-target=
+Target Undocumented RejectNegative Joined UInteger Var(s390_tpf_trace_hook_prologue_target) Init(TPF_TRACE_PROLOGUE_TARGET)
+Set the trace jump address for prologue tpf hook
+
+mtpf-trace-hook-epilogue-check=
+Target Undocumented RejectNegative Joined UInteger Var(s390_tpf_trace_hook_epilogue_check) Init(TPF_TRACE_EPILOGUE_CHECK)
+Set the trace check address for epilogue tpf hook
+
+mtpf-trace-hook-epilogue-target=
+Target Undocumented RejectNegative Joined UInteger Var(s390_tpf_trace_hook_epilogue_target) Init(TPF_TRACE_EPILOGUE_TARGET)
+Set the trace jump address for epilogue tpf hook
+
+mtpf-trace-skip
+Target Var(s390_tpf_trace_skip) Init(0)
+Set the prologue and epilogue hook addresses to TPF_TRACE_PROLOGUE_SKIP_TARGET and TPF_TRACE_EPILOGUE_SKIP_TARGET. Equivalent to using -mtpf-trace-hook-prologue-target=TPF_TRACE_PROLOGUE_SKIP_TARGET and -mtpf-trace-hook-epilogue-target=TPF_TRACE_EPILOGUE_SKIP_TARGET
+
+mmain
+Target
+Specify main object for TPF-OS.

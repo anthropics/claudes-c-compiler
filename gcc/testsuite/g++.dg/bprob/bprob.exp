@@ -1,0 +1,76 @@
+#   Copyright (C) 2001-2026 Free Software Foundation, Inc.
+
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+# 
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+# 
+# You should have received a copy of the GNU General Public License
+# along with GCC; see the file COPYING3.  If not see
+# <http://www.gnu.org/licenses/>.
+#
+# Test the functionality of programs compiled with profile-directed block
+# ordering using -fprofile-arcs followed by -fbranch-probabilities.
+
+load_lib target-supports.exp
+
+# Some targets don't have any implementation of __bb_init_func or are
+# missing other needed machinery.
+if { ![check_profiling_available "-fprofile-arcs"] } {
+    return
+}
+
+# The procedures in profopt.exp need these parameters.
+set tool g++
+set prof_ext "gcda"
+
+if $tracelevel then {
+    strace $tracelevel
+}
+
+# Load support procs.
+load_lib profopt.exp
+
+# Save and override the default list defined in profopt.exp.
+set bprob_save_profopt_options $PROFOPT_OPTIONS
+set PROFOPT_OPTIONS [list \
+	{ -g } \
+	{ -O0 } \
+	{ -O1 } \
+	{ -O2 } \
+	{ -O3 } \
+	{ -O3 -g } \
+	{ -Os } ]
+
+if $tracelevel then {
+    strace $tracelevel
+}
+
+set profile_options "-fprofile-arcs"
+set feedback_options "-fbranch-probabilities"
+set profile_wrapper ""
+
+# Main loop.
+foreach profile_option $profile_options feedback_option $feedback_options {
+    foreach src [lsort [glob -nocomplain $srcdir/$subdir/*.C]] {
+        # If we're only testing specific files and this isn't one of them, skip it.
+        if ![runtest_file_p $runtests $src] then {
+            continue
+        }
+        profopt-execute $src
+    }
+}
+
+foreach src [lsort [glob -nocomplain $srcdir/$subdir/*.C]] {
+    if ![runtest_file_p $runtests $src] then {
+        continue
+    }
+    auto-profopt-execute $src
+}
+
+set PROFOPT_OPTIONS $bprob_save_profopt_options

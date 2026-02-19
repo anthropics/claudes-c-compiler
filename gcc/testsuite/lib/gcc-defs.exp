@@ -1,0 +1,660 @@
+# Copyright (C) 2001-2026 Free Software Foundation, Inc.
+
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+# 
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+# 
+# You should have received a copy of the GNU General Public License
+# along with GCC; see the file COPYING3.  If not see
+# <http://www.gnu.org/licenses/>.
+
+load_lib target-libpath.exp
+
+load_lib wrapper.exp
+
+load_lib target-utils.exp
+
+#
+# ${tool}_check_compile -- Reports and returns pass/fail for a compilation
+#
+
+proc ${tool}_check_compile {testcase option objname gcc_output} {
+    global tool
+    set fatal_signal "*cc: Internal compiler error: program*got fatal signal"
+ 
+    if [string match "$fatal_signal 6" $gcc_output] then {
+	${tool}_fail $testcase "Got Signal 6, $option"
+	return 0
+    }
+
+    if [string match "$fatal_signal 11" $gcc_output] then {
+	${tool}_fail $testcase "Got Signal 11, $option"
+	return 0
+    }
+
+    if [regexp -line -- "internal compiler error.*" $gcc_output ice] then {
+	${tool}_fail $testcase "$option ($ice)"
+	return 0
+    }
+
+    # We shouldn't get these because of -w, but just in case.
+    if [string match "*cc:*warning:*" $gcc_output] then {
+	warning "$testcase: (with warnings) $option"
+	send_log "$gcc_output\n"
+	unresolved "$testcase, $option"
+	return 0
+    }
+
+    set gcc_output [prune_warnings $gcc_output]
+
+    if { [info proc ${tool}-dg-prune] != "" } {
+	global target_triplet
+	set gcc_output [${tool}-dg-prune $target_triplet $gcc_output]
+	if [string match "*::unsupported::*" $gcc_output] then {
+	    regsub -- "::unsupported::" $gcc_output "" gcc_output
+	    unsupported "$testcase: $gcc_output"
+	    return 0
+	}
+    } else {
+	set unsupported_message [${tool}_check_unsupported_p $gcc_output]
+	if { $unsupported_message != "" } {
+	    unsupported "$testcase: $unsupported_message"
+	    return 0
+	}
+    }
+
+    # remove any leftover LF/CR to make sure any output is legit
+    regsub -all -- "\[\r\n\]*" $gcc_output "" gcc_output
+
+    # If any message remains, we fail.
+    if ![string match "" $gcc_output] then {
+	${tool}_fail $testcase $option
+	return 0
+    }
+
+    # fail if the desired object file doesn't exist.
+    # FIXME: there's no way of checking for existence on a remote host.
+    if {$objname != "" && ![is3way] && ![file exists $objname]} {
+	${tool}_fail $testcase $option
+	return 0
+    }
+
+    ${tool}_pass $testcase $option
+    return 1
+}
+
+#
+# ${tool}_pass -- utility to record a testcase passed
+#
+
+proc ${tool}_pass { testcase cflags } {
+    if { "$cflags" == "" } {
+	pass "$testcase"
+    } else {
+	pass "$testcase, $cflags"
+    }
+}
+
+#
+# ${tool}_fail -- utility to record a testcase failed
+#
+
+proc ${tool}_fail { testcase cflags } {
+    if { "$cflags" == "" } {
+	fail "$testcase"
+    } else {
+	fail "$testcase, $cflags"
+    }
+}
+
+#
+# ${tool}_finish -- called at the end of every script that calls ${tool}_init
+#
+# Hide all quirks of the testing environment from the testsuites.  Also
+# undo anything that ${tool}_init did that needs undoing.
+#
+
+proc ${tool}_finish { } {
+    # The testing harness apparently requires this.
+    global errorInfo
+
+    if [info exists errorInfo] then {
+	unset errorInfo
+    }
+
+    # Might as well reset these (keeps our caller from wondering whether
+    # s/he has to or not).
+    global prms_id bug_id
+    set prms_id 0
+    set bug_id 0
+}
+
+#
+# ${tool}_exit -- Does final cleanup when testing is complete
+#
+
+proc ${tool}_exit { } {
+    global gluefile
+
+    if [info exists gluefile] {
+	file_on_build delete $gluefile
+	unset gluefile
+    }
+}
+
+#
+# runtest_file_p -- Provide a definition for older dejagnu releases
+# 		    and assume the old syntax: foo1.exp bar1.c foo2.exp bar2.c.
+# 		    (delete after next dejagnu release).
+#
+
+if { [info procs runtest_file_p] == "" } then {
+    proc runtest_file_p { runtests testcase } {
+	if { $runtests != "" && [regexp "\[.\]\[cC\]" $runtests] } then {
+	    if { [lsearch $runtests [file tail $testcase]] >= 0 } then {
+		return 1
+	    } else {
+		return 0
+	    }
+	}
+	return 1
+    }
+}
+
+if { [info exists env(GCC_RUNTEST_PARALLELIZE_DIR)] \
+     && [info procs runtest_file_p] != [list] \
+     && [info procs gcc_parallelize_saved_runtest_file_p] == [list] } then {
+    global gcc_runtest_parallelize_counter
+    global gcc_runtest_parallelize_counter_minor
+    global gcc_runtest_parallelize_limit_minor
+    global gcc_runtest_parallelize_enable
+    global gcc_runtest_parallelize_dir
+    global gcc_runtest_parallelize_last
+
+    # GCC testsuite is parallelised by starting N runtest processes -- each
+    # with its own test directory.  These N runtest processes ALL go through
+    # the relevant .exp and ALL attempt to run every test.  And they go
+    # through the tests the same order -- this is important, and if there is
+    # a bug that causes different runtest processes to enumerate the tests
+    # differently, then things will break and some tests will be skipped, while
+    # others will be ran several times.
+    # So, just before a runtest processes runs a specific test it asks
+    # "runtest_file_p" routine whether a particular test is part of
+    # the requested testsuite.  We override this function so that it
+    # returns "yes" to the first-arrived runtest process, and "no" to all
+    # subsequent runtest processes -- this is implemented by creating a marker
+    # file, which persist till the end of the test run.  We optimize this
+    # a bit by batching 10 tests and using a single marker file for the batch.
+    #
+    # Note that the runtest processes all race each other to get to the next
+    # test batch.  This means that batch allocation between testsuite runs
+    # is very likely to change.
+    #
+    # To confirm or deny suspicion that tests are skipped or executed
+    # multiple times due to runtest processes enumerating tests differently ...
+    # 1. Uncomment the three below "verbose -log gcc_parallel_test_run_p ..."
+    #    debug print-outs.
+    # 2. Run the testsuite with "-v" added to RUNTESTFLAGS
+    # 3. Extract debug print-outs with something like:
+    #    for i in $(find -name "*.log.sep"); do
+    #      grep gcc_parallel_test_run_p $i \
+    #        | sed -e "s/\([^ ]*\) \([^ ]*\) \([^ ]*\) \([^ ]*\)/\3 \2/" \
+    #        | sed -e "s#\(/testsuite/[a-z+]*\)[0-9]*/#\1N/#" > $i.order
+    #    done
+    # 4. Compare debug print-outs produced by individual runtest processes:
+    #    find -name "*.log.sep.order" | xargs md5sum | sort
+    # 5. Check that MD5 hashes of all .order files of the same testsuite match
+    #    and investigate if they don't.
+    set gcc_runtest_parallelize_counter 0
+    set gcc_runtest_parallelize_counter_minor 0
+    set gcc_runtest_parallelize_limit_minor 10
+    set gcc_runtest_parallelize_enable 1
+    set gcc_runtest_parallelize_dir [getenv GCC_RUNTEST_PARALLELIZE_DIR]
+    set gcc_runtest_parallelize_last 0
+
+    proc gcc_parallel_test_run_p { testcase } {
+	global gcc_runtest_parallelize_counter
+	global gcc_runtest_parallelize_counter_minor
+	global gcc_runtest_parallelize_limit_minor
+	global gcc_runtest_parallelize_enable
+	global gcc_runtest_parallelize_dir
+	global gcc_runtest_parallelize_last
+
+	if { $gcc_runtest_parallelize_enable == 0 } {
+	    return 1
+	}
+
+	# Only test the filesystem every 10th iteration
+	if { $gcc_runtest_parallelize_counter_minor >= $gcc_runtest_parallelize_limit_minor } {
+	    set gcc_runtest_parallelize_counter_minor 0
+	}
+	incr gcc_runtest_parallelize_counter_minor
+	if { $gcc_runtest_parallelize_counter_minor != 1 } {
+	    #verbose -log "gcc_parallel_test_run_p $testcase $gcc_runtest_parallelize_counter $gcc_runtest_parallelize_last"
+	    return $gcc_runtest_parallelize_last
+	}
+
+	set path $gcc_runtest_parallelize_dir/$gcc_runtest_parallelize_counter
+
+	if {![catch {open $path {RDWR CREAT EXCL} 0600} fd]} {
+	    close $fd
+	    set gcc_runtest_parallelize_last 1
+	    #verbose -log "gcc_parallel_test_run_p $testcase $gcc_runtest_parallelize_counter 1"
+	    incr gcc_runtest_parallelize_counter
+	    return 1
+	}
+	set gcc_runtest_parallelize_last 0
+	#verbose -log "gcc_parallel_test_run_p $testcase $gcc_runtest_parallelize_counter 0"
+	incr gcc_runtest_parallelize_counter
+	return 0
+    }
+
+    proc gcc_parallel_test_enable { val } {
+	global gcc_runtest_parallelize_enable
+	set gcc_runtest_parallelize_enable $val
+    }
+
+    rename runtest_file_p gcc_parallelize_saved_runtest_file_p
+    proc runtest_file_p { runtests testcase } {
+	if ![gcc_parallelize_saved_runtest_file_p $runtests $testcase] {
+	    return 0
+	}
+	return [gcc_parallel_test_run_p $testcase]
+    }
+
+} else {
+
+    proc gcc_parallel_test_run_p { testcase } {
+	return 1
+    }
+
+    proc gcc_parallel_test_enable { val } {
+    }
+
+}
+
+# Like dg-options, but adds to the default options rather than replacing them.
+
+proc dg-additional-options { args } {
+    upvar dg-extra-tool-flags extra-tool-flags
+    global srcdir
+
+    if { [llength $args] > 3 } {
+	error "[lindex $args 0]: too many arguments"
+	return
+    }
+
+    if { [llength $args] >= 3 } {
+	switch [dg-process-target [lindex $args 2]] {
+	    "S" { eval lappend extra-tool-flags [lindex $args 1] }
+	    "N" { }
+	    "F" { error "[lindex $args 0]: `xfail' not allowed here" }
+	    "P" { error "[lindex $args 0]: `xfail' not allowed here" }
+	}
+    } else {
+	eval lappend extra-tool-flags [lindex $args 1]
+    }
+}
+
+# Record additional sources files that must be compiled along with the
+# main source file.
+
+set additional_sources ""
+set additional_sources_omit_on_compile ""
+set additional_sources_used ""
+
+proc dg-additional-sources { args } {
+    global additional_sources
+    global additional_sources_omit_on_compile
+
+    if { [llength $args] > 3 } {
+	error "[lindex $args 0]: too many arguments"
+	return
+    }
+
+    set target [lindex $args 2]
+    if { [llength $args] >= 3 && [lindex $target 0] == "linkonly" } {
+	append additional_sources_omit_on_compile " [lindex $args 1]"
+	set target [lreplace $target 0 1]
+    }
+
+    if { [llength $args] >= 3 && $target != ""} {
+	switch [dg-process-target $target] {
+	    "S" { append additional_sources " [lindex $args 1]" }
+	    "N" { }
+	    "F" { error "[lindex $args 0]: `xfail' not allowed here" }
+	    "P" { error "[lindex $args 0]: `xfail' not allowed here" }
+	}
+    } else {
+	append additional_sources " [lindex $args 1]"
+    }
+}
+
+# Record additional files -- other than source files -- that must be
+# present on the system where the compiler runs.
+
+set additional_files ""
+
+proc dg-additional-files { args } {
+    global additional_files
+    set additional_files [lindex $args 1]
+}
+
+set gcc_adjusted_linker_flags 0
+
+# Add -Wl, before any file names in $opts.  Return the modified list.
+
+proc gcc_adjust_linker_flags_list { args } {
+    set opts [lindex $args 0]
+    set nopts {}
+    set skip ""
+    foreach opt [split $opts " "] {
+	if { $opt == "" } then {
+	    continue
+	} elseif { $skip != "" } then {
+	    set skip ""
+	} elseif { $opt == "-Xlinker" || $opt == "-T" } then {
+	    set skip $opt
+	} elseif { ![string match "-*" $opt] \
+		       && [file isfile $opt] } {
+	    set opt "-Wl,$opt"
+	}
+	lappend nopts $opt
+    }
+    return $nopts
+}
+
+# Add -Wl, before any file names in the target board's ldflags, libs,
+# and ldscript, as well as in global testglue and wrap_flags, so that
+# default object files or libraries do not change the names of gcc
+# auxiliary outputs.
+
+proc gcc_adjust_linker_flags {} {
+    global gcc_adjusted_linker_flags
+    if {$gcc_adjusted_linker_flags} {
+	return
+    }
+    set gcc_adjusted_linker_flags 1
+
+    if {![is_remote host]} {
+	set dest [target_info name]
+	foreach i { ldflags libs ldscript } {
+	    if {[board_info $dest exists $i]} {
+		set opts [board_info $dest $i]
+		set nopts [gcc_adjust_linker_flags_list $opts]
+		if { $nopts != $opts } {
+		    unset_currtarget_info $i
+		    set_currtarget_info $i "$nopts"
+		}
+	    }
+	}
+	foreach i { gluefile wrap_flags } {
+	    global $i
+	    if {[info exists $i]} {
+		set opts [set $i]
+		set nopts [gcc_adjust_linker_flags_list $opts]
+		if { $nopts != $opts } {
+		    set $i $nopts
+		}
+	    }
+	}
+    }
+}
+
+# Return an updated version of OPTIONS that mentions any additional
+# source files registered with dg-additional-sources.  SOURCE is the
+# name of the test case.  If DEST is given and TYPE does not require
+# linking, additional sources are noted as unsupported rather than
+# added, because the compiler rejects a single output for multiple
+# sources.
+
+proc dg-additional-files-options { options source dest type } {
+    gcc_adjust_linker_flags
+
+    global additional_sources
+    global additional_sources_omit_on_compile
+    global additional_sources_used
+    global additional_files
+    set to_download [list]
+    if { $additional_sources_omit_on_compile != "" \
+	     && $additional_sources != "" \
+	     && $type != "executable" && $dest != "" } then {
+	set linkonly ""
+	foreach s $additional_sources {
+	    foreach s2 $additional_sources_omit_on_compile {
+		if { $s == $s2 } {
+		    unsupported "$s: additional-source will not be used to build $dest"
+		    set s ""
+		    break
+		}
+	    }
+	    if { $s != "" } {
+		append linkonly " $s"
+	    }
+	}
+	set additional_sources "$linkonly"
+    }
+    if { $additional_sources == "" } then {
+    } else {
+	if [is_remote host] {
+	    lappend options "additional_flags=$additional_sources"
+	}
+	regsub -all {^ *|  *} $additional_sources " [file dirname $source]/" additional_sources
+	if ![is_remote host] {
+	    lappend options "additional_flags=$additional_sources"
+	}
+	set to_download [concat $to_download $additional_sources]
+	set additional_sources_used "$additional_sources"
+	set additional_sources ""
+	# This option restores naming of aux and dump output files
+	# after input files when multiple input files are named,
+	# instead of getting them combined with the output name.
+	lappend options "additional_flags=-dumpbase \"\""
+    }
+    if { $additional_files != "" } then { 
+	regsub -all "^| " $additional_files " [file dirname $source]/" additional_files
+	set to_download [concat $to_download $additional_files]
+	set additional_files ""
+    }
+    if [is_remote host] {
+	foreach file $to_download {
+	    remote_download host $file
+	}
+    }
+
+    return $options
+}
+
+# Return a colon-separate list of directories to search for libraries
+# for COMPILER, including multilib directories.
+
+proc gcc-set-multilib-library-path { compiler } {
+    set shlib_ext [get_shlib_extension]
+    set options [lrange $compiler 1 end]
+    set compiler [lindex $compiler 0]
+
+    set libgcc_s_x [remote_exec host "$compiler" \
+		    "$options -print-file-name=libgcc_s.${shlib_ext}"]
+    if { [lindex $libgcc_s_x 0] == 0 \
+	 && [set libgcc_s_dir [file dirname [lindex $libgcc_s_x 1]]] != "" } {
+	set libpath ":${libgcc_s_dir}"
+    } else {
+	return ""
+    }
+
+    set multi_dir_x [remote_exec host "$compiler" \
+		     "$options -print-multi-directory"]
+    set multi_lib_x [remote_exec host "$compiler" \
+		     "$options -print-multi-lib"]
+    if { [lindex $multi_dir_x 0] == 0 && [lindex $multi_lib_x 0] == 0 } {
+	set multi_dir [string trim [lindex $multi_dir_x 1]]
+	set multi_lib [string trim [lindex $multi_lib_x 1]]
+	if { "$multi_dir" == "." } {
+	    set multi_root "$libgcc_s_dir"
+	} else {
+	    set multi_match [string last "/$multi_dir" "$libgcc_s_dir"]
+	    if { "$multi_match" < 0 } {
+		return $libpath
+	    }
+	    set multi_root [string range "$libgcc_s_dir" \
+			    0 [expr $multi_match - 1]]
+	}
+	foreach i "$multi_lib" {
+	    set mldir ""
+	    regexp -- "\[a-z0-9=_/\.-\]*;" $i mldir
+	    set mldir [string trimright $mldir "\;@"]
+	    if { "$mldir" == "$multi_dir" } {
+		continue
+	    }
+	    append libpath ":${multi_root}/${mldir}"
+	}
+    }
+
+    return $libpath
+}
+
+# A list of all uses of dg-regexp, each entry of the form:
+#   line-number regexp
+# This is cleared at the end of each test by gcc-dg.exp's wrapper for dg-test.
+set freeform_regexps []
+
+# Directive for looking for a regexp, without any line numbers or other
+# prefixes.
+
+proc dg-regexp { args } {
+    verbose "dg-regexp: args: $args" 2
+
+    global freeform_regexps
+    lappend freeform_regexps $args
+}
+
+# Hook to be called by prune.exp's prune_gcc_output to
+# look for the expected dg-regexp expressions, pruning them,
+# reporting PASS for those that are found, and FAIL for
+# those that weren't found.
+#
+# It returns a pruned version of its output.
+
+proc handle-dg-regexps { text } {
+    global freeform_regexps
+    global testname_with_flags
+
+    foreach entry $freeform_regexps {
+	verbose "  entry: $entry" 3
+
+	set linenum [lindex $entry 0]
+	set rexp [lindex $entry 1]
+
+	# Escape newlines in $rexp so that we can print them in
+	# pass/fail results.
+	set escaped_regex [string map {"\n" "\\n" "\r" "\\r"} $rexp]
+	verbose "escaped_regex: ${escaped_regex}" 4
+
+	set title "$testname_with_flags dg-regexp $linenum"
+
+	# Use "regsub" to attempt to prune the pattern from $text
+	if {[regsub -line $rexp $text "" text]} {
+	    # Success; the multiline pattern was pruned.
+	    pass "$title was found: \"$escaped_regex\""
+	} else {
+	    fail "$title not found: \"$escaped_regex\""
+	}
+    }
+
+    return $text
+}
+
+# Verify that the initial arg is a valid .dot file
+# (by running dot -Tpng on it, and verifying the exit code is 0).
+
+proc dg-check-dot { args } {
+    verbose "dg-check-dot: args: $args" 2
+
+    set testcase [testname-for-summary]
+
+    set dotfile [lindex $args 0]
+    verbose "  dotfile: $dotfile" 2
+
+    set status [remote_exec host "dot" "-O -Tpng $dotfile"]
+    verbose "  status: $status" 2
+    if { [lindex $status 0] != 0 } {
+	fail "$testcase dg-check-dot $dotfile"
+	return 0
+    }
+
+    pass "$testcase dg-check-dot $dotfile"
+}
+
+# Used by aarch64-with-arch-dg-options to intercept dg-options and make
+# the changes required.  See there for details.
+proc aarch64-arch-dg-options { args } {
+    upvar dg-do-what do_what
+    global aarch64_default_testing_arch
+
+    set add_arch 1
+    set add_tune 1
+    set add_override 1
+    set checks_output [string equal [lindex $do_what 0] "compile"]
+    set options [lindex $args 1]
+
+    foreach option [split $options] {
+	switch -glob -- $option {
+	    -march=* { set add_arch 0 }
+	    -mcpu=* { set add_arch 0; set add_tune 0; set add_override 0}
+	    -mtune=* { set add_tune 0; set add_override 0 }
+	    -moverride=* { set add_override 0 }
+	    -save-temps { set checks_output 1 }
+	    --save-temps { set checks_output 1 }
+	    -fdump* { set checks_output 1 }
+	}
+    }
+
+    if { $add_arch && ![string equal $aarch64_default_testing_arch ""] } {
+	# Force SVE if we're not testing it already.
+	append options " $aarch64_default_testing_arch"
+    }
+
+    if { $checks_output } {
+	# Turn off any default tuning and codegen tweaks.
+        if { $add_tune } {
+            append options " -mtune=generic"
+        }
+        if { $add_override } {
+            append options " -moverride=tune=none"
+        }
+    }
+
+    uplevel 1 aarch64-old-dg-options [lreplace $args 1 1 $options]
+}
+
+# Run Tcl code CODE with dg-options modified to work better for some
+# AArch64 tests.  In particular:
+#
+# - If the dg-options do not specify an -march or -mcpu option,
+#   use the architecture options in ARCH (which might be empty).
+#
+# - If the dg-options do not specify an -mcpu, -mtune or -moverride option,
+#   and if the test appears to be checking assembly or dump output,
+#   force the test to use generic tuning.
+#
+# The idea is to handle toolchains that are configured with a default
+# CPU or architecture that's different from the norm.
+proc aarch64-with-arch-dg-options { arch code } {
+    global aarch64_default_testing_arch
+
+    set aarch64_default_testing_arch $arch
+
+    rename dg-options aarch64-old-dg-options
+    rename aarch64-arch-dg-options dg-options
+
+    uplevel 1 $code
+
+    rename dg-options aarch64-arch-dg-options
+    rename aarch64-old-dg-options dg-options
+}

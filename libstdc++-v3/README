@@ -1,0 +1,6 @@
+file: libstdc++-v3/README
+
+New users may wish to point their web browsers to the file
+index.html in the 'doc/html' subdirectory.  It contains brief
+building instructions and notes on how to configure the library in
+interesting ways.

@@ -1,0 +1,124 @@
+#   Copyright (C) 1997-2026 Free Software Foundation, Inc.
+
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+# 
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+# 
+# You should have received a copy of the GNU General Public License
+# along with GCC; see the file COPYING3.  If not see
+# <http://www.gnu.org/licenses/>.
+
+# Define g++ callbacks for dg.exp.
+
+load_lib gcc-dg.exp
+
+proc g++-dg-test { prog do_what extra_tool_flags } {
+    return [gcc-dg-test-1 g++_target_compile $prog $do_what $extra_tool_flags]
+}
+
+
+proc g++-dg-prune { system text } {
+    return [gcc-dg-prune $system $text]
+}
+
+# Return a list of -std flags to use for TEST.
+proc g++-std-flags { test } {
+    # If the testcase specifies a standard, use that one.
+    # If not, run it under several standards, allowing GNU extensions
+    # if there's a dg-options line.
+    if ![search_for $test "-std=*++"] {
+	if [search_for $test "dg-options"] {
+	    set std_prefix "-std=gnu++"
+	} else {
+	    set std_prefix "-std=c++"
+	}
+
+	set low 0
+	# Some directories expect certain minimums.
+	if { [string match "*/coroutines/*" $test] } { set low 20 }
+	if { [string match "*/modules/*" $test] } { set low 17 }
+
+	# See g++.exp for the initial value of this list.
+	global gpp_std_list
+	if { [llength $gpp_std_list] > 0 } {
+	    set std_list {}
+	    foreach ver $gpp_std_list {
+		set cmpver $ver
+		if { $ver == 98 } { set cmpver 03 }
+		if { $ver ni $std_list
+		     && $cmpver >= $low } {
+		    lappend std_list $ver
+		}
+	    }
+	} else {
+	    # If the test mentions specific C++ versions, test those.
+	    set lines [get_matching_lines $test {\{ dg* c++[0-9][0-9]}]
+	    set std_list {}
+	    foreach line $lines {
+		regexp {c\+\+([0-9][0-9])} $line -> ver
+		lappend std_list $ver
+
+		if { $ver == 98 } {
+		    # Leave low alone.
+		} elseif { [regexp {dg-do|dg-require-effective-target} $line] } {
+		    set low $ver
+		}
+	    }
+	    #verbose "low: $low" 1
+
+	    set std_list [lsort -unique $std_list]
+
+	    # If fewer than 3 specific versions are mentioned, add more.
+	    # The order of this list is significant: first $cxx_default,
+	    # then the oldest and newest, then others in rough order of
+	    # importance based on test coverage and usage.
+	    foreach ver { 20 98 26 17 11 14 23 } {
+		set cmpver $ver
+		if { $ver == 98 } { set cmpver 03 }
+		if { [llength $std_list] < 3
+		     && $ver ni $std_list
+		     && $cmpver >= $low } {
+		    lappend std_list $ver
+		}
+	    }
+	    verbose "std_list: $std_list" 1
+	}
+	set option_list { }
+	foreach x $std_list {
+	    if { $x eq "impcx" } then { set x "26 -fimplicit-constexpr" }
+	    if { $x eq "modules" } then { set x "26 -fmodules -flang-info-include-translate" }
+	    lappend option_list "${std_prefix}$x"
+	}
+    } else {
+	set option_list { "" }
+    }
+    return $option_list
+}
+
+# Modified dg-runtest that runs tests in multiple standard modes,
+# unless they specifically specify one standard.
+proc g++-dg-runtest { testcases flags default-extra-flags } {
+    global runtests
+
+    foreach test $testcases {
+	# If we're only testing specific files and this isn't one of them, skip it.
+	if ![runtest_file_p $runtests $test] {
+	    continue
+	}
+
+	set option_list [g++-std-flags $test]
+
+	set nshort [file tail [file dirname $test]]/[file tail $test]
+
+	foreach flags_t $option_list {
+	    verbose "Testing $nshort, $flags $flags_t" 1
+	    dg-test $test "$flags $flags_t" ${default-extra-flags}
+	}
+    }
+}

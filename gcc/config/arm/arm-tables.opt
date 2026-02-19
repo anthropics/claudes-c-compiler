@@ -1,0 +1,471 @@
+; -*- buffer-read-only: t -*-
+; Generated automatically by parsecpu.awk from arm-cpus.in.
+; Do not edit.
+
+; Copyright (C) 2011-2026 Free Software Foundation, Inc.
+
+; This file is part of GCC.
+
+; GCC is free software; you can redistribute it and/or modify
+; it under the terms of the GNU General Public License as
+; published by the Free Software Foundation; either version 3,
+; or (at your option) any later version.
+
+; GCC is distributed in the hope that it will be useful,
+; but WITHOUT ANY WARRANTY; without even the implied warranty of
+; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+; GNU General Public License for more details.
+
+; You should have received a copy of the GNU General Public
+; License along with GCC; see the file COPYING3.  If not see
+; <http://www.gnu.org/licenses/>.
+
+Enum
+Name(processor_type) Type(enum processor_type)
+Known ARM CPUs (for use with the -mcpu= and -mtune= options):
+
+EnumValue
+Enum(processor_type) String(arm8) Value( TARGET_CPU_arm8)
+
+EnumValue
+Enum(processor_type) String(arm810) Value( TARGET_CPU_arm810)
+
+EnumValue
+Enum(processor_type) String(strongarm) Value( TARGET_CPU_strongarm)
+
+EnumValue
+Enum(processor_type) String(fa526) Value( TARGET_CPU_fa526)
+
+EnumValue
+Enum(processor_type) String(fa626) Value( TARGET_CPU_fa626)
+
+EnumValue
+Enum(processor_type) String(arm7tdmi) Value( TARGET_CPU_arm7tdmi)
+
+EnumValue
+Enum(processor_type) String(arm710t) Value( TARGET_CPU_arm710t)
+
+EnumValue
+Enum(processor_type) String(arm9) Value( TARGET_CPU_arm9)
+
+EnumValue
+Enum(processor_type) String(arm9tdmi) Value( TARGET_CPU_arm9tdmi)
+
+EnumValue
+Enum(processor_type) String(arm920t) Value( TARGET_CPU_arm920t)
+
+EnumValue
+Enum(processor_type) String(arm10tdmi) Value( TARGET_CPU_arm10tdmi)
+
+EnumValue
+Enum(processor_type) String(arm9e) Value( TARGET_CPU_arm9e)
+
+EnumValue
+Enum(processor_type) String(arm10e) Value( TARGET_CPU_arm10e)
+
+EnumValue
+Enum(processor_type) String(xscale) Value( TARGET_CPU_xscale)
+
+EnumValue
+Enum(processor_type) String(fa606te) Value( TARGET_CPU_fa606te)
+
+EnumValue
+Enum(processor_type) String(fa626te) Value( TARGET_CPU_fa626te)
+
+EnumValue
+Enum(processor_type) String(fmp626) Value( TARGET_CPU_fmp626)
+
+EnumValue
+Enum(processor_type) String(fa726te) Value( TARGET_CPU_fa726te)
+
+EnumValue
+Enum(processor_type) String(arm926ej-s) Value( TARGET_CPU_arm926ejs)
+
+EnumValue
+Enum(processor_type) String(arm1026ej-s) Value( TARGET_CPU_arm1026ejs)
+
+EnumValue
+Enum(processor_type) String(arm1136j-s) Value( TARGET_CPU_arm1136js)
+
+EnumValue
+Enum(processor_type) String(arm1136jf-s) Value( TARGET_CPU_arm1136jfs)
+
+EnumValue
+Enum(processor_type) String(arm1176jz-s) Value( TARGET_CPU_arm1176jzs)
+
+EnumValue
+Enum(processor_type) String(arm1176jzf-s) Value( TARGET_CPU_arm1176jzfs)
+
+EnumValue
+Enum(processor_type) String(mpcorenovfp) Value( TARGET_CPU_mpcorenovfp)
+
+EnumValue
+Enum(processor_type) String(mpcore) Value( TARGET_CPU_mpcore)
+
+EnumValue
+Enum(processor_type) String(arm1156t2-s) Value( TARGET_CPU_arm1156t2s)
+
+EnumValue
+Enum(processor_type) String(arm1156t2f-s) Value( TARGET_CPU_arm1156t2fs)
+
+EnumValue
+Enum(processor_type) String(cortex-m1) Value( TARGET_CPU_cortexm1)
+
+EnumValue
+Enum(processor_type) String(cortex-m0) Value( TARGET_CPU_cortexm0)
+
+EnumValue
+Enum(processor_type) String(cortex-m0plus) Value( TARGET_CPU_cortexm0plus)
+
+EnumValue
+Enum(processor_type) String(cortex-m1.small-multiply) Value( TARGET_CPU_cortexm1smallmultiply)
+
+EnumValue
+Enum(processor_type) String(cortex-m0.small-multiply) Value( TARGET_CPU_cortexm0smallmultiply)
+
+EnumValue
+Enum(processor_type) String(cortex-m0plus.small-multiply) Value( TARGET_CPU_cortexm0plussmallmultiply)
+
+EnumValue
+Enum(processor_type) String(generic-armv7-a) Value( TARGET_CPU_genericv7a)
+
+EnumValue
+Enum(processor_type) String(cortex-a5) Value( TARGET_CPU_cortexa5)
+
+EnumValue
+Enum(processor_type) String(cortex-a7) Value( TARGET_CPU_cortexa7)
+
+EnumValue
+Enum(processor_type) String(cortex-a8) Value( TARGET_CPU_cortexa8)
+
+EnumValue
+Enum(processor_type) String(cortex-a9) Value( TARGET_CPU_cortexa9)
+
+EnumValue
+Enum(processor_type) String(cortex-a12) Value( TARGET_CPU_cortexa12)
+
+EnumValue
+Enum(processor_type) String(cortex-a15) Value( TARGET_CPU_cortexa15)
+
+EnumValue
+Enum(processor_type) String(cortex-a17) Value( TARGET_CPU_cortexa17)
+
+EnumValue
+Enum(processor_type) String(cortex-r4) Value( TARGET_CPU_cortexr4)
+
+EnumValue
+Enum(processor_type) String(cortex-r4f) Value( TARGET_CPU_cortexr4f)
+
+EnumValue
+Enum(processor_type) String(cortex-r5) Value( TARGET_CPU_cortexr5)
+
+EnumValue
+Enum(processor_type) String(cortex-r7) Value( TARGET_CPU_cortexr7)
+
+EnumValue
+Enum(processor_type) String(cortex-r8) Value( TARGET_CPU_cortexr8)
+
+EnumValue
+Enum(processor_type) String(cortex-m7) Value( TARGET_CPU_cortexm7)
+
+EnumValue
+Enum(processor_type) String(cortex-m4) Value( TARGET_CPU_cortexm4)
+
+EnumValue
+Enum(processor_type) String(cortex-m3) Value( TARGET_CPU_cortexm3)
+
+EnumValue
+Enum(processor_type) String(marvell-pj4) Value( TARGET_CPU_marvell_pj4)
+
+EnumValue
+Enum(processor_type) String(cortex-a15.cortex-a7) Value( TARGET_CPU_cortexa15cortexa7)
+
+EnumValue
+Enum(processor_type) String(cortex-a17.cortex-a7) Value( TARGET_CPU_cortexa17cortexa7)
+
+EnumValue
+Enum(processor_type) String(cortex-a32) Value( TARGET_CPU_cortexa32)
+
+EnumValue
+Enum(processor_type) String(cortex-a35) Value( TARGET_CPU_cortexa35)
+
+EnumValue
+Enum(processor_type) String(cortex-a53) Value( TARGET_CPU_cortexa53)
+
+EnumValue
+Enum(processor_type) String(cortex-a57) Value( TARGET_CPU_cortexa57)
+
+EnumValue
+Enum(processor_type) String(cortex-a72) Value( TARGET_CPU_cortexa72)
+
+EnumValue
+Enum(processor_type) String(cortex-a73) Value( TARGET_CPU_cortexa73)
+
+EnumValue
+Enum(processor_type) String(exynos-m1) Value( TARGET_CPU_exynosm1)
+
+EnumValue
+Enum(processor_type) String(xgene1) Value( TARGET_CPU_xgene1)
+
+EnumValue
+Enum(processor_type) String(cortex-a57.cortex-a53) Value( TARGET_CPU_cortexa57cortexa53)
+
+EnumValue
+Enum(processor_type) String(cortex-a72.cortex-a53) Value( TARGET_CPU_cortexa72cortexa53)
+
+EnumValue
+Enum(processor_type) String(cortex-a73.cortex-a35) Value( TARGET_CPU_cortexa73cortexa35)
+
+EnumValue
+Enum(processor_type) String(cortex-a73.cortex-a53) Value( TARGET_CPU_cortexa73cortexa53)
+
+EnumValue
+Enum(processor_type) String(cortex-a55) Value( TARGET_CPU_cortexa55)
+
+EnumValue
+Enum(processor_type) String(cortex-a75) Value( TARGET_CPU_cortexa75)
+
+EnumValue
+Enum(processor_type) String(cortex-a76) Value( TARGET_CPU_cortexa76)
+
+EnumValue
+Enum(processor_type) String(cortex-a76ae) Value( TARGET_CPU_cortexa76ae)
+
+EnumValue
+Enum(processor_type) String(cortex-a77) Value( TARGET_CPU_cortexa77)
+
+EnumValue
+Enum(processor_type) String(cortex-a78) Value( TARGET_CPU_cortexa78)
+
+EnumValue
+Enum(processor_type) String(cortex-a78ae) Value( TARGET_CPU_cortexa78ae)
+
+EnumValue
+Enum(processor_type) String(cortex-a78c) Value( TARGET_CPU_cortexa78c)
+
+EnumValue
+Enum(processor_type) String(cortex-a710) Value( TARGET_CPU_cortexa710)
+
+EnumValue
+Enum(processor_type) String(cortex-x1) Value( TARGET_CPU_cortexx1)
+
+EnumValue
+Enum(processor_type) String(cortex-x1c) Value( TARGET_CPU_cortexx1c)
+
+EnumValue
+Enum(processor_type) String(neoverse-n1) Value( TARGET_CPU_neoversen1)
+
+EnumValue
+Enum(processor_type) String(cortex-a75.cortex-a55) Value( TARGET_CPU_cortexa75cortexa55)
+
+EnumValue
+Enum(processor_type) String(cortex-a76.cortex-a55) Value( TARGET_CPU_cortexa76cortexa55)
+
+EnumValue
+Enum(processor_type) String(neoverse-v1) Value( TARGET_CPU_neoversev1)
+
+EnumValue
+Enum(processor_type) String(neoverse-n2) Value( TARGET_CPU_neoversen2)
+
+EnumValue
+Enum(processor_type) String(cortex-m23) Value( TARGET_CPU_cortexm23)
+
+EnumValue
+Enum(processor_type) String(cortex-m33) Value( TARGET_CPU_cortexm33)
+
+EnumValue
+Enum(processor_type) String(cortex-m35p) Value( TARGET_CPU_cortexm35p)
+
+EnumValue
+Enum(processor_type) String(cortex-m52) Value( TARGET_CPU_cortexm52)
+
+EnumValue
+Enum(processor_type) String(cortex-m55) Value( TARGET_CPU_cortexm55)
+
+EnumValue
+Enum(processor_type) String(star-mc1) Value( TARGET_CPU_starmc1)
+
+EnumValue
+Enum(processor_type) String(cortex-m85) Value( TARGET_CPU_cortexm85)
+
+EnumValue
+Enum(processor_type) String(cortex-r52) Value( TARGET_CPU_cortexr52)
+
+EnumValue
+Enum(processor_type) String(cortex-r52plus) Value( TARGET_CPU_cortexr52plus)
+
+Enum
+Name(arm_arch) Type(int)
+Known ARM architectures (for use with the -march= option):
+
+EnumValue
+Enum(arm_arch) String(armv4) Value(0)
+
+EnumValue
+Enum(arm_arch) String(armv4t) Value(1)
+
+EnumValue
+Enum(arm_arch) String(armv5t) Value(2)
+
+EnumValue
+Enum(arm_arch) String(armv5te) Value(3)
+
+EnumValue
+Enum(arm_arch) String(armv5tej) Value(4)
+
+EnumValue
+Enum(arm_arch) String(armv6) Value(5)
+
+EnumValue
+Enum(arm_arch) String(armv6j) Value(6)
+
+EnumValue
+Enum(arm_arch) String(armv6k) Value(7)
+
+EnumValue
+Enum(arm_arch) String(armv6z) Value(8)
+
+EnumValue
+Enum(arm_arch) String(armv6kz) Value(9)
+
+EnumValue
+Enum(arm_arch) String(armv6zk) Value(10)
+
+EnumValue
+Enum(arm_arch) String(armv6t2) Value(11)
+
+EnumValue
+Enum(arm_arch) String(armv6-m) Value(12)
+
+EnumValue
+Enum(arm_arch) String(armv6s-m) Value(13)
+
+EnumValue
+Enum(arm_arch) String(armv7) Value(14)
+
+EnumValue
+Enum(arm_arch) String(armv7-a) Value(15)
+
+EnumValue
+Enum(arm_arch) String(armv7ve) Value(16)
+
+EnumValue
+Enum(arm_arch) String(armv7-r) Value(17)
+
+EnumValue
+Enum(arm_arch) String(armv7-m) Value(18)
+
+EnumValue
+Enum(arm_arch) String(armv7e-m) Value(19)
+
+EnumValue
+Enum(arm_arch) String(armv8-a) Value(20)
+
+EnumValue
+Enum(arm_arch) String(armv8.1-a) Value(21)
+
+EnumValue
+Enum(arm_arch) String(armv8.2-a) Value(22)
+
+EnumValue
+Enum(arm_arch) String(armv8.3-a) Value(23)
+
+EnumValue
+Enum(arm_arch) String(armv8.4-a) Value(24)
+
+EnumValue
+Enum(arm_arch) String(armv8.5-a) Value(25)
+
+EnumValue
+Enum(arm_arch) String(armv8.6-a) Value(26)
+
+EnumValue
+Enum(arm_arch) String(armv8-m.base) Value(27)
+
+EnumValue
+Enum(arm_arch) String(armv8-m.main) Value(28)
+
+EnumValue
+Enum(arm_arch) String(armv8-r) Value(29)
+
+EnumValue
+Enum(arm_arch) String(armv8.1-m.main) Value(30)
+
+EnumValue
+Enum(arm_arch) String(armv9-a) Value(31)
+
+EnumValue
+Enum(arm_arch) String(iwmmxt) Value(32)
+
+EnumValue
+Enum(arm_arch) String(iwmmxt2) Value(33)
+
+Enum
+Name(arm_fpu) Type(enum fpu_type)
+Known ARM FPUs (for use with the -mfpu= option):
+
+EnumValue
+Enum(arm_fpu) String(vfp) Value(TARGET_FPU_vfp)
+
+EnumValue
+Enum(arm_fpu) String(vfpv2) Value(TARGET_FPU_vfpv2)
+
+EnumValue
+Enum(arm_fpu) String(vfpv3) Value(TARGET_FPU_vfpv3)
+
+EnumValue
+Enum(arm_fpu) String(vfpv3-fp16) Value(TARGET_FPU_vfpv3_fp16)
+
+EnumValue
+Enum(arm_fpu) String(vfpv3-d16) Value(TARGET_FPU_vfpv3_d16)
+
+EnumValue
+Enum(arm_fpu) String(vfpv3-d16-fp16) Value(TARGET_FPU_vfpv3_d16_fp16)
+
+EnumValue
+Enum(arm_fpu) String(vfpv3xd) Value(TARGET_FPU_vfpv3xd)
+
+EnumValue
+Enum(arm_fpu) String(vfpv3xd-fp16) Value(TARGET_FPU_vfpv3xd_fp16)
+
+EnumValue
+Enum(arm_fpu) String(neon) Value(TARGET_FPU_neon)
+
+EnumValue
+Enum(arm_fpu) String(neon-vfpv3) Value(TARGET_FPU_neon_vfpv3)
+
+EnumValue
+Enum(arm_fpu) String(neon-fp16) Value(TARGET_FPU_neon_fp16)
+
+EnumValue
+Enum(arm_fpu) String(vfpv4) Value(TARGET_FPU_vfpv4)
+
+EnumValue
+Enum(arm_fpu) String(neon-vfpv4) Value(TARGET_FPU_neon_vfpv4)
+
+EnumValue
+Enum(arm_fpu) String(vfpv4-d16) Value(TARGET_FPU_vfpv4_d16)
+
+EnumValue
+Enum(arm_fpu) String(fpv4-sp-d16) Value(TARGET_FPU_fpv4_sp_d16)
+
+EnumValue
+Enum(arm_fpu) String(fpv5-sp-d16) Value(TARGET_FPU_fpv5_sp_d16)
+
+EnumValue
+Enum(arm_fpu) String(fpv5-d16) Value(TARGET_FPU_fpv5_d16)
+
+EnumValue
+Enum(arm_fpu) String(fp-armv8) Value(TARGET_FPU_fp_armv8)
+
+EnumValue
+Enum(arm_fpu) String(neon-fp-armv8) Value(TARGET_FPU_neon_fp_armv8)
+
+EnumValue
+Enum(arm_fpu) String(crypto-neon-fp-armv8) Value(TARGET_FPU_crypto_neon_fp_armv8)
+
+EnumValue
+Enum(arm_fpu) String(vfp3) Value(TARGET_FPU_vfp3)
+
+EnumValue
+Enum(arm_fpu) String(auto) Value(TARGET_FPU_auto)

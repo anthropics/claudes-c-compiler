@@ -1,0 +1,210 @@
+#   Copyright (C) 2009-2026 Free Software Foundation, Inc.
+
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with GCC; see the file COPYING3.  If not see
+# <http://www.gnu.org/licenses/>.
+
+# Utility for testing variable values using gdb, invoked via dg-final.
+# Call pass if variable has the desired value, otherwise fail.
+#
+# Argument 0 is the line number on which to put a breakpoint
+# Argument 1 is the name of the variable to be checked
+#   possibly prefixed with type: to get the type of the variable
+#   instead of the value of the variable (the default).
+# Argument 2 is the expected value (or type) of the variable
+#   When asking for the value, the expected value is produced
+#   calling print on it in gdb. When asking for the type it is
+#   the literal string with extra whitespace removed.
+# Argument 3 handles expected failures and the like
+proc gdb-test { useline args } {
+    if { [llength $args] >= 4 } {
+	switch [dg-process-target [lindex $args 3]] {
+	    "S" { }
+	    "N" { return }
+	    "F" { setup_xfail "*-*-*" }
+	    "P" { }
+	}
+    }
+
+    # This assumes that we are three frames down from dg-test, and that
+    # it still stores the filename of the testcase in a local variable "name".
+    # A cleaner solution would require a new DejaGnu release.
+    upvar 2 name testcase
+    upvar 2 prog prog
+
+    # The command to run on the variable
+    set arg1 [lindex $args 1]
+    if { [string equal -length 5 "type:" $arg1] == 1 } {
+	set command "ptype"
+	set var [string range $arg1 5 end]
+    } else {
+	set command "print"
+	set var $arg1
+    }
+
+    set line [lindex $args 0]
+    if { [string range $line 0 0] == "@" } {
+	set line [string range $line 1 end]
+    } else {
+	set line [get-absolute-line $useline $line]
+    }
+
+    set gdb_name $::env(GUALITY_GDB_NAME)
+    set testname "$testcase line $line [lindex $args 1] == [lindex $args 2]"
+    set output_file "[file rootname [file tail $prog]].exe"
+    set cmd_file "[file rootname [file tail $prog]].gdb"
+
+    set fd [open $cmd_file "w"]
+    puts $fd "break $line"
+    puts $fd "run"
+    puts $fd "$command $var"
+    if { $command == "print" } {
+	# For values, let gdb interpret them by printing them.
+	puts $fd "print [lindex $args 2]"
+    } else {
+	# Since types can span multiple lines, we need an end marker.
+	puts $fd "echo TYPE_END\\n"
+    }
+    puts $fd "quit"
+    close $fd
+
+    set cmd_file_remote [remote_download target $cmd_file]
+    set output_file_remote [remote_download target $output_file]
+    send_log "Spawning: $gdb_name -nx -nw -quiet -batch -x $cmd_file_remote $output_file_remote\n"
+    set res [remote_spawn target "$gdb_name -nx -nw -quiet -batch -x $cmd_file_remote $output_file_remote"]
+    if { $res < 0 || $res == "" } {
+	unsupported "$testname"
+	file delete $cmd_file
+	if { [is_remote target] } {
+	    remote_file target delete $cmd_file_remote
+	    remote_file target delete $output_file_remote
+	}
+	return
+    }
+
+    remote_expect target [timeout_value] {
+	# Too old GDB
+	-re "Unhandled dwarf expression|Error in sourced command file|<unknown type in " {
+	    unsupported "$testname"
+	    remote_close target
+	    file delete $cmd_file
+	    if { [is_remote target] } {
+		remote_file target delete $cmd_file_remote
+		remote_file target delete $output_file_remote
+	    }
+	    return
+	}
+	# print var; print expected
+	-re {[\n\r]\$1 = ([^\n\r]*)[\n\r]+\$2 = ([^\n\r]*)[\n\r]} {
+	    set first $expect_out(1,string)
+	    set second $expect_out(2,string)
+	    if { $first == $second } {
+		pass "$testname"
+	    } else {
+		# We need the -- to disambiguate $first from an option,
+		# as it may be negative.
+		send_log -- "$first != $second\n"
+		fail "$testname"
+	    }
+	    remote_close target
+	    file delete $cmd_file
+	    if { [is_remote target] } {
+		remote_file target delete $cmd_file_remote
+		remote_file target delete $output_file_remote
+	    }
+	    return
+	}
+	# ptype var;
+	-re {[\n\r]type = (.*)[\n\r][\n\r]TYPE_END[\n\r]} {
+	    set type $expect_out(1,string)
+	    # Squash all extra whitespace/newlines that gdb might use for
+	    # "pretty printing" into one so result is just one line.
+	    regsub -all {[\n\r\t ]+} $type " " type
+	    # Old gdb might output "long int" instead of just "long"
+	    # and "short int" instead of just "short". Canonicalize.
+	    regsub -all {\mlong int\M} $type "long" type
+	    regsub -all {\mshort int\M} $type "short" type
+	    set expected [lindex $args 2]
+	    if { $type == $expected } {
+		pass "$testname"
+	    } else {
+		send_log -- "$type != $expected\n"
+		fail "$testname"
+	    }
+	    remote_close target
+	    file delete $cmd_file
+	    if { [is_remote target] } {
+		remote_file target delete $cmd_file_remote
+		remote_file target delete $output_file_remote
+	    }
+	    return
+	}
+	timeout {
+	    unsupported "$testname"
+	    remote_close target
+	    file delete $cmd_file
+	    if { [is_remote target] } {
+		remote_file target delete $cmd_file_remote
+		remote_file target delete $output_file_remote
+	    }
+	    return
+	}
+    }
+
+    unsupported "$testname"
+    remote_close target
+    file delete $cmd_file
+    if { [is_remote target] } {
+	remote_file target delete $cmd_file_remote
+	remote_file target delete $output_file_remote
+    }
+    return
+}
+
+# Report the gdb path and version log the .log file
+# Argument 0 is the gdb path
+# Argument 1 is the location where gdb is used
+# 
+proc report_gdb { gdb loc } {
+    set status [remote_exec target "which" "$gdb"]
+    set gdb [string trim [lindex $status 1]]
+    if { [lindex $status 0] != 0 } {
+	send_log "gdb not found in $loc: $gdb\n"
+	return
+    }
+    send_log "gdb used in $loc: $gdb\n"
+
+    send_log "gdb used in $loc: "
+    set status [remote_exec target "$gdb" "-v"]
+    set gdb_version [lindex $status 1]
+    if { [lindex $status 0] != 0 } {
+	send_log "getting version failed:\n"
+    } else {
+	send_log "version:\n"
+    }
+    send_log -- "---\n$gdb_version\n---\n"
+}
+
+# Argument 0 is the option list.
+# Return the option list, ensuring that at least -Og is present.
+
+proc guality_minimal_options { args } {
+    set options [lindex $args 0]
+    foreach opt $options {
+	if { [regexp -- "-Og" $opt] } {
+	    return $options
+	}
+    }
+    
+    return [lappend options "-Og"]
+}

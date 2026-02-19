@@ -1,0 +1,12 @@
+MULTILIB_OPTIONS = mxl-barrel-shift mno-xl-soft-mul mxl-multiply-high mlittle-endian
+MULTILIB_DIRNAMES = bs m mh le
+MULTILIB_EXCEPTIONS = *mxl-barrel-shift/mxl-multiply-high mxl-multiply-high
+MULTILIB_EXCEPTIONS += *mxl-barrel-shift/mxl-multiply-high/mlittle-endian
+MULTILIB_EXCEPTIONS += mxl-multiply-high/mlittle-endian
+
+# Extra files
+microblaze-c.o: $(srcdir)/config/microblaze/microblaze-c.cc \
+    $(srcdir)/config/microblaze/microblaze-protos.h \
+    $(CONFIG_H) $(SYSTEM_H) $(CPPLIB_H) $(TM_P_H) $(TREE_H) errors.h $(TM_H)
+	$(COMPILER) -c $(ALL_COMPILERFLAGS) $(ALL_CPPFLAGS) $(INCLUDES) \
+	$(srcdir)/config/microblaze/microblaze-c.cc

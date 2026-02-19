@@ -1,0 +1,124 @@
+#! /bin/sh
+
+# Copyright (C) 2007-2026 Free Software Foundation, Inc.
+# This file is part of GCC.
+
+# GCC is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3, or (at your option)
+# any later version.
+
+# GCC is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+
+# You should have received a copy of the GNU General Public License
+# along with GCC; see the file COPYING3.  If not see
+# <http://www.gnu.org/licenses/>.
+
+# Invoke as, ld or nm from the build tree.
+
+ORIGINAL_AS_FOR_TARGET="@ORIGINAL_AS_FOR_TARGET@"
+ORIGINAL_LD_FOR_TARGET="@ORIGINAL_LD_FOR_TARGET@"
+ORIGINAL_LD_BFD_FOR_TARGET="@ORIGINAL_LD_BFD_FOR_TARGET@"
+ORIGINAL_LD_GOLD_FOR_TARGET="@ORIGINAL_LD_GOLD_FOR_TARGET@"
+ORIGINAL_PLUGIN_LD_FOR_TARGET="@ORIGINAL_PLUGIN_LD_FOR_TARGET@"
+ORIGINAL_NM_FOR_TARGET="@ORIGINAL_NM_FOR_TARGET@"
+ORIGINAL_DSYMUTIL_FOR_TARGET="@ORIGINAL_DSYMUTIL_FOR_TARGET@"
+exeext=@host_exeext@
+fast_install=@enable_fast_install@
+objdir=@objdir@
+
+invoked=`basename "$0"`
+id=$invoked
+case "$invoked" in
+  as)
+    original=$ORIGINAL_AS_FOR_TARGET
+    prog=as-new$exeext
+    dir=gas
+    ;;
+  collect-ld)
+    # Check -fuse-ld=bfd and -fuse-ld=gold
+    case " $* " in
+      *\ -fuse-ld=bfd\ *)
+	original=$ORIGINAL_LD_BFD_FOR_TARGET
+	;;
+      *\ -fuse-ld=gold\ *)
+	original=$ORIGINAL_LD_GOLD_FOR_TARGET
+	;;
+      *)
+	# when using a linker plugin, gcc will always pass '-plugin' as the
+	# first or second option to the linker.
+	if test x"$1" = "x-plugin" || test x"$2" = "x-plugin"; then
+	  original=$ORIGINAL_PLUGIN_LD_FOR_TARGET
+	else
+	  original=$ORIGINAL_LD_FOR_TARGET
+	fi
+	;;
+    esac
+    prog=ld-new$exeext
+    if test "$original" = ../gold/ld-new$exeext; then
+      dir=gold
+      # No need to handle relink since gold doesn't use libtool.
+      fast_install=yes
+    else
+      dir=ld
+    fi
+    id=ld
+    ;;
+  nm)
+    original=$ORIGINAL_NM_FOR_TARGET
+    prog=nm-new$exeext
+    dir=binutils
+    ;;
+  dsymutil)
+    original=$ORIGINAL_DSYMUTIL_FOR_TARGET
+    # We do not build this in tree - but still want to be able to execute
+    # a configured version from the build dir.
+    prog=
+    dir=
+    ;;
+esac
+
+if test -z "$original"
+then
+  echo "$0: \$original is unset" >&2
+  echo "This probably means there is no '$invoked' for the target." >&2
+  echo "For a cross-compiler, you probably need to install Binutils first." >&2
+  exit 1
+fi
+
+case "$original" in
+  ../*)
+    # compute absolute path of the location of this script
+    tdir=`dirname "$0"`
+    scriptdir=`cd "$tdir" && pwd`
+
+    if test -x $scriptdir/../$dir/$prog; then
+      test "$fast_install" = yes || exec $scriptdir/../$dir/$prog ${1+"$@"}
+
+      # if libtool did everything it needs to do, there's a fast path
+      lt_prog=$scriptdir/../$dir/$objdir/lt-$prog 
+      test -x $lt_prog && exec $lt_prog ${1+"$@"}
+
+      # libtool has not relinked ld-new yet, but we cannot just use the
+      # previous stage (because then the relinking would just never happen!).
+      # So we take extra care to use prev-ld/ld-new *on recursive calls*.
+      eval LT_RCU="\${LT_RCU_$id}"
+      test x"$LT_RCU" = x"1" && exec $scriptdir/../prev-$dir/$prog ${1+"$@"}
+
+      eval LT_RCU_$id=1
+      export LT_RCU_$id
+      $scriptdir/../$dir/$prog ${1+"$@"}
+      result=$?
+      exit $result
+
+    else
+      exec $scriptdir/../prev-$dir/$prog ${1+"$@"}
+    fi
+    ;;
+  *)
+    exec $original ${1+"$@"}
+    ;;
+esac

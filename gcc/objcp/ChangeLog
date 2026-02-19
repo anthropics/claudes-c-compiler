@@ -1,0 +1,701 @@
+2025-06-12  Jakub Jelinek  <jakub@redhat.com>
+
+	* objcp-decl.h (TYPE_OBJC_INFO): Define to info.objc_info
+	instead of objc_info.
+
+2024-11-22  Andrew Pinski  <quic_apinski@quicinc.com>
+
+	PR bootstrap/117737
+	* objcp-decl.cc (INCLUDE_MEMORY): Remove.
+	* objcp-lang.cc (INCLUDE_MEMORY): Remove.
+
+2024-10-25  Jakub Jelinek  <jakub@redhat.com>
+
+	* objcp-decl.cc: Remove trailing whitespace.
+	* objcp-lang.cc: Likewise.
+	* objcp-decl.h: Likewise.
+
+2024-10-24  David Malcolm  <dmalcolm@redhat.com>
+	    Gaius Mulley  <gaiusmod2@gmail.com>
+
+	PR other/116613
+	* objcp-decl.cc
+	* objcp-lang.cc: Likewise.
+
+2024-05-07  Rainer Orth  <ro@CeBiTec.Uni-Bielefeld.DE>
+
+	* Make-lang.in (cc1objplus$(exeext)): Remove $(NETLIBS).
+
+2023-11-27  Alex Coplan  <alex.coplan@arm.com>
+	    Iain Sandoe  <iain@sandoe.co.uk>
+
+	PR c++/60512
+	* objcp-lang.cc (c_family_register_lang_features): New.
+
+2023-10-22  Patrick Palka  <ppalka@redhat.com>
+
+	PR objc++/111920
+	* objcp-lang.cc (objcp_tsubst_expr) <case CLASS_REFERENCE_EXPR>:
+	Use tsubst instead of tsubst_expr for type operands.
+
+2023-10-20  Patrick Palka  <ppalka@redhat.com>
+
+	* objcp-lang.cc (objcp_tsubst_copy_and_build): Rename to ...
+	(objcp_tsubst_expr): ... this.  Adjust tsubst_copy_and_build
+	uses.
+
+2022-11-15  Patrick Palka  <ppalka@redhat.com>
+
+	* objcp-lang.cc (objcp_tsubst_copy_and_build): Adjust calls to
+	tsubst_copy_and_build and tsubst_expr.
+
+2022-11-15  Patrick Palka  <ppalka@redhat.com>
+
+	* objcp-lang.cc (objcp_tsubst_copy_and_build): Remove
+	function_p parameter.
+
+2022-05-31  Jason Merrill  <jason@redhat.com>
+
+	* Make-lang.in (obj-c++.tags): Look at *.cc.
+
+2022-05-11  Martin Liska  <mliska@suse.cz>
+
+	PR target/105355
+	* lang-specs.h: Use Separate syntax.
+
+2022-01-17  Martin Liska  <mliska@suse.cz>
+
+	* Make-lang.in: Rename .c names to .cc.
+	* config-lang.in: Likewise.
+	* lang-specs.h: Likewise.
+	* objcp-decl.cc (objcp_end_compound_stmt): Likewise.
+	* objcp-lang.cc (struct lang_hooks): Likewise.
+
+2022-01-17  Martin Liska  <mliska@suse.cz>
+
+	* objcp-decl.c: Moved to...
+	* objcp-decl.cc: ...here.
+	* objcp-lang.c: Moved to...
+	* objcp-lang.cc: ...here.
+
+2021-11-29  Eric Gallager  <egallager@gcc.gnu.org>
+
+	PR other/103021
+	* Make-lang.in: Use ETAGS variable in TAGS target.
+
+2021-10-22  Eric Gallager  <egallager@gcc.gnu.org>
+
+	PR other/102663
+	* Make-lang.in: Add dummy objc++.install-dvi target.
+
+2021-10-11  Eric Gallager  <egallager@gcc.gnu.org>
+
+	PR objc++/56604
+	* Make-lang.in: Add obj-c++.srcman: line.
+
+2021-06-08  Bernd Edlinger  <bernd.edlinger@hotmail.de>
+
+	* Make-lang.in (cc1objplus-checksum.c): Check previous
+	stage checksum exists.
+
+2021-06-07  Bernd Edlinger  <bernd.edlinger@hotmai.de>
+
+	* Make-lang.in (cc1objplus-checksum.c): For stage-final re-use
+	the checksum from the previous stage.
+
+2021-01-05  Jakub Jelinek  <jakub@redhat.com>
+
+	* Make-lang.in (cc1objplus-checksum, cc1objplus$(exeext): Add
+	$(CODYLIB) after $(BACKEND).
+
+2021-01-05  Rainer Orth  <ro@CeBiTec.Uni-Bielefeld.DE>
+
+	PR c++/98316
+	* Make-lang.in (cc1objplus$(exeext)): Add $(CODYLIB), $(NETLIBS).
+
+2020-11-20  Jakub Jelinek  <jakub@redhat.com>
+
+	PR other/97911
+	* Make-lang.in (obj-c++.serial): Change from goal to a variable.
+	(.PHONY): Drop obj-c++.serial and obj-c++.prev.
+	(cc1objplus$(exeext)): Depend on $(obj-c++.serial) rather than
+	obj-c++.serial.
+
+2020-11-18  Jakub Jelinek  <jakub@redhat.com>
+
+	* Make-lang.in (obj-c++.serial): New goal.
+	(.PHONY): Add obj-c++.serial obj-c++.prev.
+	(cc1objplus$(exeext)): Depend on obj-c++.prev.  Call LINK_PROGRESS.
+
+2020-09-25  Nathan Sidwell  <nathan@acm.org>
+
+	* objcp-decl.c (objcp_start_struct): Use TAG_how not tag_scope.
+	(objcp_xref_tag): Likewise.
+
+2020-09-24  Nathan Sidwell  <nathan@acm.org>
+
+	* objcp-decl.c (objcp_start_struct): Drop default args to
+	xref_tag.
+	(objcp_xref_tag): Likewise.
+
+2020-01-01  Jakub Jelinek  <jakub@redhat.com>
+
+	Update copyright years.
+
+2019-05-10  Jakub Jelinek  <jakub@redhat.com>
+
+	PR pch/90326
+	* config-lang.in (gtfiles): Don't add c-family/c-cppbuiltin.c.
+
+2019-01-01  Jakub Jelinek  <jakub@redhat.com>
+
+	Update copyright years.
+
+2018-10-17  David Malcolm  <dmalcolm@redhat.com>
+
+	* Make-lang.in (selftest-obj-c++): New.
+
+2018-05-07  Nathan Sidwell  <nathan@acm.org>
+
+	* objcp-lang.c (objcxx_init_ts): Don't call init_shadowed_var_for_decl.
+
+2018-01-03  Jakub Jelinek  <jakub@redhat.com>
+
+	Update copyright years.
+
+2017-07-03  Nathan Sidwell  <nathan@acm.org>
+
+	* config-lang.in: Source cp/config-lang.in, sort objc++ gtfiles list.
+
+2017-06-02  Nathan Sidwell  <nathan@acm.org>
+
+	* objcp-decl.h (SIZEOF_OBJC_TYPE_LANG_SPECIFIC): Use lang_type.
+	(ALLOC_OBJC_TYPE_LANG_SPECIFIC): Use it.  Don't set
+	u.c.h.is_lang_type_class.
+
+2017-01-01  Jakub Jelinek  <jakub@redhat.com>
+
+	Update copyright years.
+
+2016-01-04  Jakub Jelinek  <jakub@redhat.com>
+
+	Update copyright years.
+
+2015-11-13  Jason Merrill  <jason@redhat.com>
+
+	* config-lang.in (gtfiles): Add cp-gimplify.c.
+
+2015-11-11  Andrew MacLeod  <amacleod@redhat.com>
+
+	* objcp-decl.c: Remove unused header files.
+	* objcp-lang.c: Likewise.
+
+2015-10-29  Andrew MacLeod  <amacleod@redhat.com>
+
+	* objcp-decl.c: Reorder #include's and remove duplicates.
+	* objcp-lang.c: Likewise.
+
+2015-07-07  Andrew MacLeod  <amacleod@redhat.com>
+
+	* objcp-decl.c: Adjust includes.
+	* objcp-lang.c: Likewise.
+
+2015-06-17  Andrew MacLeod  <amacleod@redhat.com>
+
+	* objcp-decl.c: Do not include input.h, line-map.h or is-a.h.
+	* objcp-lang.c: Likewise.
+
+2015-06-08  Andrew MacLeod  <amacleod@redhat.com>
+
+	* objcp-decl.c : Adjust include files.
+	* objcp-lang.c : Likewise.
+
+2015-06-04  Andrew MacLeod  <amacleod@redhat.com>
+
+	* objcp-decl.c: Adjust includes for restructured coretypes.h.
+	* objcp-lang.c: Likewise.
+
+2015-04-27  Jim Wilson  <jim.wilson@linaro.org>
+
+	* Make-lang.in (obj-c++.mostlyclean): Remove cc1objplus.
+
+2015-01-09  Michael Collison  <michael.collison@linaro.org>
+
+	* objcp-decl.c: Include hash-set.h, machmode.h, vec.h, double-int.h,
+	input.h, alias.h, symtab.h, options, fold-const.h,
+	wide-int.h, and inchash.h due to flattening of tree.h.
+	* objcp-lang.c: Ditto.
+
+2014-12-31  Iain Sandoe  <iain@codesourcery.com>
+
+	* config-lang.in (gtfiles): Update list.
+
+2014-05-17  Trevor Saunders  <tsaunders@mozilla.com>
+
+	* objcp-decl.h: Adjust.
+
+2014-04-14  Paolo Carlini  <paolo.carlini@oracle.com>
+
+	* objcp-decl.h (OBJC_TYPE_NAME, OBJC_SET_TYPE_NAME): Use
+	TYPE_IDENTIFIER.
+
+2014-01-02  Richard Sandiford  <rdsandiford@googlemail.com>
+
+	Update copyright years
+
+2013-09-25  Tom Tromey  <tromey@redhat.com>
+
+	* Make-lang.in (START_HDRS, cc1objplus-checksum.o)
+	(objcp/objcp-lang.o, objcp/objcp-decl.o
+	(objcp/objc-runtime-shared-support.o)
+	(objcp/objc-gnu-runtime-abi-01.o objcp/objc-next-runtime-abi-01.o)
+	(objcp/objc-next-runtime-abi-02.o, objcp/objcp-act.o)
+	(objcp/objc-encoding.o, objcp/objc-map.o): Use COMPILE and
+	POSTCOMPILE.  Remove explicit dependencies.
+
+2013-05-16  Jason Merrill  <jason@redhat.com>
+
+	* Make-lang.in (cc1objplus$(exeext)): Use link mutex.
+
+2012-06-02  Jason Merrill  <jason@redhat.com>
+
+	* objcp-decl.c (objcp_start_struct): Adjust for change in
+	begin_class_definition prototype.
+
+2011-10-14  Nicola Pero  <nicola.pero@meta-innovation.com>
+
+	* Make-lang.in (OBJCXX_OBJS): Added objc-map.o.
+	(objcp/objc-map.o): New rule.
+	(objcp/objcp-act.o): Depend on objc/objc-map.h.
+	* config-lang.in (gtfiles): Added objc-map.h.
+
+2011-07-11  Nicola Pero  <nicola.pero@meta-innovation.com>
+
+	* Make-lang.in (objcp/objc-runtime-shared-support.o): Do not
+	depend on OBSTACK_H.
+	(objcp/objc-gnu-runtime-abi-01.o): Likewise.
+	(objcp/objc-next-runtime-abi-01.o): Likewise.
+	(objcp/objc-next-runtime-abi-02.o): Likewise.
+	(objcp/objcp-act.o): Likewise.
+
+2011-07-04  Nicola Pero  <nicola.pero@meta-innovation.com>
+
+	* Make-lang.in (OBJCXX_OBJS): Added objc-encoding.o.
+	(objcp/objcp-lang.o): Reordered dependencies.  Depend on GGC_H.
+	(objcp/objcp-decl.o): Reordered dependencies.
+	(objcp/objc-runtime-shared-support.o): Reordered dependencies.
+	Updated them to be identical to the corresponding new objc/ ones,
+	with the addition of objcp-decl.h.
+	(objcp/objc-runtime-shared-support.o): Likewise.
+	(objcp/objc-gnu-runtime-abi-01.o): Likewise.
+	(objcp/objc-next-runtime-abi-01.o): Likewise.
+	(objcp/objc-next-runtime-abi-02.o): Likewise.
+	(objcp/objcp-act.o): Reordered dependencies.  Added dependency on
+	objc-encoding.h.
+	(objcp/objc-encoding.o): New rule.
+
+2011-04-15  Nicola Pero  <nicola.pero@meta-innovation.com>
+
+	* objcp-decl.c (objcp_finish_struct): Use
+	objc_detect_field_duplicates instead of having a local
+	implementation.
+
+2011-04-12  Nathan Froyd  <froydnj@codesourcery.com>
+
+	* objcp-lang.c (objcxx_init_ts): Call objc_common_init_ts and
+	cp_common_init_ts.
+
+2011-03-21  Nicola Pero  <nicola.pero@meta-innovation.com>
+
+	PR bootstrap/48167
+	* Make-lang.in (START_HDRS): Added CXX_PARSER_H and
+	CXX_PRETTY_PRINT_H.
+	* config-lang.in (gtfiles): Added cp/parser.h and reorganized list
+	so that it is more obvious that it is identical to the C++ one
+	with the addition of some files at the end.
+
+2011-03-06  Joseph Myers  <joseph@codesourcery.com>
+
+	* lang-specs.h: Match -save-temps* instead of -save-temps.
+
+2011-02-20  Nicola Pero  <nicola.pero@meta-innovation.com>
+
+	PR objc++/47711
+	* config-lang.in (gtfiles): Updated list.
+
+2011-02-17  Iain Sandoe  <iains@gcc.gnu.org>
+
+	* Make-lang.in (START_HDRS): New.
+	(OBJCXX_OBJS): Added new object files from objc/.
+	(objcp/objcp-act.o): Updated prerequisites.
+	(objcp/objcp-lang.o): Updated prerequisites.
+	(objcp/objc-runtime-shared-support.o): New.
+	(objcp/objc-gnu-runtime-abi-01.o): New.
+	(objcp/objc-next-runtime-abi-01.o): New.
+	(objcp/objc-next-runtime-abi-02.o): New.
+	* config-lang.in (gtfiles): Updated.
+	* objcp-lang.c (objcxx_eh_personality): Removed.
+	(LANG_HOOKS_EH_PERSONALITY): Removed.
+	(LANG_HOOKS_EH_RUNTIME_TYPE): Removed.
+	(objcp_eh_personality_decl): Removed.
+
+2011-02-07  Mike Stump  <mikestump@comcast.net>
+
+	* Make-lang.in (obj-c++.tags): Don't include *.y.
+
+2010-12-29  Nicola Pero  <nicola.pero@meta-innovation.com>
+
+	* objcp-lang.c (objcp_tsubst_copy_and_build): Update call to
+	objc_finish_message_expr.
+
+2010-12-26  Nicola Pero  <nicola.pero@meta-innovation.com>
+
+	* config-lang.in (gtfiles): Added c-family/c-cppbuiltin.c.
+
+2010-12-06  Nicola Pero  <nicola.pero@meta-innovation.com>
+
+	* config-lang.in (gtfiles): Added c-family/c-objc.h.
+	* Make-lang.in (objcp/objcp-act.o): Depend on
+	c-family/c-objc.h.
+	(objcp/objcp-lang.o): Same change.
+	(objcp/objcp-decl.o): Same change.
+	* objcp-lang.c: Include c-family/c-objc.h.
+	* objcp-decl.c: Same change.
+
+2010-11-23  Nicola Pero  <nicola.pero@meta-innovation.com>
+
+	PR objc/24358
+	* lang-specs.h: Print a deprecation note every time
+	objc++-cpp-output is requested.
+
+2010-10-24  Nicola Pero  <nicola.pero@meta-innovation.com>
+
+	* objcp-lang.c (LANG_HOOKS_DECL_PRINTABLE_NAME): Do not define.
+
+2010-10-20  Nicola Pero  <nicola.pero@meta-innovation.com>
+
+	* objcp-lang.c (finish_file): Removed.
+
+2010-10-14  Iain Sandoe  <iains@gcc.gnu.org>
+
+	merge from FSF apple 'trunk' branch.
+	2006 Fariborz Jahanian  <fjahanian@apple.com>
+
+	Radars 4436866, 4505126, 4506903, 4517826
+	* objcp-lang.c (objcxx_init_ts): Update for property_decl.
+
+2010-10-13  Richard Henderson  <rth@redhat.com>
+
+	* objcp-lang.c (objcxx_eh_personality): Update call to
+	build_personality_function.
+
+2010-10-11  Andi Kleen  <ak@linux.intel.com>
+
+	* Make-lang.in (cc1objplus-checksum.c): Use correct temporary
+	name.
+
+2010-10-07  Andi Kleen  <ak@linux.intel.com>
+
+	* Make-lang.in (cc1objplus-dummy): Remove.
+	(cc1objplus-checksum): Change to run checksum over object files
+	and options only.
+
+2010-10-04  Andi Kleen  <ak@linux.intel.com>
+
+	* Make-lang.in (cc1objplus-dummy, cc1objplus): Add + to build rule.
+
+2010-09-28  Richard Henderson  <rth@redhat.com>
+
+	* objcp-lang.c: Include "target.h".
+	(objcxx_eh_personality): Use targetm.except_unwind_info.
+	* Make-lang.in (objcp-lang.o): Update deps.
+
+2010-09-21  Nicola Pero  <nicola.pero@meta-innovation.com>
+
+	PR objc/25965
+	* objcp-decl.c (objcp_finish_struct): Call
+	objc_get_interface_ivars() and check for duplicate ivars.
+
+2010-06-28  Steven Bosscher  <steven@gcc.gnu.org>
+
+	* objcp-lang.c: Do not include except.h.
+	* Make-lang.in: Update dependencies.
+
+2010-06-25  Joseph Myers  <joseph@codesourcery.com>
+
+	* lang-specs.h: Remove +e handling.
+
+2010-06-08  Laurynas Biveinis  <laurynas.biveinis@gmail.com>
+
+	* objcp-decl.h (ALLOC_OBJC_TYPE_LANG_SPECIFIC): Use typed GC
+	allocation.
+
+2010-06-05  Steven Bosscher  <steven@gcc.gnu.org>
+
+	* objcp-lang.c: Update include path for moved files.
+	* config-lang.in: Update paths in gtfiles for files in c-family/.
+
+2010-05-25  Steven Bosscher  <steven@gcc.gnu.org>
+
+	* objcp-decl.c: Do not include tm.h, rtl.h, expr.h, c-common.h,
+	flags.h, input.h, except.h, output.h, toplev.h, cpplib.h, debug.h,
+	and target.h.
+	* objcp-lang.c: Do not include tm.h, toplev.h, diagnostics.h,
+	and debug.h.  Explain why except.h has to be included.
+	* Make-lang.in: Update dependencies.
+
+2010-04-30  Steven Bosscher  <steven@gcc.gnu.org>
+
+	* objcp-decl.c: Do not include varray.h.
+
+2009-09-22  Richard Guenther  <rguenther@suse.de>
+
+	PR objc++/41430
+	* Make-lang.in (objcp-lang.o): Add $(EXCEPT_H) dependency.
+	* objcp-lang.c (LANG_HOOKS_EH_PERSONALITY): Define.
+	(LANG_HOOKS_EH_RUNTIME_TYPE): Likewise.
+	(objcxx_eh_personality): New function.
+
+2009-09-03  Diego Novillo  <dnovillo@google.com>
+
+	* objcp-lang.c (lang_hooks): Remove const qualifier.
+
+2009-07-14  Taras Glek  <tglek@mozilla.com>
+	    Rafael Espindola  <espindola@google.com>
+
+	* Make-lang.in (obj-c.install-plugin): New target for
+	installing plugin headers.
+
+2009-06-19  Ian Lance Taylor  <iant@google.com>
+
+	* objcp-decl.h (start_struct): Remove in_struct and struct_types
+	parameters.  Add struct_info parameter.
+	(finish_struct): Likewise.
+
+2009-06-13  Aldy Hernandez  <aldyh@redhat.com>
+
+	* objcp-decl.h (start_struct): Add location argument.
+	(finish_struct): Same.
+	(finish_decl): New.
+
+2009-06-12  Aldy Hernandez  <aldyh@redhat.com>
+
+	* objcp-decl.h (c_end_compound_stmt): New argument.
+	* objcp-decl.c (objcp_start_struct): Add argument.
+	(objcp_finish_struct): Same.
+
+2009-06-03  Ian Lance Taylor  <iant@google.com>
+
+	* Make-lang.in (cc1objplus-checksum.o): Depend upon $(CONFIG_H)
+	and $(SYSTEM_H).
+
+2009-05-27  Ian Lance Taylor  <iant@google.com>
+
+	* Make-lang.in (cc1objplus-dummy$(exeext)): Change $(COMPILER) to
+	$(LINKER).
+	(cc1objplus$(exeext)): Likewise.
+
+2009-05-26  Ian Lance Taylor  <iant@google.com>
+
+	* Make-lang.in (cc1objplus-dummy$(exeext)): Use $(COMPILER).
+	(cc1objplus$(exeext), objcp/objcp-act.o): Likwise.
+
+2009-05-10  Ian Lance Taylor  <iant@google.com>
+
+	* objcp-decl.h (start_struct): Add three new, ignored, macro
+	parameters.
+	(finish_struct): Add two new, ignored, macro parameters.
+
+2009-04-21  Joseph Myers  <joseph@codesourcery.com>
+
+	* ChangeLog: Add copyright and license notices.
+
+2008-12-05  Sebastian Pop  <sebastian.pop@amd.com>
+
+	PR bootstrap/38262
+	* Make-lang.in (cc1objplus-dummy, cc1objplus): Add BACKENDLIBS,
+	remove GMPLIBS.
+
+2008-09-17  Andrew Pinski  <andrew_pinski@playstation.sony.com>
+
+	PR objc/37460
+	* objcp-lang.c (LANG_HOOKS_GET_CALLEE_FNDECL): Don't define.
+
+2008-04-03  Tom Tromey  <tromey@redhat.com>
+
+	* Make-lang.in (obj-c++_OBJS): New variable.
+
+2008-03-27  Tom Tromey  <tromey@redhat.com>
+
+	* Make-lang.in: Revert automatic dependency patch.
+
+2008-03-25  Tom Tromey  <tromey@redhat.com>
+
+	* Make-lang.in (obj-c++_OBJS): Rename from objcp_OBJS.
+	(objcp/objcp-act.o): Restore target.
+
+2008-03-25  Tom Tromey  <tromey@redhat.com>
+
+	* Make-lang.in (objcp_OBJS): New variable.
+	(cc1objplus-checksum.o, objcp/objcp-lang.o, objcp/objcp-decl.o,
+	objcp/objcp-act.o): Remove.
+
+2008-03-07  Paolo Bonzini  <bonzini@gnu.org>
+
+	Revert:
+
+	2008-02-07  Andreas Tobler  <andreast-list@fgznet.ch>
+		    Douglas Gregor  <doug.gregor@gmail.com>
+
+	PR bootstrap/35115
+	* objcp-decl.c (objcp_comptypes): Call cp_comptypes, not comptypes.
+
+2008-02-07  Andreas Tobler  <andreast-list@fgznet.ch>
+	    Douglas Gregor  <doug.gregor@gmail.com>
+
+	PR bootstrap/35115
+	* objcp-decl.c (objcp_comptypes): Call cp_comptypes, not comptypes.
+
+2008-02-06  Kaveh R. Ghazi  <ghazi@caip.rutgers.edu>
+
+	PR other/35107
+	* Make-lang.in (cc1objplus-dummy, cc1objplus): Add $(GMPLIBS).
+
+2007-08-02  Nick Clifton  <nickc@redhat.com>
+
+	* Make-lang.in: Change copyright header to refer to version 3 of
+	the GNU General Public License and to point readers at the
+	COPYING3 file and the FSF's license web page.
+	* lang-specs.h, objcp-decl.c, objcp-decl.h, config-lang.in,
+	objcp-lang.c: Likewise.
+
+2007-03-01  Brooks Moses  <brooks.moses@codesourcery.com>
+
+	* Make-lang.in: Add dummy lang.install-pdf target.
+
+2006-10-23  Rafael Ávila de Espíndola  <rafael.espindola@gmail.com>
+
+	* objcp-decl.h (objcp_builtin_function): Remove.
+
+2006-10-10  Brooks Moses  <bmoses@stanford.edu>
+
+	* Make-lang.in: Added empty "obj-c++.pdf" target.
+
+2006-08-20  Mark Mitchell  <mark@codesourcery.com>
+
+	* objcp-lang.c (objcp_tsubst_copy_and_build): Adjust call to
+	tsubst_copy_and_build.
+
+2006-07-28  Volker Reichelt  <reichelt@igpm.rwth-aachen.de>
+
+	* Make-lang.in: Use $(HEADER_H) instead of header.h in dependencies.
+
+2006-07-03  Paolo Bonzini  <bonzini@gnu.org>
+
+	PR other/27063
+	* config-lang.in: Add subdir_requires.
+
+2006-06-30  Jason Merrill  <jason@redhat.com>
+
+	* objcp-decl.c (objcp_start_struct): Pass null attributes argument
+	to begin_class_definition.
+
+2006-05-14  H.J. Lu  <hongjiu.lu@intel.com>
+
+	* Make-lang.in (objcp/objcp-decl.o): Add dependency on
+	$(TARGET_H).
+
+2006-02-20  Rafael Ávila de Espíndola  <rafael.espindola@gmail.com>
+
+	* Make-lang.in (OBJ-C++): Remove
+	(.PHONY): Remove Obj-c++ and obj-C++. Add obj-c++
+
+2005-12-14  Andrew Pinski  <pinskia@physics.uc.edu>
+
+	* Make-lang.in (objcp/objcp-decl.o): Add depends on $(EXPR_H).
+
+2005-12-07  Rafael Ávila de Espíndola  <rafael.espindola@gmail.com>
+
+	* Make-lang.in (obj-c++.all.build, obj-c++.install-normal): Remove.
+
+2005-12-07  Rafael Ávila de Espíndola  <rafael.espindola@gmail.com>
+
+	* Make-lang.in: Remove all dependencies on s-gtype.
+
+2005-11-22  Andrew Pinski  <pinskia@physics.uc.edu>
+
+	* objcp-decl.c (objcp_lookup_name): Remove.
+	* objcp-decl.h (objcp_lookup_name): Delete.
+	(lookup_name): Kill define.
+
+2005-09-11  Richard Henderson  <rth@redhat.com>
+
+	* objcp-lang.c (objcxx_init_ts): Remove ALIAS_DECL.
+
+2005-07-09  Andrew Pinski  <pinskia@physics.uc.edu>
+
+	* config-lang.in (gtfiles): Add cp-objcp-common.c.
+	* objcp-lang.c (objcxx_init_ts): New function.
+	(LANG_HOOKS_INIT_TS): Define.
+
+2005-07-03  Kazu Hirata  <kazu@codesourcery.com>
+
+	* Make-lang.in (cc1plus-checksum.c): Use
+	build/genchecksum$(build_exeext), not build/genchecksum$(exeext).
+
+2005-06-30  Zack Weinberg  <zack@codesourcery.com>
+	    Jakub Jelinek  <jakub@redhat.com>
+
+	* objcp-lang.c: No need to include cxx-pretty-print.h.
+	* Make-lang.in: Update dependencies.
+
+2005-06-25  Kelley Cook  <kcook@gcc.gnu.org>
+
+	* all files: Update FSF in copyright headers.
+
+2005-06-20  Ziemowit Laski  <zlaski@apple.com>
+
+	* config-lang.in (gtfiles): Add cp/rtti.c.
+
+2005-05-24  Ziemowit Laski  <zlaski@apple.com>
+
+	* objcp-decl.c (objcp_start_struct, objcp_xref_tag): Adjust
+	call to xref_tag().
+	(objcp_build_component_ref): Remove function.
+	* objcp-decl.h (objcp_build_component_ref): Remove prototype.
+	(build_component_ref): Remove macro.
+	* objcp-lang.c (LANG_HOOKS_TYPES_COMPATIBLE_P): Remove.
+
+2005-05-18  Geoffrey Keating  <geoffk@apple.com>
+
+	* Make-lang.in (cc1objplus-dummy): New.
+	(cc1objplus-checksum.c): New.
+	(cc1objplus-checksum.o): New.
+	(cc1objplus): Add cc1objplus-checksum.o.
+
+2005-05-17  Ziemowit Laski  <zlaski@apple.com>
+	    Mike Stump  <mrs@apple.com>
+
+	Yet more Objective-C++...
+
+	* Make-lang.in (objcp/objcp-lang.o): Add tree-gimple.h
+	(objcp/objcp-decl.o): Likewise.
+	(objcp/objcp-act.o): Likewise.
+	* objcp-lang.c (LANG_HOOKS_GIMPLIFY_EXPR): Add.
+
+2005-04-21  Ziemowit Laski  <zlaski@apple.com>
+	    Mike Stump  <mrs@apple.com>
+
+	* ChangeLog: New.
+	* Make-lang.in: Likewise.
+	* config-lang.in: Likewise.
+	* lang-specs.h: Likewise.
+	* objcp-decl.c: Likewise.
+	* objcp-decl.h: Likewise.
+	* objcp-lang.c: Likewise.
+
+Copyright (C) 2005-2026 Free Software Foundation, Inc.
+
+Copying and distribution of this file, with or without modification,
+are permitted in any medium without royalty provided the copyright
+notice and this notice are preserved.

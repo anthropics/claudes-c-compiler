@@ -1,0 +1,341 @@
+#   Copyright (C) 2009-2026 Free Software Foundation, Inc.
+
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with GCC; see the file COPYING3.  If not see
+# <http://www.gnu.org/licenses/>.
+
+global gdb_tests
+set gdb_tests {}
+
+# Scan a file for markers and fill in the gdb_marker array for that
+# file.  Any error in this script is simply thrown; errors here are
+# programming errors in the test suite itself and should not be
+# caught.
+proc scan_gdb_markers {filename} {
+    global gdb_markers
+
+    if {[info exists gdb_markers($filename,-)]} {
+	return
+    }
+
+    set fd [open $filename]
+    set lineno 1
+    while {! [eof $fd]} {
+	set line [gets $fd]
+	if {[regexp -- "Mark (\[a-zA-Z0-9\]+)" $line ignore marker]} {
+	    set gdb_markers($filename,$marker) $lineno
+	}
+	incr lineno
+    }
+    close $fd
+
+    set gdb_markers($filename,-) {}
+}
+
+# Find a marker in a source file, and return the marker's line number.
+proc get_line_number {filename marker} {
+    global gdb_markers
+
+    scan_gdb_markers $filename
+    return $gdb_markers($filename,$marker)
+}
+
+proc register_gdb_test {var result kind rexp selector} {
+    global gdb_tests
+
+    set xfail 0
+    if {[string length $selector] > 0} {
+	switch [dg-process-target $selector] {
+	    "N" { return }
+	    "S" { }
+	    "P" { }
+	    "F" { set xfail 1 }
+	}
+    }
+
+    lappend gdb_tests $var $result $kind $rexp $xfail
+}
+
+# Make note of a gdb test.  A test consists of a variable name and an
+# expected result, and an optional target selector.
+proc note-test {var result {selector {}}} {
+    register_gdb_test $var $result print 0 $selector
+}
+
+# A test that uses a regular expression.  This is like note-test, but
+# the result is a regular expression that is matched against the
+# output.
+proc regexp-test {var result {selector {}}} {
+    register_gdb_test $var $result print 1 $selector
+}
+
+# A test of 'whatis'.  This tests a type rather than a variable.
+proc whatis-test {var result {selector {}}} {
+    register_gdb_test $var $result whatis 0 $selector
+}
+
+# A test of 'whatis' that uses a regular expression. This tests a type rather
+# than a variable.
+proc whatis-regexp-test {var result {selector {}}} {
+    register_gdb_test $var $result whatis 1 $selector
+}
+
+# Utility for testing variable values using gdb, invoked via dg-final.
+# Tests all tests indicated by note-test, whatis-test, and the regexp versions.
+#
+# Argument 0 is the marker on which to put a breakpoint
+# Argument 2 handles expected failures and the like
+proc gdb-test { marker {selector {}} {load_xmethods 0} } {
+    if { ![isnative] || [is_remote target] } { return }
+
+    if {[string length $selector] > 0} {
+	switch [dg-process-target $selector] {
+	    "S" { }
+	    "N" { return }
+	    "F" { setup_xfail "*-*-*" }
+	    "P" { }
+	}
+    }
+
+    # A very old version of gdb will not have the type_printers
+    # global.  Some organizations may ship a gdb that has some default
+    # type printers, so accept any list output as indication that the
+    # global exists.
+    set do_whatis_tests [gdb_batch_check "python print(gdb.type_printers)" \
+			   "\\\[.+"]
+    if {!$do_whatis_tests} {
+	send_log "skipping 'whatis' tests - gdb too old"
+    }
+
+    # This assumes that we are three frames down from dg-test, and that
+    # it still stores the filename of the testcase in a local variable "name".
+    # A cleaner solution would require a new DejaGnu release.
+    upvar 2 name testcase
+    upvar 2 prog prog
+
+    set line [get_line_number $prog $marker]
+
+    set gdb_name $::env(GUALITY_GDB_NAME)
+    set testname "$testcase"
+    set output_file "[file rootname [file tail $prog]].exe"
+    set cmd_file "[file rootname [file tail $prog]].gdb"
+
+    global srcdir
+    set printer_code [file join $srcdir .. python libstdcxx v6 printers.py]
+    set xmethod_code [file join $srcdir .. python libstdcxx v6 xmethods.py]
+
+    global gdb_tests
+
+    set fd [open $cmd_file "w"]
+    # We don't want the system copy of the pretty-printers loaded
+    puts $fd "set auto-load no"
+    # Now that we've disabled auto-load, it's safe to set the target file
+    puts $fd "file ./$output_file"
+    # See the full backtrace of any failures.
+    puts $fd "set python print-stack full"
+    # Load & register *our* copy of the pretty-printers
+    puts $fd "source $printer_code"
+    puts $fd "python register_libstdcxx_printers(None)"
+    if { $load_xmethods } {
+	# Load a& register xmethods.
+	puts $fd "source $xmethod_code"
+	puts $fd "python register_libstdcxx_xmethods(None)"
+    }
+    # And start the program
+    puts $fd "break $line"
+    puts $fd "run"
+    # So we can verify that we're using the right libs ...
+    puts $fd "info share"
+
+    set count 0
+    foreach {var result kind rexp xfail} $gdb_tests {
+	incr count
+	set gdb_var($count) $var
+	set gdb_expected($count) $result
+	if {$kind == "whatis"} {
+	    if {$do_whatis_tests} {
+		set gdb_is_type($count) 1
+		set gdb_is_regexp($count) $rexp
+		set gdb_is_xfail($count) $xfail
+		set gdb_command($count) "whatis $var"
+	    } else {
+	        unsupported "$testname"
+	        close $fd
+	        return
+	    }
+	} else {
+	    set gdb_is_type($count) 0
+	    set gdb_is_regexp($count) $rexp
+	    set gdb_is_xfail($count) $xfail
+	    set gdb_command($count) "print $var"
+	}
+	puts $fd $gdb_command($count)
+    }
+    set gdb_tests {}
+
+    puts $fd "quit"
+    close $fd
+
+    set res [remote_spawn target "$gdb_name -nx -nw -quiet -batch -x $cmd_file "]
+    if { $res < 0 || $res == "" } {
+	unsupported "$testname"
+	return
+    }
+
+    set test_counter 0
+    remote_expect target [timeout_value] {
+	-re {^[\n\r]*(type|\$([0-9]+)) = ([^\n\r]*)[\n\r]+} {
+	    # Escape newlines so that we can print them.
+	    set escaped [string map {"\n" "\\n"} $expect_out(buffer)]
+	    set escaped2 [string map {"\r" "\\r"} $escaped]
+	    send_log "got: $escaped2"
+
+	    incr test_counter
+	    set first $expect_out(3,string)
+
+	    if {$gdb_is_type($test_counter)} {
+		if {$expect_out(1,string) != "type"} {
+		    error "gdb failure"
+		}
+	    }
+
+	    if {$gdb_is_regexp($test_counter)} {
+		set match [regexp -- $gdb_expected($test_counter) $first]
+	    } else {
+		set match [expr {![string compare $first \
+				     $gdb_expected($test_counter)]}]
+	    }
+
+	    if {$match} {
+		if {$gdb_is_xfail($test_counter)} {
+		    xpass "$testname $gdb_command($test_counter)"
+		    verbose " matched =>$first<="
+		} else {
+		    pass "$testname $gdb_command($test_counter)"
+		}
+	    } else {
+		if {$gdb_is_xfail($test_counter)} {
+		    xfail "$testname $gdb_command($test_counter)"
+		} else {
+		    fail "$testname $gdb_command($test_counter)"
+		    verbose "     got =>$first<="
+		    verbose "expected =>$gdb_expected($test_counter)<="
+		}
+	    }
+
+	    if {$test_counter == $count} {
+		remote_close target
+		return
+	    } else {
+		exp_continue
+	    }
+	}
+
+	-re {Python scripting is not supported in this copy of GDB.[\n\r]+} {
+	    unsupported "$testname"
+	    remote_close target
+	    return
+	}
+
+	-re {Error while executing Python code.[\n\r]} {
+	    fail "$testname"
+	    remote_close target
+	    return
+	}
+
+	-re {^[^$][^\n\r]*[\n\r]+} {
+	    # Escape newlines so that we can print them.
+	    set escaped [string map {"\n" "\\n"} $expect_out(buffer)]
+	    set escaped2 [string map {"\r" "\\r"} $escaped]
+	    send_log "skipping: $escaped2"
+	    exp_continue
+	}
+
+	timeout {
+	    unsupported "$testname"
+	    remote_close target
+	    return
+	}
+    }
+
+    remote_close target
+    unsupported "$testname"
+    return
+}
+
+# Invoke gdb with a command and pattern-match the output.
+proc gdb_batch_check {command pattern} {
+    set gdb_name $::env(GUALITY_GDB_NAME)
+    set cmd "$gdb_name -nw -nx -quiet -batch -ex \"$command\""
+    send_log "Spawning: $cmd\n"
+    if [catch { set res [remote_spawn target "$cmd"] } ] {
+	return 0
+    }
+    if { $res < 0 || $res == "" } {
+	return 0
+    }
+
+    remote_expect target [timeout_value] {
+	-re $pattern {
+	    return 1
+	}
+
+	-re {^[^\n\r]*[\n\r]+} {
+	    verbose "skipping: $expect_out(buffer)"
+	    exp_continue
+	}
+
+	timeout {
+	    remote_close target
+	    return 0
+	}
+    }
+
+    remote_close target
+    return 0
+}
+
+# Check for a new-enough version of gdb.  The pretty-printer tests
+# require gdb 7.3, but we don't want to test versions, so instead we
+# check for the python "lookup_global_symbol" method, which is in 7.3
+# but not earlier versions.
+# Return 1 if the version is ok, 0 otherwise.
+proc gdb_version_check {} {
+    if { ![isnative] || [is_remote target] } { return 0 }
+
+    return [gdb_batch_check "python print(gdb.lookup_global_symbol)" \
+	      "<built-in function lookup_global_symbol>"]
+}
+
+# Check for a version of gdb which supports xmethod tests.  It is done
+# in a manner similar to the check for a version of gdb which supports the
+# pretty-printer tests below.
+proc gdb_version_check_xmethods {} {
+    if { ![isnative] || [is_remote target] } { return 0 }
+
+    return [gdb_batch_check \
+	      "python import gdb.xmethod; print(gdb.xmethod.XMethod)" \
+	      "<class 'gdb\\.xmethod\\.XMethod'>"]
+}
+
+# Like dg-runtest but keep the .exe around.  dg-test has an option for
+# this but there is no way to pass it through dg-runtest.
+proc gdb-dg-runtest {args} {
+  global dg-interpreter-batch-mode
+  set saved-dg-interpreter-batch-mode ${dg-interpreter-batch-mode}
+  set dg-interpreter-batch-mode 1
+
+  eval dg-runtest $args
+
+  set dg-interpreter-batch-mode ${saved-dg-interpreter-batch-mode}
+}

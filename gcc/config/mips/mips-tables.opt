@@ -1,0 +1,716 @@
+; -*- buffer-read-only: t -*-
+; Generated automatically by genopt.sh from mips-cpus.def.
+
+; Copyright (C) 2011-2026 Free Software Foundation, Inc.
+;
+; This file is part of GCC.
+;
+; GCC is free software; you can redistribute it and/or modify it under
+; the terms of the GNU General Public License as published by the Free
+; Software Foundation; either version 3, or (at your option) any later
+; version.
+;
+; GCC is distributed in the hope that it will be useful, but WITHOUT ANY
+; WARRANTY; without even the implied warranty of MERCHANTABILITY or
+; FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+; for more details.
+;
+; You should have received a copy of the GNU General Public License
+; along with GCC; see the file COPYING3.  If not see
+; <http://www.gnu.org/licenses/>.
+
+Enum
+Name(mips_arch_opt_value) Type(int)
+Known MIPS CPUs (for use with the -march= and -mtune= options):
+
+Enum
+Name(mips_mips_opt_value) Type(int)
+Known MIPS ISA levels (for use with the -mips option):
+
+EnumValue
+Enum(mips_arch_opt_value) String(from-abi) Value(MIPS_ARCH_OPTION_FROM_ABI)
+
+EnumValue
+Enum(mips_arch_opt_value) String(native) Value(MIPS_ARCH_OPTION_NATIVE) DriverOnly
+
+EnumValue
+Enum(mips_arch_opt_value) String(mips1) Value(0) Canonical
+
+EnumValue
+Enum(mips_mips_opt_value) String(1) Value(0)
+
+EnumValue
+Enum(mips_arch_opt_value) String(mips2) Value(1) Canonical
+
+EnumValue
+Enum(mips_mips_opt_value) String(2) Value(1)
+
+EnumValue
+Enum(mips_arch_opt_value) String(mips3) Value(2) Canonical
+
+EnumValue
+Enum(mips_mips_opt_value) String(3) Value(2)
+
+EnumValue
+Enum(mips_arch_opt_value) String(mips4) Value(3) Canonical
+
+EnumValue
+Enum(mips_mips_opt_value) String(4) Value(3)
+
+EnumValue
+Enum(mips_arch_opt_value) String(mips32) Value(4) Canonical
+
+EnumValue
+Enum(mips_mips_opt_value) String(32) Value(4)
+
+EnumValue
+Enum(mips_arch_opt_value) String(mips32r2) Value(5) Canonical
+
+EnumValue
+Enum(mips_mips_opt_value) String(32r2) Value(5)
+
+EnumValue
+Enum(mips_arch_opt_value) String(mips32r3) Value(6) Canonical
+
+EnumValue
+Enum(mips_mips_opt_value) String(32r3) Value(6)
+
+EnumValue
+Enum(mips_arch_opt_value) String(mips32r5) Value(7) Canonical
+
+EnumValue
+Enum(mips_mips_opt_value) String(32r5) Value(7)
+
+EnumValue
+Enum(mips_arch_opt_value) String(mips32r6) Value(8) Canonical
+
+EnumValue
+Enum(mips_mips_opt_value) String(32r6) Value(8)
+
+EnumValue
+Enum(mips_arch_opt_value) String(mips64) Value(9) Canonical
+
+EnumValue
+Enum(mips_mips_opt_value) String(64) Value(9)
+
+EnumValue
+Enum(mips_arch_opt_value) String(mips64r2) Value(10) Canonical
+
+EnumValue
+Enum(mips_mips_opt_value) String(64r2) Value(10)
+
+EnumValue
+Enum(mips_arch_opt_value) String(mips64r3) Value(11) Canonical
+
+EnumValue
+Enum(mips_mips_opt_value) String(64r3) Value(11)
+
+EnumValue
+Enum(mips_arch_opt_value) String(mips64r5) Value(12) Canonical
+
+EnumValue
+Enum(mips_mips_opt_value) String(64r5) Value(12)
+
+EnumValue
+Enum(mips_arch_opt_value) String(mips64r6) Value(13) Canonical
+
+EnumValue
+Enum(mips_mips_opt_value) String(64r6) Value(13)
+
+EnumValue
+Enum(mips_arch_opt_value) String(r3000) Value(14) Canonical
+
+EnumValue
+Enum(mips_arch_opt_value) String(r3k) Value(14)
+
+EnumValue
+Enum(mips_arch_opt_value) String(3000) Value(14)
+
+EnumValue
+Enum(mips_arch_opt_value) String(3k) Value(14)
+
+EnumValue
+Enum(mips_arch_opt_value) String(r2000) Value(15) Canonical
+
+EnumValue
+Enum(mips_arch_opt_value) String(r2k) Value(15)
+
+EnumValue
+Enum(mips_arch_opt_value) String(2000) Value(15)
+
+EnumValue
+Enum(mips_arch_opt_value) String(2k) Value(15)
+
+EnumValue
+Enum(mips_arch_opt_value) String(r3900) Value(16) Canonical
+
+EnumValue
+Enum(mips_arch_opt_value) String(3900) Value(16)
+
+EnumValue
+Enum(mips_arch_opt_value) String(r6000) Value(17) Canonical
+
+EnumValue
+Enum(mips_arch_opt_value) String(r6k) Value(17)
+
+EnumValue
+Enum(mips_arch_opt_value) String(6000) Value(17)
+
+EnumValue
+Enum(mips_arch_opt_value) String(6k) Value(17)
+
+EnumValue
+Enum(mips_arch_opt_value) String(allegrex) Value(18) Canonical
+
+EnumValue
+Enum(mips_arch_opt_value) String(r4000) Value(19) Canonical
+
+EnumValue
+Enum(mips_arch_opt_value) String(r4k) Value(19)
+
+EnumValue
+Enum(mips_arch_opt_value) String(4000) Value(19)
+
+EnumValue
+Enum(mips_arch_opt_value) String(4k) Value(19)
+
+EnumValue
+Enum(mips_arch_opt_value) String(vr4100) Value(20) Canonical
+
+EnumValue
+Enum(mips_arch_opt_value) String(4100) Value(20)
+
+EnumValue
+Enum(mips_arch_opt_value) String(r4100) Value(20)
+
+EnumValue
+Enum(mips_arch_opt_value) String(vr4111) Value(21) Canonical
+
+EnumValue
+Enum(mips_arch_opt_value) String(4111) Value(21)
+
+EnumValue
+Enum(mips_arch_opt_value) String(r4111) Value(21)
+
+EnumValue
+Enum(mips_arch_opt_value) String(vr4120) Value(22) Canonical
+
+EnumValue
+Enum(mips_arch_opt_value) String(4120) Value(22)
+
+EnumValue
+Enum(mips_arch_opt_value) String(r4120) Value(22)
+
+EnumValue
+Enum(mips_arch_opt_value) String(vr4130) Value(23) Canonical
+
+EnumValue
+Enum(mips_arch_opt_value) String(4130) Value(23)
+
+EnumValue
+Enum(mips_arch_opt_value) String(r4130) Value(23)
+
+EnumValue
+Enum(mips_arch_opt_value) String(vr4300) Value(24) Canonical
+
+EnumValue
+Enum(mips_arch_opt_value) String(4300) Value(24)
+
+EnumValue
+Enum(mips_arch_opt_value) String(r4300) Value(24)
+
+EnumValue
+Enum(mips_arch_opt_value) String(r4400) Value(25) Canonical
+
+EnumValue
+Enum(mips_arch_opt_value) String(4400) Value(25)
+
+EnumValue
+Enum(mips_arch_opt_value) String(r4600) Value(26) Canonical
+
+EnumValue
+Enum(mips_arch_opt_value) String(4600) Value(26)
+
+EnumValue
+Enum(mips_arch_opt_value) String(orion) Value(27) Canonical
+
+EnumValue
+Enum(mips_arch_opt_value) String(r4650) Value(28) Canonical
+
+EnumValue
+Enum(mips_arch_opt_value) String(4650) Value(28)
+
+EnumValue
+Enum(mips_arch_opt_value) String(r4700) Value(29) Canonical
+
+EnumValue
+Enum(mips_arch_opt_value) String(4700) Value(29)
+
+EnumValue
+Enum(mips_arch_opt_value) String(r5900) Value(30) Canonical
+
+EnumValue
+Enum(mips_arch_opt_value) String(5900) Value(30)
+
+EnumValue
+Enum(mips_arch_opt_value) String(loongson2e) Value(31) Canonical
+
+EnumValue
+Enum(mips_arch_opt_value) String(loongson2f) Value(32) Canonical
+
+EnumValue
+Enum(mips_arch_opt_value) String(r8000) Value(33) Canonical
+
+EnumValue
+Enum(mips_arch_opt_value) String(r8k) Value(33)
+
+EnumValue
+Enum(mips_arch_opt_value) String(8000) Value(33)
+
+EnumValue
+Enum(mips_arch_opt_value) String(8k) Value(33)
+
+EnumValue
+Enum(mips_arch_opt_value) String(r10000) Value(34) Canonical
+
+EnumValue
+Enum(mips_arch_opt_value) String(r10k) Value(34)
+
+EnumValue
+Enum(mips_arch_opt_value) String(10000) Value(34)
+
+EnumValue
+Enum(mips_arch_opt_value) String(10k) Value(34)
+
+EnumValue
+Enum(mips_arch_opt_value) String(r12000) Value(35) Canonical
+
+EnumValue
+Enum(mips_arch_opt_value) String(r12k) Value(35)
+
+EnumValue
+Enum(mips_arch_opt_value) String(12000) Value(35)
+
+EnumValue
+Enum(mips_arch_opt_value) String(12k) Value(35)
+
+EnumValue
+Enum(mips_arch_opt_value) String(r14000) Value(36) Canonical
+
+EnumValue
+Enum(mips_arch_opt_value) String(r14k) Value(36)
+
+EnumValue
+Enum(mips_arch_opt_value) String(14000) Value(36)
+
+EnumValue
+Enum(mips_arch_opt_value) String(14k) Value(36)
+
+EnumValue
+Enum(mips_arch_opt_value) String(r16000) Value(37) Canonical
+
+EnumValue
+Enum(mips_arch_opt_value) String(r16k) Value(37)
+
+EnumValue
+Enum(mips_arch_opt_value) String(16000) Value(37)
+
+EnumValue
+Enum(mips_arch_opt_value) String(16k) Value(37)
+
+EnumValue
+Enum(mips_arch_opt_value) String(vr5000) Value(38) Canonical
+
+EnumValue
+Enum(mips_arch_opt_value) String(vr5k) Value(38)
+
+EnumValue
+Enum(mips_arch_opt_value) String(5000) Value(38)
+
+EnumValue
+Enum(mips_arch_opt_value) String(5k) Value(38)
+
+EnumValue
+Enum(mips_arch_opt_value) String(r5000) Value(38)
+
+EnumValue
+Enum(mips_arch_opt_value) String(r5k) Value(38)
+
+EnumValue
+Enum(mips_arch_opt_value) String(vr5400) Value(39) Canonical
+
+EnumValue
+Enum(mips_arch_opt_value) String(5400) Value(39)
+
+EnumValue
+Enum(mips_arch_opt_value) String(r5400) Value(39)
+
+EnumValue
+Enum(mips_arch_opt_value) String(vr5500) Value(40) Canonical
+
+EnumValue
+Enum(mips_arch_opt_value) String(5500) Value(40)
+
+EnumValue
+Enum(mips_arch_opt_value) String(r5500) Value(40)
+
+EnumValue
+Enum(mips_arch_opt_value) String(rm7000) Value(41) Canonical
+
+EnumValue
+Enum(mips_arch_opt_value) String(rm7k) Value(41)
+
+EnumValue
+Enum(mips_arch_opt_value) String(7000) Value(41)
+
+EnumValue
+Enum(mips_arch_opt_value) String(7k) Value(41)
+
+EnumValue
+Enum(mips_arch_opt_value) String(r7000) Value(41)
+
+EnumValue
+Enum(mips_arch_opt_value) String(r7k) Value(41)
+
+EnumValue
+Enum(mips_arch_opt_value) String(rm9000) Value(42) Canonical
+
+EnumValue
+Enum(mips_arch_opt_value) String(rm9k) Value(42)
+
+EnumValue
+Enum(mips_arch_opt_value) String(9000) Value(42)
+
+EnumValue
+Enum(mips_arch_opt_value) String(9k) Value(42)
+
+EnumValue
+Enum(mips_arch_opt_value) String(r9000) Value(42)
+
+EnumValue
+Enum(mips_arch_opt_value) String(r9k) Value(42)
+
+EnumValue
+Enum(mips_arch_opt_value) String(4kc) Value(43) Canonical
+
+EnumValue
+Enum(mips_arch_opt_value) String(r4kc) Value(43)
+
+EnumValue
+Enum(mips_arch_opt_value) String(4km) Value(44) Canonical
+
+EnumValue
+Enum(mips_arch_opt_value) String(r4km) Value(44)
+
+EnumValue
+Enum(mips_arch_opt_value) String(4kp) Value(45) Canonical
+
+EnumValue
+Enum(mips_arch_opt_value) String(r4kp) Value(45)
+
+EnumValue
+Enum(mips_arch_opt_value) String(4ksc) Value(46) Canonical
+
+EnumValue
+Enum(mips_arch_opt_value) String(r4ksc) Value(46)
+
+EnumValue
+Enum(mips_arch_opt_value) String(m4k) Value(47) Canonical
+
+EnumValue
+Enum(mips_arch_opt_value) String(m14kc) Value(48) Canonical
+
+EnumValue
+Enum(mips_arch_opt_value) String(m14k) Value(49) Canonical
+
+EnumValue
+Enum(mips_arch_opt_value) String(m14ke) Value(50) Canonical
+
+EnumValue
+Enum(mips_arch_opt_value) String(m14kec) Value(51) Canonical
+
+EnumValue
+Enum(mips_arch_opt_value) String(4kec) Value(52) Canonical
+
+EnumValue
+Enum(mips_arch_opt_value) String(r4kec) Value(52)
+
+EnumValue
+Enum(mips_arch_opt_value) String(4kem) Value(53) Canonical
+
+EnumValue
+Enum(mips_arch_opt_value) String(r4kem) Value(53)
+
+EnumValue
+Enum(mips_arch_opt_value) String(4kep) Value(54) Canonical
+
+EnumValue
+Enum(mips_arch_opt_value) String(r4kep) Value(54)
+
+EnumValue
+Enum(mips_arch_opt_value) String(4ksd) Value(55) Canonical
+
+EnumValue
+Enum(mips_arch_opt_value) String(r4ksd) Value(55)
+
+EnumValue
+Enum(mips_arch_opt_value) String(24kc) Value(56) Canonical
+
+EnumValue
+Enum(mips_arch_opt_value) String(r24kc) Value(56)
+
+EnumValue
+Enum(mips_arch_opt_value) String(24kf2_1) Value(57) Canonical
+
+EnumValue
+Enum(mips_arch_opt_value) String(r24kf2_1) Value(57)
+
+EnumValue
+Enum(mips_arch_opt_value) String(24kf) Value(58) Canonical
+
+EnumValue
+Enum(mips_arch_opt_value) String(r24kf) Value(58)
+
+EnumValue
+Enum(mips_arch_opt_value) String(24kf1_1) Value(59) Canonical
+
+EnumValue
+Enum(mips_arch_opt_value) String(r24kf1_1) Value(59)
+
+EnumValue
+Enum(mips_arch_opt_value) String(24kfx) Value(60) Canonical
+
+EnumValue
+Enum(mips_arch_opt_value) String(r24kfx) Value(60)
+
+EnumValue
+Enum(mips_arch_opt_value) String(24kx) Value(61) Canonical
+
+EnumValue
+Enum(mips_arch_opt_value) String(r24kx) Value(61)
+
+EnumValue
+Enum(mips_arch_opt_value) String(24kec) Value(62) Canonical
+
+EnumValue
+Enum(mips_arch_opt_value) String(r24kec) Value(62)
+
+EnumValue
+Enum(mips_arch_opt_value) String(24kef2_1) Value(63) Canonical
+
+EnumValue
+Enum(mips_arch_opt_value) String(r24kef2_1) Value(63)
+
+EnumValue
+Enum(mips_arch_opt_value) String(24kef) Value(64) Canonical
+
+EnumValue
+Enum(mips_arch_opt_value) String(r24kef) Value(64)
+
+EnumValue
+Enum(mips_arch_opt_value) String(24kef1_1) Value(65) Canonical
+
+EnumValue
+Enum(mips_arch_opt_value) String(r24kef1_1) Value(65)
+
+EnumValue
+Enum(mips_arch_opt_value) String(24kefx) Value(66) Canonical
+
+EnumValue
+Enum(mips_arch_opt_value) String(r24kefx) Value(66)
+
+EnumValue
+Enum(mips_arch_opt_value) String(24kex) Value(67) Canonical
+
+EnumValue
+Enum(mips_arch_opt_value) String(r24kex) Value(67)
+
+EnumValue
+Enum(mips_arch_opt_value) String(34kc) Value(68) Canonical
+
+EnumValue
+Enum(mips_arch_opt_value) String(r34kc) Value(68)
+
+EnumValue
+Enum(mips_arch_opt_value) String(34kf2_1) Value(69) Canonical
+
+EnumValue
+Enum(mips_arch_opt_value) String(r34kf2_1) Value(69)
+
+EnumValue
+Enum(mips_arch_opt_value) String(34kf) Value(70) Canonical
+
+EnumValue
+Enum(mips_arch_opt_value) String(r34kf) Value(70)
+
+EnumValue
+Enum(mips_arch_opt_value) String(34kf1_1) Value(71) Canonical
+
+EnumValue
+Enum(mips_arch_opt_value) String(r34kf1_1) Value(71)
+
+EnumValue
+Enum(mips_arch_opt_value) String(34kfx) Value(72) Canonical
+
+EnumValue
+Enum(mips_arch_opt_value) String(r34kfx) Value(72)
+
+EnumValue
+Enum(mips_arch_opt_value) String(34kx) Value(73) Canonical
+
+EnumValue
+Enum(mips_arch_opt_value) String(r34kx) Value(73)
+
+EnumValue
+Enum(mips_arch_opt_value) String(34kn) Value(74) Canonical
+
+EnumValue
+Enum(mips_arch_opt_value) String(r34kn) Value(74)
+
+EnumValue
+Enum(mips_arch_opt_value) String(74kc) Value(75) Canonical
+
+EnumValue
+Enum(mips_arch_opt_value) String(r74kc) Value(75)
+
+EnumValue
+Enum(mips_arch_opt_value) String(74kf2_1) Value(76) Canonical
+
+EnumValue
+Enum(mips_arch_opt_value) String(r74kf2_1) Value(76)
+
+EnumValue
+Enum(mips_arch_opt_value) String(74kf) Value(77) Canonical
+
+EnumValue
+Enum(mips_arch_opt_value) String(r74kf) Value(77)
+
+EnumValue
+Enum(mips_arch_opt_value) String(74kf1_1) Value(78) Canonical
+
+EnumValue
+Enum(mips_arch_opt_value) String(r74kf1_1) Value(78)
+
+EnumValue
+Enum(mips_arch_opt_value) String(74kfx) Value(79) Canonical
+
+EnumValue
+Enum(mips_arch_opt_value) String(r74kfx) Value(79)
+
+EnumValue
+Enum(mips_arch_opt_value) String(74kx) Value(80) Canonical
+
+EnumValue
+Enum(mips_arch_opt_value) String(r74kx) Value(80)
+
+EnumValue
+Enum(mips_arch_opt_value) String(74kf3_2) Value(81) Canonical
+
+EnumValue
+Enum(mips_arch_opt_value) String(r74kf3_2) Value(81)
+
+EnumValue
+Enum(mips_arch_opt_value) String(1004kc) Value(82) Canonical
+
+EnumValue
+Enum(mips_arch_opt_value) String(r1004kc) Value(82)
+
+EnumValue
+Enum(mips_arch_opt_value) String(1004kf2_1) Value(83) Canonical
+
+EnumValue
+Enum(mips_arch_opt_value) String(r1004kf2_1) Value(83)
+
+EnumValue
+Enum(mips_arch_opt_value) String(1004kf) Value(84) Canonical
+
+EnumValue
+Enum(mips_arch_opt_value) String(r1004kf) Value(84)
+
+EnumValue
+Enum(mips_arch_opt_value) String(1004kf1_1) Value(85) Canonical
+
+EnumValue
+Enum(mips_arch_opt_value) String(r1004kf1_1) Value(85)
+
+EnumValue
+Enum(mips_arch_opt_value) String(interaptiv) Value(86) Canonical
+
+EnumValue
+Enum(mips_arch_opt_value) String(p5600) Value(87) Canonical
+
+EnumValue
+Enum(mips_arch_opt_value) String(m5100) Value(88) Canonical
+
+EnumValue
+Enum(mips_arch_opt_value) String(m5101) Value(89) Canonical
+
+EnumValue
+Enum(mips_arch_opt_value) String(5kc) Value(90) Canonical
+
+EnumValue
+Enum(mips_arch_opt_value) String(r5kc) Value(90)
+
+EnumValue
+Enum(mips_arch_opt_value) String(5kf) Value(91) Canonical
+
+EnumValue
+Enum(mips_arch_opt_value) String(r5kf) Value(91)
+
+EnumValue
+Enum(mips_arch_opt_value) String(20kc) Value(92) Canonical
+
+EnumValue
+Enum(mips_arch_opt_value) String(r20kc) Value(92)
+
+EnumValue
+Enum(mips_arch_opt_value) String(sb1) Value(93) Canonical
+
+EnumValue
+Enum(mips_arch_opt_value) String(sb1a) Value(94) Canonical
+
+EnumValue
+Enum(mips_arch_opt_value) String(sr71000) Value(95) Canonical
+
+EnumValue
+Enum(mips_arch_opt_value) String(sr71k) Value(95)
+
+EnumValue
+Enum(mips_arch_opt_value) String(xlr) Value(96) Canonical
+
+EnumValue
+Enum(mips_arch_opt_value) String(loongson3a) Value(97) Canonical
+
+EnumValue
+Enum(mips_arch_opt_value) String(gs464) Value(98) Canonical
+
+EnumValue
+Enum(mips_arch_opt_value) String(gs464e) Value(99) Canonical
+
+EnumValue
+Enum(mips_arch_opt_value) String(gs264e) Value(100) Canonical
+
+EnumValue
+Enum(mips_arch_opt_value) String(octeon) Value(101) Canonical
+
+EnumValue
+Enum(mips_arch_opt_value) String(octeon+) Value(102) Canonical
+
+EnumValue
+Enum(mips_arch_opt_value) String(octeon2) Value(103) Canonical
+
+EnumValue
+Enum(mips_arch_opt_value) String(octeon3) Value(104) Canonical
+
+EnumValue
+Enum(mips_arch_opt_value) String(xlp) Value(105) Canonical
+
+EnumValue
+Enum(mips_arch_opt_value) String(i6400) Value(106) Canonical
+
+EnumValue
+Enum(mips_arch_opt_value) String(i6500) Value(107) Canonical
+
+EnumValue
+Enum(mips_arch_opt_value) String(p6600) Value(108) Canonical
+

@@ -1,0 +1,202 @@
+#!/usr/bin/env python3
+
+# RISC-V multilib list generator.
+# Copyright (C) 2011-2026 Free Software Foundation, Inc.
+# Contributed by Andrew Waterman (andrew@sifive.com).
+# 
+# This file is part of GCC.
+# 
+# GCC is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3, or (at your option)
+# any later version.
+# 
+# GCC is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+# 
+# You should have received a copy of the GNU General Public License
+# along with GCC; see the file COPYING3.  If not see
+# <http://www.gnu.org/licenses/>.
+
+# Each argument to this script is of the form
+#  <primary arch>-<abi>-<additional arches>-<extensions>
+# Example 1:
+#  rv32imafd-ilp32d-rv32g-c,v
+# means that, in addition to rv32imafd, these configurations can also use the
+# rv32imafd-ilp32d libraries: rv32imafdc, rv32imafdv, rv32g, rv32gc, rv32gv
+#
+# Example 2:
+#  rv32imafd-ilp32d--c*b
+# means that, in addition to rv32imafd, these configurations can also use the
+# rv32imafd-ilp32d libraries: rv32imafdc-ilp32d, rv32imafdb-ilp32d,
+#                             rv32imafdcb-ilp32d
+
+from __future__ import print_function
+import sys
+import os
+import collections
+import itertools
+from functools import reduce
+import subprocess
+import argparse
+
+#
+# TODO: Add test for this script.
+#
+
+SUPPORTED_ISA_SPEC = ["2.2", "20190608", "20191213"]
+arches = collections.OrderedDict()
+abis = collections.OrderedDict()
+required = []
+reuse = []
+
+def arch_canonicalize(arch, isa_spec):
+  this_file = os.path.abspath(os.path.join( __file__))
+  arch_can_script = \
+    os.path.join(os.path.dirname(this_file), "arch-canonicalize")
+  proc = subprocess.Popen([sys.executable, arch_can_script,
+                          '-misa-spec=%s' % isa_spec, arch],
+                          stdout=subprocess.PIPE)
+  out, err = proc.communicate()
+  return out.decode().strip()
+
+#
+# Handle expansion operation.
+#
+# e.g. "a*b" -> [("a",), ("b",), ("a", "b")]
+#      "a"   -> [("a",)]
+#
+def _expand_combination(ext):
+  exts = list(ext.split("*"))
+
+  # Add underline to every extension.
+  # e.g.
+  #  _b * zvamo => _b * _zvamo
+  exts = list(map(lambda x: '_' + x, exts))
+
+  # No need to expand if there is no `*`.
+  if len(exts) == 1:
+    return [(exts[0],)]
+
+  # Generate combination!
+  ext_combs = []
+  for comb_len in range(1, len(exts)+1):
+    for ext_comb in itertools.combinations(exts, comb_len):
+      ext_combs.append(ext_comb)
+
+  return ext_combs
+
+#
+# Input a list and drop duplicated entry.
+# e.g.
+#   ["a", "b", "ab", "a"] -> ["a", "b", "ab"]
+#
+def unique(x):
+  #
+  # Drop duplicated entry.
+  # Convert list to set and then convert back to list.
+  #
+  # Add sorted to prevent non-deterministic results in different env.
+  #
+  return list(sorted(list(set(x))))
+
+#
+# Expand EXT string if there is any expansion operator (*).
+# e.g.
+#   "a*b,c" -> ["a", "b", "ab", "c"]
+#
+def expand_combination(ext):
+  ext = list(filter(None, ext.split(',')))
+
+  # Expand combination for EXT, got lots of list.
+  # e.g.
+  #   a * b => [[("a",), ("b",)], [("a", "b")]]
+  ext_combs = list(map(_expand_combination, ext))
+
+  # Then fold to single list.
+  # e.g.
+  #   [[("a",), ("b",)], [("a", "b")]] => [("a",), ("b",), ("a", "b")]
+  ext = list(reduce(lambda x, y: x + y, ext_combs, []))
+
+  # Fold the tuple to string.
+  # e.g.
+  #   [("a",), ("b",), ("a", "b")] => ["a", "b", "ab"]
+  ext = map(lambda e : reduce(lambda x, y: x + y, e), ext)
+
+  # Drop duplicated entry.
+  ext = unique(ext)
+
+  return ext
+
+multilib_cfgs = filter(lambda x:not x.startswith("--"), sys.argv[1:])
+options = filter(lambda x:x.startswith("--"), sys.argv[1:])
+
+parser = argparse.ArgumentParser()
+parser.add_argument("--cmodel", type=str)
+parser.add_argument('-misa-spec', type=str,
+                    default='20191213',
+                    choices=SUPPORTED_ISA_SPEC)
+parser.add_argument("cfgs", type=str, nargs='*')
+args = parser.parse_args()
+
+if args.cmodel:
+  cmodels = [None] + args.cmodel.split(",")
+else:
+  cmodels = [None]
+
+cmodel_options = '/'.join(['mcmodel=%s' % x for x in cmodels[1:]])
+cmodel_dirnames = ' \\\n'.join(cmodels[1:])
+
+for cmodel in cmodels:
+  for cfg in args.cfgs:
+    try:
+      (arch, abi, extra, ext) = cfg.split('-')
+    except:
+      print ("Invalid configure string %s, <arch>-<abi>-<extra>-<extensions>\n"
+             "<extra> and <extensions> can be empty, "
+             "e.g. rv32imafd-ilp32--" % cfg)
+      sys.exit(1)
+
+    # Large code model only support rv64.
+    if cmodel == "large" and arch.startswith("rv32"):
+      continue
+
+    arch = arch_canonicalize (arch, args.misa_spec)
+    arches[arch] = 1
+    abis[abi] = 1
+    extra = list(filter(None, extra.split(',')))
+    ext_combs = expand_combination(ext)
+    alts = sum([[x] + [x + y for y in ext_combs] for x in [arch] + extra], [])
+    alts = filter(lambda x: len(x) != 0, alts)
+    alts = list(map(lambda a : arch_canonicalize(a, args.misa_spec), alts))
+
+    # Drop duplicated entry.
+    alts = unique(alts)
+
+    for alt in alts:
+      if alt == arch:
+        continue
+      arches[alt] = 1
+      reuse.append('march.%s/mabi.%s=march.%s/mabi.%s' % (arch, abi, alt, abi))
+
+    if cmodel:
+      required.append('march=%s/mabi=%s/mcmodel=%s' % (arch, abi, cmodel))
+    else:
+      required.append('march=%s/mabi=%s' % (arch, abi))
+
+  arch_options = '/'.join(['march=%s' % x for x in arches.keys()])
+  arch_dirnames = ' \\\n'.join(arches.keys())
+
+  abi_options = '/'.join(['mabi=%s' % x for x in abis.keys()])
+  abi_dirnames = ' \\\n'.join(abis.keys())
+
+prog = sys.argv[0].split('/')[-1]
+print('# This file was generated by %s with the command:' % prog)
+print('#  %s' % ' '.join(sys.argv))
+
+print('MULTILIB_OPTIONS = %s %s %s' % (arch_options, abi_options, cmodel_options))
+print('MULTILIB_DIRNAMES = %s %s %s' % (arch_dirnames, abi_dirnames, cmodel_dirnames))
+print('MULTILIB_REQUIRED = %s' % ' \\\n'.join(required))
+print('MULTILIB_REUSE = %s' % ' \\\n'.join(reuse))

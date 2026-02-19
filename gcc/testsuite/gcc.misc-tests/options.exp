@@ -1,0 +1,108 @@
+# Copyright (C) 2005-2026 Free Software Foundation, Inc.
+
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+# 
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+# 
+# You should have received a copy of the GNU General Public License
+# along with GCC; see the file COPYING3.  If not see
+# <http://www.gnu.org/licenses/>.
+
+# Run the LANGUAGE compiler with GCC_OPTIONS and inspect the compiler,
+# assembler and linker output (from gcc -v) to make sure that they
+# match the patterns COMPILER_PATTERN, AS_PATTERN and LD_PATTERN,
+# respectively.
+
+load_lib gcc-defs.exp
+
+# These tests don't run runtest_file_p consistently if it
+# doesn't return the same values, so disable parallelization
+# of this *.exp file.  The first parallel runtest to reach
+# this will run all the tests serially.
+if ![gcc_parallel_test_run_p options] {
+    return
+}
+gcc_parallel_test_enable 0
+
+proc check_for_all_options {language gcc_options compiler_pattern as_pattern ld_pattern} {
+    set filename test-[pid]
+    set fd [open $filename.c w]
+    puts $fd "int main (void) \{ return 0; \}"
+    close $fd
+    remote_download host $filename.c
+
+    set test "compiler driver $gcc_options option(s)"
+    set gcc_options "\{additional_flags=$gcc_options -v\}"
+
+    switch "$language" {
+	"c" { set compiler cc1 }
+	default { error "unknown language" }
+    }
+    set gcc_output [gcc_target_compile $filename.c $filename.x executable $gcc_options]
+    remote_file build delete $filename.c $filename.x $filename.gcno
+    set dumpfiles [glob -nocomplain $filename.c.*]
+    foreach dumpfile $dumpfiles {
+	remote_file build delete $dumpfile
+    }   
+
+    if {![regexp -- "/${compiler}(\\.exe)? \[^\r\n\]*-quiet.*$compiler_pattern" $gcc_output]} {
+	fail "$test (compiler options)"
+	return
+    }
+    if {![regexp -- " *as(\\.exe)? .*$as_pattern" $gcc_output]} {
+	fail "$test (assembler options)"
+	return
+    }
+    # Match /collect2, /ld, or *-ld.
+    if {![regexp -- "(/collect2|\[-/\]ld)(\\.exe)? .*$ld_pattern" $gcc_output]} {
+	fail "$test (linker options)"
+	return
+    }
+    pass $test
+}
+
+if { [check_profiling_available "-fprofile-arcs"] } {
+    check_for_all_options c {--coverage} {-fprofile-arcs -ftest-coverage} {} {-lgcov}
+}
+
+proc get_dump_flags {} {
+    set res [list]
+
+    global srcdir
+    set file "$srcdir/../dumpfile.cc"
+    
+    set a [open $file]
+    set lines [split [read $a] "\n"]
+    close $a
+
+    set domatch 0
+    foreach line $lines {
+	if { [regexp "dump_options.* =" $line] } {
+	    set domatch 1
+	} elseif { [regexp "^\};" $line] } {
+	    set domatch 0
+	}
+	if { $domatch } {
+	    if { [regexp "\"(.*)\"" $line match submatch] } {
+		lappend res $submatch
+	    }
+	}
+    }
+
+    return $res
+}
+
+foreach flag [get_dump_flags] {
+    check_for_all_options c -fdump-tree-all-$flag {} {} {}
+    check_for_all_options c -fdump-ipa-all-$flag {} {} {}
+    check_for_all_options c -fdump-rtl-all-$flag {} {} {}
+    check_for_all_options c -fdump-lang-all-$flag {} {} {}
+}
+
+gcc_parallel_test_enable 1

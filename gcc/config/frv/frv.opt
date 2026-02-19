@@ -1,0 +1,238 @@
+; Options for the FR-V port of the compiler.
+
+; Copyright (C) 2005-2026 Free Software Foundation, Inc.
+;
+; This file is part of GCC.
+;
+; GCC is free software; you can redistribute it and/or modify it under
+; the terms of the GNU General Public License as published by the Free
+; Software Foundation; either version 3, or (at your option) any later
+; version.
+;
+; GCC is distributed in the hope that it will be useful, but WITHOUT ANY
+; WARRANTY; without even the implied warranty of MERCHANTABILITY or
+; FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+; for more details.
+;
+; You should have received a copy of the GNU General Public License
+; along with GCC; see the file COPYING3.  If not see
+; <http://www.gnu.org/licenses/>.
+
+HeaderInclude
+config/frv/frv-opts.h
+
+; Value of -mcpu=.
+Variable
+frv_cpu_t frv_cpu_type = CPU_TYPE
+
+macc-4
+Target RejectNegative Mask(ACC_4)
+Use 4 media accumulators.
+
+macc-8
+Target RejectNegative InverseMask(ACC_4, ACC_8)
+Use 8 media accumulators.
+
+malign-labels
+Target Mask(ALIGN_LABELS)
+Enable label alignment optimizations.
+
+malloc-cc
+Target RejectNegative Mask(ALLOC_CC)
+Dynamically allocate cc registers.
+
+; We used to default the branch cost to 2, but it was changed it to 1 to avoid
+; generating SCC instructions and or/and-ing them together, and then doing the
+; branch on the result, which collectively generate much worse code.
+mbranch-cost=
+Target RejectNegative Joined UInteger Var(frv_branch_cost_int) Init(1) Undocumented
+Set the cost of branches.
+
+mcond-exec
+Target Mask(COND_EXEC)
+Enable conditional execution other than moves/scc.
+
+mcond-exec-insns=
+Target RejectNegative Joined UInteger Var(frv_condexec_insns) Init(8) Undocumented
+Change the maximum length of conditionally-executed sequences.
+
+mcond-exec-temps=
+Target RejectNegative Joined UInteger Var(frv_condexec_temps) Init(4) Undocumented
+Change the number of temporary registers that are available to conditionally-executed sequences.
+
+mcond-move
+Target Mask(COND_MOVE)
+Enable conditional moves.
+
+mcpu=
+Target RejectNegative Joined Enum(frv_cpu) Var(frv_cpu_type)
+Set the target CPU type.
+
+Enum
+Name(frv_cpu) Type(frv_cpu_t)
+Known FR-V CPUs (for use with the -mcpu= option):
+
+EnumValue
+Enum(frv_cpu) String(simple) Value(FRV_CPU_SIMPLE)
+
+EnumValue
+Enum(frv_cpu) String(tomcat) Value(FRV_CPU_TOMCAT)
+
+EnumValue
+Enum(frv_cpu) String(fr550) Value(FRV_CPU_FR550)
+
+EnumValue
+Enum(frv_cpu) String(fr500) Value(FRV_CPU_FR500)
+
+EnumValue
+Enum(frv_cpu) String(fr450) Value(FRV_CPU_FR450)
+
+EnumValue
+Enum(frv_cpu) String(fr405) Value(FRV_CPU_FR405)
+
+EnumValue
+Enum(frv_cpu) String(fr400) Value(FRV_CPU_FR400)
+
+EnumValue
+Enum(frv_cpu) String(fr300) Value(FRV_CPU_FR300)
+
+EnumValue
+Enum(frv_cpu) String(frv) Value(FRV_CPU_GENERIC)
+
+mdebug
+Target Undocumented Var(TARGET_DEBUG)
+
+mdebug-arg
+Target Undocumented Var(TARGET_DEBUG_ARG)
+
+mdebug-addr
+Target Undocumented Var(TARGET_DEBUG_ADDR)
+
+mdebug-cond-exec
+Target Undocumented Var(TARGET_DEBUG_COND_EXEC)
+
+mdebug-loc
+Target Undocumented Var(TARGET_DEBUG_LOC)
+
+mdebug-stack
+Target Undocumented Var(TARGET_DEBUG_STACK)
+
+mdouble
+Target Mask(DOUBLE)
+Use fp double instructions.
+
+mdword
+Target Mask(DWORD)
+Change the ABI to allow double word insns.
+
+mfdpic
+Target Mask(FDPIC)
+Enable Function Descriptor PIC mode.
+
+mfixed-cc
+Target RejectNegative InverseMask(ALLOC_CC, FIXED_CC)
+Just use icc0/fcc0.
+
+mfpr-32
+Target RejectNegative Mask(FPR_32)
+Only use 32 FPRs.
+
+mfpr-64
+Target RejectNegative InverseMask(FPR_32, FPR_64)
+Use 64 FPRs.
+
+mgpr-32
+Target RejectNegative Mask(GPR_32)
+Only use 32 GPRs.
+
+mgpr-64
+Target RejectNegative InverseMask(GPR_32, GPR_64)
+Use 64 GPRs.
+
+mgprel-ro
+Target Mask(GPREL_RO)
+Enable use of GPREL for read-only data in FDPIC.
+
+mhard-float
+Target RejectNegative InverseMask(SOFT_FLOAT, HARD_FLOAT)
+Use hardware floating point.
+
+minline-plt
+Target Mask(INLINE_PLT)
+Enable inlining of PLT in function calls.
+
+mlibrary-pic
+Target Mask(LIBPIC)
+Enable PIC support for building libraries.
+
+mlinked-fp
+Target Mask(LINKED_FP)
+Follow the EABI linkage requirements.
+
+mlong-calls
+Target Mask(LONG_CALLS)
+Disallow direct calls to global functions.
+
+mmedia
+Target Mask(MEDIA)
+Use media instructions.
+
+mmuladd
+Target Mask(MULADD)
+Use multiply add/subtract instructions.
+
+mmulti-cond-exec
+Target Mask(MULTI_CE)
+Enable optimizing &&/|| in conditional execution.
+
+mnested-cond-exec
+Target Mask(NESTED_CE)
+Enable nested conditional execution optimizations.
+
+; Not used by the compiler proper.
+mno-eflags
+Target RejectNegative
+Do not mark ABI switches in e_flags.
+
+moptimize-membar
+Target Mask(OPTIMIZE_MEMBAR)
+Remove redundant membars.
+
+mpack
+Target Mask(PACK)
+Pack VLIW instructions.
+
+mscc
+Target Mask(SCC)
+Enable setting GPRs to the result of comparisons.
+
+; This option seems not to be used anywhere.
+msched-lookahead=
+Target Undocumented RejectNegative Joined UInteger Var(frv_sched_lookahead) Init(4)
+Change the amount of scheduler lookahead.
+
+msoft-float
+Target RejectNegative Mask(SOFT_FLOAT)
+Use software floating point.
+
+mTLS
+Target RejectNegative Mask(BIG_TLS)
+Assume a large TLS segment.
+
+mtls
+Target RejectNegative InverseMask(BIG_TLS)
+Do not assume a large TLS segment.
+
+; Not used by the compiler proper.
+mtomcat-stats
+Target
+Cause gas to print tomcat statistics.
+
+; Not used by the compiler proper.
+multilib-library-pic
+Target RejectNegative
+Link with the library-pic libraries.
+
+mvliw-branch
+Target Mask(VLIW_BRANCH)
+Allow branches to be packed with other instructions.

@@ -1,0 +1,84 @@
+# GCC build-specific configuration file.
+# Copyright (C) 1997-2026 Free Software Foundation, Inc.
+
+#This file is part of GCC.
+
+#GCC is free software; you can redistribute it and/or modify it under
+#the terms of the GNU General Public License as published by the Free
+#Software Foundation; either version 3, or (at your option) any later
+#version.
+
+#GCC is distributed in the hope that it will be useful, but WITHOUT
+#ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+#FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+#for more details.
+
+#You should have received a copy of the GNU General Public License
+#along with GCC; see the file COPYING3.  If not see
+#<http://www.gnu.org/licenses/>.
+
+# This is the GCC build-specific configuration file
+# where a configuration type is mapped to different system-specific
+# definitions and files.  This is invoked by the autoconf-generated
+# configure script.  Putting it in a separate shell file lets us skip
+# running autoconf when modifying build-specific information.
+
+# This file switches on the shell variable ${build}.  As much of this
+# as possible should be replaced with autoconf tests in the future.
+
+# This file sets the following shell variables for use by the
+# autoconf-generated configure script:
+#
+#  build_xm_defines	List of macros to define when compiling for the
+#			build machine.
+#
+#  build_xm_file	List of files to include when compiling for the
+#			build machine.
+#
+#  build_install_headers_dir
+#			Target to use when installing header files.
+#
+#  build_exeext		Set to the suffix, if the build machine requires
+#			executables to have a file name suffix.
+
+# Default settings.
+build_xm_file=
+build_xm_defines=
+build_exeext=
+build_install_headers_dir=install-headers-tar
+build_file_translate=
+
+# System-specific settings.
+case $build in
+  hppa*64*-*-hpux11* )
+    build_install_headers_dir=install-headers-cpio
+    ;;
+  i[34567]86-*-cygwin* | x86_64-*-cygwin* )
+    build_xm_file=i386/xm-cygwin.h
+    build_exeext=.exe
+    ;;
+  i[34567]86-*-mingw32* | x86_64-*-mingw*)
+    build_xm_file=i386/xm-mingw32.h
+    build_exeext=.exe
+    t=`(CMD //c echo /c) 2>/dev/null`
+    case $t in ?:*)
+      build_file_translate="CMD //c"
+      ;;
+    esac
+    ;;
+  i[34567]86-pc-msdosdjgpp*)
+    build_xm_file=i386/xm-djgpp.h
+    build_exeext=.exe
+    ;;
+  *-*-sysv*)
+    # All other System V variants.
+    build_install_headers_dir=install-headers-cpio
+    ;;
+  *-*-*vms*)
+    # All OpenVMS targets.
+    build_xm_file="vms/xm-vms.h"
+    build_exeext=.exe
+    build_install_headers_dir=install-headers-cp
+    ;;
+esac
+

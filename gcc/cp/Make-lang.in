@@ -1,0 +1,408 @@
+# Top level -*- makefile -*- fragment for GNU C++.
+#   Copyright (C) 1994-2026 Free Software Foundation, Inc.
+
+#This file is part of GCC.
+
+#GCC is free software; you can redistribute it and/or modify
+#it under the terms of the GNU General Public License as published by
+#the Free Software Foundation; either version 3, or (at your option)
+#any later version.
+
+#GCC is distributed in the hope that it will be useful,
+#but WITHOUT ANY WARRANTY; without even the implied warranty of
+#MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#GNU General Public License for more details.
+
+# You should have received a copy of the GNU General Public License
+# along with GCC; see the file COPYING3.  If not see
+# <http://www.gnu.org/licenses/>.
+
+# This file provides the language dependent support in the main Makefile.
+# Each language makefile fragment must provide the following targets:
+#
+# foo.all.cross, foo.start.encap, foo.rest.encap,
+# foo.install-common, foo.install-man, foo.install-info, foo.install-pdf,
+# foo.install-html, foo.info, foo.dvi, foo.pdf, foo.html, foo.uninstall,
+# foo.mostlyclean, foo.clean, foo.distclean,
+# foo.maintainer-clean, foo.stage1, foo.stage2, foo.stage3, foo.stage4
+#
+# where `foo' is the name of the language.
+#
+# It should also provide rules for:
+#
+# - making any compiler driver (eg: g++)
+# - the compiler proper (eg: cc1plus)
+# - define the names for selecting the language in LANGUAGES.
+
+# Actual names to use when installing a native compiler.
+CXX_INSTALL_NAME := $(shell echo c++|sed '$(program_transform_name)')
+GXX_INSTALL_NAME := $(shell echo g++|sed '$(program_transform_name)')
+CXX_TARGET_INSTALL_NAME := $(target_noncanonical)-$(shell echo c++|sed '$(program_transform_name)')
+GXX_TARGET_INSTALL_NAME := $(target_noncanonical)-$(shell echo g++|sed '$(program_transform_name)')
+CP_PLUGIN_HEADERS := cp-tree.h cxx-pretty-print.h name-lookup.h type-utils.h operators.def cp-trait.def contracts.h
+
+#
+# Define the names for selecting c++ in LANGUAGES.
+# Note that it would be nice to move the dependency on g++
+# into the C++ rule, but that needs a little bit of work
+# to do the right thing within all.cross.
+c++: cc1plus$(exeext)
+c++.serial = cc1plus$(exeext)
+
+# Tell GNU make to ignore these if they exist.
+.PHONY: c++
+
+CFLAGS-cp/g++spec.o += $(DRIVER_DEFINES)
+
+CFLAGS-cp/module.o += -DHOST_MACHINE=\"$(host)\" \
+	-DTARGET_MACHINE=\"$(target)\" $(ZLIBINC)
+
+# In non-release builds, use a date-related module version.
+ifneq ($(DEVPHASE_c),)
+# Some date's don't grok 'r', if so, simply use today's date,
+# but use date from previous stage if bootstrapping to avoid breaking
+# bootstraps across midnight.
+s-cp-module-version: $(srcdir)/cp/module.cc
+	MODULE_VERSION=`if date -r $(srcdir)/cp/module.cc '+%y%m%d%H%MU' \
+			  2>/dev/null; then :; \
+			elif test ../prev-gcc/s-cp-module-version -nt \
+			       $(srcdir)/cp/module.cc; then \
+			  cat ../prev-gcc/s-cp-module-version; \
+			else \
+			  date '+%y%m%d0000U' 2>/dev/null; \
+			fi`; \
+	echo $${MODULE_VERSION} > s-cp-module-version
+cp/module.o: s-cp-module-version
+CFLAGS-cp/module.o += -DMODULE_VERSION='$(shell cat s-cp-module-version)'
+endif
+
+# Create the compiler driver for g++.
+GXX_OBJS = $(GCC_OBJS) cp/g++spec.o
+xg++$(exeext): $(GXX_OBJS) $(EXTRA_GCC_OBJS) libcommon-target.a $(LIBDEPS)
+	+$(LINKER) $(ALL_LINKERFLAGS) $(LDFLAGS) -o $@ \
+	  $(GXX_OBJS) $(EXTRA_GCC_OBJS) libcommon-target.a \
+	  $(EXTRA_GCC_LIBS) $(LIBS)
+
+# Create a version of the g++ driver which calls the cross-compiler.
+g++-cross$(exeext): xg++$(exeext)
+	-rm -f g++-cross$(exeext)
+	cp xg++$(exeext) g++-cross$(exeext)
+
+# The compiler itself.
+# Shared with C front end:
+CXX_C_OBJS = attribs.o \
+	$(C_COMMON_OBJS) $(CXX_TARGET_OBJS)
+
+# Language-specific object files for C++ and Objective C++.
+CXX_AND_OBJCXX_OBJS = \
+	cp/call.o cp/class.o cp/constexpr.o cp/constraint.o \
+	cp/coroutines.o cp/cp-gimplify.o \
+	cp/cp-objcp-common.o cp/cp-ubsan.o \
+	cp/cvt.o cp/contracts.o cp/cxx-pretty-print.o \
+	cp/decl.o cp/decl2.o cp/dump.o \
+	cp/error.o cp/except.o cp/expr.o \
+	cp/friend.o cp/init.o \
+	cp/lambda.o cp/lex.o cp/logic.o \
+	cp/mangle.o cp/mapper-client.o cp/mapper-resolver.o \
+	cp/method.o cp/module.o \
+	cp/name-lookup.o cp/optimize.o \
+	cp/parser.o cp/pt.o cp/ptree.o \
+	cp/reflect.o cp/rtti.o \
+	cp/search.o cp/semantics.o \
+	cp/tree.o cp/typeck.o cp/typeck2.o \
+	cp/vtable-class-hierarchy.o $(CXX_C_OBJS)
+
+ifeq ($(if $(wildcard ../stage_current),$(shell cat \
+  ../stage_current)),stageautofeedback)
+$(CXX_AND_OBJCXX_OBJS): CFLAGS += -fauto-profile=cc1plus.fda
+$(CXX_AND_OBJCXX_OBJS): cc1plus.fda
+endif
+
+# Language-specific object files for C++.
+CXX_OBJS = cp/cp-lang.o c-family/stub-objc.o $(CXX_AND_OBJCXX_OBJS)
+
+c++_OBJS = $(CXX_OBJS) cc1plus-checksum.o cp/g++spec.o
+
+c++_FDAS = cc1plus.fda
+
+# Use strict warnings for this front end.
+cp-warn = $(STRICT_WARN)
+
+# compute checksum over all object files and the options
+# re-use the checksum from the prev-final stage so it passes
+# the bootstrap comparison and allows comparing of the cc1 binary
+cc1plus-checksum.cc : build/genchecksum$(build_exeext) checksum-options \
+	$(CXX_OBJS) $(BACKEND) $(CODYLIB) $(LIBDEPS) 
+	if [ -f ../stage_final ] \
+	   && cmp -s ../stage_current ../stage_final; then \
+	   cp ../prev-gcc/cc1plus-checksum.cc cc1plus-checksum.cc; \
+	else \
+	  build/genchecksum$(build_exeext) $(CXX_OBJS) $(BACKEND) $(CODYLIB) $(LIBDEPS) \
+                     checksum-options > cc1plus-checksum.cc.tmp &&	   \
+	  $(srcdir)/../move-if-change cc1plus-checksum.cc.tmp cc1plus-checksum.cc; \
+	fi
+
+cc1plus$(exeext): $(CXX_OBJS) cc1plus-checksum.o $(BACKEND) $(CODYLIB) $(LIBDEPS) $(c++.prev)
+	@$(call LINK_PROGRESS,$(INDEX.c++),start)
+	+$(LLINKER) $(ALL_LINKERFLAGS) $(LDFLAGS) -o $@ \
+	      $(CXX_OBJS) cc1plus-checksum.o $(BACKEND) $(CODYLIB) \
+		$(LIBS) $(BACKENDLIBS)
+	@$(call LINK_PROGRESS,$(INDEX.c++),end)
+
+ifeq ($(ENABLE_MAINTAINER_RULES), true)
+# Special build rule.  This is a maintainer rule, that is only
+# available when GCC is configured with --enable-maintainer-mode.  In
+# other cases, it is not available to avoid triggering rebuilds if a
+# user has the source checked out with unusual timestamps.
+$(srcdir)/cp/cfns.h: $(srcdir)/cp/cfns.gperf
+else
+# We keep the rule so that you can still force a rebuild, even if you
+# didn't configure GCC with --enable-maintainer-mode, by manually
+# deleting the $(srcdir)/cp/cfns.h file.
+$(srcdir)/cp/cfns.h:
+endif
+	gperf -o -C -E -k '1-6,$$' -j1 -D -N 'libc_name_p' -L C++ \
+		$(srcdir)/cp/cfns.gperf --output-file $(srcdir)/cp/cfns.h
+
+# We always need the dependency on the .gperf file because it itself is generated.
+ifeq ($(ENABLE_MAINTAINER_RULES), true)
+$(srcdir)/cp/std-name-hint.h: $(srcdir)/cp/std-name-hint.gperf
+else
+$(srcdir)/cp/std-name-hint.h: | $(srcdir)/cp/std-name-hint.gperf
+endif
+	cd $(srcdir)/cp; gperf -o -C -E -k '1,2,7,11,$$' -D -N find -L C++ \
+		std-name-hint.gperf --output-file std-name-hint.h
+
+# The std-name-hint.gperf file itself is generated from a general
+# C++ API description.
+ifeq ($(ENABLE_MAINTAINER_RULES), true)
+$(srcdir)/cp/std-name-hint.gperf: $(srcdir)/cp/gen-cxxapi-file.py $(srcdir)/cp/cxxapi-data.csv
+else
+$(srcdir)/cp/std-name-hint.gperf:
+endif
+	python3 $(srcdir)/cp/gen-cxxapi-file.py hints $(srcdir)/cp/cxxapi-data.csv > $@
+ifneq ($(ENABLE_MAINTAINER_RULES), true)
+.SECONDARY: $(srcdir)/cp/std-name-hint.gperf
+endif
+
+# This is the file that depends on the generated header file.
+cp/name-lookup.o: $(srcdir)/cp/std-name-hint.h
+
+ifeq ($(ENABLE_MAINTAINER_RULES), true)
+# Special build rule.  This is a maintainer rule, that is only
+# available when GCC is configured with --enable-maintainer-mode.  In
+# other cases, it is not available to avoid triggering rebuilds if a
+# user has the source checked out with unusual timestamps.
+$(srcdir)/cp/metafns.h: $(srcdir)/cp/metafns.gperf
+else
+# We keep the rule so that you can still force a rebuild, even if you
+# didn't configure GCC with --enable-maintainer-mode, by manually
+# deleting the $(srcdir)/cp/metafns.h file.
+$(srcdir)/cp/metafns.h:
+endif
+	cd $(srcdir)/cp; gperf -o -C -E -k '1,4,5,11,14,$$' -D -N find -L C++ \
+		metafns.gperf --output-file metafns.h
+
+# This is the file that depends on the generated header file.
+cp/reflect.o: $(srcdir)/cp/metafns.h
+
+components_in_prev = "bfd opcodes binutils fixincludes gas gcc gmp mpfr mpc isl gold intl ld libbacktrace libcpp libcody libdecnumber libiberty libiberty-linker-plugin libiconv zlib lto-plugin libctf libsframe"
+components_in_prev_target = "libstdc++-v3 libsanitizer libvtv libgcc libbacktrace libphobos zlib libgomp libatomic"
+
+cc1plus.fda: create_fdas_for_cc1plus
+	$(PROFILE_MERGER) $(shell ls -ha cc1plus_*.fda) --output_file cc1plus.fda -gcov_version 3
+
+create_fdas_for_cc1plus: ../stage1-gcc/cc1plus$(exeext) ../prev-gcc/$(PERF_DATA)
+	for component_in_prev in "$(components_in_prev)"; do \
+	  perf_path=../prev-$$component_in_prev/$(PERF_DATA); \
+	  echo "Perf path:"; \
+	  echo $$perf_path; \
+	  if [ -f $$perf_path ]; then \
+	    profile_name=cc1plus_$$component_in_prev.fda; \
+	    $(CREATE_GCOV) -binary ../stage1-gcc/cc1plus$(exeext) -gcov $$profile_name -profile $$perf_path -gcov_version 3 || exit 1; \
+	  fi; \
+	done;
+
+	for component_in_prev_target in "$(components_in_prev_target)"; do \
+	  perf_path=../prev-$(TARGET_SUBDIR)/$$component_in_prev_target/$(PERF_DATA); \
+	  echo "Perf path:"; \
+	  echo $$perf_path; \
+	  if [ -f $$perf_path ]; then \
+	    profile_name=cc1plus_$$component_in_prev_target.fda; \
+	    $(CREATE_GCOV) -binary ../prev-gcc/cc1plus$(exeext) -gcov $$profile_name -profile $$perf_path -gcov_version 3 || exit 1; \
+	  fi; \
+	done;
+
+	$(STAMP) $@
+#
+# Build hooks:
+
+c++.all.cross: g++-cross$(exeext)
+c++.start.encap: xg++$(exeext)
+c++.rest.encap:
+c++.info:
+c++.install-info:
+c++.dvi:
+c++.install-dvi:
+c++.pdf:
+c++.install-pdf:
+c++.install-html:
+c++.html:
+c++.srcinfo:
+c++.srcextra:
+
+c++.tags: force
+	cd $(srcdir)/cp; $(ETAGS) -o TAGS.sub *.cc *.h \
+	  ../../libcody/*.cc ../../c++tools/*.cc \
+	  --language=none --regex='/DEFTREECODE [(]\([A-Z_]+\)/\1/' cp-tree.def; \
+	$(ETAGS) --include TAGS.sub --include ../TAGS.sub
+
+c++.man: doc/g++.1
+
+c++.srcman: doc/g++.1
+	-cp -p $^ $(srcdir)/doc
+
+# C++ selftests
+
+# If C++ is enabled, require the selftests to be run for it
+# at each stage of the build:
+selftest-c++: s-selftest-c++
+
+CPP_SELFTEST_DEPS = cc1plus$(exeext) $(SELFTEST_DEPS)
+CPP_SELFTEST_FLAGS = -xc++ $(SELFTEST_FLAGS)
+
+# Run the C++ selftests
+s-selftest-c++: $(CPP_SELFTEST_DEPS)
+	$(GCC_FOR_SELFTESTS) $(CPP_SELFTEST_FLAGS)
+	$(STAMP) $@
+
+# Convenience method for running C++ selftests under gdb:
+.PHONY: selftest-c++-gdb
+selftest-c++-gdb: $(CPP_SELFTEST_DEPS)
+	$(GCC_FOR_SELFTESTS) $(CPP_SELFTEST_FLAGS) \
+	  -wrapper gdb,--args
+
+# Convenience method for running C++ selftests under valgrind:
+.PHONY: selftest-c++-valgrind
+selftest-c++-valgrind: $(CPP_SELFTEST_DEPS)
+	$(GCC_FOR_SELFTESTS) $(CPP_SELFTEST_FLAGS) \
+	  -wrapper valgrind,--leak-check=full
+
+# 'make check' in gcc/ looks for check-c++, as do all toplevel C++-related
+# check targets.  However, our DejaGNU framework requires 'check-g++' as its
+# entry point.  We feed the former to the latter here.
+check-c++ : check-g++
+
+# Run the testsuite in C++17 mode.
+check-c++1z: check-c++17
+check-c++17:
+	$(MAKE) RUNTESTFLAGS="$(RUNTESTFLAGS)" GXX_TESTSUITE_STDS=17 check-g++
+
+# Run the testsuite in all standard conformance levels.
+check-c++-all:
+	$(MAKE) RUNTESTFLAGS="$(RUNTESTFLAGS) --stds=98,11,14,17,20,23,impcx" check-g++
+
+# Run the testsuite with garbage collection at every opportunity.
+check-g++-strict-gc:
+	$(MAKE) RUNTESTFLAGS="$(RUNTESTFLAGS) --extra_opts,--param,ggc-min-heapsize=0,--param,ggc-min-expand=0,--param,hash-table-verification-limit=10000" \
+	  TESTSUITEDIR="$(TESTSUITEDIR).gc" check-g++
+check-c++-subtargets : check-g++-subtargets
+# List of targets that can use the generic check- rule and its // variant.
+lang_checks += check-g++
+lang_checks_parallelized += check-g++
+# For description see the check_$lang_parallelize comment in gcc/Makefile.in.
+check_g++_parallelize = 10000
+#
+# Install hooks:
+# cc1plus is installed elsewhere as part of $(COMPILERS).
+
+# Install the driver program as $(target)-g++ and $(target)-c++, and
+# also as g++ and c++ if native.
+c++.install-common: installdirs
+	-if test "$(enable_as_accelerator)" != "yes" ; then \
+	  rm -f $(DESTDIR)$(bindir)/$(GXX_INSTALL_NAME)$(exeext); \
+	  $(INSTALL_PROGRAM) xg++$(exeext) $(DESTDIR)$(bindir)/$(GXX_INSTALL_NAME)$(exeext); \
+	  chmod a+x $(DESTDIR)$(bindir)/$(GXX_INSTALL_NAME)$(exeext); \
+	  rm -f $(DESTDIR)$(bindir)/$(CXX_INSTALL_NAME)$(exeext); \
+	  ( cd $(DESTDIR)$(bindir) && \
+	    $(LN) $(GXX_INSTALL_NAME)$(exeext) $(CXX_INSTALL_NAME)$(exeext) ); \
+	  if [ -f cc1plus$(exeext) ] ; then \
+	    if [ ! -f g++-cross$(exeext) ] ; then \
+	      rm -f $(DESTDIR)$(bindir)/$(GXX_TARGET_INSTALL_NAME)$(exeext); \
+	      ( cd $(DESTDIR)$(bindir) && \
+		$(LN) $(GXX_INSTALL_NAME)$(exeext) $(GXX_TARGET_INSTALL_NAME)$(exeext) ); \
+	      rm -f $(DESTDIR)$(bindir)/$(CXX_TARGET_INSTALL_NAME)$(exeext); \
+	      ( cd $(DESTDIR)$(bindir) && \
+		$(LN) $(CXX_INSTALL_NAME)$(exeext) $(CXX_TARGET_INSTALL_NAME)$(exeext) ); \
+	    fi ; \
+	  fi; \
+	fi
+
+# We can't use links because not everyone supports them.  So just copy the
+# manpage.
+doc/g++.1: doc/gcc.1
+	cp $< doc/g++.1
+
+c++.install-man: $(DESTDIR)$(man1dir)/$(GXX_INSTALL_NAME)$(man1ext)
+
+$(DESTDIR)$(man1dir)/$(GXX_INSTALL_NAME)$(man1ext): doc/g++.1 installdirs
+	-rm -f $@
+	-$(INSTALL_DATA) $< $@
+	-chmod a-x $@
+
+c++.install-plugin: installdirs
+# We keep the directory structure for files in config and .def files. All
+# other files are flattened to a single directory.
+	headers="$(CP_PLUGIN_HEADERS)"; \
+	for file in $$headers; do \
+	  path=$(srcdir)/cp/$$file; \
+	  dest=$(plugin_includedir)/cp/$$file; \
+	  echo $(INSTALL_DATA) $$path $(DESTDIR)$$dest; \
+	  dir=`dirname $$dest`; \
+	  $(mkinstalldirs) $(DESTDIR)$$dir; \
+	  $(INSTALL_DATA) $$path $(DESTDIR)$$dest; \
+	done
+# Install import library.
+ifeq ($(plugin_implib),yes)
+	$(mkinstalldirs) $(DESTDIR)$(plugin_resourcesdir)
+	$(INSTALL_DATA) cc1plus$(exeext).a $(DESTDIR)$(plugin_resourcesdir)/cc1plus$(exeext).a
+endif
+
+c++.uninstall:
+	-rm -rf $(DESTDIR)$(bindir)/$(CXX_INSTALL_NAME)$(exeext)
+	-rm -rf $(DESTDIR)$(bindir)/$(GXX_INSTALL_NAME)$(exeext)
+	-rm -rf $(DESTDIR)$(man1dir)/$(GXX_INSTALL_NAME)$(man1ext)
+#
+# Clean hooks:
+# A lot of the ancillary files are deleted by the main makefile.
+# We just have to delete files specific to us.
+
+c++.mostlyclean:
+	-rm -f doc/g++.1
+	-rm -f cp/*$(objext)
+	-rm -f cp/*$(coverageexts)
+	-rm -f xg++$(exeext) g++-cross$(exeext) cc1plus$(exeext) cc1plus*.fda
+c++.clean:
+c++.distclean:
+	-rm -f cp/config.status cp/Makefile
+c++.maintainer-clean:
+#
+# Stage hooks:
+# The main makefile has already created stage?/cp.
+
+c++.stage1: stage1-start
+	-mv cp/*$(objext) stage1/cp
+c++.stage2: stage2-start
+	-mv cp/*$(objext) stage2/cp
+c++.stage3: stage3-start
+	-mv cp/*$(objext) stage3/cp
+c++.stage4: stage4-start
+	-mv cp/*$(objext) stage4/cp
+c++.stageprofile: stageprofile-start
+	-mv cp/*$(objext) stageprofile/cp
+c++.stagefeedback: stagefeedback-start
+	-mv cp/*$(objext) stagefeedback/cp
+c++.autostageprofile: stageprofile-start
+	-mv cp/*$(objext) autostageprofile/cp
+c++.autostagefeedback: stagefeedback-start
+	-mv cp/*$(objext) autostagefeedback/cp

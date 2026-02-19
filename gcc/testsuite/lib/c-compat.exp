@@ -1,0 +1,166 @@
+# Copyright (C) 2002-2026 Free Software Foundation, Inc.
+
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with GCC; see the file COPYING3.  If not see
+# <http://www.gnu.org/licenses/>.
+
+# Please email any bugs, comments, and/or additions to this file to:
+# gcc-patches@gcc.gnu.org
+
+# Globals.
+
+global compat_use_alt
+global compat_same_alt
+global compat_have_dfp
+global compat_skip_list
+
+# This file defines procs for determining features supported by both C
+# compilers for compatibility tests.
+
+load_lib target-supports.exp
+load_lib target-libpath.exp
+
+#
+# compat-use-alt-compiler -- make the alternate compiler the default
+# 
+proc compat-use-alt-compiler { } {
+    global GCC_UNDER_TEST ALT_CC_UNDER_TEST
+    global compat_same_alt compat_alt_caret compat_alt_color compat_no_line_no
+    global compat_alt_urls compat_alt_plain_output
+    global TEST_ALWAYS_FLAGS
+
+    # We don't need to do this if the alternate compiler is actually
+    # the same as the compiler under test.
+    if { $compat_same_alt == 0 } then {
+	set GCC_UNDER_TEST $ALT_CC_UNDER_TEST
+
+	# These flags are no longer added to TEST_ALWAYS_FLAGS by prune.exp
+	# because they are subsumed by -fdiagnostics-plain-output. Add them back
+	# for compatibility testing with older compilers that do not understand
+	# -fdiagnostics-plain-output.
+	set TEST_ALWAYS_FLAGS "-fno-diagnostics-show-caret -fno-diagnostics-show-line-numbers -fdiagnostics-color=never -fdiagnostics-urls=never $TEST_ALWAYS_FLAGS"
+
+	if { $compat_alt_caret == 0 } then {
+	    regsub -all -- "-fno-diagnostics-show-caret" $TEST_ALWAYS_FLAGS "" TEST_ALWAYS_FLAGS
+	}
+	if { $compat_alt_color == 0 } then {
+	    regsub -all -- "-fdiagnostics-color=never" $TEST_ALWAYS_FLAGS "" TEST_ALWAYS_FLAGS
+	}
+	if { $compat_alt_urls == 0 } then {
+	    regsub -all -- "-fdiagnostics-urls=never" $TEST_ALWAYS_FLAGS "" TEST_ALWAYS_FLAGS
+	}
+	if { $compat_no_line_no == 0 } then {
+	    regsub -all -- "-fno-diagnostics-show-line-numbers" $TEST_ALWAYS_FLAGS "" TEST_ALWAYS_FLAGS
+	}
+	if { $compat_alt_plain_output == 0 } then {
+	    regsub -all -- "-fdiagnostics-plain-output" $TEST_ALWAYS_FLAGS "" TEST_ALWAYS_FLAGS
+	}
+	restore_gcc_exec_prefix_env_var
+    }
+}
+
+#
+# compat-use-tst-compiler -- make compiler under test the default
+#
+proc compat-use-tst-compiler { } {
+    global GCC_UNDER_TEST compat_save_gcc_under_test
+    global compat_same_alt
+    global TEST_ALWAYS_FLAGS compat_save_TEST_ALWAYS_FLAGS
+
+    # We don't need to do this if the alternate compiler is actually
+    # the same as the compiler under test.
+
+    if { $compat_same_alt == 0 } then {
+	set GCC_UNDER_TEST $compat_save_gcc_under_test
+	set TEST_ALWAYS_FLAGS $compat_save_TEST_ALWAYS_FLAGS
+	set_gcc_exec_prefix_env_var
+    }
+}
+
+# Find out whether both compilers support decimal float types.
+proc compat_setup_dfp { } {
+    global compat_use_alt
+    global compat_same_alt
+    global compat_have_dfp
+    global compat_alt_caret
+    global compat_alt_color
+    global compat_alt_urls
+    global compat_alt_plain_output
+    global compat_no_line_no
+    global TEST_ALWAYS_FLAGS compat_save_TEST_ALWAYS_FLAGS
+
+    set compat_alt_caret 0
+    set compat_alt_color 0
+    set compat_alt_urls 0
+    set compat_alt_plain_output 0
+    set compat_no_line_no 0
+    set compat_save_TEST_ALWAYS_FLAGS $TEST_ALWAYS_FLAGS
+
+    verbose "compat_setup_dfp: $compat_use_alt $compat_same_alt" 2
+
+    # Does the compiler under test support decimal float types?
+    compat-use-tst-compiler
+    set compat_have_dfp [check_effective_target_dfprt_nocache]
+    verbose "compat_have_dfp for tst compiler: $compat_have_dfp" 2
+
+    if { $compat_use_alt == 1 && $compat_same_alt == 0 } {
+	compat-use-alt-compiler
+	if { [check_no_compiler_messages_nocache compat_alt_has_caret object {
+		int dummy; } "-fno-diagnostics-show-caret"] != 0 } {
+	    set compat_alt_caret 1
+	}
+	if { [check_no_compiler_messages_nocache compat_alt_has_color object {
+		int dummy; } "-fdiagnostics-color=never"] != 0 } {
+	    set compat_alt_color 1
+	}
+	if { [check_no_compiler_messages_nocache compat_alt_has_urls object {
+		int dummy; } "-fdiagnostics-urls=never"] != 0 } {
+	    set compat_alt_urls 1
+	}
+	if { [check_no_compiler_messages_nocache compat_alt_has_no_line_no object {
+		int dummy; } "-fno-diagnostics-show-line-numbers"] != 0 } {
+	    set compat_no_line_no 1
+	}
+	if { [check_no_compiler_messages_nocache compat_alt_has_plain_output object {
+		int dummy; } "-fdiagnostics-plain-output"] != 0 } {
+	    set compat_alt_plain_output 1
+	}
+	
+	compat-use-tst-compiler
+    }
+
+    # If there is an alternate compiler, does it support decimal float types?
+    if { $compat_have_dfp == 1 && $compat_use_alt == 1 && $compat_same_alt == 0 } {
+	compat-use-alt-compiler
+	set compat_have_dfp [check_effective_target_dfprt_nocache]
+	compat-use-tst-compiler
+	verbose "compat_have_dfp for alt compiler: $compat_have_dfp" 2
+    }
+
+    # If decimal float is not supported, add it to the skip list, which
+    # affects code in the header files.
+    if { $compat_have_dfp == 0 } {
+	global compat_skip_list
+	lappend compat_skip_list "DECIMAL_FLOAT"
+    }
+}
+
+# If either compiler does not support decimal float types, skip this test.
+
+proc dg-require-compat-dfp { args } {
+    global compat_have_dfp
+    if { $compat_have_dfp == 0 } {
+	upvar dg-do-what dg-do-what
+	set dg-do-what [list [lindex ${dg-do-what} 0] "N" "P"]
+    }
+}

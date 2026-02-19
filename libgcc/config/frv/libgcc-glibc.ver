@@ -1,0 +1,73 @@
+# Copyright (C) 2004-2026 Free Software Foundation, Inc.
+#
+# This file is part of GCC.
+#
+# GCC is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3, or (at your option)
+# any later version.
+#
+# GCC is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with GCC; see the file COPYING3.  If not see
+# <http://www.gnu.org/licenses/>.
+
+GCC_3.4 {
+  # frv abi symbol names
+  __ftod
+  __ftoi
+  __ftoui
+  __dtoi
+  __ftoui
+  __dtoui
+  __ftoll
+  __dtoll
+  __ftoull
+  __dtoull
+  __itof
+  __lltof
+  __dtof
+  __itod
+  __lltof
+  __lltod
+  __addd
+  __subd
+  __muld
+  __divd
+  __addf
+  __subf
+  __mulf
+  __divf
+  __sllll
+  __srlll
+  __srall
+  __addll
+  __subll
+  __mulll
+  __umulll
+  __divll
+  __udivll
+  __modll
+  __umodll
+  __cmpll
+  __cmpf
+  __cmpd
+  __andll
+  __orll
+  __xorll
+  __notll
+  __cmov
+  __cmovd
+  __cmovh
+  __cmovw
+  __modi
+  __uitod
+  __uitof
+  __ulltod
+  __ulltof
+  __umodi
+}

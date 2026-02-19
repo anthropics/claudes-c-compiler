@@ -1,0 +1,896 @@
+@c Copyright (C) 2019-2026 Free Software Foundation, Inc.
+@c This is part of the GCC manual.
+@c For copying conditions, see the file gcc.texi.
+@c Contributed by David Malcolm <dmalcolm@redhat.com>.
+
+@node Static Analyzer
+@chapter Static Analyzer
+@cindex analyzer
+@cindex static analysis
+@cindex static analyzer
+
+@menu
+* Analyzer Internals::       Analyzer Internals
+* Debugging the Analyzer::   Useful debugging tips
+@end menu
+
+@node Analyzer Internals
+@section Analyzer Internals
+@cindex analyzer, internals
+@cindex static analyzer, internals
+
+@subsection Overview
+
+At a high-level, we're doing coverage-guided symbolic execution of the
+user's code.
+
+The analyzer implementation works on the gimple-SSA representation.
+(I chose this in the hopes of making it easy to work with LTO to
+do whole-program analysis).
+
+The implementation is read-only: it doesn't attempt to change anything,
+just emit warnings.
+
+The gimple representation can be seen using @option{-fdump-ipa-analyzer}.
+@quotation Tip
+If the analyzer ICEs before this is written out, one workaround is to use
+@option{--param=analyzer-bb-explosion-factor=0} to force the analyzer
+to bail out after analyzing the first basic block.
+@end quotation
+
+First, we build a directed graph to represent the user's code.
+For historical reasons we call this the @code{supergraph}, although
+this is now a misnomer as we no longer add callgraph edges to this graph.
+The nodes and edges in the supergraph are called ``supernodes'' and
+``superedges'', and often referred to in code as @code{snodes} and
+@code{sedges}.
+
+We make a node in the supergraph before every gimple statement, with
+edges representing the transitions between statements within a basic block,
+along with additional nodes and edges at CFG edges.
+
+The nodes in the supergraph represent locations in the user's code,
+and discrete points between operations.  The edges represent transitions
+between these locations.  Each edge in the supergraph can have an optional
+@code{operation} associated with it, representing a single state transition
+that occurs along the edge, such as
+
+@itemize @bullet
+
+@item
+individual non-control-flow gimple statements (such as an assignment)
+
+@item
+control flow statements on a CFG edge that impose a condition for the
+transition to be possible (e.g. a branch of a conditional or a
+@code{switch} case)
+
+@item
+the collection of phi nodes at the entry to a basic block, with an
+associated CFG edge (so that these all take effect simultaneously)
+
+@item
+etc
+@end itemize
+
+There can be multiple nodes and edges in the supergraph corresponding to
+a single CFG edge so that e.g. we can handle filtering states on a condition
+separately from handling the effect of the phi nodes if the condition
+was satisfied.
+
+The analyzer in GCC 10 - GCC 15 attempted to have a single supernode per
+basic block for the sake of efficiency, but given that state transitions
+can happen mid-block, this became unmaintainable, hence we now have
+fine-grained nodes with one node/edge per gimple statement.
+
+Having built the supergraph from the CFGs of all of the functions in
+the user's code, we manipulate it:
+
+@itemize @bullet
+@item
+We fixup locations to try to ensure that every supernode has a reasonable
+@code{location_t} value referring to the location in the user's source.
+This is necessary, since in the gimple IR seen by the analyzer, many gimple
+statements have no location associated with them.
+
+@item
+We simplify the supergraph to remove redundant nodes and edges, such as
+those that are simply no-ops that add no useful location information.
+This can eliminate about 5-10% of the nodes.
+
+@item
+We sort and renumber the nodes into an order that we hope will lead to
+efficient state merging when exploring the graph (see below).
+@end itemize
+
+The supergraph can be seen at each stage using
+@option{-fdump-analyzer-supergraph}, which creates a series of
+@file{SRC.supergraph.N.KIND.dot} GraphViz files files showing the state
+of the supergraph after each of the above.
+
+We then build an @code{analysis_plan} which walks the callgraph to
+determine which calls might be suitable for being summarized (rather
+than fully explored) and thus in what order to explore the functions.
+
+Next is the heart of the analyzer: we use a worklist to explore state
+within the supergraph, building an "exploded graph".
+Nodes in the exploded graph correspond to <point,@w{ }state> pairs, as in
+     "Precise Interprocedural Dataflow Analysis via Graph Reachability"
+     (Thomas Reps, Susan Horwitz and Mooly Sagiv) - but note that
+we're not using the algorithm described in that paper, just the
+``exploded graph'' terminology.
+
+We reuse nodes for <point,@w{ }state> pairs we've already seen, and avoid
+tracking state too closely, so that (hopefully) we rapidly converge
+on a final exploded graph, and terminate the analysis.  We also bail
+out if the number of exploded <point,@w{ }state> nodes gets
+larger than a particular multiple of the total number of supernodes,
+(to ensure termination in the face of pathological state-explosion
+cases, or bugs).  We also stop exploring a point once we hit a limit
+of states for that point.
+
+We can identify problems directly when processing a <point,@w{ }state>
+instance.  For example, if we're finding the successors of
+
+@smallexample
+   <point: before-stmt: "free (ptr);",
+    state: @{"ptr": freed@}>
+@end smallexample
+
+then we can detect a double-free of "ptr".  We can then emit a path
+to reach the problem by finding the simplest route through the graph.
+
+Program points in the analysis are a combination of a supernode
+together with a "call string" identifying the
+stack of callsites below them, so that paths in the exploded graph
+correspond to interprocedurally valid paths: we always return to the
+correct call site, propagating state information accordingly.
+We avoid infinite recursion by stopping the analysis if a callsite
+appears more than @code{analyzer-max-recursion-depth} in a callstring
+(defaulting to 2).
+
+@subsection Graphs
+
+Nodes and edges in the exploded graph are called ``exploded nodes'' and
+``exploded edges'' and often referred to in the code as
+@code{enodes} and @code{eedges} (especially when distinguishing them
+from the @code{snodes} and @code{sedges} in the supergraph).
+
+Each graph numbers its nodes, giving unique identifiers - supernodes
+are referred to throughout dumps in the form @samp{SN': @var{index}} and
+exploded nodes in the form @samp{EN: @var{index}} (e.g. @samp{SN: 2} and
+@samp{EN:29}).
+
+The supergraph can be seen using @option{-fdump-analyzer-supergraph}.
+
+The exploded graph can be seen using @option{-fdump-analyzer-exploded-graph}
+and other dump options.  Exploded nodes are color-coded in the .dot output
+based on state-machine states to make it easier to see state changes at
+a glance.
+
+@subsection State Tracking
+
+There's a tension between:
+@itemize @bullet
+@item
+precision of analysis in the straight-line case, vs
+@item
+exponential blow-up in the face of control flow.
+@end itemize
+
+For example, in general, given this CFG:
+
+@smallexample
+      A
+     / \
+    B   C
+     \ /
+      D
+     / \
+    E   F
+     \ /
+      G
+@end smallexample
+
+we want to avoid differences in state-tracking in B and C from
+leading to blow-up.  If we don't prevent state blowup, we end up
+with exponential growth of the exploded graph like this:
+
+@smallexample
+
+           1:A
+          /   \
+         /     \
+        /       \
+      2:B       3:C
+       |         |
+      4:D       5:D        (2 exploded nodes for D)
+     /   \     /   \
+   6:E   7:F 8:E   9:F
+    |     |   |     |
+   10:G 11:G 12:G  13:G    (4 exploded nodes for G)
+
+@end smallexample
+
+Similar issues arise with loops.
+
+To prevent this, we follow various approaches:
+
+@enumerate a
+@item
+state pruning: which tries to discard state that won't be relevant
+later on within the function.
+This can be disabled via @option{-fno-analyzer-state-purge}.
+
+@item
+state merging.  We can try to find the commonality between two
+program_state instances to make a third, simpler program_state.
+We have two strategies here:
+
+  @enumerate
+  @item
+     the worklist keeps new nodes for the same program_point together,
+     and tries to merge them before processing, and thus before they have
+     successors.  Hence, in the above, the two nodes for D (4 and 5) reach
+     the front of the worklist together, and we create a node for D with
+     the merger of the incoming states.
+
+  @item
+     try merging with the state of existing enodes for the program_point
+     (which may have already been explored).  There will be duplication,
+     but only one set of duplication; subsequent duplicates are more likely
+     to hit the cache.  In particular, (hopefully) all merger chains are
+     finite, and so we guarantee termination.
+     This is intended to help with loops: we ought to explore the first
+     iteration, and then have a "subsequent iterations" exploration,
+     which uses a state merged from that of the first, to be more abstract.
+  @end enumerate
+
+We avoid merging pairs of states that have state-machine differences,
+as these are the kinds of differences that are likely to be most
+interesting.  So, for example, given:
+
+@smallexample
+      if (condition)
+        ptr = malloc (size);
+      else
+        ptr = local_buf;
+
+      .... do things with 'ptr'
+
+      if (condition)
+        free (ptr);
+
+      ...etc
+@end smallexample
+
+then we end up with an exploded graph that looks like this:
+
+@smallexample
+
+                   if (condition)
+                     / T      \ F
+            ---------          ----------
+           /                             \
+      ptr = malloc (size)             ptr = local_buf
+          |                               |
+      copy of                         copy of
+        "do things with 'ptr'"          "do things with 'ptr'"
+      with ptr: heap-allocated        with ptr: stack-allocated
+          |                               |
+      if (condition)                  if (condition)
+          | known to be T                 | known to be F
+      free (ptr);                         |
+           \                             /
+            -----------------------------
+                         | ('ptr' is pruned, so states can be merged)
+                        etc
+
+@end smallexample
+
+where some duplication has occurred, but only for the places where the
+the different paths are worth exploringly separately.
+
+Merging can be disabled via @option{-fno-analyzer-state-merge}.
+@end enumerate
+
+@subsection Region Model
+
+Part of the state stored at a @code{exploded_node} is a @code{region_model}.
+This is an implementation of the region-based ternary model described in
+@url{https://www.researchgate.net/publication/221430855_A_Memory_Model_for_Static_Analysis_of_C_Programs,
+"A Memory Model for Static Analysis of C Programs"}
+(Zhongxing Xu, Ted Kremenek, and Jian Zhang).
+
+A @code{region_model} encapsulates a representation of the state of
+memory, with a @code{store} recording a binding between @code{region}
+instances, to @code{svalue} instances.  The bindings are organized into
+clusters, where regions accessible via well-defined pointer arithmetic
+are in the same cluster.  The representation is graph-like because values
+can be pointers to regions.  It also stores a @code{constraint_manager},
+capturing relationships between the values.
+
+Because each node in the @code{exploded_graph} has a @code{region_model},
+and each of the latter is graph-like, the @code{exploded_graph} is in some
+ways a graph of graphs.
+
+There are several ``dump'' functions for use when debugging the analyzer.
+
+Consider this example C code:
+
+@smallexample
+void *
+calls_malloc (size_t n)
+@{
+  void *result = malloc (1024);
+  return result; /* HERE */
+@}
+
+void test (size_t n)
+@{
+  void *ptr = calls_malloc (n * 4);
+  /* etc.  */
+@}
+@end smallexample
+
+and the state at the point @code{/* HERE */} for the interprocedural
+analysis case where @code{calls_malloc} returns back to @code{test}.
+
+Here's an example of printing a @code{program_state} at @code{/* HERE */},
+showing the @code{region_model} within it, along with state for the
+@code{malloc} state machine.
+
+@smallexample
+(gdb) break region_model::on_return
+[..snip...]
+(gdb) run
+[..snip...]
+(gdb) up
+[..snip...]
+(gdb) call state->dump()
+State
+├─ Region Model
+│  ├─ Current Frame: frame: ‘calls_malloc’@@2
+│  ├─ Store
+│  │  ├─ m_called_unknown_fn: false
+│  │  ├─ frame: ‘test’@@1
+│  │  │  ╰─ _1: (INIT_VAL(n_2(D))*(size_t)4)
+│  │  ╰─ frame: ‘calls_malloc’@@2
+│  │     ├─ result_4: &HEAP_ALLOCATED_REGION(27)
+│  │     ╰─ _5: &HEAP_ALLOCATED_REGION(27)
+│  ╰─ Dynamic Extents
+│     ╰─ HEAP_ALLOCATED_REGION(27): (INIT_VAL(n_2(D))*(size_t)4)
+╰─ ‘malloc’ state machine
+   ╰─ 0x468cb40: &HEAP_ALLOCATED_REGION(27): unchecked (@{free@}) (‘result_4’)
+@end smallexample
+
+Within the store, there are bindings clusters for the SSA names for the
+various local variables within frames for @code{test} and
+@code{calls_malloc}.  For example,
+
+@itemize @bullet
+@item
+within @code{test} the whole cluster for @code{_1} is bound
+to a @code{binop_svalue} representing @code{n * 4}, and
+@item
+within @code{test} the whole cluster for @code{result_4} is bound to a
+@code{region_svalue} pointing at @code{HEAP_ALLOCATED_REGION(12)}.
+@end itemize
+
+Additionally, this latter pointer has the @code{unchecked} state for the
+@code{malloc} state machine indicating it hasn't yet been checked against
+@code{NULL} since the allocation call.
+
+We also see that the state has captured the size of the heap-allocated
+region (``Dynamic Extents'').
+
+This visualization can also be seen within the output of
+@option{-fdump-analyzer-exploded-nodes-2} and
+@option{-fdump-analyzer-exploded-nodes-3}.
+
+As well as the above visualizations of states, there are tree-like
+visualizations for instances of @code{svalue} and @code{region}, showing
+their IDs and how they are constructed from simpler symbols:
+
+@smallexample
+(gdb) break region_model::set_dynamic_extents
+[..snip...]
+(gdb) run
+[..snip...]
+(gdb) up
+[..snip...]
+(gdb) call size_in_bytes->dump()
+(17): ‘long unsigned int’: binop_svalue(mult_expr: ‘*’)
+├─ (15): ‘size_t’: initial_svalue
+│  ╰─ m_reg: (12): ‘size_t’: decl_region(‘n_2(D)’)
+│     ╰─ parent: (9): frame_region(‘test’, index: 0, depth: 1)
+│        ╰─ parent: (1): stack region
+│           ╰─ parent: (0): root region
+╰─ (16): ‘size_t’: constant_svalue (‘4’)
+@end smallexample
+
+i.e. that @code{size_in_bytes} is a @code{binop_svalue} expressing
+the result of multiplying
+
+@itemize @bullet
+@item
+the initial value of the @code{PARM_DECL} @code{n_2(D)} for the
+parameter @code{n} within the frame for @code{test} by
+@item
+the constant value @code{4}.
+@end itemize
+
+The above visualizations rely on the @code{text_art::widget} framework,
+which performs significant work to lay out the output, so there is also
+an earlier, simpler, form of dumping available.  For states there is:
+
+@smallexample
+(gdb) call state->dump(eg.m_ext_state, true)
+rmodel:
+stack depth: 2
+  frame (index 1): frame: ‘calls_malloc’@@2
+  frame (index 0): frame: ‘test’@@1
+clusters within frame: ‘test’@@1
+  cluster for: _1: (INIT_VAL(n_2(D))*(size_t)4)
+clusters within frame: ‘calls_malloc’@@2
+  cluster for: result_4: &HEAP_ALLOCATED_REGION(27)
+  cluster for: _5: &HEAP_ALLOCATED_REGION(27)
+m_called_unknown_fn: FALSE
+constraint_manager:
+  equiv classes:
+  constraints:
+dynamic_extents:
+  HEAP_ALLOCATED_REGION(27): (INIT_VAL(n_2(D))*(size_t)4)
+malloc:
+  0x468cb40: &HEAP_ALLOCATED_REGION(27): unchecked (@{free@}) (‘result_4’)
+@end smallexample
+
+or for @code{region_model} just:
+
+@smallexample
+(gdb) call state->m_region_model->debug()
+stack depth: 2
+  frame (index 1): frame: ‘calls_malloc’@@2
+  frame (index 0): frame: ‘test’@@1
+clusters within frame: ‘test’@@1
+  cluster for: _1: (INIT_VAL(n_2(D))*(size_t)4)
+clusters within frame: ‘calls_malloc’@@2
+  cluster for: result_4: &HEAP_ALLOCATED_REGION(27)
+  cluster for: _5: &HEAP_ALLOCATED_REGION(27)
+m_called_unknown_fn: FALSE
+constraint_manager:
+  equiv classes:
+  constraints:
+dynamic_extents:
+  HEAP_ALLOCATED_REGION(27): (INIT_VAL(n_2(D))*(size_t)4)
+@end smallexample
+
+and for instances of @code{svalue} and @code{region} there is this
+older dump implementation, which takes a @code{bool simple} flag
+controlling the verbosity of the dump:
+
+@smallexample
+(gdb) call size_in_bytes->dump(true)
+(INIT_VAL(n_2(D))*(size_t)4)
+
+(gdb) call size_in_bytes->dump(false)
+binop_svalue (mult_expr, initial_svalue(‘size_t’, decl_region(frame_region(‘test’, index: 0, depth: 1), ‘size_t’, ‘n_2(D)’)), constant_svalue(‘size_t’, 4))
+@end smallexample
+
+@subsection Analyzer Paths
+
+We need to explain to the user what the problem is, and to persuade them
+that there really is a problem.  Hence having a @code{diagnostics::paths::path}
+isn't just an incidental detail of the analyzer; it's required.
+
+Paths ought to be:
+@itemize @bullet
+@item
+interprocedurally-valid
+@item
+feasible
+@end itemize
+
+Without state-merging, all paths in the exploded graph are feasible
+(in terms of constraints being satisfied).
+With state-merging, paths in the exploded graph can be infeasible.
+
+We collate warnings and only emit them for the simplest path
+e.g. for a bug in a utility function, with lots of routes to calling it,
+we only emit the simplest path (which could be intraprocedural, if
+it can be reproduced without a caller).
+
+We thus want to find the shortest feasible path through the exploded
+graph from the origin to the exploded node at which the diagnostic was
+saved.  Unfortunately, if we simply find the shortest such path and
+check if it's feasible we might falsely reject the diagnostic, as there
+might be a longer path that is feasible.  Examples include the cases
+where the diagnostic requires us to go at least once around a loop for a
+later condition to be satisfied, or where for a later condition to be
+satisfied we need to enter a suite of code that the simpler path skips.
+
+We attempt to find the shortest feasible path to each diagnostic by
+first constructing a ``trimmed graph'' from the exploded graph,
+containing only those nodes and edges from which there are paths to
+the target node, and using Dijkstra's algorithm to order the trimmed
+nodes by minimal distance to the target.
+
+We then use a worklist to iteratively build a ``feasible graph''
+(actually a tree), capturing the pertinent state along each path, in
+which every path to a ``feasible node'' is feasible by construction,
+restricting ourselves to the trimmed graph to ensure we stay on target,
+and ordering the worklist so that the first feasible path we find to the
+target node is the shortest possible path.  Hence we start by trying the
+shortest possible path, but if that fails, we explore progressively
+longer paths, eventually trying iterations through loops.  The
+exploration is captured in the feasible_graph, which can be dumped as a
+.dot file via @option{-fdump-analyzer-feasibility} to visualize the
+exploration.  The indices of the feasible nodes show the order in which
+they were created.  We effectively explore the tree of feasible paths in
+order of shortest path until we either find a feasible path to the
+target node, or hit a limit and give up.
+
+This is something of a brute-force approach, but the trimmed graph
+hopefully keeps the complexity manageable.
+
+This algorithm can be disabled (for debugging purposes) via
+@option{-fno-analyzer-feasibility}, which simply uses the shortest path,
+and notes if it is infeasible.
+
+The above gives us a shortest feasible @code{exploded_path} through the
+@code{exploded_graph} (a list of @code{exploded_edge *}).  We use this
+@code{exploded_path} to build a @code{diagnostics::paths::path} (a list of
+@strong{events} for the diagnostic subsystem) - specifically a
+@code{checker_path}.
+
+Having built the @code{checker_path}, we prune it to try to eliminate
+events that aren't relevant, to minimize how much the user has to read.
+
+After pruning, we notify each event in the path of its ID and record the
+IDs of interesting events, allowing for events to refer to other events
+in their descriptions.  The @code{pending_diagnostic} class has various
+vfuncs to support emitting more precise descriptions, so that e.g.
+
+@itemize @bullet
+@item
+a deref-of-unchecked-malloc diagnostic might use:
+@smallexample
+  returning possibly-NULL pointer to 'make_obj' from 'allocator'
+@end smallexample
+for a @code{return_event} to make it clearer how the unchecked value moves
+from callee back to caller
+@item
+a double-free diagnostic might use:
+@smallexample
+  second 'free' here; first 'free' was at (3)
+@end smallexample
+and a use-after-free might use
+@smallexample
+  use after 'free' here; memory was freed at (2)
+@end smallexample
+@end itemize
+
+At this point we can emit the diagnostic.
+
+@subsection Limitations
+
+@itemize @bullet
+@item
+Only for C so far
+@item
+The implementation of call summaries is currently very simplistic.
+@item
+Lack of function pointer analysis
+@item
+The constraint-handling code assumes reflexivity in some places
+(that values are equal to themselves), which is not the case for NaN.
+As a simple workaround, constraints on floating-point values are
+currently ignored.
+@item
+There are various other limitations in the region model (grep for TODO/xfail
+in the testsuite).
+@item
+The constraint_manager's implementation of transitivity is currently too
+expensive to enable by default and so must be manually enabled via
+@option{-fanalyzer-transitivity}).
+@item
+The checkers are currently hardcoded and don't allow for user extensibility
+(e.g. adding allocate/release pairs).
+@item
+Although the analyzer's test suite has a proof-of-concept test case for
+LTO, LTO support hasn't had extensive testing.  There are various
+lang-specific things in the analyzer that assume C rather than LTO.
+For example, SSA names are printed to the user in ``raw'' form, rather
+than printing the underlying variable name.
+@end itemize
+
+@node Debugging the Analyzer
+@section Debugging the Analyzer
+@cindex analyzer, debugging
+@cindex static analyzer, debugging
+
+When debugging the analyzer I normally use all of these options
+together:
+
+@smallexample
+./xgcc -B. \
+  -S \
+  -fanalyzer \
+  OTHER_GCC_ARGS \
+  -wrapper gdb,--args \
+  -fdump-analyzer-stderr \
+  -fdump-ipa-analyzer=stderr
+@end smallexample
+
+where:
+
+@itemize @bullet
+@item @code{./xgcc -B.}
+is the usual way to invoke a self-built GCC from within the @file{BUILDDIR/gcc}
+subdirectory.
+
+@item @code{-S}
+so that the driver (@code{./xgcc}) invokes @code{cc1}, but doesn't bother
+running the assembler or linker (since the analyzer runs inside @code{cc1}).
+
+@item @code{-fanalyzer}
+enables the analyzer, obviously.
+
+@item @code{-wrapper gdb,--args}
+invokes @code{cc1} under the debugger so that I can debug @code{cc1} and
+set breakpoints and step through things.
+
+@item @code{-fdump-analyzer-stderr}
+so that the logging interface is enabled and goes to stderr, which often
+gives valuable context into what's happening when stepping through the
+analyzer
+
+@item @code{-fdump-ipa-analyzer=stderr}
+which dumps the GIMPLE IR seen by the analyzer pass to stderr
+
+@end itemize
+
+Other useful options:
+
+@itemize @bullet
+@item @code{-fdump-analyzer-supergraph}
+which dumps @file{SRC.supergraph.N.KIND.dot} GraphViz files that I can look at (with
+python-xdot)
+
+@item @code{-fdump-analyzer-exploded-graph}
+which dumps a @file{SRC.eg.dot} GraphViz file
+
+@item @code{-fdump-analyzer-exploded-nodes-2}
+which dumps a @file{SRC.eg.txt} file containing the full @code{exploded_graph}.
+
+@item @code{-fdiagnostics-add-output=experimental-html:show-state-diagrams=yes}
+which writes out the diagnostics in HTML form, and generates SVG state
+diagrams visualizing the state of memory at each event (inspired by the
+"ddd" debugger).  These can be seen by pressing 'j' and 'k' to single-step
+forward and backward through events.  Note that these SVG diagrams are
+created from an intermediate SARIF directed graph representation generated from
+@code{program_state} objects.  The SARIF representation can be easier to
+read - for example, rather than storing the contents of memory via byte
+offsets, it uses fields for structs and element indexes for arrays,
+recursively.  However it is a different representation, and thus bugs could
+be hidden by this transformation.  Generating the SVG diagrams requires
+an invocation of "dot" per event, so it noticeably slows down diagnostic
+emission, hence the opt-in command-line flag.  The SARIF and ``dot''
+representations can be seen by @code{__analyzer_dump_xml} and
+@code{__analyzer_dump_dot} below (writing them to stderr), or by adding
+@code{show-state-diagrams-sarif=yes} and
+@code{show-state-diagrams-dot-src=yes} to the html sink, which shows
+them within the generated HTML next to the generated SVG.
+
+@end itemize
+
+Assuming that you have the
+@uref{https://gcc-newbies-guide.readthedocs.io/en/latest/debugging.html,,python support scripts for gdb}
+installed (which you should do, it makes debugging GCC much easier),
+you can use:
+
+@smallexample
+(gdb) break-on-saved-diagnostic
+@end smallexample
+
+to put a breakpoint at the place where a diagnostic is saved during
+@code{exploded_graph} exploration, to see where a particular diagnostic
+is being saved, and:
+
+@smallexample
+(gdb) break-on-diagnostic
+@end smallexample
+
+to put a breakpoint at the place where diagnostics are actually emitted.
+
+@subsection Special Functions for Debugging the Analyzer
+
+The analyzer recognizes various special functions by name, for use
+in debugging the analyzer, and for use in DejaGnu tests.
+
+The declarations of these functions can be seen in the testsuite
+in @file{analyzer-decls.h}.  None of these functions are actually
+implemented in terms of code, merely as @code{known_function} subclasses
+(in @file{gcc/analyzer/kf-analyzer.cc}).
+
+@table @code
+
+@item __analyzer_break
+Add:
+@smallexample
+  __analyzer_break ();
+@end smallexample
+to the source being analyzed to trigger a breakpoint in the analyzer when
+that source is reached.  By putting a series of these in the source, it's
+much easier to effectively step through the program state as it's analyzed.
+
+@item __analyzer_describe
+The analyzer handles:
+
+@smallexample
+__analyzer_describe (0, expr);
+@end smallexample
+
+by emitting a warning describing the 2nd argument (which can be of any
+type), at a verbosity level given by the 1st argument.  This is for use when
+debugging, and may be of use in DejaGnu tests.
+
+@item __analyzer_dump
+@smallexample
+__analyzer_dump ();
+@end smallexample
+
+will dump the copious information about the analyzer's state each time it
+reaches the call in its traversal of the source.
+
+@item __analyzer_dump_capacity
+@smallexample
+extern void __analyzer_dump_capacity (const void *ptr);
+@end smallexample
+
+will emit a warning describing the capacity of the base region of
+the region pointed to by the 1st argument.
+
+@item __analyzer_dump_dot
+@smallexample
+__analyzer_dump_dot ();
+@end smallexample
+
+will dump GraphViz .dot source to stderr reaches the call in its
+traversal of the source.  This .dot source implements a diagram
+describing the analyzer’s state.
+
+@item __analyzer_dump_escaped
+@smallexample
+extern void __analyzer_dump_escaped (void);
+@end smallexample
+
+will emit a warning giving the number of decls that have escaped on this
+analysis path, followed by a comma-separated list of their names,
+in alphabetical order.
+
+@item __analyzer_dump_path
+@smallexample
+__analyzer_dump_path ();
+@end smallexample
+
+will emit a placeholder ``note'' diagnostic with a path to that call site,
+if the analyzer finds a feasible path to it.  This can be useful for
+writing DejaGnu tests for constraint-tracking and feasibility checking.
+
+@item __analyzer_dump_exploded_nodes
+For every callsite to @code{__analyzer_dump_exploded_nodes} the analyzer
+will emit a warning after it finished the analysis containing information
+on all of the exploded nodes at that program point.
+
+@smallexample
+  __analyzer_dump_exploded_nodes (0);
+@end smallexample
+
+will output the number of ``processed'' nodes, and the IDs of
+both ``processed'' and ``merger'' nodes, such as:
+
+@smallexample
+warning: 2 processed enodes: [EN: 56, EN: 58] merger(s): [EN: 54-55, EN: 57, EN: 59]
+@end smallexample
+
+With a non-zero argument
+
+@smallexample
+  __analyzer_dump_exploded_nodes (1);
+@end smallexample
+
+it will also dump all of the states within the ``processed'' nodes.
+
+@item __analyzer_dump_named_constant
+When the analyzer sees a call to @code{__analyzer_dump_named_constant} it
+will emit a warning describing what is known about the value of a given
+named constant, for parts of the analyzer that interact with target
+headers.
+
+For example:
+
+@smallexample
+__analyzer_dump_named_constant ("O_RDONLY");
+@end smallexample
+
+might lead to the analyzer emitting the warning:
+
+@smallexample
+warning: named constant 'O_RDONLY' has value '1'
+@end smallexample
+
+@item __analyzer_dump_region_model
+@smallexample
+   __analyzer_dump_region_model ();
+@end smallexample
+will dump the region_model's state to stderr.
+
+@item __analyzer_dump_state
+@smallexample
+__analyzer_dump_state ("malloc", ptr);
+@end smallexample
+
+will emit a warning describing the state of the 2nd argument
+(which can be of any type) with respect to the state machine with
+a name matching the 1st argument (which must be a string literal).
+This is for use when debugging, and may be of use in DejaGnu tests.
+
+@item __analyzer_dump_sarif
+@smallexample
+__analyzer_dump_sarif ();
+@end smallexample
+
+will dump the copious information about the analyzer's state each time it
+reaches the call in its traversal of the source.
+
+@item __analyzer_eval
+@smallexample
+__analyzer_eval (expr);
+@end smallexample
+will emit a warning with text "TRUE", FALSE" or "UNKNOWN" based on the
+truthfulness of the argument.  This is useful for writing DejaGnu tests.
+
+@item __analyzer_get_unknown_ptr
+@smallexample
+__analyzer_get_unknown_ptr ();
+@end smallexample
+will obtain an unknown @code{void *}.
+
+@item __analyzer_get_strlen
+@smallexample
+__analyzer_get_strlen (buf);
+@end smallexample
+will emit a warning if PTR doesn't point to a null-terminated string.
+TODO: eventually get the strlen of the buffer (without the
+optimizer touching it).
+
+@end table
+
+@subsection Other Debugging Techniques
+
+To compare two different exploded graphs, try
+@code{-fdump-analyzer-exploded-nodes-2 -fdump-noaddr}.
+This will dump a @file{SRC.eg.txt} file containing the full
+@code{exploded_graph}. I use @code{diff -u50 -p} to compare two different
+such files (e.g. before and after a patch) to find the first place where the
+two graphs diverge.  The option @option{-fdump-noaddr} will suppress
+printing pointers withihn the dumps (which would otherwise hide the real
+differences with irrelevent churn).
+
+The option @option{-fdump-analyzer-json} will dump both the supergraph
+and the exploded graph in compressed JSON form.
+
+One approach when tracking down where a particular bogus state is
+introduced into the @code{exploded_graph} is to add custom code to
+@code{program_state::validate}.
+
+The debug function @code{region::is_named_decl_p} can be used when debugging,
+such as for assertions and conditional breakpoints.  For example, when
+tracking down a bug in handling a decl called @code{yy_buffer_stack}, I
+temporarily added a:
+@smallexample
+  gcc_assert (!m_base_region->is_named_decl_p ("yy_buffer_stack"));
+@end smallexample
+to @code{binding_cluster::mark_as_escaped} to trap a point where
+@code{yy_buffer_stack} was mistakenly being treated as having escaped.

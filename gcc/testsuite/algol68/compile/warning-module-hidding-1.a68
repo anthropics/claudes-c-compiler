@@ -1,0 +1,6 @@
+{ dg-options "-Whidden-declarations=all" }
+
+module Bar =
+def int j; j := 20
+postlude int j; puts ("bye bar'n")  { dg-warning "hidden" }
+fed

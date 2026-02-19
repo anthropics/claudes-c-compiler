@@ -1,0 +1,233 @@
+# Top level -*- makefile -*- fragment for GNU C - C language.
+# Copyright (C) 1994-2026 Free Software Foundation, Inc.
+
+#This file is part of GCC.
+
+#GCC is free software; you can redistribute it and/or modify
+#it under the terms of the GNU General Public License as published by
+#the Free Software Foundation; either version 3, or (at your option)
+#any later version.
+
+#GCC is distributed in the hope that it will be useful,
+#but WITHOUT ANY WARRANTY; without even the implied warranty of
+#MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#GNU General Public License for more details.
+
+# You should have received a copy of the GNU General Public License
+# along with GCC; see the file COPYING3.  If not see
+# <http://www.gnu.org/licenses/>.
+
+# This file provides the language dependent support in the main Makefile.
+# Each language makefile fragment must provide the following targets:
+#
+# foo.all.cross, foo.start.encap, foo.rest.encap,
+# foo.install-common, foo.install-man, foo.install-info, foo.install-pdf,
+# foo.install-html, foo.info, foo.dvi, foo.pdf, foo.html, foo.uninstall,
+# foo.mostlyclean, foo.clean, foo.distclean,
+# foo.maintainer-clean, foo.stage1, foo.stage2, foo.stage3, foo.stage4
+#
+# where `foo' is the name of the language.
+#
+# It should also provide rules for:
+#
+# - making any compiler driver (eg: gcc)
+# - the compiler proper (eg: cc1)
+# - define the names for selecting the language in LANGUAGES.
+
+#
+# Define the names for selecting c in LANGUAGES.
+c: cc1$(exeext)
+c.serial = cc1$(exeext)
+
+# Tell GNU make to ignore these if they exist.
+.PHONY: c gcc
+
+# The C front end driver.  This is different from the drivers for other
+# front ends, because there is no C language specific driver (i.e. nothing
+# is to cc1 as e.g. g++ is to cc1plus, or gfortran is to f951).
+CFLAGS-c/gccspec.o += $(DRIVER_DEFINES)
+
+# The C compiler itself.
+
+# Language-specific object files for C and Objective C.
+C_AND_OBJC_OBJS = attribs.o c/c-errors.o c/c-decl.o c/c-typeck.o \
+  c/c-convert.o c/c-aux-info.o c/c-objc-common.o c/c-parser.o \
+  c/c-fold.o c/gimple-parser.o \
+  $(C_COMMON_OBJS) $(C_TARGET_OBJS)
+
+# Language-specific object files for C.
+C_OBJS = c/c-lang.o c-family/stub-objc.o $(C_AND_OBJC_OBJS)
+c_OBJS = $(C_OBJS) cc1-checksum.o c/gccspec.o
+c_FDAS = cc1.fda
+
+# Use strict warnings for this front end.
+c-warn = $(STRICT_WARN)
+
+ifeq ($(if $(wildcard ../stage_current),$(shell cat \
+  ../stage_current)),stageautofeedback)
+$(C_OBJS): ALL_COMPILERFLAGS += -fauto-profile=cc1.fda
+$(C_OBJS): cc1.fda
+endif
+
+# compute checksum over all object files and the options
+# re-use the checksum from the prev-final stage so it passes
+# the bootstrap comparison and allows comparing of the cc1 binary
+cc1-checksum.cc : build/genchecksum$(build_exeext) checksum-options \
+	$(C_OBJS) $(BACKEND) $(LIBDEPS) 
+	if [ -f ../stage_final ] \
+	   && cmp -s ../stage_current ../stage_final; then \
+	  cp ../prev-gcc/cc1-checksum.cc cc1-checksum.cc; \
+	else \
+	  build/genchecksum$(build_exeext) $(C_OBJS) $(BACKEND) $(LIBDEPS) \
+                     checksum-options > cc1-checksum.cc.tmp && 		 \
+	  $(srcdir)/../move-if-change cc1-checksum.cc.tmp cc1-checksum.cc; \
+	fi
+
+cc1$(exeext): $(C_OBJS) cc1-checksum.o $(BACKEND) $(LIBDEPS)
+	@$(call LINK_PROGRESS,$(INDEX.c),start)
+	+$(LLINKER) $(ALL_LINKERFLAGS) $(LDFLAGS) -o $@ $(C_OBJS) \
+	  cc1-checksum.o $(BACKEND) $(LIBS) $(BACKENDLIBS)
+	@$(call LINK_PROGRESS,$(INDEX.c),end)
+
+components_in_prev = "bfd opcodes binutils fixincludes gas gcc gmp mpfr mpc isl gold intl ld libbacktrace libcpp libcody libdecnumber libiberty libiberty-linker-plugin libiconv zlib lto-plugin libctf libsframe"
+components_in_prev_target = "libstdc++-v3 libsanitizer libvtv libgcc libbacktrace libphobos zlib libgomp libatomic"
+
+cc1.fda: create_fdas_for_cc1
+	$(PROFILE_MERGER) $(shell ls -ha cc1_*.fda) --output_file cc1.fda -gcov_version 3
+
+create_fdas_for_cc1: ../stage1-gcc/cc1$(exeext) ../prev-gcc/$(PERF_DATA)
+	for component_in_prev in "$(components_in_prev)"; do \
+	  perf_path=../prev-$$component_in_prev/$(PERF_DATA); \
+	  echo "Perf path:"; \
+	  echo $$perf_path; \
+	  if [ -f $$perf_path ]; then \
+	    profile_name=cc1_$$component_in_prev.fda; \
+	    $(CREATE_GCOV) -binary ../stage1-gcc/cc1$(exeext) -gcov $$profile_name -profile $$perf_path -gcov_version 3 || exit 1; \
+	  fi; \
+	done;
+
+	for component_in_prev_target in "$(components_in_prev_target)"; do \
+	  perf_path=../prev-$(TARGET_SUBDIR)/$$component_in_prev_target/$(PERF_DATA); \
+	  echo "Perf path:"; \
+	  echo $$perf_path; \
+	  if [ -f $$perf_path ]; then \
+	    profile_name=cc1_$$component_in_prev_target.fda; \
+	    $(CREATE_GCOV) -binary ../prev-gcc/cc1$(exeext) -gcov $$profile_name -profile $$perf_path -gcov_version 3 || exit 1; \
+	  fi; \
+	done;
+
+	$(STAMP) $@
+#
+# Build hooks:
+
+c.info:
+c.dvi:
+c.pdf:
+c.html:
+c.install-info:
+c.install-dvi:
+c.install-pdf:
+c.install-html:
+c.all.cross:
+c.start.encap:
+c.rest.encap:
+c.srcinfo:
+c.srcextra:
+c.tags: force
+	cd $(srcdir)/c; $(ETAGS) -o TAGS.sub *.cc *.h; \
+	$(ETAGS) --include TAGS.sub --include ../TAGS.sub
+c.man:
+c.srcman:
+
+# C selftests
+
+# If C is enabled, require the selftests to be run for it
+# at each stage of the build:
+selftest-c: s-selftest-c
+
+C_SELFTEST_FLAGS = -xc $(SELFTEST_FLAGS)
+C_SELFTEST_DEPS = cc1$(exeext) $(SELFTEST_DEPS)
+
+# Run the C selftests:
+s-selftest-c: $(C_SELFTEST_DEPS)
+	$(GCC_FOR_SELFTESTS) $(C_SELFTEST_FLAGS)
+	$(STAMP) $@
+
+# Convenience methods for running C selftests under gdb:
+.PHONY: selftest-c-gdb
+selftest-c-gdb: $(C_SELFTEST_DEPS)
+	$(GCC_FOR_SELFTESTS) $(C_SELFTEST_FLAGS) \
+	  -wrapper gdb,--args
+
+.PHONY: selftest-gdb
+selftest-gdb: selftest-c-gdb
+
+# Convenience methods for running C selftests under valgrind:
+.PHONY: selftest-c-valgrind
+selftest-c-valgrind: $(C_SELFTEST_DEPS)
+	$(GCC_FOR_SELFTESTS) $(C_SELFTEST_FLAGS) \
+	  -wrapper valgrind,--leak-check=full
+
+.PHONY: selftest-valgrind
+selftest-valgrind: selftest-c-valgrind
+
+# List of targets that can use the generic check- rule and its // variant.
+lang_checks += check-gcc
+lang_checks_parallelized += check-gcc
+# For description see the check_$lang_parallelize comment in gcc/Makefile.in.
+check_gcc_parallelize=10000
+
+# 'make check' in gcc/ looks for check-c.  Redirect it to check-gcc.
+check-c : check-gcc
+
+#
+# Install hooks:
+# cc1 is installed elsewhere as part of $(COMPILERS).
+
+c.install-common:
+c.install-man:
+
+c.install-plugin: installdirs
+# Install import library.
+ifeq ($(plugin_implib),yes)
+	$(mkinstalldirs) $(DESTDIR)$(plugin_resourcesdir)
+	$(INSTALL_DATA) cc1$(exeext).a $(DESTDIR)$(plugin_resourcesdir)/cc1$(exeext).a
+endif
+
+c.uninstall:
+
+#
+# Clean hooks:
+# A lot of the ancillary files are deleted by the main makefile.
+# We just have to delete files specific to us.
+
+c.mostlyclean:
+	-rm -f cc1$(exeext)
+	-rm -f c/*$(objext)
+	-rm -f c/*$(coverageexts)
+	-rm -f cc1.fda
+	-rm -f cc1_*.fda
+c.clean:
+c.distclean:
+	-rm -f c/config.status c/Makefile
+c.maintainer-clean:
+#
+# Stage hooks:
+# The main makefile has already created stage?/cp.
+
+c.stage1: stage1-start
+	-mv c/*$(objext) stage1/c
+c.stage2: stage2-start
+	-mv c/*$(objext) stage2/c
+c.stage3: stage3-start
+	-mv c/*$(objext) stage3/c
+c.stage4: stage4-start
+	-mv c/*$(objext) stage4/c
+c.stageprofile: stageprofile-start
+	-mv c/*$(objext) stageprofile/c
+c.stagefeedback: stagefeedback-start
+	-mv c/*$(objext) stagefeedback/c
+c.autostageprofile: autostageprofile-start
+	-mv c/*$(objext) autostageprofile/c
+c.autostagefeedback: autostagefeedback-start
+	-mv c/*$(objext) autostagefeedback/c

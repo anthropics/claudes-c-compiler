@@ -1,0 +1,491 @@
+2025-12-29  Rainer Orth  <ro@CeBiTec.Uni-Bielefeld.DE>
+
+	* configure: Regenerate.
+
+2025-11-03  Sam James  <sam@gentoo.org>
+
+	* configure: Regenerate.
+
+2025-10-05  Sam James  <sam@gentoo.org>
+
+	* Makefile.in: Regenerate.
+	* aclocal.m4: Regenerate.
+	* configure: Regenerate.
+
+2024-05-07  Rainer Orth  <ro@CeBiTec.Uni-Bielefeld.DE>
+
+	* Makefile.am [LIBSSP_USE_SYMVER_SUN] (ssp.map-sun): Pass
+	$(libssp_la_OBJECTS), $(libssp_la_LIBADD) to make_sunver.pl
+	unmodified.
+	* Makefile.in: Regenerate.
+
+2024-02-06  Rainer Orth  <ro@CeBiTec.Uni-Bielefeld.DE>
+
+	* configure.ac (AC_CHECK_DECLS): Check for gets.
+	* configure, config.h.in: Regenerate.
+	* gets-chk.c (gets): Guard declaration with !HAVE_DECL_GETS.
+
+2023-12-22  Christophe Lyon  <christophe.lyon@linaro.org>
+
+	* Makefile.am: Allow overriding EXEPCT.
+	* Makefile.in: Regenerate.
+
+2023-10-22  Iain Sandoe  <iain@sandoe.co.uk>
+
+	* Makefile.am: Handle Darwin rpaths.
+	* Makefile.in: Regenerate.
+	* configure: Regenerate.
+	* configure.ac: Handle Darwin rpaths.
+
+2023-08-07  Nick Alcock  <nick.alcock@oracle.com>
+
+	* configure: Regenerate.
+
+2023-08-07  Alexander von Gluck IV  <kallisti5@unixzen.com>
+
+	* configure: Regenerate.
+
+2023-08-07  Nick Alcock  <nick.alcock@oracle.com>
+
+	* configure: Regenerate.
+
+2023-08-07  Nick Alcock  <nick.alcock@oracle.com>
+
+	* configure: Regenerate.
+
+2023-08-07  H.J. Lu  <hjl.tools@gmail.com>
+
+	* configure: Regenerate.
+
+2023-08-07  H.J. Lu  <hjl.tools@gmail.com>
+
+	* configure: Regenerate.
+
+2023-01-07  LIU Hao  <lh_mouse@126.com>
+
+	PR middle-end/108300
+	* ssp.c: Define `WIN32_LEAN_AND_MEAN` before <windows.h>.
+
+2022-10-12  Martin Liska  <mliska@suse.cz>
+
+	* configure: Regenerate.
+
+2022-10-11  Olivier Hainque  <hainque@adacore.com>
+	    Olivier Hainque  <hainque@adacore.com>
+
+	* configure: Regenerate.
+
+2022-08-25  Martin Liska  <mliska@suse.cz>
+
+	* configure: Regenerate.
+
+2021-01-05  Samuel Thibault  <samuel.thibault@ens-lyon.org>
+
+	* configure: Re-generate.
+
+2020-12-05  Iain Sandoe  <iain@sandoe.co.uk>
+
+	PR target/97865
+	* configure: Regenerate.
+
+2020-11-29  John David Anglin  <danglin@gcc.gnu.org>
+
+	* configure: Regenerate.
+
+2020-05-29  H.J. Lu  <hjl.tools@gmail.com>
+
+	PR bootstrap/95413
+	* configure: Regenerated.
+
+2020-05-15  H.J. Lu  <hongjiu.lu@intel.com>
+
+	PR bootstrap/95147
+	* configure: Regenerated.
+
+2020-05-14  H.J. Lu  <hongjiu.lu@intel.com>
+
+	* configure: Regenerated.
+
+2020-02-12  Sandra Loosemore  <sandra@codesourcery.com>
+
+	PR libstdc++/79193
+	PR libstdc++/88999
+
+	* configure: Regenerated.
+
+2020-01-24  Maciej W. Rozycki  <macro@wdc.com>
+
+	* configure.ac: Handle `--with-toolexeclibdir='.
+	* Makefile.in: Regenerate.
+	* aclocal.m4: Regenerate.
+	* configure: Regenerate.
+
+2020-01-01  Jakub Jelinek  <jakub@redhat.com>
+
+	Update copyright years.
+
+2019-09-27  Maciej W. Rozycki  <macro@wdc.com>
+
+	* configure: Regenerate.
+
+2019-01-01  Jakub Jelinek  <jakub@redhat.com>
+
+	Update copyright years.
+
+2018-10-31  Joseph Myers  <joseph@codesourcery.com>
+
+	PR bootstrap/82856
+	* Makefile.am: Include multilib.am.
+	(AUTOMAKE_OPTIONS): Remove 1.9.5.
+	* configure.ac: Remove AC_PREREQ.  Quote argument to
+	AC_RUN_IFELSE.
+	* Makefile.in, aclocal.m4, configure: Regenerate.
+
+2018-04-24  H.J. Lu  <hongjiu.lu@intel.com>
+
+	* configure: Regenerated.
+
+2018-04-19  Jakub Jelinek  <jakub@redhat.com>
+
+	* configure: Regenerated.
+
+2018-04-18  David Malcolm  <dmalcolm@redhat.com>
+
+	PR jit/85384
+	* configure: Regenerate.
+
+2018-02-14  Igor Tsimbalist  <igor.v.tsimbalist@intel.com>
+
+	PR target/84148
+	* configure: Regenerate.
+
+2018-01-03  Jakub Jelinek  <jakub@redhat.com>
+
+	Update copyright years.
+
+2017-11-17  Igor Tsimbalist  <igor.v.tsimbalist@intel.com>
+
+	* Makefile.am: Update AM_CFLAGS, update
+	libssp_nonshared_la_CFLAGS.
+	* Makefile.in: Regenerate.
+	* configure: Likewise.
+	* aclocal.m4: Likewise.
+	* configure.ac: Set CET_FLAGS. Update XCFLAGS.
+
+2017-04-01  Jonathan Yong  <10walls@gmail.com>
+
+	* ssp.c (__guard_setup): Suppress unused variable warning.
+
+2017-01-17  Jakub Jelinek  <jakub@redhat.com>
+
+	PR other/79046
+	* configure.ac: Add GCC_BASE_VER.
+	* Makefile.am (gcc_version): Use @get_gcc_base_ver@ instead of cat to
+	get version from BASE-VER file.
+	* configure: Regenerated.
+	* Makefile.in: Regenerated.
+
+2017-01-04  Jakub Jelinek  <jakub@redhat.com>
+
+	Update copyright years.
+
+2016-11-15  Matthias Klose  <doko@ubuntu.com>
+
+	* configure: Regenerate.
+
+2015-04-25  Daniel Starke  <daniel.f.starke@freenet.de>
+
+	PR target/65867
+	* ssp.c: Added wincrypt.h include for Windows targets.
+
+2015-05-13  Michael Haubenwallner  <michael.haubenwallner@ssi-schaefer.com>
+
+	* Makefile.in: Regenerated with automake-1.11.6.
+	* aclocal.m4: Likewise.
+	* configure: Likewise.
+
+2015-02-09  Georg Koppen  <gk@torproject.org>
+
+	* ssp.c: Conditionally include <windows.h>
+	(__guard_setup): For Windows, use approved methods to get
+	a suitable random number for the stack check guard rather
+	than reading /dev/random.
+
+2015-01-22  Matthias Klose  <doko@ubuntu.com>
+
+	* gets-chk.c: Declare prototype for gets in C11 mode.
+
+2014-11-21  H.J. Lu  <hongjiu.lu@intel.com>
+
+	PR bootstrap/63784
+	* configure: Regenerated.
+
+2014-11-11  Francois-Xavier Coudert  <fxcoudert@gcc.gnu.org>
+
+	PR target/63610
+	* configure: Regenerate.
+
+2013-12-07  Jakub Jelinek  <jakub@redhat.com>
+
+	* ssp.c (fail): Avoid -Wformat-security warning.
+
+2013-09-20  Alan Modra  <amodra@gmail.com>
+
+	* configure: Regenerate.
+
+2013-02-06  Richard Sandiford  <rdsandiford@googlemail.com>
+
+	Revert previous patch.
+
+2013-02-03  Richard Sandiford  <rdsandiford@googlemail.com>
+
+	Update copyright years.
+
+2013-01-15  Paul Pluzhnikov  <ppluzhnikov@google.com>
+
+	PR 55982
+	* strncat-chk.c (__strncat_chk): Fix loop unroll.
+
+2012-09-14  David Edelsohn  <dje.gcc@gmail.com>
+
+	* configure: Regenerated.
+
+2012-05-29  Benjamin Kosnik  <bkoz@redhat.com>
+
+	PR libstdc++/51007
+	* configure.ac: Allow gnu, gnu* variants for --enable-symvers argument.
+	* configure: Regenerated.
+
+2012-05-16  H.J. Lu  <hongjiu.lu@intel.com>
+
+	* configure: Regenerated.
+
+2011-11-21  Andreas Tobler  <andreast@fgznet.ch>
+
+	* configure: Regenerate.
+
+2011-03-21  Rainer Orth  <ro@CeBiTec.Uni-Bielefeld.DE>
+
+	PR bootstrap/48135
+	* configure.ac (ssp_use_symver): Handle --disable-symvers.
+	* configure: Regenerate.
+
+2011-02-13  Ralf Wildenhues  <Ralf.Wildenhues@gmx.de>
+
+	* Makefile.in: Regenerate.
+	* aclocal.m4: Likewise.
+	* configure: Likewise.
+
+2010-12-06  Dave Korn  <dave.korn.cygwin@gmail.com>
+
+	PR target/40125
+	PR lto/46695
+	* configure.ac: Invoke ACX_LT_HOST_FLAGS.
+	* Makefile.am (libssp_la_LDFLAGS): Use lt_host_flags.
+	* aclocal.m4: Regenerate.
+	* configure: Regenerate.
+	* Makefile.in: Regenerate.
+
+2010-07-02  Rainer Orth  <ro@CeBiTec.Uni-Bielefeld.DE>
+
+	* configure.ac (ssp_use_symver): Only check for Sun-style symbol
+	versioning on Solaris 2.
+	* configure: Regenerate.
+
+2010-07-02  Rainer Orth  <ro@CeBiTec.Uni-Bielefeld.DE>
+
+	* configure.ac: Check for Sun symbol versioning.
+	Check for memmove.
+	* configure: Regenerate.
+	* config.h.in: Regenerate.
+
+	* Makefile.am [LIBSSP_USE_SYMVER]: Protect version_arg,
+	version_dep with LIBSSP_USE_SYMVER_GNU.
+	[LIBSSP_USE_SYMVER_SUN]: Handle Sun symbol versioning.
+	* Makefile.in: Regenerate.
+
+	* ssp.map: Reformat.
+
+	* memmove-chk.c: Change guard to HAVE_MEMMOVE.
+
+2010-05-04  Ralf Wildenhues  <Ralf.Wildenhues@gmx.de>
+
+	PR other/43620
+	* configure.ac (AM_INIT_AUTOMAKE): Add no-dist.
+	* Makefile.in: Regenerate.
+
+2010-04-02  Ralf Wildenhues  <Ralf.Wildenhues@gmx.de>
+
+	* Makefile.in: Regenerate.
+	* aclocal.m4: Regenerate.
+
+2009-12-05  Ralf Wildenhues  <Ralf.Wildenhues@gmx.de>
+
+	* Makefile.in: Regenerate.
+	* configure: Regenerate.
+
+2009-08-24  Ralf Wildenhues  <Ralf.Wildenhues@gmx.de>
+
+	* configure.ac (AC_PREREQ): Bump to 2.64.
+
+2009-08-22  Ralf Wildenhues  <Ralf.Wildenhues@gmx.de>
+
+	* Makefile.am (install-html, install-pdf): Remove.
+	* Makefile.in: Regenerate.
+
+	* Makefile.in: Regenerate.
+	* aclocal.m4: Regenerate.
+	* config.h.in: Regenerate.
+	* configure: Regenerate.
+
+2009-08-20  Dave Korn  <dave.korn.cygwin@gmail.com>
+
+	* Makefile.am (libssp_la_LDFLAGS): Add -bindir flag.
+	* Makefile.in: Regenerate.
+
+2009-07-30  Ralf Wildenhues  <Ralf.Wildenhues@gmx.de>
+
+	* configure.ac (_AC_ARG_VAR_PRECIOUS): Use m4_rename_force.
+
+2009-04-13  Ozkan Sezer  <sezeroz@gmail.com>
+
+	PR target/39062
+	* ssp.c: Also include malloc.h for alloca(). MinGW needs it.
+	* configure.ac: Also check for malloc.h.
+	* configure: Regenerated.
+	* config.h.in: Regenerated.
+
+2009-04-09  Nick Clifton  <nickc@redhat.com>
+
+	* strcat-chk.c: Change copyright header to refer to version 3
+	of the GNU General Public License with version 3.1 of the GCC
+	Runtime Library Exception and to point readers at the COPYING3
+	and COPYING3.RUNTIME files and the FSF's license web page.
+	* gets-chk.c: Likewise.
+	* memcpy-chk.c: Likewise.
+	* memmove-chk.c: Likewise.
+	* mempcpy-chk.c: Likewise.
+	* memset-chk.c: Likewise.
+	* snprintf-chk.c: Likewise.
+	* sprintf-chk.c: Likewise.
+	* ssp-local.c: Likewise.
+	* ssp.c: Likewise.
+	* ssp/ssp.h.in: Likewise.
+	* ssp/stdio.h: Likewise.
+	* ssp/string.h: Likewise.
+	* ssp/unistd.h: Likewise.
+	* stpcpy-chk.c: Likewise.
+	* strcpy-chk.c: Likewise.
+	* strncat-chk.c: Likewise.
+	* strncpy-chk.c: Likewise.
+	* vsnprintf-chk.c: Likewise.
+	* vsprintf-chk.c: Likewise.
+
+2009-03-01  Ralf Wildenhues  <Ralf.Wildenhues@gmx.de>
+
+	* configure: Regenerate.
+
+2009-02-02  Danny Smith  <dannysmith@users.sourcforge.net>
+
+	* ssp.c (_PATH_TTY): Define as "CONOUT$" for _WIN32.
+
+2008-12-18  Ralf Wildenhues  <Ralf.Wildenhues@gmx.de>
+
+	* configure: Regenerate.
+
+2008-09-26  Peter O'Gorman  <pogma@thewrittenword.com>
+	    Steve Ellcey  <sje@cup.hp.com>
+
+	* configure: Regenerate for new libtool.
+	* Makefile.in: Ditto.
+	* aclocal.m4: Ditto.
+
+2008-08-21  Aaron W. LaFramboise  <aaronavay62@aaronwl.com>
+
+	* Makefile.am: Add -no-undefined
+	* Makefile.in: Regenerate.
+
+2008-06-17  Ralf Wildenhues  <Ralf.Wildenhues@gmx.de>
+
+	* Makefile.in: Regenerate.
+	* config.h.in: Regenerate.
+	* configure: Regenerate.
+
+2008-04-18  Paolo Bonzini  <bonzini@gnu.org>
+
+	PR bootstrap/35457
+	* aclocal.m4: Regenerate.
+	* configure: Regenerate.
+
+2008-03-16  Ralf Wildenhues  <Ralf.Wildenhues@gmx.de>
+
+	* aclocal.m4: Regenerate.
+	* configure: Likewise.
+	* Makefile.in: Likewise.
+
+2008-01-24  David Edelsohn  <edelsohn@gnu.org>
+
+	* configure: Regenerate.
+
+2007-07-05  H.J. Lu  <hongjiu.lu@intel.com>
+
+	* aclocal.m4: Regenerated.
+
+2007-06-02  Paolo Bonzini  <bonzini@gnu.org>
+
+	* configure: Regenerate.
+
+2007-05-23  Steve Ellcey  <sje@cup.hp.com>
+
+	* Makefile.in: Regenerate.
+	* configure: Regenerate.
+	* aclocal.m4: Regenerate.
+
+2007-03-01  Brooks Moses  <brooks.moses@codesourcery.com>
+
+	* Makefile.am: Add dummy install-pdf target.
+	* Makefile.in: Regenerate
+
+2006-10-14  Geoffrey Keating  <geoffk@apple.com>
+
+	* aclocal.m4: Regenerate.
+	* configure: Regenerate.
+
+2006-09-29  Joseph S. Myers  <joseph@codesourcery.com>
+
+	PR other/25035
+	* configure.ac (AC_EXEEXT): Remove.
+	(GCC_NO_EXECUTABLES): Call.
+	(ssp_use_symver): Default to no if unable to link.
+	(AC_CHECK_FUNCS): Hardwire results if unable to link.
+	* aclocal.m4, configure, Makefile.in: Regenerate.
+
+2006-05-23  Carlos O'Donell  <carlos@codesourcery.com>
+
+	* Makefile.am: Add install-html target. Add install-html to .PHONY
+	* Makefile.in: Regenerate.
+
+2006-02-27  Mark Mitchell  <mark@codesourcery.com>
+	
+	PR 26473
+	* configure.ac (ACX_NONCANONICAL_TARGET): Use it.
+	* Makefile.am (target_noncanonical): Define.
+	(libsubincludedir): New variable.
+	(nobase_libsubinclude_HEADERS): Likewise.
+	(nobase_include_HEADERS): Remove.
+	* configure: Regenerated.
+	* Makefile.in: Likewise.
+	* aclocal.m4: Regenerated.
+
+2006-01-20  Richard Guenther  <rguenther@suse.de>
+
+	* configure.ac: Use -fPIC for symbol versioning test.
+	* configure: Regenerate.
+
+2005-08-17  Kelley Cook  <kcook@gcc.gnu.org>
+
+	* ALL: Update FSF address.
+
+2005-07-02  Jakub Jelinek  <jakub@redhat.com>
+
+	* ALL: First release as more than just a single file.

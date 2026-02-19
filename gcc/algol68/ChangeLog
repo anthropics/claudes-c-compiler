@@ -1,0 +1,808 @@
+2026-02-16  Jose E. Marchesi  <jemarch@gnu.org>
+
+	PR algol68/124115
+	* a68-low-holes.cc (get_hole_symbol): Always set *addrp to avoid
+	uninitialized memory.
+	* a68-low.cc (a68_make_formal_hole_decl): Remove assert.
+
+2026-02-12  James Bohl  <bohlj47@gmail.com>
+
+	PR algol68/124049
+	* Make-lang.in (ALGOL68_OBJS): Add algol68/a68-moids-sorting.o.
+	* a68.h: Add prototype for a68_sort_union_packs.
+	* a68-moids-sorting.cc: New file.
+	* a68-parser-modes.cc (a68_make_moid_list): Call a68_sort_union_packs.
+	* ga68-exports.pk (ga68_mode_64): Add comment on union mode ordering.
+
+2026-02-11  Jose E. Marchesi  <jemarch@gnu.org>
+
+	* ga68-coding-guidelines.texi (Enquiry clauses): New section.
+
+2026-02-10  Jose E. Marchesi  <jemarch@gnu.org>
+
+	* a68-low-units.cc (a68_lower_formal_hole): Call
+	a68_wrap_formal_proc_hole after a68_add_decl.
+
+2026-02-09  Jose E. Marchesi  <jemarch@gnu.org>
+
+	PR algol68/124028
+	* a68-low-bits.cc (a68_bits_shift): Avoid uninitialized save_expr.
+
+2026-02-09  Jose E. Marchesi  <jemarch@gnu.org>
+
+	* a68-low-holes.cc (a68_wrap_formal_proc_hole): The wrapper is not
+	a top-level function.
+	* a68-low-units.cc (a68_lower_formal_hole): Reorder code and
+	remove spurious comment.
+
+2026-02-06  Jose E. Marchesi  <jemarch@gnu.org>
+
+	* a68-low-units.cc (a68_lower_denotation): Fix call to
+	a68_u8_mbtouc.
+
+2026-02-06  Jose E. Marchesi  <jemarch@gnu.org>
+
+	* Make-lang.in (ALGOL68_OBJS): Add algol68/a68-low-holes.o.
+	* a68.h: Update prototypes.
+	* a68-types.h (struct TAG_T): New field nest_proc.
+	(NEST_PROC): Define.
+	* a68-parser.cc (a68_new_tag): Initialize NEST_PROC.
+	* a68-parser-extract.cc (extract_identities): Use NEST_PROC
+	instead of IN_PROC for taxes for defining-identifiers in identity
+	declarations of proc modes with formal holes as actual parameters.
+	* a68-moids-misc.cc (a68_is_c_mode): Modified to allow strings as
+	direct parameters.
+	* a68-low.cc (a68_make_proc_formal_hole_decl): Remove.
+	* a68-low-units.cc (a68_lower_identifier): Improve commentary.
+	(a68_lower_formal_hole): Factorize.
+	* a68-low-holes.cc: New file.
+	* a68-low-decls.cc (a68_lower_identity_declaration): Optimize
+	identity declarations of proc mode with formal holes as actual
+	parameters.
+	* a68-exports.cc (a68_add_identifier_to_moif): Honor NEST_PROC.
+	* ga68.texi (Communicating with C): Strings can now be passed as
+	parameters in formal holes.
+
+2026-02-05  Jose E. Marchesi  <jemarch@gnu.org>
+
+	* a68-low-clauses.cc (a68_lower_revelation_ludes): Fix function
+	type for fdecl.
+
+2026-02-05  Jose E. Marchesi  <jemarch@gnu.org>
+
+	* a68-low-bits.cc (a68_bits_set): Make bit number zero-based rathe
+	than one-based.
+	(a68_bits_clear): Likewise.
+	(a68_bits_test): Likewise.
+	* ga68.texi (Extended bits operators): Adapt documentation
+	accordingly.
+
+2026-02-05  Jose E. Marchesi  <jemarch@gnu.org>
+
+	PR algol68/123959
+	* a68.h: Expand prototype of a68_bits_shift to get a node argument
+	for location purposes.
+	* a68-low-bits.cc (a68_bits_shift): Implement RR compatible
+	semantics.
+	* a68-low-prelude.cc (a68_lower_shl3): Fix call to a68_bit_shift.
+	(a68_lower_shr3): Likewise.
+	* ga68.texi (Bits operators): Fix documentation of SHR and SHL.
+
+2026-02-03  Iain Buclaw  <ibuclaw@gdcproject.org>
+
+	* a68-parser-extract.cc (a68_extract_indicants): Don't call FORWARD if
+	skip_module_text returns NO_NODE.
+
+2026-02-01  Jose E. Marchesi  <jemarch@gnu.org>
+
+	* a68-low-bits.cc (a68_bits_test): Do not get a parameter with the
+	result moid.
+	* a68.h: Adapt prototype of a68_bits_test accordingly.
+	* a68-low-prelude.cc (a68_lower_test3): Adjust call accordingly.
+
+2026-02-01  Jose E. Marchesi  <jemarch@gnu.org>
+
+	* a68.h: Prototype for a68_make_proc_formal_hole_decl.
+	* a68-parser-extract.cc (extract_identities): Mark identity
+	declarations of proc modes whose actual parameter is a formal hole
+	as "inproc".
+	* a68-low.cc (a68_make_proc_formal_hole_decl): New function.
+	* a68-low-units.cc (a68_lower_formal_hole): Call
+	a68_make_proc_formal_hole_decl whenever necessary.
+
+2026-01-31  Jose E. Marchesi  <jemarch@gnu.org>
+
+	* a68.h: Prototypes for a68_bits_test and a68_lower_test3.
+	* a68-low-bits.cc (a68_bits_test): New function.
+	* a68-low-prelude.cc (a68_lower_test3): Likewise.
+	* a68-parser-prelude.cc (gnu_prelude): Declare TEST operators and
+	their priority.
+	* ga68.texi (Extended bits operators): New section.
+
+2026-01-31  Jose E. Marchesi  <jemarch@gnu.org>
+
+	* ga68.texi (POSIX files): Document SET and CLEAR operators.
+	* a68.h: Prototypes for a68_bits_set, a68_bits_clear,
+	a68_lower_set3 and a68_lower_clear3.
+	* a68-low-bits.cc (a68_bits_set): New function.
+	(a68_bits_clear): Likewise.
+	* a68-low-prelude.cc (a68_lower_set3): Likewise.
+	(a68_lower_clear3): Likewise.
+	* a68-parser-prelude.cc (gnu_prelude): Declare operators SET and
+	CLEAR and their priorities.
+
+2026-01-30  Marc Poulhiès  <dkm@kataplop.net>
+
+	* ga68-coding-guidelines.texi: Typo fix.
+
+2026-01-29  Jose E. Marchesi  <jemarch@gnu.org>
+
+	* ga68.vw: Update formal grammar to express the GNU extension.
+	* a68-parser.cc (a68_dont_mark_here): Likewise.
+	* a68-parser-scanner.cc (SINGLE_QUOTE_CHAR): Define.
+	(get_next_token): Recognize ' as QUOTE_SYMBOL.
+	(tokenise_source): Acknowledge QUOTE_SYMBOL.
+	* a68-parser-keywords.cc (a68_set_up_tables): Likewise.
+	* a68-parser-bottom-up.cc (reduce_primary_parts): Adjust parser to
+	brief form of selection.
+	* a68-parser-attrs.def (QUOTE_SYMBOL): New attribute.
+	* ga68.texi (Brief selection): New section.
+
+2026-01-29  Jose E. Marchesi  <jemarch@gnu.org>
+
+	* ga68.vw: Fix grammar for formal holes.
+	* ga68.texi (Particular programs): New section.
+	(Comments): Likewise.
+	* a68.h: Prototypes for a68_is_c_mode, a68_make_fomal_hole_decl,
+	a68_lower_formal_hole.
+	* a68-parser-attrs.def (FORMAL_HOLE): New attribute.
+	(LANGUAGE_INDICANT): Likewise.
+	* a68-parser-extract.cc (a68_elaborate_bold_tags): Elaborate
+	language indicants.
+	* a68-parser-moids-check.cc (mode_check_unit): Check mode in
+	formal holes.
+	* a68-low-units.cc (a68_lower_formal_hole): New function.
+	* a68-low.cc (a68_make_formal_hole_decl): Likewise.
+	* a68-moids-misc.cc (a68_is_c_mode): Likewise.
+	* a68-parser-bottom-up.cc (reduce_formal_holes): Likewise.
+
+2026-01-24  Jose E. Marchesi  <jemarch@gnu.org>
+
+	PR algol68/123733
+	* README: Mention minimum version of libgc.
+
+2026-01-24  Jose E. Marchesi  <jemarch@gnu.org>
+
+	Revert:
+	2026-01-17  Jose E. Marchesi  <jemarch@gnu.org>
+
+	* a68-parser-prelude.cc (stand_prelude): Remove definitions for ^
+	operator.
+	* ga68.texi (Real operators): Remove entries for ^.
+	(Integral operators): Likewise.
+
+2026-01-24  Jose E. Marchesi  <jemarch@gnu.org>
+
+	PR algol68/123785
+	* a68-lang.cc (a68_init): Call a68_build_a68_type_nodes abefore
+	targetm.init_builtins.
+
+2026-01-22  Mohammad-Reza Nabipoor  <mnabipoor@gnu.org>
+
+	PR algol68/123734
+	* ga68.texi: Fix code examples to make them compilable.
+	And s/consists on/consists of/g.
+
+2026-01-20  Jakub Jelinek  <jakub@redhat.com>
+
+	* lang.opt (std=algol68, std=gnu68): Add dot at the end of the
+	description.
+
+2026-01-20  Pietro Monteiro  <pietro@sociotechnical.xyz>
+
+	* a68-low-clauses.cc (a68_lower_collateral_clause): Update
+	call to a68_lower_alloca.
+	* a68-low-coercions.cc (a68_lower_widening): Likewise.
+	* a68-low-generator.cc (allocator_t): Adjust typedef.
+	(fill_in_buffer): Adjust call to allocator.
+	(gen_mode): Likewise.
+	* a68-low-multiples.cc (a68_row_malloc): Change type parameter to MOID_T
+	from tree. Adjust call to a68_lower_malloc.
+	* a68-low-posix.cc (a68_posix_fgets): Adjust call to a68_row_malloc.
+	(a68_posix_gets): Likewise.
+	* a68-low-runtime.def (MALLOC_LEAF): Add definition for
+	_libga68_malloc_leaf.
+	* a68-low-strings.cc (a68_string_concat): Adjust call to
+	a68_lower_malloc.
+	(a68_string_from_char): Likewise.
+	* a68-low-units.cc (a68_lower_slice): Likewise.
+	* a68-low.cc (a68_low_dup): Adjust calls to a68_lower_malloc
+	and a68_lower_alloca.
+	(a68_lower_alloca): Change type parameter to MOID_T from tree.
+	(a68_lower_malloc): Likewise. Use _libga68_malloc_leaf if the MOID_T
+	doesn't have refs, use _libga68_malloc otherwise.
+	* a68-parser-modes.cc (a68_create_mode): Set has_refs on the new mode.
+	(is_mode_has_refs): New function.
+	(compute_derived_modes): Set has_refs on the chain of modes.
+	* a68-parser.cc (a68_new_moid): Set has_refs to false by
+	default.
+	* a68-types.h (struct MOID_T): Add member `has_refs`.
+	(HAS_REFS): New macro.
+	* a68.h (a68_row_malloc): Update prototype.
+	(a68_lower_alloca): Likewise.
+	(a68_lower_malloc): Likewise.
+
+2026-01-17  Jose E. Marchesi  <jemarch@gnu.org>
+
+	* a68-parser-prelude.cc (stand_prelude): Remove definitions for ^
+	operator.
+	* ga68.texi (Real operators): Remove entries for ^.
+	(Integral operators): Likewise.
+
+2026-01-17  Jose E. Marchesi  <jemarch@gnu.org>
+
+	* ga68-coding-guidelines.texi: New file.
+	* Make-lang.in (A68_CODING_GUIDE_MANUAL_FILES): Define.
+	(A68_TEXI_FILES): Add A68_CODING_GUIDE_MANUAL_FILES.
+	(doc/ga68-coding-guidelines.info): New rule.
+	(doc/ga68-coding-guidelines.dvi): Likewise.
+	(doc/ga68-coding-guidelines.pdf): Likewise.
+	($(build_htmldir)/ga68-coding-guidelines/index.html): Likewise.
+	(algol68.info): Add ga68-coding-guidelines.info.
+	(algol68.srcinfo): Likewise.
+	(algol68.install-info): Likewise.
+	(algol68.install-html): Likewise.
+	(algol68.dvi): Add ga68-coding-guielines.dvi.
+	(algol68.pdf): Add ga68-coding-guidelines.pdf.
+
+2026-01-17  Jose E. Marchesi  <jemarch@gnu.org>
+
+	* a68-parser-moids-equivalence.cc (are_packs_equivalent): Add
+	explicative comment.
+
+2026-01-17  Jose E. Marchesi  <jemarch@gnu.org>
+
+	PR algol68/123653
+	* a68-parser-moids-equivalence.cc (are_packs_equivalent): Fix
+	logic in name comparison.
+
+2026-01-17  Jose E. Marchesi  <jemarch@gnu.org>
+
+	* a68-parser-prelude.cc (stand_transput): Do not define
+	`Number' and `whole' as built-ins.
+
+2026-01-17  Mohammad-Reza Nabipoor  <mnabipoor@gnu.org>
+
+	PR algol68/123007
+	* a68-lang.cc (a68_type_for_mode): Handle TImode.
+	(a68_type_for_size): Handle unsigned_intTI_type_node.
+
+2026-01-15  Jose E. Marchesi  <jemarch@gnu.org>
+
+	* ga68.texi (POSIX files): Fix documentation of lseek.
+
+2026-01-15  Jose E. Marchesi  <jemarch@gnu.org>
+
+	* ga68.texi (Dialect options): {..} is not a valid variant of
+	(...).
+
+2026-01-10  Pietro Monteiro  <pietro@sociotechnical.xyz>
+
+	* a68-low-posix.cc (a68_posix_setexitstatus): Delete function.
+	(a68_posix_exit): New function.
+	* a68-low-prelude.cc (a68_lower_setexitstatus): Delete function.
+	(a68_lower_posixexit): New function.
+	* a68-low-runtime.def (SET_EXIT_STATUS): Delete definition.
+	(POSIX_EXIT): Add definition for posixexit.
+	* a68-parser-prelude.cc (posix_prelude): Remove setexitstatus
+	identifier from and add posixexit identifier to standenv.
+	* a68.h (a68_posix_setexitstatus): Delete prototype.
+	(a68_lower_setexitstatus): Likewise.
+	(a68_posix_exit): New prototype.
+	(a68_lower_posixexit): Likewise.
+	* ga68.texi:
+
+2026-01-09  Jose E. Marchesi  <jemarch@gnu.org>
+
+	* ga68.texi (Worthy characters): Escape @.
+
+2026-01-04  Jose E. Marchesi  <jose.marchesi@oracle.com>
+
+	* a68-lang.cc (a68_post_options): Disable psABI warnings.
+
+2025-12-31  Jose E. Marchesi  <jose.marchesi@oracle.com>
+
+	* a68-exports.cc (a68_asm_output_mode): Do not rely on DIM to
+	count modes in an union mode.
+
+2025-12-31  Jose E. Marchesi  <jose.marchesi@oracle.com>
+
+	* a68-imports.cc (a68_open_packet): Use right tag format in
+	a68_error.
+
+2025-12-30  Jose E. Marchesi  <jose.marchesi@oracle.com>
+
+	* a68-lang.cc (a68_init_options): Add an entry to A68_MODULE_FILES
+	to map module Transput to the basename ga68.
+
+2025-12-29  Jose E. Marchesi  <jose.marchesi@oracle.com>
+
+	* a68-parser-scanner.cc (get_next_token): Bits denotation parsing
+	fixes.
+	* ga68.texi (SUPPER stropping): Document special rule for bits
+	denotations with radix 16.
+
+2025-12-29  Jose E. Marchesi  <jose.marchesi@oracle.com>
+
+	* a68-parser-victal.cc (victal_check_mode_dec): Mind publicized
+	declarations.
+	(victal_check_variable_dec): Likewise.
+	(victal_check_identity_dec): Likewise.
+
+2025-12-29  Jose E. Marchesi  <jose.marchesi@oracle.com>
+
+	* a68-parser-scope.cc (scope_module_text): New function.
+	(scope_module_declaration): Likewise.
+	(scope_particular_program): Likewise.
+	(scope_prelude_packet): Likewise.
+	(a68_scope_checker): Call scope_particular_program and
+	scope_prelude_packet.
+
+2025-12-29  Jose E. Marchesi  <jose.marchesi@oracle.com>
+
+	* a68-exports.cc (a68_asm_output_mode): Use .LMDnn labels for
+	modes instead of .LMnn.
+
+2025-12-28  Jose E. Marchesi  <jose.marchesi@oracle.com>
+
+	* ga68.texi (Packets): Update to specify only particular programs
+	and prelude packets are currently supported.
+	(Writing modules): Few updates.
+	(Module activation): Likewise.
+	(Modules and exports): New section.
+
+2025-12-28  Jose E. Marchesi  <jose.marchesi@oracle.com>
+
+	* a68-imports.cc (a68_open_packet): Use already decoded moifs
+	if present.
+
+2025-12-28  Jose E. Marchesi  <jose.marchesi@oracle.com>
+
+	* a68-imports.cc (a68_decode_modes): Do not deduplicate imported
+	modes here.
+	(a68_open_packet): Do it here.
+	* a68-parser-extract.cc (extract_revelation): Recurse into
+	publicized modules after interning modes in the current module,
+	not before.
+
+2025-12-27  Jose E. Marchesi  <jose.marchesi@oracle.com>
+
+	* a68-parser-taxes.cc (tax_module_dec): Do not handle
+	DEFINING_MODULE_INDICANT.
+	* a68-exports.cc (a68_add_module_to_moif): Do not mangle module
+	names in module extracts.
+	(add_pub_revelations_to_moif): New function.
+	(a68_do_exports): Simplify and call add_pub_revelations_to_moif.
+	* a68-imports.cc (a68_decode_moifs): Add all decoded moifs to the
+	global list TOP_MOIF.
+	* a68-parser-extract.cc (extract_revelation): Recurse to import
+	extracts from publicized modules.
+	(a68_extract_indicants): Do not add symbol table entries for
+	defining modules.
+	* a68-types.h (struct TAG_T): Remove field EXPORTED.
+	(EXPORTED): Remove macro.
+	(TOP_MOIF): Define.
+	* a68-parser.cc (a68_parser): Initialize global list of moifs.
+	(a68_new_tag): Do not initialize EXPORTED.
+
+2025-12-27  Jose E. Marchesi  <jose.marchesi@oracle.com>
+
+	* a68-parser-top-down.cc (a68_top_down_parser): Stop parsing after
+	longjump.
+
+2025-12-27  Jose E. Marchesi  <jose.marchesi@oracle.com>
+
+	* a68-parser-bottom-up.cc (a68_bottom_up_error_check): Do not
+	check for the absence of public-symbols.
+	(a68_bottom_up_coalesce_pub): Removed function.
+	* a68-parser.cc (a68_parser): Do not call
+	a68_bottom_up_coalesce_pub
+	* a68-parser-extract.cc (a68_extract_indicants): Adapt to the
+	presence of public-symbols.
+	* a68-parser-modes.cc (get_mode_from_proc_variables): Likewise.
+	* a68-parser-taxes.cc (tax_variable_dec): Likewise.
+	(tax_proc_variable_dec): Likewise.
+	(tax_op_dec): Likewise
+	(tax_prio_dec): Likewise.
+	* a68-low-decls.cc (a68_lower_mode_declaration): Adapt to the
+	presence of public-symbols.
+	(a68_lower_variable_declaration): Likewise.
+	(a68_lower_identity_declaration): Likewise.
+	(a68_lower_procedure_declaration): Likewise.
+	(a68_lower_procedure_variable_declaration): Likewise.
+	(a68_lower_brief_operator_declaration): Likewise.
+	(a68_lower_operator_declaration): Likewise.
+
+2025-12-27  Jose E. Marchesi  <jose.marchesi@oracle.com>
+
+	* a68-moids-misc.cc (a68_pack_soids_in_moid): Return the result of
+	a68_register_extra_mode.
+
+2025-12-27  Jose E. Marchesi  <jose.marchesi@oracle.com>
+
+	* a68-parser-extract.cc (a68_extract_indicants): Do not
+	detect_redefined_keyword for accessed modules.
+
+2025-12-27  Jose E. Marchesi  <jose.marchesi@oracle.com>
+
+	* a68-parser-scope.cc (scope_access_clause): New function.
+	(scope_enclosed_clause): Use scope_access_clause.
+
+2025-12-27  Jose E. Marchesi  <jose.marchesi@oracle.com>
+
+	* a68-parser-bottom-up.cc (reduce_enclosed_clauses): Reduce joined
+	list of revelations.
+	* a68-low-clauses.cc (a68_lower_revelation_ludes): New function.
+	(a68_lower_access_clause): Use a68_lower_revelation_ludes.
+
+2025-12-27  Jose E. Marchesi  <jose.marchesi@oracle.com>
+
+	* a68-parser-extract.cc (a68_extract_indicants): Fix
+	MODE_DECLARATION to MODULE_DECLARATION typo.
+
+2025-12-27  Jose E. Marchesi  <jose.marchesi@oracle.com>
+
+	* a68-parser-top-down.cc (top_down_access): An access clause may
+	be nested in another access clause.
+	* a68-parser-extract.cc (a68_extract_indicants): Coalesce 'pub'
+	symbols.
+	(a68_extract_indicants): Nested access are not allowed in module
+	texts.
+	* a68-parser-bottom-up.cc (expected_module_text): New function.
+	(reduce_prelude_packet): Use expected_module_text.
+	(a68_bottom_up_error_check): Add comment.
+
+2025-12-27  Jose E. Marchesi  <jose.marchesi@oracle.com>
+
+	* a68-types.h (struct MOIF_T): Add chain_next to GTY info.
+	* a68-imports.cc (a68_decode_modes): Mode offsets are relative to
+	the start of the moif, not the start of the exports.
+	(a68_decode_moifs): Renamed from a68_decode_moif and changed to
+	decode multiple moifs from the exports.
+	(a68_open_packet): Call a68_decode_moifs and look for the right
+	moif.
+	* a68-exports.cc (a68_moif_new): Initialize NEXT (moif).
+
+2025-12-23  Mohammad-Reza Nabipoor  <mnabipoor@gnu.org>
+
+	* a68.h (a68_file_size): Changed to use file descriptor.
+	(a68_file_read): Likewise.
+	* a68-parser-scanner.cc (a68_file_size): Likewise.
+	(a68_file_read): Likewise.
+	(read_source_file): Adapt `a68_file_{size,read}'.
+	(include_files): Likewise.
+	* a68-lang.cc (a68_handle_option): Likewise.
+	* a68-imports.cc (a68_find_export_data): Implement
+	reading from module's .m68 file if available.
+
+2025-12-22  Jose E. Marchesi  <jose.marchesi@oracle.com>
+
+	* a68-imports.cc (PARSE_INDICANT): Fix handling of uderscore
+	characters.
+
+2025-12-22  Mohammad-Reza Nabipoor  <mnabipoor@gnu.org>
+
+	* a68-parser-scanner.cc (a68_file_size): Fix comment to mention
+	it accepts `FILE *' and not file descriptor.
+	Fix invocation of `lseek' to correctly revert position of file
+	offset to previous one.
+
+2025-12-20  Jose E. Marchesi  <jose.marchesi@oracle.com>
+
+	* a68-low-moids.cc (a68_lower_moids): Fix for layout of
+	incomplete types.
+
+2025-12-19  Jakub Jelinek  <jakub@redhat.com>
+
+	* a68-low-decls.cc (a68_lower_variable_declaration): Fix comment typo,
+	varaible -> variable.
+
+2025-12-17  Jose E. Marchesi  <jose.marchesi@oracle.com>
+
+	PR algol68/123006
+	* a68-imports.cc (complete_encoded_mode): Fix handling of flex
+	modes.
+
+2025-12-17  Jose E. Marchesi  <jose.marchesi@oracle.com>
+
+	PR algol68/123132
+	* a68-imports.cc (DOFFSET): Fix big-endian path.
+
+2025-12-16  Jose E. Marchesi  <jose.marchesi@oracle.com>
+
+	* a68-parser-bottom-up.cc (reduce_prelude_packet): Do not support
+	multiple module definitions per packet.
+
+2025-12-16  Jose E. Marchesi  <jose.marchesi@oracle.com>
+
+	* lang.opt.urls: Regenerate.
+
+2025-12-16  Jose E. Marchesi  <jose.marchesi@oracle.com>
+
+	* lang.opt (-fmodules-map): New option.
+	(-fmodules-map-file): Likewise.
+	* a68.h: Add prototype for a68_process_module_map.
+	* a68-imports.cc (SKIP_WHITESPACES): Define.
+	(PARSE_BASENAME): Likewise.
+	(PARSE_INDICANT): Likewise.
+	(a68_process_module_map): New function.
+	* a68-lang.cc: (a68_init): Move initialization of
+	A68_MODULE_FILES from there...
+	(a68_init_options): to here.
+	(a68_handle_option): Handle OPT_fmodules_map and
+	OPT_fmodules_map_.
+	* a68-parser-pragmat.cc (handle_access_in_pragmat): Normalize
+	module indicants to upper case.
+	* ga68.texi (Module search options): New section.
+
+2025-12-16  Jose E. Marchesi  <jose.marchesi@oracle.com>
+
+	* a68.h: Prototypes for a68_get_file_size and a68_file_read.
+	* a68-parser-scanner.cc (a68_file_size): New function.
+	(a68_file_read): Renamed from io_read.
+	(get_source_size): Deleted function.
+	(include_files): Use a68_file_size and a68_file_read.
+
+2025-12-16  Mohammad-Reza Nabipoor  <mnabipoor@gnu.org>
+
+	* a68-imports.cc (dump_encoded_mode): Replace "basic" with
+	"string".
+
+2025-12-15  Mohammad-Reza Nabipoor  <mnabipoor@gnu.org>
+
+	* ga68-exports.pk (ga68_text_reloc_64): Renamed and
+	adapted from ga68_text_reloc.
+	(ga68_data_reloc_64): Renamed and adapted from ga68_data_reloc.
+	(ga68_mode_64): Renamed and adapted from ga68_mode.
+	(ga68_extract_64): Renamed and adapted from ga68_extract.
+	(ga68_module_64): Renamed and adapted from ga68_module.
+	(ga68_text_reloc_32): New type.
+	(ga68_data_reloc_32): Likewise.
+	(ga68_mode_32): Likewise.
+	(ga68_extract_32): Likewise.
+	(ga68_module_32): Likewise.
+
+2025-12-15  Mohammad-Reza Nabipoor  <mnabipoor@gnu.org>
+
+	* ga68-exports.pk: Fix comment and value for magic number.
+
+2025-12-13  Jose E. Marchesi  <jose.marchesi@oracle.com>
+
+	* a68-parser-bottom-up.cc (a68_bottom_up_coalesce_pub): Do not
+	mark defining entities as publicized.
+	* a68-parser-extract.cc (a68_extract_indicants): Mark public
+	defining entities.
+	(a68_extract_priorities): Likewise.
+	(a68_extract_operators): Likewise.
+	(a68_extract_identities): Likewise.
+	(a68_extract_variables): Likewise.
+	(a68_extract_proc_identities): Likewise.
+	(a68_extract_proc_variables): Likewise.
+
+2025-12-12  Jose E. Marchesi  <jose.marchesi@oracle.com>
+
+	* a68-parser-scanner.cc (a68_lexical_analyser): New argument
+	empty_program.
+	* a68.h: Update prototype of a68_lexical_analyser.
+	* a68-parser.cc (a68_parser): Emit error for empty input files.
+
+2025-12-12  Pietro Monteiro  <pietro@sociotechnical.xyz>
+
+	* ga68.texi (@opindex I): Expand.
+	(@oindex L): New.
+	* lang.opt.urls: Regenerate.
+
+2025-12-10  Jose E. Marchesi  <jose.marchesi@oracle.com>
+
+	* lang.opt: Add entry for OPT_L.
+
+2025-12-10  Jose E. Marchesi  <jose.marchesi@oracle.com>
+
+	* a68-imports.cc (a68_try_packet_in_directory): do not try
+	extensionless packet files.
+
+2025-12-10  Jose E. Marchesi  <jose.marchesi@oracle.com>
+
+	* a68-low-ints.cc (a68_int_sign): Avoid gimplifying val twice.
+	* a68-low-reals.cc (a68_real_sign): Likewise.
+
+2025-12-10  Jose E. Marchesi  <jose.marchesi@oracle.com>
+
+	* a68-low-prelude.cc (a68_lower_char_mult3): Fix asserts.
+
+2025-12-06  Jose E. Marchesi  <jose.marchesi@oracle.com>
+
+	PR algol68/123007
+	* a68-lang.cc (a68_type_for_size): Handle intTI_type_node.
+
+2025-12-03  Jose E. Marchesi  <jose.marchesi@oracle.com>
+
+	PR algol68/122954
+	* a68-types.h (NO_A68_REF): Delete.
+	(NO_ARRAY): Likewise.
+	(NO_BOOK): Likewise.
+	(NO_BOOL): Likewise.
+	(NO_BYTE): Likewise.
+	(NO_CONSTANT): Likewise.
+	(NO_DEC): Likewise.
+	(NO_EDLIN): Likewise.
+	(NO_FILE): Likewise.
+	(NO_FORMAT): Likewise.
+	(NO_GPROC): Likewise.
+	(NO_HANDLE): Likewise.
+	(NO_INT): Likewise.
+	(NO_JMP_BUF): Likewise.
+	(NO_SCOPE): Moved to a68-parser-scope.cc.
+	(NO_TUPLE): Likewise.
+	(TUPLE): Likewise.
+	(NO_GINFO): Converted from macro to contexpr.
+	(NO_KEYWORD): Likewise.
+	(NO_NINFO): Likewise.
+	(NO_PACK): Likewise.
+	(NO_SOID): Likewise.
+	(NO_TOKEN): Likewise.
+	(NO_NOTE): Likewise.
+	(MODES_T): Turned from typedef to forward declaration.
+	(NODE_T): Likewise.
+	(MODE_CACHE_T): Likewise.
+	(MOID_T): Likewise.
+	(GINFO_T): Likewise.
+	(KEYWORD_T): Likewise.
+	(LINE_T): Likewise.
+	(NODE_INFO_T): Likewise.
+	(PACK_T): Likewise.
+	(SOID_T): Likewise.
+	(TABLE_T): Likewise.
+	(TAG_T): Likewise.
+	(TOKEN_T): Likewise.
+	(ORIGIN_T): Likewise.
+	(POSTULATE_T): Likewise.
+	(OPTIONS_T): Likewise.
+	(PARSER_T): Likewise.
+	(MODULE_T): Likewise.
+	(EXTRACT_T): Likewise.
+	(MOIF_T): Likewise.
+	(A68_T): Likewise.
+	* a68-parser-scope.cc (NO_TUPLE): Moved from a68-types.h
+	(NO_SCOPE): Likewise.
+	(TUPLE): Likewise.
+
+2025-12-03  Jose E. Marchesi  <jose.marchesi@oracle.com>
+
+	PR algol68/122966
+	* a68-low-clauses.cc (a68_lower_collateral_clause): Remove
+	self-assignment.
+
+2025-12-02  Jose E. Marchesi  <jose.marchesi@oracle.com>
+
+	PR algol68/122954
+	* a68-low-clauses.cc (serial_clause_dsa): Avoid redundant
+	initialization.
+	* a68-parser-modes.cc (compute_derived_modes): Likewise.
+	* a68-low.cc (a68_lower_tree): Remove redundant break.
+
+2025-12-01  Jose E. Marchesi  <jose.marchesi@oracle.com>
+
+	PR algol68/122944
+	* Make-lang.in (algol68.install-common): Link
+	A68_TARGET_INSTALL_NAME in bindir.
+
+2025-12-01  Rainer Orth  <ro@CeBiTec.Uni-Bielefeld.DE>
+
+	* a68-exports.cc: Include memmodel.h.
+	* a68-imports.cc: Likeswise.
+
+2025-12-01  Jakub Jelinek  <jakub@redhat.com>
+
+	* a68-low-multiples.cc (copy_multiple_dimension_elems): Use
+	HOST_SIZE_T_PRINT_DEC in xasprintf format string and cast to
+	fmt_size_t.
+
+2025-11-30  Jose E. Marchesi  <jose.marchesi@oracle.com>
+
+	* a68-diagnostics.cc (diagnostic): Copypasto "a meek"
+	should be "a firm".  Support printing line number for programs
+	longer than 9 lines.  Use obstack_append_str rather than
+	obstack_grow.
+	(obstack_append_str): New function.
+
+2025-11-30  Andrew Pinski  <andrew.pinski@oss.qualcomm.com>
+
+	* lang.opt.urls: Regenerate.
+
+2025-11-30  Jose E. Marchesi  <jose.marchesi@oracle.com>
+
+	* lang.opt: New file.
+	* lang.opt.urls: Generate.
+
+2025-11-30  Jose E. Marchesi  <jose.marchesi@oracle.com>
+
+	* ga68-internals.texi: New file.
+	* ga68.texi: Likewise.
+	* Make-lang.in: New file.
+	* config-lang.in: Likewise.
+
+2025-11-30  Jose E. Marchesi  <jose.marchesi@oracle.com>
+
+	* a68-unistr.c: New file.
+	* a68-lang.cc: Likewise.
+	* a68spec.cc: Likewise.
+	* lang-specs.h: Likewise.
+	* README: Likewise.
+	* a68-tree.def: Likewise.
+	* a68-types.h: Likewise.
+	* a68.h: Likewise.
+	* ga68.vw: Likewise.
+	* a68-low-moids.cc: Likewise.
+	* a68-low-coercions.cc: Likewise.
+	* a68-low-generator.cc: Likewise.
+	* a68-low-units.cc: Likewise.
+	* a68-low-ranges.cc: Likewise.
+	* a68-low-builtins.cc: Likewise.
+	* a68-low-runtime.cc: Likewise.
+	* a68-low-runtime.def: Likewise.
+	* a68-low-clauses.cc: Likewise.
+	* a68-low-decls.cc: Likewise.
+	* a68-low-posix.cc: Likewise.
+	* a68-low-prelude.cc: Likewise.
+	* a68-low-multiples.cc: Likewise.
+	* a68-low-structs.cc: Likewise.
+	* a68-low-unions.cc: Likewise.
+	* a68-low-bits.cc: Likewise.
+	* a68-low-bools.cc: Likewise.
+	* a68-low-chars.cc: Likewise.
+	* a68-low-complex.cc: Likewise.
+	* a68-low-ints.cc: Likewise.
+	* a68-low-procs.cc: Likewise.
+	* a68-low-reals.cc: Likewise.
+	* a68-low-refs.cc: Likewise.
+	* a68-low-strings.cc: Likewise.
+	* a68-low.cc: Likewise.
+	* a68-low-misc.cc: Likewise.
+	* a68-parser-pragmat.cc: Likewise.
+	* a68-parser-serial-dsa.cc: Likewise.
+	* a68-parser-debug.cc: Likewise.
+
+2025-11-30  Jose E. Marchesi  <jose.marchesi@oracle.com>
+	    Marcel van der Veer  <algol68g@xs4all.nl>
+
+	* a68-parser-extract.cc: New file.
+	* a68-parser-scope.cc: Likewise.
+	* a68-parser-taxes.cc: Likewise.
+	* a68-moids-diagnostics.cc: Likewise.
+	* a68-moids-misc.cc: Likewise.
+	* a68-moids-to-string.cc: Likewise.
+	* a68-parser-modes.cc: Likewise.
+	* a68-parser-moids-check.cc: Likewise.
+	* a68-parser-moids-coerce.cc: Likewise.
+	* a68-parser-moids-equivalence.cc: Likewise.
+	* a68-postulates.cc: Likewise.
+	* a68-parser-prelude.cc: Likewise.
+	* a68-parser-victal.cc: Likewise.
+	* a68-parser-bottom-up.cc: Likewise.
+	* a68-parser-brackets.cc: Likewise.
+	* a68-parser-top-down.cc: Likewise.
+	* a68-parser-keywords.cc: Likewise.
+	* a68-parser-scanner.cc: Likewise.
+	* a68-parser-attrs.def: Likewise.
+	* a68-parser.cc: Likewise.
+	* a68-imports.cc: Likewise.
+	* a68-exports.cc: Likewise.
+	* ga68-exports.pk: Likewise.
+	* a68-diagnostics.cc: Likewise.
+
+Copyright (C) 2025-2026 Free Software Foundation, Inc.
+
+Copying and distribution of this file, with or without modification,
+are permitted in any medium without royalty provided the copyright
+notice and this notice are preserved.

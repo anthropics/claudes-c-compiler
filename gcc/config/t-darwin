@@ -1,0 +1,43 @@
+# Copyright (C) 2002-2026 Free Software Foundation, Inc.
+#
+# This file is part of GCC.
+#
+# GCC is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3, or (at your option)
+# any later version.
+#
+# GCC is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with GCC; see the file COPYING3.  If not see
+# <http://www.gnu.org/licenses/>.
+
+TM_H += $(srcdir)/config/darwin-sections.def
+
+darwin.o: $(srcdir)/config/darwin.cc config/darwin-sections.def
+	$(COMPILE) $<
+	$(POSTCOMPILE)
+
+darwin-c.o: $(srcdir)/config/darwin-c.cc
+	$(COMPILE) $(PREPROCESSOR_DEFINES) $<
+	$(POSTCOMPILE)
+
+darwin-d.o: $(srcdir)/config/darwin-d.cc
+	$(COMPILE) $<
+	$(POSTCOMPILE)
+
+darwin-f.o: $(srcdir)/config/darwin-f.cc
+	$(COMPILE) $<
+	$(POSTCOMPILE)
+
+darwin-rust.o: $(srcdir)/config/darwin-rust.cc
+	$(COMPILE) $<
+	$(POSTCOMPILE)
+
+darwin-driver.o: $(srcdir)/config/darwin-driver.cc
+	$(COMPILE) $<
+	$(POSTCOMPILE)

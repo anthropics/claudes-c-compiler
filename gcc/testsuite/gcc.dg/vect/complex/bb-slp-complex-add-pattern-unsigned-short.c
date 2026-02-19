@@ -1,0 +1,17 @@
+/* { dg-do compile } */
+/* { dg-require-effective-target stdint_types } */
+/* { dg-require-effective-target vect_int } */
+/* { dg-additional-options "-fno-tree-loop-vectorize" } */
+/* { dg-add-options arm_v8_1m_mve_fp } */
+
+#define UNROLL
+
+#define TYPE uint16_t
+#define N 16
+#include <stdint.h>
+#include "complex-add-pattern-template.c"
+
+/* { dg-final { scan-tree-dump "add new stmt: \[^\n\r]*COMPLEX_ADD_ROT90" "slp1" { target { vect_complex_add_short } xfail { aarch64*-*-* } } } } */
+/* { dg-final { scan-tree-dump "add new stmt: \[^\n\r]*COMPLEX_ADD_ROT270" "slp1" { target { vect_complex_add_short } xfail { aarch64*-*-* } } } } */
+/* { dg-final { scan-tree-dump "Found COMPLEX_ADD_ROT270" "slp1" } } */
+/* { dg-final { scan-tree-dump "Found COMPLEX_ADD_ROT90" "slp1" } } */

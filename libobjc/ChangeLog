@@ -1,0 +1,3706 @@
+2025-12-29  Rainer Orth  <ro@CeBiTec.Uni-Bielefeld.DE>
+
+	* configure: Regenerate.
+
+2025-11-03  Sam James  <sam@gentoo.org>
+
+	* configure: Regenerate.
+
+2025-10-05  Sam James  <sam@gentoo.org>
+
+	* aclocal.m4: Regenerate.
+	* configure: Regenerate.
+
+2024-09-23  Andrew Kreimer  <algonell@gmail.com>
+
+	* Makefile.in: s/overrridden/overridden.
+	* encoding.c (_darwin_rs6000_special_round_type_align): Fix typo
+	in comment.
+	(rs6000_special_round_type_align): Likewise.
+	* exception.c (is_kind_of_exception_matcher): Likewise.
+	(PERSONALITY_FUNCTION): Likewise.
+	* hash.c (objc_hash_next): Likewise.
+	* init.c (__objc_create_classes_tree): Likewise.
+	* objc-private/objc-list.h (list_remove_head): Likewise.
+	* sendmsg.c (__objc_install_dtable_for_class): Likewise.
+	* thr.c (objc_thread_yield): Likewise.
+
+2024-08-31  Andrew Pinski  <quic_apinski@quicinc.com>
+
+	PR libobjc/89586
+	* sendmsg.c (__objc_get_forward_imp): Add cast to `void*` before casting to IMP.
+
+2024-04-02  Jakub Jelinek  <jakub@redhat.com>
+
+	* init.c (duplicate_classes): Fix duplicated words in comment; in in
+	-> in.
+	* sendmsg.c (__objc_prepare_dtable_for_class): Fix duplicated words
+	in comment; the the -> the.
+	* encoding.c (objc_layout_structure): Likewise.
+
+2023-10-22  Iain Sandoe  <iain@sandoe.co.uk>
+
+	* configure: Regenerate.
+	* configure.ac: Handle Darwin rpaths.
+
+2023-08-07  Nick Alcock  <nick.alcock@oracle.com>
+
+	* configure: Regenerate.
+
+2023-08-07  Alexander von Gluck IV  <kallisti5@unixzen.com>
+
+	* configure: Regenerate.
+
+2023-08-07  Nick Alcock  <nick.alcock@oracle.com>
+
+	* configure: Regenerate.
+
+2023-08-07  Nick Alcock  <nick.alcock@oracle.com>
+
+	* configure: Regenerate.
+
+2023-08-07  H.J. Lu  <hjl.tools@gmail.com>
+
+	* configure: Regenerate.
+
+2023-08-07  H.J. Lu  <hjl.tools@gmail.com>
+
+	* configure: Regenerate.
+
+2023-05-22  Iain Sandoe  <iain@sandoe.co.uk>
+	    Andrew Pinski  <apinski@marvell.com>
+
+	PR libobjc/109913
+	* encoding.c (RECORD_OR_UNION_TYPE_P, VECTOR_TYPE_P): New.
+
+2022-10-20  Thomas Schwinge  <thomas@codesourcery.com>
+
+	* configure.ac (AC_CONFIG_MACRO_DIRS): Instantiate.
+	* configure: Regenerate.
+
+2022-10-12  Martin Liska  <mliska@suse.cz>
+
+	* configure: Regenerate.
+
+2022-10-11  Olivier Hainque  <hainque@adacore.com>
+	    Olivier Hainque  <hainque@adacore.com>
+
+	* configure: Regenerate.
+
+2022-08-25  Martin Liska  <mliska@suse.cz>
+
+	* configure: Regenerate.
+
+2021-01-05  Samuel Thibault  <samuel.thibault@ens-lyon.org>
+
+	* configure: Re-generate.
+
+2020-12-05  Iain Sandoe  <iain@sandoe.co.uk>
+
+	PR target/97865
+	* configure: Regenerate.
+
+2020-11-29  John David Anglin  <danglin@gcc.gnu.org>
+
+	* configure: Regenerate.
+
+2020-10-11  Iain Sandoe  <iain@sandoe.co.uk>
+
+	* encoding.c (_darwin_rs6000_special_round_type_align):
+	Use DFMode in the emulation of the special round type.
+
+2020-05-29  H.J. Lu  <hjl.tools@gmail.com>
+
+	PR bootstrap/95413
+	* configure: Regenerated.
+
+2020-05-15  H.J. Lu  <hongjiu.lu@intel.com>
+
+	PR bootstrap/95147
+	* configure: Regenerated.
+
+2020-05-14  H.J. Lu  <hongjiu.lu@intel.com>
+
+	* configure: Regenerated.
+
+2020-02-12  Sandra Loosemore  <sandra@codesourcery.com>
+
+	PR libstdc++/79193
+	PR libstdc++/88999
+
+	* configure: Regenerated.
+
+2020-01-24  Maciej W. Rozycki  <macro@wdc.com>
+
+	* Makefile.in (aclocal_deps): Add `toolexeclibdir.m4'.
+	* aclocal.m4: Include `toolexeclibdir.m4'.
+	* configure.ac: Handle `--with-toolexeclibdir='.
+	* configure: Regenerate.
+
+2020-01-01  Andrew Pinski  <pinskia@gmail.com>
+
+	PR libobjc/93099
+	* objc/objc-decls.h (objc_EXPORT): Define it to
+	extern for DLL_EXPORT define case.
+
+2020-01-01  Jakub Jelinek  <jakub@redhat.com>
+
+	Update copyright years.
+
+2019-11-26  Tobias Burnus  <tobias@codesourcery.com>
+
+	* Makefile.in (aclocal_deps): Fix path to cet.m4.
+
+2019-09-27  Maciej W. Rozycki  <macro@wdc.com>
+
+	* configure: Regenerate.
+
+2019-04-23  Ramana Radhakrishnan  <ramana.radhakrishnan@arm.com>
+	    Bernd Edlinger  <bernd.edlinger@hotmail.de>
+	    Jakub Jelinek  <jakub@redhat.com>
+
+	PR target/89093
+	* exception.c (PERSONALITY_FUNCTION): Add general-regs-only target
+	attribute for ARM.
+
+2019-03-06  Uroš Bizjak  <ubizjak@gmail.com>
+
+	* encoding.c (DFmode): #undef before #define.
+
+2019-01-09  Sandra Loosemore  <sandra@codesourcery.com>
+
+	PR other/16615
+	* objc/runtime.h: Change "can not" to "cannot".
+
+2019-01-09  Sandra Loosemore  <sandra@codesourcery.com>
+
+	PR other/16615
+
+	* class.c: Mechanically replace "can not" with "cannot".
+	* objc/runtime.h: Likewise.
+	* sendmsg.c: Likewise.
+
+2019-01-01  Jakub Jelinek  <jakub@redhat.com>
+
+	Update copyright years.
+
+2018-10-31  Joseph Myers  <joseph@codesourcery.com>
+
+	PR bootstrap/82856
+	* configure.ac: Remove AC_PREREQ.
+	* aclocal.m4, config.h.in, configure: Regenerate.
+
+2018-04-24  H.J. Lu  <hongjiu.lu@intel.com>
+
+	* configure: Regenerated.
+
+2018-04-19  Jakub Jelinek  <jakub@redhat.com>
+
+	* configure: Regenerated.
+
+2018-04-18  David Malcolm  <dmalcolm@redhat.com>
+
+	PR jit/85384
+	* configure: Regenerate.
+
+2018-02-14  Igor Tsimbalist  <igor.v.tsimbalist@intel.com>
+
+	PR target/84148
+	* configure: Regenerate.
+
+2018-01-03  Jakub Jelinek  <jakub@redhat.com>
+
+	Update copyright years.
+
+2017-11-23  Tom de Vries  <tom@codesourcery.com>
+
+	* class.c (CLASS_TABLE_HASH): Wrap in "do {} while (0)".
+
+2017-11-17  Igor Tsimbalist  <igor.v.tsimbalist@intel.com>
+
+	* Makefile.in: Regenerate.
+	* aclocal.m4: Likeiwse.
+	* configure: Likewise.
+	* configure.ac: Set CET_FLAGS. Update XCFLAGS.
+
+2017-08-30  Richard Sandiford  <richard.sandiford@linaro.org>
+	    Alan Hayward  <alan.hayward@arm.com>
+	    David Sherwood  <david.sherwood@arm.com>
+
+	* encoding.c (_darwin_rs6000_special_round_type_align): Prefix mode
+	names with E_ in case statements.
+
+2017-02-07  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/79256
+	PR middle-end/79278
+	* encoding.c (objc_layout_structure_next_member): Adjust
+	ADJUST_FIELD_ALIGN usage.
+
+2017-01-18  Matthias Klose  <doko@ubuntu.com>
+
+	PR libobjc/78697
+	* configure.ac: Allow default for --with-target-bdw-gc-include.
+	* configure: Regenerate.
+
+	PR libobjc/78698
+	* configure.ac: Use the libgc.la file when available.
+	* configure: Regenerate.
+
+2017-01-17  Jakub Jelinek  <jakub@redhat.com>
+
+	PR other/79046
+	* configure: Regenerated.
+	* configure.ac: Add GCC_BASE_VER.
+	* Makefile.in (gcc_version): Use @get_gcc_base_ver@ instead of cat to
+	get version from BASE-VER file.
+	* configure: Regenerated.
+
+2017-01-01  Jakub Jelinek  <jakub@redhat.com>
+
+	Update copyright years.
+
+2016-12-01  Matthias Klose  <doko@ubuntu.com>
+
+	* configure.ac: Don't use pkg-config to check for bdw-gc.
+	* configure: Regenerate.
+
+2016-11-30  Matthias Klose  <doko@ubuntu.com>
+
+	* configure.ac: Set BDW_GC_CFLAGS and BDW_GC_LIBS after checking
+	for the existence of the pkg-config modules.
+	* Regenerate.
+
+2016-11-30  Jakub Jelinek  <jakub@redhat.com>
+
+	* configure.ac (--enable-objc-gc): If not given, default to
+	enable_objc_gc=no.
+	* configure: Regenerated.
+
+2016-11-30  Matthias Klose  <doko@ubuntu.com>
+
+	* configure.ac (--enable-objc-gc): Allow to configure with a
+	system provided boehm-gc.
+	* configure: Regenerate.
+	* Makefile.in (OBJC_BOEHM_GC_LIBS): Get value from configure.
+	* gc.c: Include system bdw-gc headers.
+	* memory.c: Likewise.
+	* objects.c: Likewise.
+
+2016-11-15  Matthias Klose  <doko@ubuntu.com>
+
+	* aclocal.m4: Regenerate.
+	* configure: Likewise.
+
+2016-01-04  Jakub Jelinek  <jakub@redhat.com>
+
+	Update copyright years.
+
+2015-11-07  Trevor Saunders  <tbsaunde+gcc@tbsaunde.org>
+
+	PR libobjc/24775
+	* encoding.c (_darwin_rs6000_special_round_type_align): Use
+	__CHAR_BIT__ instead of BITS_PER_UNIT.
+	(objc_sizeof_type): Likewise.
+	(objc_layout_structure): Likewise.
+	(objc_layout_structure_next_member): Likewise.
+	(objc_layout_finish_structure): Likewise.
+	(objc_layout_structure_get_info): Likewise.
+
+2015-11-03  Trevor Saunders  <tbsaunde+gcc@tbsaunde.org>
+
+	PR libobjc/24775
+	* encoding.c (objc_layout_finish_structure): Remove usage of
+	ROUND_TYPE_SIZE.
+
+2015-09-12  Trevor Saunders  <tbsaunde+gcc@tbsaunde.org>
+
+	PR libobjc/24775
+	* sendmsg.c (tm.h): Remove include.
+
+2015-09-12  Trevor Saunders  <tbsaunde+gcc@tbsaunde.org>
+
+	PR libobjc/24775
+	* sendmsg.c (gen_rtx): Remove macro.
+	(gen_rtx_MEM): Likewise.
+	(gen_rtx_REG): Likewise.
+	(rtx): Likewise.
+
+2015-09-12  Trevor Saunders  <tbsaunde+gcc@tbsaunde.org>
+
+	PR libobjc/24775
+	* sendmsg.c: Remove check of STRUCT_VALUE macro.
+
+2015-05-13  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* configure.ac: Remove manual SJLJ check.
+	* config.h.in: Regenerate.
+	* configure: Likewise.
+	* exception.c: Replace SJLJ_EXCEPTIONS by __USING_SJLJ_EXCEPTIONS__.
+
+2015-05-13  Michael Haubenwallner  <michael.haubenwallner@ssi-schaefer.com>
+
+	* aclocal.m4: Regenerated with automake-1.11.6.
+
+2015-05-04  Trevor Saunders  <tbsaunde+gcc@tbsaunde.org>
+
+	* configure: Regenerate.
+
+2015-05-01  Trevor Saunders  <tbsaunde+gcc@tbsaunde.org>
+
+	* acinclude.m4: Include bitfields.m4.
+	* config.h.in: Regenerate.
+	* configure: Likewise.
+	* configure.ac: Invoke gt_BITFIELD_TYPE_MATTERS.
+	* encoding.c: Check HAVE_BITFIELD_TYPE_MATTERS.
+
+2015-04-29  Trevor Saunders  <tbsaunde+gcc@tbsaunde.org>
+
+	* encoding.c (objc_layout_structure_next_member): Check the value of
+	PCC_BITFIELD_TYPE_MATTERS not if it is defined.
+
+2015-02-05  Rainer Orth  <ro@CeBiTec.Uni-Bielefeld.DE>
+
+	PR libobjc/63765
+	* thr.c (_XOPEN_SOURCE): Remove.
+
+2015-01-27  Matthias Klose  <doko@ubuntu.com>
+
+	* sendmsg.c: Add prototypes for __objc_get_forward_imp and get_imp.
+
+2015-01-09  Dimitris Papavasiliou  <dpapavas@gmail.com>
+
+	PR libobjc/51891
+	* ivars.c: Add a check for classes without instance
+	variables, which have a NULL ivar list pointer.
+
+2015-01-05  Jakub Jelinek  <jakub@redhat.com>
+
+	Update copyright years.
+
+2014-11-21  H.J. Lu  <hongjiu.lu@intel.com>
+
+	PR bootstrap/63784
+	* configure: Regenerated.
+
+2014-11-11  Francois-Xavier Coudert  <fxcoudert@gcc.gnu.org>
+
+	PR target/63610
+	* configure: Regenerate.
+
+2014-11-05  Rainer Orth  <ro@CeBiTec.Uni-Bielefeld.DE>
+
+	* thr.c (_XOPEN_SOURCE): Define as 600.
+
+2014-07-27  Alan Modra  <amodra@gmail.com>
+	    Matthias Klose  <doko@ubuntu.com>
+
+	PR libobjc/61920
+
+	* encoding.c: Define rs6000_special_adjust_field_align_p.
+
+2014-01-02  Richard Sandiford  <rdsandiford@googlemail.com>
+
+	Update copyright years
+
+2013-09-20  Alan Modra  <amodra@gmail.com>
+
+	* configure: Regenerate.
+
+2013-07-21   OndÅej BÃ­lka  <neleai@seznam.cz>
+
+	* class.c: Fix typos.
+	* encoding.c: Likewise.
+	* init.c: Likewise.
+	* objc-private/runtime.h: Likewise.
+	* objc/runtime.h: Likewise.
+	* objc-sync.c: Likewise.
+
+2013-07-04  Kai Tietz  <ktietz@redhat.com>
+
+	* exception.c: Add check for SjLj to SEH blocks.
+
+2013-02-03  Richard Sandiford  <rdsandiford@googlemail.com>
+
+	Update copyright years.
+
+2012-10-19  Michael Meissner  <meissner@linux.vnet.ibm.com>
+
+	* encoding.c (TARGET_VSX): Provide definitions based on the
+	current compilation options, and not based off the target options
+	structure.
+	(TARGET_ALTIVEC): Likewise.
+	(TARGET_64BIT): Likewise.
+
+2012-09-14  David Edelsohn  <dje.gcc@gmail.com>
+
+	* configure: Regenerated.
+
+2012-07-19  Tristan Gingold  <gingold@adacore.com>
+	    Richard Henderson  <rth@redhat.com>
+
+	* exception.c (__gnu_objc_personality_seh0): New function.
+
+2012-05-16  H.J. Lu  <hongjiu.lu@intel.com>
+
+	* configure: Regenerated.
+
+2012-03-12  Rainer Orth  <ro@CeBiTec.Uni-Bielefeld.DE>
+
+	* configure.ac (enable_objc_gc): Remove alpha*-dec-osf* handling.
+	* configure: Regenerate.
+
+	* thr.c (_XOPEN_SOURCE): Define unconditionally.
+
+2011-11-21  Andreas Tobler  <andreast@fgznet.ch>
+
+	* configure: Regenerate.
+
+2011-11-02  Rainer Orth  <ro@CeBiTec.Uni-Bielefeld.DE>
+
+	* Makefile.in (INCLUDES): Add -I$(MULTIBUILDTOP)../libgcc.
+	* configure.ac (target_thread_file, HAVE_GTHR_DEFAULT): Remove.
+	* configure: Regenerate.
+	* config.h.in: Regenerate.
+
+2011-10-17  Paul Brook  <paul@codesourcery.com>
+	    Matthias Klose  <doko@ubuntu.com>
+
+	* exception.c (parse_lsda_header): hardcode ttype_encoding for older
+	ARM EABI toolchains.
+	(get_ttype_entry) Remove __ARM_EABI_UNWINDER__ variant.
+
+2011-10-09  Nicola Pero  <nicola.pero@meta-innovation.com>
+
+	PR libobjc/49883
+	* init.c (__objc_exec_class): Work around a bug in clang's code
+	generation.  Clang sets the class->info field to values different
+	from 0x1 or 0x2 (the only allowed values in the traditional GNU
+	Objective-C runtime ABI) to store some additional information, but
+	this breaks backwards compatibility.  Wipe out all the bits in the
+	fields other than the first two upon loading a class.
+
+2011-10-09  Nicola Pero  <nicola.pero@meta-innovation.com>
+
+	* class.c (objc_lookup_class): Added back for compatibility with
+	clang which seems to emit calls to it.
+
+2011-10-08  Richard Frith-Macdonald <rfm@gnu.org>
+	    Nicola Pero  <nicola.pero@meta-innovation.com>
+
+	PR libobjc/50428
+	* sendmsg.c (__objc_send_initialize): If a class does not have an
+	+initialize method, search for an +initialize method in the
+	superclass and in the ancestor classes and execute the first one
+	that is found.  This makes the GNU runtime behave in the same way
+	as the Apple/NeXT runtime with respect to +initialize methods and
+	subclassing.
+
+2011-08-06  Nicola Pero  <nicola.pero@meta-innovation.com>
+
+	PR libobjc/50002
+	* class.c (__objc_update_classes_with_methods): Iterate over meta
+	classes as well as normal classes when refreshing the method
+	implementations.  This fixes replacing class methods.
+
+2011-08-06  Nicola Pero  <nicola.pero@meta-innovation.com>
+
+	* class.c (class_getSuperclass): Fixed to work with meta classes
+	still in construction too.
+
+2011-08-06  Nicola Pero  <nicola.pero@meta-innovation.com>
+
+	* class.c (class_getSuperclass): Fixed typo in comment.
+
+2011-08-06  Nicola Pero  <nicola.pero@meta-innovation.com>
+
+	PR libobjc/49882
+	* class.c (class_getSuperclass): Return the superclass if the
+	class is in construction.
+	* objc/runtime.h (class_getSuperclass): Updated documentation.
+
+2011-08-05  Rainer Orth  <ro@CeBiTec.Uni-Bielefeld.DE>
+
+	* Makefile.in (INCLUDES): Search
+	$(srcdir)/$(MULTISRCTOP)../libgcc.
+
+2011-06-08  Nicola Pero  <nicola.pero@meta-innovation.com>
+
+	* objc/objc.h (__GNU_LIBOBJC__): Bumped to 20110608.
+
+2011-06-08  Nicola Pero  <nicola.pero@meta-innovation.com>
+
+	* configure.ac (VERSION): Bumped to 4:0:0.
+	* configure (VERSION): Likewise.
+
+2011-06-08  Nicola Pero  <nicola.pero@meta-innovation.com>
+
+	* objc/README: Updated.
+	* objc-private/selector.h: Updated comments.
+
+2011-06-07  Nicola Pero  <nicola.pero@meta-innovation.com>
+
+	* sendmsg.c (class_get_instance_method): Removed.
+	(class_get_class_method): Removed.
+	(objc_get_uninstalled_dtable): Removed.
+
+2011-06-07  Nicola Pero  <nicola.pero@meta-innovation.com>
+
+	* objc-private/module-abi-8.h (class_get_instance_size): Removed.
+	* objects.c (class_create_instance): Removed.
+	* error.c (__USE_FIXED_PROTOTYPES__): Removed.
+	* gc.c (__objc_generate_gc_type_description): Use
+	class_getInstanceSize() instead of class_get_instance_size().
+	* selector.c (sel_types_match): Made static.
+	(sel_get_typed_uid): Removed.
+	(sel_get_any_typed_uid): Removed.
+	(sel_get_name): Removed.
+	(sel_get_type): Removed.
+	(sel_register_name): Removed.
+	(sel_register_typed_name): Removed.
+	(sel_get_uid): Removed.
+
+2011-06-07  Nicola Pero  <nicola.pero@meta-innovation.com>
+
+	* encoding.c (method_get_number_of_arguments): Removed.
+	(method_get_sizeof_arguments): Removed.
+
+2011-06-07  Nicola Pero  <nicola.pero@meta-innovation.com>
+
+	* class.c (objc_next_class): Removed.
+	(class_pose_as): Removed.
+	(CLASSOF): Removed.
+	(class_table_replace): Removed.
+	(objc_lookup_class): Removed.
+
+2011-06-07  Nicola Pero  <nicola.pero@meta-innovation.com>
+
+	Removed the Traditional Objective-C runtime public API.
+	* Makefile.in (OBJC_DEPRECATED_H): Variable removed.
+	(install-headers): Do not create the objc/deprecated directory and
+	do not install the deprecated headers.
+	(OBJC_H): Removed encoding.h and objc-api.h.
+	* Object.m: Removed all methods with the exception of -class and
+	-isEqual:.  Updated includes.  ([-class]): Use Modern API.
+	* objc/Object.h: Do not include deprecated/Object.h.
+	* objc/deprecated/Object.h: Removed.
+	* linking.m (__objc_linking): Call [Object class] instead of
+	[Object name].
+	* Protocol.m: Removed all methods with the exception of -isEqual:.
+	Updated includes.
+	* objc/Protocol.h: Do not include deprecated/Protocol.h.
+	* objc/deprecated/Protocol.h: Removed.
+	* objc/deprecated/struct_objc_symtab.h: Removed.
+	* objc/deprecated/struct_objc_module.h: Removed.
+	* objc/deprecated/struct_objc_ivar.h: Removed.
+	* objc/deprecated/struct_objc_ivar_list.h: Removed.
+	* objc/deprecated/struct_objc_method.h: Removed.
+	* objc/deprecated/struct_objc_method_list.h: Removed.
+	* objc/deprecated/struct_objc_protocol_list.h: Removed.
+	* objc/deprecated/struct_objc_category.h: Removed.
+	* objc/deprecated/MetaClass.h: Removed.
+	* objc/deprecated/objc_msg_sendv.h: Removed.
+	* objc/deprecated/README: Removed.
+	* objc/deprecated/struct_objc_class.h: Removed.
+	* objc/deprecated/struct_objc_protocol.h: Removed.
+	* objc/deprecated/struct_objc_selector.h: Removed.
+	* objc/encoding.h: Removed.
+	* objc/message.h (struct objc_super): Removed the definition for
+	the Traditional Objective-C runtime API.
+	* objc/objc.h: Do not include objc/objc-decls.h.
+	deprecated/struct_objc_selector.h, deprecated/MetaClass.h,
+	deprecated/struct_objc_class.h, deprecated/struct_objc_protocol.h
+	and deprecated/objc_msg_sendv.h.  Uncommented new definition of
+	Protocol *.
+	* objc/objc-api.h: Removed.
+	* objc/runtime.h: Updated comments.  Removed check to detect
+	concurrent usage of Traditional and Modern APIs.
+	* objc-private/module-abi-8.h: Always define struct objc_class and
+	struct objc_protocol.  (struct objc_protocol_list): Changed type
+	of 'list' argument from 'Protocol *' to 'struct objc_protocol *'.
+	(class_get_instance_size): Added.
+	* objc-private/protocols.h (__objc_protocols_add_protocol): Take a
+	'struct objc_protocol *' as argument, not a 'Protocol *'.
+	* objc-private/runtime.h: Updated comments.
+	* objc-private/selector.h (struct objc_selector, sel_eq): Added.
+	* class.c: Include objc-private/selector.h.
+	(objc_get_meta_class): Return a Class instead of a MetaClass.
+	* encoding.c (method_get_next_argument): Removed.
+	(method_get_first_argument): Removed.
+	(method_get_nth_argument): Removed.
+	* gc.c: Include objc/runtime.h instead of objc/encoding.h.
+	Include objc-private/module-abi-8.h and ctype.h.
+	* protocols.c (__objc_protocols_add_protocol): Take a 'struct
+	objc_protocl *' as argument, not a 'Protocol *'.
+	(class_addProtocol): Added casts to 'struct objc_protocol *' and
+	'Protocol *'.
+	(class_copyProtocolList): Likewise.
+	(protocol_conformsToProtocol): Likewise.
+	(protocol_copyProtocolList): Likewise.
+	* sarray.c: Include objc-private/module-abi-8.h.
+	* sendmsg.c (method_get_next_argument): Removed.
+	(method_get_first_argument): Removed.
+	(method_get_nth_argument): Removed.
+	(objc_msg_sendv): Removed.
+	(arglist_t, retval_t): New.  (class_get_class_method): Take a
+	'Class', not 'MetaClass', argument.
+	* thr.c: Include module-abi-8.h.
+
+2011-06-03  Nicola Pero  <nicola.pero@meta-innovation.com>
+
+	* Makefile.in (OBJC_DEPRECATED_H): Removed struct_objc_static_instances.h
+	and objc_get_uninstalled_dtable.h.
+	* objc/deprecated/struct_objc_static_instances.h: Removed.
+	* objc/deprecated/objc_get_uninstalled_dtable.h: Removed.
+	* objc/objc-api.h: Do not include deprecated/objc_static_instances.h
+	and deprecated/objc_get_uninstalled_dtable.h.
+
+2011-06-03  Nicola Pero  <nicola.pero@meta-innovation.com>
+
+	* Makefile.in (OBJC_DEPRECATED_H): Removed objc_object_alloc.h.
+	* objc/deprecated/objc_object_alloc.h: Removed.
+	* objc/objc-api.h: Do not include deprecated/objc_object_alloc.h.
+	* objects.c (_objc_object_alloc, _objc_object_dispose,
+	_objc_object_copy): Removed.
+	* libobjc.def (__objc_object_alloc, __objc_object_copy,
+	__objc_object_dispose): Removed.
+
+2011-06-03  Nicola Pero  <nicola.pero@meta-innovation.com>
+
+	* Makefile.in (OBJC_DEPRECATED_H): Removed METHOD_NULL.h.
+	* objc/objc-api.h: Do not include deprecated/METHOD_NULL.h.
+	* objc/deprecated/METHOD_NULL.h: Removed.
+
+2011-06-03  Nicola Pero  <nicola.pero@meta-innovation.com>
+
+	* Makefile.in (OBJC_DEPRECATED_H): Removed objc_valloc.h,
+	objc_malloc.h and objc_unexpected_exception.h.
+	(exception.lo): Do not use -Wno-deprecated-declarations.
+	(exception_gc.lo): Likewise.
+	* objc/objc-api.h: Do not include deprecated/objc_valloc.h,
+	deprecated/objc_malloc.h and
+	deprecated/objc_unexpected_exception.h.
+	* objc/deprecated/objc_valloc.h: Removed.
+	* objc/deprecated/objc_malloc.h: Removed.
+	* objc/deprecated/objc_unexpected_exception.h: Removed.
+	* exception.c (_objc_unexpected_exception): Removed.
+	(objc_exception_throw): Do not check for
+	_objc_unexpected_exception.
+	* memory.c (objc_valloc, _objc_malloc, _objc_atomic_malloc,
+	_objc_valloc, _objc_realloc, _objc_calloc, _objc_free): Removed.
+	* libobjc.def (_objc_unexpected_exception, objc_valloc): Removed.
+
+2011-06-03  Nicola Pero  <nicola.pero@meta-innovation.com>
+
+	* objc/objc.h: Do not include deprecated/STR.h.
+	* objc/deprecated/STR.h: Removed.
+	* Makefile.in (OBJC_DEPRECATED_H): removed STR.h.
+
+2011-06-03  Nicola Pero  <nicola.pero@meta-innovation.com>
+
+	* Makefile.in (OBJC_H): Removed hash.h and sarray.h.
+	(OBJC_DEPRECATED_H): Likewise.
+	* libobjc.def (objc_hash_new, objc_hash_delete, objc_hash_add,
+	objc_hash_remove, objc_hash_next, objc_hash_value_for_key,
+	objc_hash_is_key_in_hash, hash_add, hash_delete, hash_new,
+	hash_next, hash_remove, hash_value_for_key, hash_is_key_in_hash,
+	sarray_at_put, sarray_at_put_safe, sarray_free, sarray_lazy_copy,
+	sarray_new, sarray_realloc, sarray_remove_garbage): Removed.
+	* objc/sarray.h: Removed.
+	* objc/hash.h: Removed.
+	* objc/deprecated/sarray.h: Removed.
+	* objc/deprecated/hash.h: Removed.
+	* objc/Object.h: Do not include objc/deprecated/hash.h
+	* Object.m: Include string.h.
+	* objc/objc-api.h: Do not include objc/deprecated/hash.h.
+	* objc-private/common.h (GNU_LIBOBJC_COMPILING_LIBOBJC_ITSELF):
+	Removed.
+
+2011-06-03  Nicola Pero  <nicola.pero@meta-innovation.com>
+
+	* Object.m ([-forward::]): Removed.
+	* objc/deprecated/Object.h ([-forward::]): Removed.
+	* sendmsg.c (__objc_forward): Updated comments.
+
+2011-06-03  Nicola Pero  <nicola.pero@meta-innovation.com>
+
+	* Makefile.in (OBJC_H): Removed objc-list.h.
+	(OBJC_DEPRECATED_H): Removed objc-list.h.
+	* objc/objc-list.h: File removed.
+	* objc/deprecated/objc-list.h: File removed.
+
+2011-06-03  Nicola Pero  <nicola.pero@meta-innovation.com>
+
+	* Makefile.in (OBJC_H): Removed typedstream.h.
+	(OBJC_DEPRECATED_H): Removed typedstream.h.
+	(C_SOURCE_FILES): Removed archive.c.
+	(Object.lo): Rule removed.
+	(Object_gc.lo): Likewise.
+	(archive.lo): Likewise.
+	(archive_gc.lo): Likewise.
+	* objc/deprecated/Object.h ([+streamVersion:], [-read], [-write],
+	[-awake]): Removed.
+	Do not include deprecated/typedstream.h.
+	* Object.m: Removed the same methods.
+	* archive.c: File removed.
+	* objc/typedstream.h: File removed.
+	* objc/deprecated/typedstream.h: File removed.
+	* libobjc.def (__objc_read_nbyte_uint, __objc_read_nbyte_ulong,
+	__objc_write_class, __objc_write_object, __objc_write_selector,
+	objc_close_typed_stream, objc_end_of_typed_stream,
+	objc_flush_typed_stream, objc_get_stream_class_version,
+	objc_open_typed_stream, objc_open_typed_stream_for_file,
+	objc_read_array, objc_read_char, objc_read_int, objc_read_long,
+	objc_read_object, objc_read_selector, objc_read_short,
+	objc_read_string, objc_read_type, objc_read_types,
+	objc_read_unsigned_char, objc_read_unsigned_int,
+	objc_read_unsigned_long, objc_read_unsigned_short,
+	objc_write_array, objc_write_char, objc_write_int,
+	objc_write_long, objc_write_object, objc_write_object_reference,
+	objc_write_root_object, objc_write_selector, objc_write_short,
+	objc_write_string, objc_write_string_atomic, objc_write_type,
+	objc_write_types, objc_write_unsigned_char,
+	objc_write_unsigned_int, objc_write_unsigned_long,
+	objc_write_unsigned_short): Removed.
+
+2011-06-02  Nicola Pero  <nicola.pero@meta-innovation.com>
+
+	* Makefile.in (OBJC_DEPRECATED_H): Removed objc_error.h.
+	* objc/deprecated/objc_error.h: Removed.
+	* objc/objc-api.h: Do not include deprecated/objc_error.h.
+	* libobjc.def (objc_error, objc_verror): Removed.
+	* error.c (_objc_error_handler, objc_error, objc_verror,
+	objc_set_error_handler): Removed.
+	* Object.m ([-error:], [-perform:], [-perform:with:],
+	[-perform:with:with], [-subclassResponsibility:],
+	[-notImplemented:], [-shouldNotImplement:], [-doesNotRecognize:]):
+	Removed.
+	* objc/deprecated/Object.h: Removed the same methods.
+	* sendmsg.c (__objc_forward): Do not try to invoke the "error:"
+	method after trying to invoke the "doesNotRecognize:" method.
+
+2011-05-26  Nicola Pero  <nicola.pero@meta-innovation.com>
+
+	* sendmsg.c: Reindented part of the file.  No non-trivial changes
+	in code.
+
+2011-05-26  Nicola Pero  <nicola.pero@meta-innovation.com>
+
+	* sendmsg.c (__objc_install_dtable_for_class): Use objc_getClass,
+	not objc_lookup_class.
+
+2011-05-25  Richard Frith-Macdonald <rfm@gnu.org>
+	    David Ayers  <ayers@fsfe.org>
+
+	PR libobjc/38307
+	* sendmsg.c: Include objc/hash.h.
+	(get_implementation): New function, mostly with code from get_imp
+	updated to support the new +initialize dispatch table logic.
+	(get_imp): Use get_implementation.
+	(__objc_responds_to): Updated to support the new +initialize
+	dispatch table logic.
+	(class_respondsToSelector): Likewise.
+	(objc_msg_lookup): Use get_implementation.
+	(__objc_init_install_dtable): Removed.
+	(__objc_install_methods_in_dtable): Updated arguments.
+	(__objc_install_dispatch_table_for_class): Renamed to
+	__objc_install_dtable_for_class and updated to support the new
+	+initialize dispatch table logic.
+	(__objc_update_dispatch_table_for_class): Updated to support the
+	new +initialize dispatch table logic.
+	(__objc_forward): Call get_implementation instead of get_imp.
+	(prepared_dtable_table): New.
+	(__objc_prepare_dtable_for_class): New.
+	(__objc_prepared_dtable_for_class): New.
+	(__objc_get_prepared_imp): New.
+	(__objc_install_prepared_dtable_for_class): New.
+
+2011-05-24  Nicola Pero  <nicola.pero@meta-innovation.com>
+
+	PR libobjc/48177
+	* selector.c (__sel_register_typed_name): Use sel_types_match()
+	instead of strcmp() to compare selector types (Suggestion by
+	Richard Frith-Macdonald <rfm@gnu.org>).
+
+2011-04-15  Rainer Orth  <ro@CeBiTec.Uni-Bielefeld.DE>
+
+	PR libobjc/32037
+	* Makefile.in (OBJC_GCFLAGS): Move ...
+	* configure.ac (enable_objc_gc): ... here.
+	Add $(libsuffix) to OBJC_BOEHM_GC.
+	* configure: Regenerate.
+
+2011-02-28  Nicola Pero  <nicola.pero@meta-innovation.com>
+
+	* selector.c (sel_getTypedSelector): Return NULL if there are
+	multiple selectors with conflicting types.
+	* objc/runtime.h (sel_getTypedSelector): Updated documentation.
+
+2011-02-28  Richard Frith-Macdonald <rfm@gnu.org>
+
+	PR libobjc/47922
+	* gc.c (class_ivar_set_gcinvisible): Use _C_GCINVISIBLE instead of
+	a hardcoded "!".
+
+2011-02-13  Ralf Wildenhues  <Ralf.Wildenhues@gmx.de>
+
+	* configure: Regenerate.
+
+2010-12-26  Nicola Pero  <nicola.pero@meta-innovation.com>
+
+	* init.c (create_tree_of_subclasses_inherited_from): Use
+	class_superclass_of_class instead of assuming a class is
+	unresolved when it could be resolved.  Tidied up assignment and
+	check.
+	(__objc_tree_insert_class): Enhanced DEBUG_PRINTF.
+	(objc_tree_insert_class): Tidied up loop; return immediately upon
+	inserting a class.
+	(__objc_exec_class): Do not set __objc_class_tree_list.
+
+2010-12-24  Nicola Pero  <nicola.pero@meta-innovation.com>
+
+	* selector.c (sel_getTypedSelector): Return NULL if given a NULL
+	argument.
+	(sel_registerTypedName): Same.
+	(sel_registerName): Same.
+	* objc/runtime.h: Updated documentation.
+
+2010-12-24  Nicola Pero  <nicola.pero@meta-innovation.com>
+
+	* objc/runtime.h (class_addIvar): Updated documentation.  The
+	alignment is actually the log_2 of the alignment in bytes.
+	* ivars.c (class_addIvar): Corresponding change to the
+	implementation.
+
+2010-12-24  Nicola Pero  <nicola.pero@meta-innovation.com>
+
+	* objc/runtime.h (sel_getType): Renamed to sel_getTypeEncoding to
+	be consistent with method_getTypeEncoding and
+	ivar_getTypeEncoding.
+	(sel_copyTypedSelectorList, sel_getTypedSelector): New.
+	* selector.c (sel_getType): Renamed to sel_getTypeEncoding.
+	(sel_copyTypedSelectorList, sel_getTypedSelector): New.
+	(sel_get_type): Updated call to sel_getType.
+
+2010-12-24  Nicola Pero  <nicola.pero@meta-innovation.com>
+
+	* objc/runtime.h (class_conformsToProtocol,
+	class_copyProtocolList): Updated documentation.
+
+2010-12-23  Nicola Pero  <nicola.pero@meta-innovation.com>
+
+	* init.c (create_tree_of_subclasses_inherited_from): Updated
+	DEBUG_PRINTF messages.
+	(__objc_tree_insert_class): Same.
+	(__objc_send_load_using_method_list): Same.
+	(__objc_send_load): Same.
+	(__objc_exec_class): Same.  In particular, do not print the module
+	name since it is no longer used.
+	* sendmsg.c (__objc_send_initialize): Added DEBUG_PRINTFs for
+	tracking +initialize calls.
+	(__objc_update_dispatch_table_for_class): Added DEBUG_PRINTFs for
+	tracking updates of dispatch tables.
+	(__objc_install_dispatch_table_for_class): Same.
+
+2010-12-23  Rainer Orth  <ro@CeBiTec.Uni-Bielefeld.DE>
+
+	* Makefile.in (libobjc$(libsuffix).la): Link with -Wc,-shared-libgcc.
+	(libobjc_gc$(libsuffix).la): Likewise.
+
+2010-12-23  Nicola Pero  <nicola.pero@meta-innovation.com>
+
+	* sendmsg.c (class_addMethod): Return NO if the method already
+	exists in the class.
+
+2010-12-22  Nicola Pero  <nicola.pero@meta-innovation.com>
+
+	* init.c (duplicate_classes): New.
+	(__objc_exec_class): Initialize duplicate_classes.
+	(__objc_create_classes_tree): Ignore classes in the
+	duplicate_classes table.
+	(__objc_call_load_callback): Same.
+	(__objc_init_class): If a duplicate class is found, add it to
+	duplicate_classes instead of aborting.  Return YES if the class is
+	not a duplicate, and NO if it is.
+	* objc-private/runtime.h (__objc_init_class): Updated prototype.
+
+2010-12-22  Nicola Pero  <nicola.pero@meta-innovation.com>
+
+	* objc-private/objc-list.h: Reindented file.  No code changes.
+	* objc-private/sarray.h: Same change.
+
+2010-12-22  Nicola Pero  <nicola.pero@meta-innovation.com>
+
+	* objc-private/accessors.h: Removed 'extern "C"' guards.  This
+	file is never compiled with C++.
+	* objc-private/hash.h: Same change.
+	* objc-private/objc-list.h: Same change.
+	* objc-private/objc-sync.h: Same change.
+	* objc-private/protocols.h: Same change.
+	* objc-private/runtime.h: Same change.
+	* objc-private/sarray.h: Same change.
+	* objc-private/selector.h: Same change.
+
+2010-12-21  Nicola Pero  <nicola.pero@meta-innovation.com>
+
+	PR libobjc/18764
+	* class.c (__objc_add_class_to_hash): Return YES if the class was
+	added, and NO if it already existed.
+	* init.c (__objc_init_class): If __objc_add_class_to_hash returns
+	NO, then abort the program with an error message.
+	* objc-private/runtime.h (__objc_add_class_to_hash): Updated
+	declaration.
+
+2010-12-21  Nicola Pero  <nicola.pero@meta-innovation.com>
+
+	* init.c (_objc_load_callback): Initialize with 0.
+	(__objc_call_callback): Renamed to __objc_call_load_callback.
+	Check _objc_load_callback only once, and if it is not set, return
+	immediately.
+	(objc_send_load): Updated call to __objc_call_callback.
+
+2010-12-21  Nicola Pero  <nicola.pero@meta-innovation.com>
+
+	PR libobjc/16110
+	* init.c (__objc_send_message_in_list): Renamed to
+	__objc_send_load_using_method_list.  Do not take an 'op' argument.
+	Register the 'load' selector if needed.
+	(__objc_send_load): Do not register the 'load' selector.  Updated
+	call to __objc_send_message_in_list.
+	(__objc_create_classes_tree): Add the class of any claimed
+	category that was loaded in the module to the list of classes for
+	which we try to execute +load.
+
+2010-12-21  Nicola Pero  <nicola.pero@meta-innovation.com>
+
+	* objc-private/common.h: When DEBUG is defined, include <stdio.h>.
+	Updated comments.
+	* init.c (__objc_tree_insert_class): Use %p, not %x, when printing
+	a pointer using DEBUG_PRINTF.
+
+2010-12-21  Nicola Pero  <nicola.pero@meta-innovation.com>
+
+	PR libobjc/45953
+	* selector.c (__sel_register_typed_name): When registering a new
+	selector with the same name as an existing one, reuse the existing
+	name string.  Also updated types, casts and comments in the whole
+	function.
+
+2010-12-21  Nicola Pero  <nicola.pero@meta-innovation.com>
+
+	* objc-private/module-abi-8.h (struct objc_symtab): Declare 'refs'
+	to be 'struct objc_selector *' and not 'SEL'.
+	* init.c (__objc_exec_class): Call
+	__objc_register_selectors_from_module instead of iterating over
+	each selector and calling __sel_register_typed_name for each.
+	* objc-private/selector.h: Declare
+	__objc_register_selectors_from_module instead of
+	__sel_register_typed_name.
+	* selector.c (__objc_register_selectors_from_module): New.
+	(__sel_register_typed_name): Made static.
+
+2010-12-21  Nicola Pero  <nicola.pero@meta-innovation.com>
+
+	* linking.m: Do not include objc/NXConstStr.h.
+
+2010-12-21  Nicola Pero  <nicola.pero@meta-innovation.com>
+
+	* objc-private/runtime.h (DEBUG_PRINTF): Moved from here ...
+	* objc-private/common.h (DEBUG_PRINTF): To here.
+	* hash.c: Do not include objc-private/runtime.h and objc/thr.h.
+
+2010-12-21  Nicola Pero  <nicola.pero@meta-innovation.com>
+
+	* hash.c: Tidied up comments and indentation.  No code changes.
+
+2010-12-19  Nicola Pero  <nicola.pero@meta-innovation.com>
+
+	PR libobjc/47012
+	* accessors.m (objc_getProperty): If not atomic, do not
+	retain/autorelease the returned value.
+
+2010-12-19  Nicola Pero  <nicola.pero@meta-innovation.com>
+
+	* objc-private/runtime.h (__objc_selector_max_index,
+	__objc_init_selector_tables, __objc_register_selectors_from_class,
+	__objc_register_selectors_from_list,
+	__objc_register_selectors_from_description_list): Moved to ...
+	* objc-private/selector.h: ... here.
+
+2010-12-19  Nicola Pero  <nicola.pero@meta-innovation.com>
+
+	* objc-private/runtime.h (__objc_class_links_resolved): Removed.
+	(__objc_print_dtable_stats): Removed.
+	(__sel_register_typed_name): Removed.
+	* sendmsg.c (__objc_print_dtable_stats): Use 'void' as argument.
+
+2010-12-19  Nicola Pero  <nicola.pero@meta-innovation.com>
+
+	* init.c (__objc_exec_class): Call __objc_resolve_class_links (),
+	if appropriate, after loading the module.
+
+2010-12-19  Nicola Pero  <nicola.pero@meta-innovation.com>
+
+	* sendmsg.c (method_setImplementation): Do not declare.
+
+2010-12-19  Nicola Pero  <nicola.pero@meta-innovation.com>
+
+	* objc/message.h: Updated comments.
+	* objc/runtime.h: Updated comments.
+
+2010-12-19  Nicola Pero  <nicola.pero@meta-innovation.com>
+
+	* class.c (objc_lookupClass): Renamed to objc_lookUpClass.
+	* protocols.c: Updated all calls to objc_lookupClass to call
+	objc_lookUpClass instead.
+	* sendmsg.c (objc_lookupClass): Do not declare.
+	(get_imp): Update call to objc_lookupClass to call
+	objc_lookUpClass instead.
+	* objc/runtime.h (objc_lookupClass): Renamed to objc_lookUpClass.
+
+2010-12-19  Nicola Pero  <nicola.pero@meta-innovation.com>
+
+	* objc/runtime.h (class_ivar_set_gcinvisible): Declare.
+	* sendmsg.c (_CLS_IN_CONSTRUCTION, CLS_IS_IN_CONSTRUCTION): Do not
+	define.  Updated comments.
+
+2010-12-19  Nicola Pero  <nicola.pero@meta-innovation.com>
+
+	* objc/encoding.h: Updated comments.
+	* objc/runtime.h: Updated comments.
+	(objc_setGetUnknownClassHandler): Mark with objc_EXPORT.
+	(objc_sizeof_type): Same.
+	(objc_alignof_type): Same.
+	(objc_aligned_size): Same.
+	(objc_promoted_size): Same.
+	(objc_skip_type_qualifiers): Same.
+	(objc_skip_typespec): Same.
+	(objc_skip_offset): Same.
+	(objc_skip_argspec): Same.
+	(objc_get_type_qualifiers): Same.
+	(objc_layout_structure): Same.
+	(objc_layout_structure_next_member): Same.
+	(objc_layout_finish_structure): Same.
+	(objc_layout_structure_get_info): Same.
+
+2010-12-19  Nicola Pero  <nicola.pero@meta-innovation.com>
+
+	* init.c: Updated comments.
+	* objc/objc-api.h: Updated comments.
+	* objc/runtime.h (_objc_load_callback): Declare.
+
+2010-12-19  Nicola Pero  <nicola.pero@meta-innovation.com>
+
+	* objc/Object.h: Include deprecated/typedstream.h and
+	deprecated/hash.h instead of typedstream.h.  Updated comments.
+
+2010-12-19  Nicola Pero  <nicola.pero@meta-innovation.com>
+
+	* Makefile.in (OBJC_DEPRECATED_H): Added objc_msg_sendv.h.
+	* objc/deprecated/objc_msg_sendv.h: New.
+	* objc/message.h: Do not define retval_t, apply_t, arglist,
+	arglist_t, objc_msg_sendv, now in
+	objc/deprecated/objc_msg_sendv.h.
+	* objc/objc.h: Do not include message.h; include
+	objc/deprecated/objc_msg_sendv.h instead.  Tidied up comments.
+	* sendmsg.c: Include objc/message.h.
+	* thr.c: Include objc/message.h.
+
+2010-12-19  Nicola Pero  <nicola.pero@meta-innovation.com>
+
+	* objc/objc-exception.h: Include objc-decls.h.  Mark all
+	functions with objc_EXPORT.
+	* objc/objc-sync.h: Same change.
+
+2010-12-19  Nicola Pero  <nicola.pero@meta-innovation.com>
+
+	* Protocol.m: Moved all methods, with the exception of -isEqual:,
+	into the 'Deprecated' category.
+	* objc/Protocol.h: Removed all methods, moved to
+	objc/deprecated/Protocol.h.  Include objc/deprecated/Protocol.h.
+	* objc/deprecated/Protocol.h: New.
+	* Makefile.in (OBJC_DEPRECATED_H): Added Protocol.h.
+
+2010-12-19  Nicola Pero  <nicola.pero@meta-innovation.com>
+
+	* init.c: Include objc-private/selector.h.  Do not declare
+	__sel_register_typed_name.
+	* objc-private/selector.h (__sel_register_typed_name): Declare.
+	* selector.c: Include objc-private/selector.h.
+
+2010-12-18  Nicola Pero  <nicola.pero@meta-innovation.com>
+
+	* class.c: Tidied up comments and indentation.  No code changes.
+	* error.c: Same.
+	* exception.c: Same.
+	* init.c: Same.
+	* ivars.c: Same.
+	* memory.c: Same.
+	* objc-foreach.c: Same.
+	* objc-sync.c: Same.
+	* objects.c: Same.
+	* protocols.c: Same.
+	* sarray.c: Same.
+	* thr.c: Same.
+
+2010-12-17  Nicola Pero  <nicola.pero@meta-innovation.com>
+
+	* init.c: Include objc/runtime.h and objc-private/module-abi-8.h
+	instead of objc/objc-api.h.
+	(init_check_module_version): Take a 'struct objc_module *'
+	argument instead of 'Module_t'.  Use 'struct objc_module *'
+	instead of 'Module_t'.
+	(__objc_created_classes_tree): Take a 'struct objc_module *'
+	argument instead of 'Module_t'; use 'struct objc_symtab *' instead
+	of 'Symtab_t'.
+	(__objc_call_callback): Take a 'struct objc_module *' argument
+	instead of 'Module_t'; use 'struct objc_symtab *' instead of
+	'Symtab_t' and 'struct objc_category *' instead of 'Category_t'.
+	(_objc_load_callback): Take a 'struct objc_category *' argument
+	instead of 'Category *'.
+	(class_superclass_of_class): Use objc_getClass() instead of
+	objc_lookup_class().
+	(create_tree_of_subclasses_inherited_from): Same change (also, use
+	an explicit 'if' instead of '?').
+	(objc_init_statics): Same change.
+	(objc_send_load): Same change.
+	(__objc_init_protocol): same change.
+	(__objc_send_message_in_list): Take a 'struct objc_method_list *'
+	argument instead of 'MethodList_t'.  Use 'struct objc_method *'
+	instead of 'Method_t'.
+	(__objc_send_load): Use 'struct objc_method_list *' instead of
+	'MethodList_t'.  Use sel_registerName() instead of
+	sel_register_name().
+	(__objc_exec_class): Take a 'struct objc_module *' argument
+	instead of 'Module_t'.  Use 'struct objc_symtab *' instead of
+	'Symtab_t'.  Use objc_getClass() instead of objc_lookup_class().
+	Use 'struct objc_category *' instead of 'Category_t'.
+
+2010-12-16  Nicola Pero  <nicola.pero@meta-innovation.com>
+
+	* sendmsg.c: Include objc/runtime.h instead of objc/objc-api.h.
+	Include objc-private/module-abi-8.h and objc-private/selector.h
+	instead of objc/encoding.h.
+	(objc_msg_lookup_super): Use super->super_class instead of
+	super->class.
+	(method_get_first_argument, method_get_next_argument): Declare
+	locally.
+	(class_get_instance_method): Declare before using.
+	(objc_msg_sendv): Use 'struct objc_method' instead of 'Method'.
+	(__objc_init_dispatch_tables, __objc_send_initialize): Use
+	sel_registerName() instead of sel_register_name().
+	(__objc_forward): Use sel_getName() instead of sel_get_name().
+	(objc_get_uninstalled_dtable): Use 'void' as argument.
+	* objc-private/selector.h: New.
+
+2010-12-15  Nicola Pero  <nicola.pero@meta-innovation.com>
+
+	* objc/message.h (objc_super): When using the modern API, do not
+	define Super and Super_t, and always use 'super_class' for the
+	super class field.
+	(objc_msg_lookup_super): Updated prototype to use 'struct
+	objc_super *' instead of 'Super_t'.
+	* sendmsg.c (objc_msg_lookup_super): Updated prototype to use
+	'struct objc_super *' instead of 'Super_t'.
+
+2010-12-15  Nicola Pero  <nicola.pero@meta-innovation.com>
+
+	* objc/message.h: Update comments, reindented code and moved
+	deprecated types and functions at the end of the file.  No code
+	changes.
+
+2010-12-15  Nicola Pero  <nicola.pero@meta-innovation.com>
+
+	* ivars.c (class_addIvar): Use the 'size' argument instead of
+	trying to calculate it using objc_sizeof_type().
+	* objc/runtime.h (class_addIvar): Updated comments.
+
+2010-12-15  Nicola Pero  <nicola.pero@meta-innovation.com>
+
+	* sendmsg.c: Reindented some code and tidied up comments.  No
+	actual code changes.
+
+2010-12-14  Nicola Pero  <nicola.pero@meta-innovation.com>
+
+	* objc/Object.h: Moved all the methods, with the exception of
+	-class and -isEqual:, into ...
+	* objc/deprecated/Object.h: here.
+	* Object.m: Moved all the methods, with the exception of -class
+	and -isEqual: into the 'Deprecated' category.
+
+2010-12-14  Nicola Pero  <nicola.pero@meta-innovation.com>
+
+	* objects.c (object_copy): Do not #undef as we are no longer
+	including objc/objc-api.h.
+	* selector.c: Include objc/runtime.h and
+	objc-private/module-abi-8.h.  Do not include objc/objc-api.h and
+	objc/encoding.h.  Updated
+	(__objc_register_selectors_from_class): Use struct
+	objc_method_list * instead of MethodList_t.
+	(__objc_register_selectors_from_list): Use Method instead of
+	Method_t.
+	(struct objc_method_description_list): Do not define here.
+	(__objc_register_instance_methods_to_class): Use struct
+	objc_method_list * instead of MethodList_t and Method instead of
+	Method_t.
+
+2010-12-14  Nicola Pero  <nicola.pero@meta-innovation.com>
+
+	* selector.c: Reindented some code and tidied up comments.  No
+	actual code changes.
+
+2010-12-13  Iain Sandoe  <iains@gcc.gnu.org>
+
+	* encoding.c (_darwin_rs6000_special_round_type_align): New.
+	(darwin_rs6000_special_round_type_align): Adjust to use new routine.
+
+2010-12-11  Nicola Pero  <nicola.pero@meta-innovation.com>
+
+	* sendmsg.c (selector_resolveClassMethod): New.
+	(selector_resolveInstanceMethod): New.
+	(__objc_resolve_class_method): New.
+	(__objc_resolve_instance_method): New.
+	(get_imp): Call __objc_resolve_class_method or
+	__objc_resolve_instance_method at the appropriate time.
+	(objc_msg_lookup): Same.
+	(class_getClassMethod): Same.
+	(class_getInstanceMethod): Same.
+	(__objc_init_dispatch_tables): Initialize
+	selector_resolveClassMethod and selector_resolveInstanceMethod.
+	* objc/runtime.h: Updated documentation of class_getClassMethod,
+	class_getInstanceMethod and class_getMethodImplementation.
+
+2010-12-11  Nicola Pero  <nicola.pero@meta-innovation.com>
+
+	* objc-private/module-abi-8.h (struct objc_symtab): Updated
+	description of sel_ref_cnt and refs.
+	* objc/deprecated/struct_objc_symtab.h (objc_symtab): Same change.
+
+2010-12-06  Dave Korn  <dave.korn.cygwin@gmail.com>
+
+	PR target/40125
+	PR lto/46695
+	* configure.ac (extra_ldflags_libobjc): Invoke ACX_LT_HOST_FLAGS.
+	* Makefile.in (lt_host_flags): Import AC_SUBST'd value.
+	* aclocal.m4: Regenerate.
+	* configure: Regenerate.
+
+2010-12-03  Matthias Klose  <doko@ubuntu.com>
+
+	* configure.ac (VERSION): Bump the version to 3:0:0.
+	* configure: Regenerate.
+
+2010-11-23  Richard Frith-Macdonald <rfm@gnu.org>
+
+	* sendmsg.c (get_imp): Fixed call to __objc_get_forward_imp to
+	pass nil as the receiver since we don't know the receiver at this
+	point.
+
+2010-11-18  Nicola Pero  <nicola.pero@meta-innovation.com>
+
+	* ivars.c: Include stdlib.h.
+	* protocols.c: Same change.
+
+2010-10-24  Nicola Pero  <nicola.pero@meta-innovation.com>
+
+	* Makefile.in (OBJC_SOURCE_FILES): Added accessors.m.
+	* accessors.m: New.
+	* init.c: Include objc-private/accessors.h.
+	(__objc_exec_class): Call __objc_accessors_init.
+	* objc-private/accessors.h: New.
+
+2010-10-17  Nicola Pero  <nicola.pero@meta-innovation.com>
+
+	* objc/message.h: Moved initial includes outside of extern "C".
+	* objc/runtime.h: Add extern "C" for Objective-C++.
+
+2010-10-17  Nicola Pero  <nicola.pero@meta-innovation.com>
+
+	* init.c (objc_send_load): Do not wait for NXConstantString to be
+	registered before executing +load.  There is no point if
+	-fconstant-string-class=xxx is used when compiling all modules,
+	as is the case for almost all users.
+	* linking.m (__objc_linking): Do not try to forcefully link in
+	NXConstantString.
+
+2010-10-16  Nicola Pero  <nicola.pero@meta-innovation.com>
+
+	* objc/runtime.h: Updated comments.
+	(class_addMethod): New.
+	(class_addIvar): New.
+	(class_replaceMethod): New.
+	(objc_allocateClassPair): New.
+	(objc_registerClassPair): New.
+	(objc_disposeClassPair): New.
+	* class.c (objc_allocateClassPair): New.
+	(objc_registerClassPair): New.
+	(objc_disposeClassPair): New.
+	(class_getSuperclass): Return Nil if a class is in construction.
+	* init.c (__objc_exec_class): Call __objc_init_class.
+	(__objc_init_class): New.
+	* ivars.c (class_copyIvarList): Return NULL if class is in
+	construction.  Do not lock the runtime mutex.
+	(class_getInstanceVariable): Return NULL if class is in
+	construction.  Do not lock the runtime mutex.
+	(class_addIvar): New.
+	* sendmsg.c (class_addMethod): New.
+	(class_replaceMethod): New.
+	* objc-private/module-abi-8.h (__CLS_SETNOTINFO): New.
+	(_CLS_IN_CONSTRUCTION): New.
+	(CLS_IS_IN_CONSTRUCTION): New.
+	(CLS_SET_IN_CONSTRUCTION): New.
+	(CLS_SET_NOT_IN_CONSTRUCTION): New.
+	* objc-private/runtime.h (__objc_init_class): New.
+
+2010-10-16  Nicola Pero  <nicola.pero@meta-innovation.com>
+
+	* class.c (class_getSuperclass): Call __objc_resolve_class_links
+	if the class is not resolved yet.
+	* ivars.c (class_getInstanceVariable): Use class_getSuperclass.
+
+2010-10-16  Nicola Pero  <nicola.pero@meta-innovation.com>
+
+	* objc/runtime.h (class_getIvarLayout): New.
+	(class_getWeakIvarLayout): New.
+	(class_setIvarLayout): New.
+	(class_setWeakIvarLayout): New.
+	* ivars.c (class_getIvarLayout): New.
+	(class_getWeakIvarLayout): New.
+	(class_setIvarLayout): New.
+	(class_setWeakIvarLayout): New.
+
+2010-10-15  Nicola Pero  <nicola.pero@meta-innovation.com>
+
+	* objc/runtime.h (class_copyPropertyList): New.
+	(class_getProperty): New.
+	(property_getAttributes): New.
+	(property_getName): New.
+	* ivars.c (class_copyPropertyList): New.
+	(class_getProperty): New.
+	(property_getAttributes): New.
+	(property_getName): New.
+
+2010-10-15  Nicola Pero  <nicola.pero@meta-innovation.com>
+
+	* objc-private/runtime.h (__objc_update_classes_with_methods): New.
+	* class.c (__objc_update_classes_with_methods): New.
+	(objc_getClassList): Do not lock the class lock.
+	* methods.c (method_exchangeImplementations): New.
+	(method_setImplementation): New.
+	* objc/runtime.h (method_setImplementation): New.
+	(method_exchangeImplementations): New.
+
+2010-10-15  Nicola Pero  <nicola.pero@meta-innovation.com>
+
+	* Protocol.m: Include objc/runtime.h and
+	objc-private/module-abi-8.h instead of objc/objc-api.h.  Do not
+	repeat Protocol's instance variables.
+	(struct objc_method_description_list): Do not define here.
+	([-conformsTo:]): Reimplemented on top of protocol_conformsTo().
+	([descriptionForInstanceMethod:]): Use sel_isEqual() to compare
+	selectors directly instead of getting names and then using strcmp.
+	([descriptionForClassMethod:]): Same change.
+	([-isEqual:]): Reimplemented on top of protocol_isEqual().
+	* protocols.c (protocol_getMethodDescription): Use sel_isEqual()
+	to compare selectors directly instead of getting names and then
+	using strcmp.
+	* objc/Protocol.h: Updated comments.
+
+2010-10-15  Nicola Pero  <nicola.pero@meta-innovation.com>
+
+	* init.c (__objc_init_protocol): New function which fixes up a
+	protocol's class pointer, registers it with the runtime, register
+	all protocol selectors and registers associated protocols too.
+	(objc_init_statics): Detect if we are initializing protocols, and
+	if so, use __objc_init_protocol instead of only fixing up the
+	class pointer.
+	(__objc_init_protocls): Use __objc_init_protocol.
+	* objc-private/module-abi-8.h: Updated comments.
+	* objc-private/runtime.h
+	(__objc_register_selectors_from_description_list): New.
+	* selector.c (__objc_register_selectors_from_description_list):
+	New.  (struct objc_method_description_list): Declare.
+	* Protocol.m ([-descriptionForInstanceMethod:]): Use sel_get_name
+	when accessing the name of a method, which is now correctly a SEL.
+	([-descriptionForClassMethod:]): Same change.
+	* protocols.c (protocol_getMethodDescription): Same change.
+	* objc/runtime.h: Updated comments.
+	(sel_registerTypedName): Fixed typo in function name.
+
+2010-10-13  Nicola Pero  <nicola.pero@meta-innovation.com>
+
+	PR libobjc/23214
+	* init.c (objc_init_statics): Do not skip the initialization of a
+	statics list if the first object has already been initialized; in
+	the case of Protocols, while the first one may have been
+	initialized, some others may not have been initialized yet.
+
+2010-10-13  Nicola Pero  <nicola.pero@meta-innovation.com>
+
+	* Makefile.in (OBJC_DEPRECATED_H): Added
+	objc_get_uninstalled_dtable, objc_object_alloc.h and
+	struct_objc_static_instances.h.
+
+2010-10-13  Nicola Pero  <nicola.pero@meta-innovation.com>
+
+	* encoding.c (method_copyReturnType): New.
+	(method_copyArgumentType): New.
+	(method_getReturnType): New.
+	(method_getArgumentType): New.
+	* methods.c (method_getDescription): New.
+	* objc/runtime.h (method_copyReturnType): New.
+	(method_copyArgumentType): New.
+	(method_getReturnType): New.
+	(method_getArgumentType): New.
+	(method_getDescription): New.
+
+2010-10-12  Nicola Pero  <nicola.pero@meta-innovation.com>
+
+	* encoding.c: Tidied up comments.
+	(objc_skip_variable_name): New static inline function.
+	(objc_sizeof_type): Use objc_skip_variable_name instead of copying
+	the same code over and over.
+	(objc_alignof_type): Same.
+	(objc_aligned_size): Same.
+	(objc_promoted_size): Same.
+	(objc_skip_typespec): Same.
+	(objc_layout_structure_next_member): Same.
+	(objc_skip_offset): Skip a '-' before the digits (if any).  Fixed
+	historical bug where objc_skip_offset would skip one byte even if
+	there is no offset: check that the first offset digit is actually
+	a digit before skipping it.
+	(objc_skip_type_qualifiers): Mark as inline.
+	(objc_skip_typespec): Mark as inline.
+
+2010-10-12  Nicola Pero  <nicola.pero@meta-innovation.com>
+
+	* Makefile.in (C_SOURCE_FILES): Added methods.c.
+	* encoding.c (method_getNumberOfArguments): New.
+	(method_get_number_of_arguments): Call
+	method_getNumberOfArguments.
+	* ivars.c (ivar_getName): Check for NULL variable argument.
+	(ivar_getOffset): Check for NULL variable argument.
+	(ivar_getTypeEncoding): Check for NULL variable argument.
+	(class_copyIvarList): New.
+	* methods.c: New.
+	* protocols.c (class_copyProtocolList): Check for Nil class_
+	argument.
+	* sendmsg.c: Use 'struct objc_method *' instead of Method_t, and
+	'struct objc_method_list *' instead of MethodList_t.
+	(class_getMethodImplementation): New.
+	(class_respondsToSelector): New.
+	(class_getInstanceMethod): New.
+	(class_getClassMethod): New.
+	* objc/runtime.h: Updated comments.
+	(class_copyIvarList): New.
+	(class_getInstanceMethod): New.
+	(class_getClassMethod): New.
+	(class_getMethodImplementation): New.
+	(class_respondsToSelector): New.
+	(method_getName): New.
+	(method_getImplementation): New.
+	(method_getTypeEncoding): New.
+	(class_copyMethodList): New.
+	(method_getNumberOfArguments): New.
+
+2010-10-12  Nicola Pero  <nicola.pero@meta-innovation.com>
+
+	* class.c: Include objc/runtime.h and objc-private/module-abi-8.h
+	instead of objc/objc-api.h.
+	(objc_get_unknown_class_handler): Do not define.
+	(class_isMetaClass): New.
+	(class_getSuperclass): New.
+	(class_getVersion): New.
+	(class_setVersion): New.
+	(class_getInstanceSize): New.
+	* exceptions.c: Include objc/runtime.h instead of objc/objc-api.h.
+	(is_kind_of_exception_matcher): Use objc_getSuperclass instead of
+	objc_get_super_class.
+	(get_ttype_entry): Use objc_getRequiredClass instead of
+	objc_get_class.
+	* ivars.c (class_getClassVariable): New.
+	* objects.c: Include objc/runtime.h, objc/thr.h and
+	objc-private/module-abi-8.h instead of objc/objc-api.h
+	* objc/runtime.h (class_getClassVariable): New.
+	(class_isMetaClass): New.
+	(class_getSuperclass): New.
+	(class_getVersion): New.
+	(class_setVersion): New.
+	(class_getInstanceSize): New.
+	* objc-private/module-abi-8.h (HOST_BITS_PER_LONG): New (from
+	objc/objc-api.h)
+	(__CLS_INFO): Same.
+	(__CLS_ISINFO): Same.
+	(__CLS_SETINFO): Same.
+	(CLS_ISMETA): Same.
+	(CLS_ISCLASS): Same.
+	(CLS_ISRESOLV): Same.
+	(CLS_SETRESOLV): Same.
+	(CLS_ISINITIALIZED): Same.
+	(CLS_SETINITIALIZED): Same.
+	(CLS_GETNUMBER): Same.
+	(CLS_SETNUMBER): Same.
+
+2010-10-12  Nicola Pero  <nicola.pero@meta-innovation.com>
+
+	* archive.c: Do not include objc/objc.h.
+	* class.c: Do not include objc/objc.h.
+	* encoding.c: Include objc/runtime.h, ctype.h and
+	objc-private/module-abi-8.h instead of objc/objc-api.h and
+	objc/encoding.h.
+	* error.c: Do not include objc/objc.h.
+	* gc.c: Include tconfig.h and objc/encoding.h only if
+	OBJC_WITH_GC.
+	* hash.c: Include objc/runtime.h and objc/thr.h instead of
+	objc/objc-api.h.  Do not include objc/objc.h.
+	* init.c: Do not include objc/objc.h.
+	* ivars.c: Include objc/runtime.h, objc-private/module-abi-8.h and
+	objc/thr.h instead of objc/objc-api.h.  Do not include
+	objc/objc.h.
+	* linking.m: Tidied comment.
+	* memory.c: Include objc/runtime.h instead of objc/objc-api.h.
+	Do not include objc/objc.h.
+	* objects.c: Do not include objc/objc.h.
+	* objc-sync.c: Include objc/runtime.h instead of objc/objc-api.h.
+	* protocols.c: Do not include objc/objc.h.
+	* sarray.c: Include objc/runtime.h instead of objc/objc-api.h.  Do
+	not include objc/objc.h.
+	* selector.c: Do not include objc/objc.h.
+	* sendmsg.c: Do not include objc/objc.h.
+	* thr.c: Include objc/runtime.h instead of objc/objc-api.h.
+	Do not include objc/objc.h.
+	* objc/objc-decls.h: Reindented code.
+	* objc/runtime.h Include objc-decls.h.  Updated comments.
+	(objc_malloc): New.
+	(objc_atomic_malloc): New.
+	(objc_calloc): New.
+	(objc_realloc): New.
+	(objc_free): New.
+	* objc-private/runtime.h: Updated comments.
+
+2010-10-12  Nicola Pero  <nicola.pero@meta-innovation.com>
+
+	* Makefile.in (C_SOURCE_FILES): Added protocols.c.
+	* objc-private/protocols.h: New.
+	* protocols.c: New.
+	* init.c: Include objc-private/protocols.h.
+	(__objc_exec_class): Call __objc_protocols_init on startup.
+	(__objc_init_protocols): Call __objc_protocols_add_protocol.
+	* objc-private/runtime.h: Use (struct objc_method_list *) instead
+	of MethodList_t, and (struct objc_method *) instead of Method_t.
+	* objc/deprecated/struct_objc_class.h: Define
+	__objc_STRUCT_OBJC_CLASS_defined.
+	* objc-private/module-abi-8.h (struct
+	objc_method_description_list): New.
+	(struct objc_class): Only define if
+	__objc_STRUCT_OBJC_CLASS_defined is undefined.
+	* objc/runtime.h (class_getName): New.
+	(objc_getProtocol): New.
+	(objc_copyProtocolList): New.
+	(class_addProtocol): New.
+	(class_conformsToProtocol): New.
+	(class_copyProtocolList): New.
+	(protocol_conformsToProtocol): New.
+	(protocol_isEqual): New.
+	(protocol_getName): New.
+	(protocol_getMethodDescription): New.
+	(protocol_copyMethodDescriptionList): New.
+	(protocol_getProperty): New.
+	(protocol_copyPropertyList): New.
+	(protocol_copyProtocolList): New.
+	* class.c (class_getName): New.
+	* selector.c (sel_isEqual): New.
+
+2010-10-12  Nicola Pero  <nicola.pero@meta-innovation.com>
+
+	* selector.c (sel_getName): Return "<null selector>" for a NULL
+	argument.
+	(sel_get_name): Return 0 for a NULL argument.
+	* objc/runtime.h (sel_getName): Updated documentation.
+
+	* objc-private/hash.h (class_hash_table): Unused declaration
+	removed.
+	(module_hash_table): Same.
+	* objc/deprecated/hash.h: Same changes.
+
+2010-10-11  Nicola Pero  <nicola.pero@meta-innovation.com>
+
+	* class.c (objc_getClassList): New.
+	(objc_getRequiredClass): New.
+	(objc_getMetaClass): New.
+	(objc_lookupClass): New.
+	(objc_getClass): New.
+	(__objc_get_unknown_class_handler): New.
+	(objc_setGetUnknownClassHandler): New.
+	(objc_get_class): Use __objc_get_unknown_class_handler.
+	(objc_lookup_class): Call objc_getClass.
+	* objc/objc-api.h: Updated comment and copyright notice.
+	* objc/runtime.h: Updated comments.
+	(objc_getClass): New.
+	(objc_lookupClass): New.
+	(objc_getMetaClass): New.
+	(objc_getRequiredClass): New.
+	(objc_getClassList): New.
+	(objc_setGetUnknownClassHandler): New.
+	(objc_get_unknown_class_handler): New.
+	* objc-private/runtime.h: Use __objc_private_runtime_INCLUDE_GNU
+	instead of __objc_runtime_INCLUDE_GNU as include guard.
+	* objc-private/error.h (_objc_abort): Mark as noreturn.
+
+2010-10-11  Nicola Pero  <nicola.pero@meta-innovation.com>
+
+	* Makefile.in (C_SOURCE_FILES): Added ivars.c.
+	* ivars.c: New.
+	* objc/objc.h: Updated comments.
+	* objc/runtime.h (object_getClass): New.
+	(object_getClassName): New.
+	(object_setClass): New.
+	(class_getInstanceVariable): New.
+	(object_getIndexedIvars): New.
+	(object_getInstanceVariable): New.
+	(object_setInstanceVariable): New.
+	(object_getIvar): New.
+	(object_setIvar): New.
+	(ivar_getName): New.
+	(ivar_getOffset): New.
+	(ivar_getTypeEncoding): New.
+	* objc-private/module-abi-8.h (struct objc_class): Added.
+	* objects.c (object_getClassName): New.
+	(object_setClass): New.
+
+2010-10-11  Nicola Pero  <nicola.pero@meta-innovation.com>
+
+	* objc/objc.h: Updated comments.
+	* objc/objc-api.h: (object_copy): Added one argument; use a
+	#define to maintain backwards-compatibility.  Moved
+	_objc_object_alloc, _objc_object_copy, _objc_object_dispose and
+	objc_get_uninstalled_dtable into
+	objc/deprecated/objc_get_uninstalled_dtable.h and
+	objc/deprecated/objc_object_alloc.h.  Include these files.
+	* objc/deprecated/objc_get_uninstalled_dtable.h: New.
+	* objc/deprecated/objc_object_alloc.h: New.
+	* objc/runtime.h (set_getName): New.
+	(sel_getType): New.
+	(sel_getUid): New.
+	(sel_registerName): New.
+	(sel_registerTypedName): New.
+	(sel_isEqual): New.
+	(class_createInstance): New.
+	(object_copy): New.
+	(object_dispose): New.
+	* objects.c: Do not include tconfig.h.  Include gc_typed.h if
+	building the garbage collection version.
+	(__objc_object_alloc): Removed.
+	(__objc_object_copy): Removed.
+	(__objc_object_dispose): Removed.
+	(class_createInstance): New from code in class_create_instance.
+	Cast second argument of GC_malloc_explicitly_typed.  Use
+	objc_calloc.  Do not call _objc_object_alloc.
+	(class_create_instance): Call class_createInstance.
+	(object_copy): Added extraBytes argument.  Do not call
+	_objc_object_copy.
+	(object_dispose): Do not call _objc_object_dispose.
+	* memory.c (objc_free): When using garbage collection, mark the
+	argument as unused.
+	* selector.c (sel_getName): New.
+	(sel_get_name): Call sel_getName.
+	(sel_getType): New.
+	(sel_get_type): Call sel_getType.
+	(sel_registerName): New.
+	(sel_register_name): Call sel_registerName.
+	(sel_registerTypedName): New.
+	(sel_register_typed_name): Call sel_registerTypedName.
+	(sel_getUid): New.
+	(sel_get_uid): Call sel_getUid.
+
+2010-10-10  Nicola Pero  <nicola.pero@meta-innovation.com>
+
+	* objc/objc-api.h: Define Method, Method_t, Category and
+	Category_t.  Prevent including this file at the same time as
+	objc/runtime.h.  Updated comments.
+	* objc/deprecated/struct_objc_method.h: Do not define Method,
+	Method_t.
+	* objc/deprecated/struct_objc_category.h: Do not define Category,
+	Category_t.
+	* objc-private/module-abi-8.h: New file containing a copy of all
+	the structure definitions.  Not used yet.
+	* objc/encoding.h (objc_aligned_size): Removed duplicate
+	declaration.  Updated comments.
+	* objc/runtime.h: Added Ivar, objc_property_t, Property, Method,
+	Category, struct objc_method_description, _C_ID and similar,
+	_C_CONST and similar and _F_CONST and similar.  Added
+	objc_sizeof_type, objc_alignof_type, objc_aligned_size,
+	objc_promoted_size, objc_skip_type_qualifier, objc_skip_typespec,
+	objc_skip_offset, objc_skip_argspec, objc_get_type_qualifiers,
+	struct objc_struct_layout, objc_layout_structure,
+	objc_layout_structure_next_member, objc_layout_finish_structure,
+	objc_layout_structure_get_info.  Prevent including this file at
+	the same time as objc/objc-api.h.
+
+2010-10-10  Nicola Pero  <nicola.pero@meta-innovation.com>
+
+	* Makefile.in (OBJC_DEPRECATED_H): Added struct_objc_category.h,
+	struct_objc_ivar.h, struct_objc_ivar_list.h, struct_objc_method.h,
+	struct_objc_method_list.h, struct_objc_module.h,
+	struct_objc_protocol_list.h, struct_objc_symtab.h.
+	* objc/deprecated/struct_objc_category.h: New.
+	* objc/deprecated/struct_objc_ivar.h: New.
+	* objc/deprecated/struct_objc_ivar_list.h: New.
+	* objc/deprecated/struct_objc_method.h: New.
+	* objc/deprecated/struct_objc_method_list.h: New.
+	* objc/deprecated/struct_objc_module.h: New.
+	* objc/deprecated/struct_objc_protocol_list.h: New.
+	* objc/deprecated/struct_objc_symtab.h: New.
+	* objc/deprecated/struct_objc_static_instances.h: New.
+	* objc/objc-api.h: Definitions of deprecated structures moved into
+	the above header fragment files in objc/deprecated/.  Include the
+	files instead of definition the structures here.  Updated
+	comments.
+	* objc/runtime.h: Updated comments.  Do not include objc-api.h.
+	(objc_set_enumeration_mutation_handler): Renamed to
+	objc_setEnumerationMutationHandler.
+	* objc-foreach.c (objc_set_enumeration_mutation_handler): Renamed
+	to objc_setEnumerationMutationHandler.
+	* objc/objc-exception.h (objc_set_exception_matcher): Renamed to
+	objc_setExceptionMatcher.
+	(objc_set_uncaught_exception_handler): Renamed to
+	objc_setUncaughtExceptionHandler.
+	* exception.c: Same changes.
+
+2010-10-10  Nicola Pero  <nicola.pero@meta-innovation.com>
+
+	* objc-sync.c: Include objc-private/common.h.
+
+2010-10-10  Nicola Pero  <nicola.pero@meta-innovation.com>
+
+	* objc-foreach.c: Include objc-private/common.h.
+	* objc/deprecated/METHOD_NULL.h: New file.
+	* objc/objc-api.h: Include deprecated/METHOD_NULL.h instead of
+	defining METHOD_NULL here.
+	* Makefile.in (OBJC_DEPRECATED_H): Added METHOD_NULL.h.
+	* Object.m ([+instancesRespondTo:]): Use (Method_t)0 instead of
+	METHOD_NULL.
+	([-respondsTo:]): Same change.
+	* objc/objc-api.h (method_get_imp): Converted it into a normal
+	function so that we can hide the internals of struct objc_method.
+	* sendmsg.c (method_get_imp): Implemented.
+
+2010-10-09  Nicola Pero  <nicola.pero@meta-innovation.com>
+
+	* objc/objc-api.h (struct objc_super, Super, Super_t,
+	objc_msg_lookup_super, objc_msg_sendv, objc_msg_forward,
+	objc_msg_forward2): Declarations moved to objc/message.h.  Include
+	message.h here.
+	* objc/message.h: Added such declarations; updated comments.
+
+2010-10-06  Nicola Pero  <nicola.pero@meta-innovation.com>
+
+	Implemented fast enumeration for Objective-C.
+	* Makefile.in (C_SOURCE_FILES): Added objc-foreach.c.
+	(OBJC_H): Added runtime.h
+	* objc-foreach.c: New file.
+	* objc/runtime.h: New file.
+
+2010-09-30  Kai Tietz  <kai.tietz@onevision.com>
+
+	* objc/deprecated/struct_objc_class.h: Add padding
+	to avoid warning with -Wpadded.
+
+2010-09-26  Nicola Pero  <nicola.pero@meta-innovation.com>
+
+	* encoding.c (objc_sizeof_type): Added support for vector type and
+	for double long types.
+	(objc_alignof_type): Same change.
+	(objc_skip_typespec): Same change.
+	* objc/encoding.h (_C_GCINVISIBLE): Use '|' for _C_GCINVISIBLE
+	instead of '!' since '!' is already used for _C_VECTOR.
+	* objc/objc-api.h (_C_LNG_DBL): Added.
+
+2010-09-26  Nicola Pero  <nicola.pero@meta-innovation.com>
+
+	* libobjc_entry.c: File removed.
+
+2010-09-26  Kai Tietz  <kai.tietz@onevision.com>
+
+	* sendmsg.c (objc_msg_lookup): Remove inline.
+	(objc_get_uninstalled_dtable): Likewise.
+	* encoding.c (objc_skip_type_qualifiers): Likewise.
+	(objc_skip_offset): Likewise.
+	* archive.c (__objc_write_object): Likewise
+	(__objc_write_class):
+	(__objc_write_selector):
+	(objc_read_char):
+	(objc_read_unsigned_char):
+	(objc_read_short):
+	(objc_read_unsigned_short):
+	(objc_read_int):
+	(objc_read_long):
+	(__objc_read_nbyte_uint):
+	(objc_read_unsigned_int):
+	(objc_read_unsigned_long):
+	* objc/objc-decls.h (obc_EXPORT): Remove dllexport for DLL_EXPORT case.
+	(objc_EXPORT): Likewise.
+	* objc/message.h (objc-decls.h): Add include.
+	* objc/objc-api.h: Mark API by objc_EXPORT.
+	* libobjc.def (__objc_responds_to): Removed.
+
+2010-09-18  Nicola Pero  <nicola.pero@meta-innovation.com>
+
+	* hash.c: Include objc-private/hash.h instead of objc/hash.h.
+
+	* objc/sarray.h: Moved into objc/deprecated/sarray.h;
+	objc/sarray.h replaced with a placeholder including the file from
+	the deprecated/ directory.
+	* objc-private/sarray.h: New file (private copy of sarray.h).
+	* hash.c: Include <assert.h> instead of "assert.h"
+	* sarray.c: Include <assert.h> instead of "assert.h".  Include
+	objc-private/sarray.h instead of objc/sarray.h.
+	* selector.c: Include objc-private/sarray.h instead of
+	objc/sarray.h.
+	* sendmsg.c: Include <assert.h>.  Include objc-private/sarray.h
+	instead of objc/sarray.h.
+	* Makefile.in (OBJC_DEPRECATED_H): Added sarray.h.
+
+2010-09-17  Nicola Pero  <nicola.pero@meta-innovation.com>
+
+	* objc-private/objc-list.h (list_remove_elem): Unused function
+	removed.  (list_nth): Unused function removed.  (list_find):
+	Unused function removed.  (list_lenght): Unused function removed.
+
+2010-09-17  Nicola Pero  <nicola.pero@meta-innovation.com>
+
+	* objc/hash.h: Moved into objc/deprecated/hash.h; objc/hash.h
+	replaced with a placeholder including the file from the
+	deprecated/ directory.
+	* objc/objc-api.h: Updated includes.
+	* objc/typedstream.h: Updated includes.
+	* objc-private/hash.h: New file (private copy of hash.h).
+	* objc/objc-list.h: Moved into objc/deprecated/objc-list.h;
+	objc/objc-list.h replaced with a placeholder including the file
+	from the deprecated/ directory.
+	* objc-private/objc-list.h: New file (private copy of objc-list.h).
+	* init.c: Include objc-private/hash.h and objc-private/objc-list.h
+	instead of objc/hash.h and objc/objc-list.h.
+	* selector.c: Same change.
+	* class.c: Added include <string.h>, which used to be implicitly included
+	when hash.h was included.
+	* exception.c: Same change.
+	* objects.c: Same change.
+	* sarray.c: Same change.
+	* sendmsg.c: Same change.
+	* Makefile.in (OBJC_DEPRECATED_H): Added hash.h and objc-list.h.
+
+2010-09-14  Nicola Pero  <nicola.pero@meta-innovation.com>
+
+	Implemented objc_sync_enter() and objc_sync_exit(), which are
+	required by @synchronized() to work.
+	* objc-sync.c: New file.
+	* objc/objc-sync.h: New file.
+	* objc-private/objc-sync.h: New file.
+	* init.c (__objc_exec_class): Call __objc_sync_init() during the
+	Objective-C runtime startup.
+	* Makefile.in: Added objc-sync.c and objc-sync.h.
+	* configure.ac: Added GCC_CHECK_TLS.
+	* acinclude.m4: Include ../config/enable.m4 and ../config/tls.m4.
+	* configure: Regenerated.
+	* config.h.in: Regenerated.
+
+2010-09-12  Nicola Pero  <nicola.pero@meta-innovation.com>
+
+	* Makefile.in (%_gc.lo): New pattern rules to build the
+	garbage-collected version of the library.  Removed rules for
+	specific files that are no longer needed.  Standardized all rules.
+	(C_SOURCE_FILES, OBJC_SOURCE_FILES): New variables.
+	(OBJS, OBJS_GC): Compute these from C_SOURCE_FILES and
+	OBJC_SOURCE_FILES.
+	(INCLUDES): Removed the unused include -I$(srcdir)/objc.
+
+2010-09-12  Nicola Pero  <nicola.pero@meta-innovation.com>
+
+	* memory.c (objc_calloc): Fixed call to GC_malloc when building
+	with Garbage Colletion.
+
+2010-09-12  Nicola Pero  <nicola.pero@meta-innovation.com>
+
+	* memory.c: Do not include objc-private/runtime.h.
+
+2010-09-12  Nicola Pero  <nicola.pero@meta-innovation.com>
+
+	* objc/deprecated/objc_malloc.h: New file.
+	* objc/deprecated/objc_valloc.h: New file.
+	* objc/objc-api.h: Include the files instead of defining
+	objc_valloc, _objc_malloc() and similar.
+	* Makefile.in (OBJC_DEPRECATED_H): Added objc_valloc.h and
+	objc_malloc.h.
+	* memory.c: Removed the extra layer of indirection of _objc_malloc
+	and similar.
+	(objc_calloc): Use GC_malloc in the garbage-collected
+	implementation as GC_malloc returns memory that is already freed.
+	(objc_valloc): Deprecated.
+
+2010-09-12  Nicola Pero  <nicola.pero@meta-innovation.com>
+
+	* objc/deprecated/objc_error.h: New file.
+	* objc/objc-api.h: Include deprecated/objc_error.h instead of
+	defining objc_error and related.
+	* error.c: New file.  Added _objc_abort function which replaces
+	objc_error.  No change in functionality as they both print an
+	error and abort.
+	* misc.c: File removed.  Code moved into memory.c and error.c.
+	* memory.c: New file.
+	* objc-private/error.h: New file.
+	* archive.c: Include objc-private/error.h and use _objc_abort
+	instead of objc_error everywhere.
+	* class.c: Same change.
+	* encoding.c: Same change.
+	* init.c: Same change, and simplified init_check_module_version.
+	* memory.c: Same change.
+	* sendmsg.c:  Same change.
+	* thr.c: Same change.
+	* Makefile.in (OBJ_DEPRECATED_H): Added objc_error.h.
+	(OBJ_H): Reordered list.
+	(OBJS): Removed misc.lo, added memory.lo and error.lo.
+	(OBJS_GC): Removed misc_gc.lo, added memory_gc.lo and error_gc.lo.
+	(misc_gc.lo): Rule removed.
+	(error_gc.lo): Rule added.
+	(memory_gc.lo): Rule added.
+
+2010-09-12  Nicola Pero  <nicola.pero@meta-innovation.com>
+
+	* objc/objc.h (__GNU_LIBOBJC__): New #define providing an easy way
+	to check the API version.  Added some comments.
+
+	* objc-private/common.h: New file.
+	* NXConstStr.m: Include objc-private/common.h.
+	* Object.m: Same change.
+	* Protocol.m: Same change.
+	* archive.c: Same change.
+	* class.c: Same change.
+	* encoding.c: Same change.
+	* exception.c: Same change.
+	* gc.c: Same change.
+	* hash.c: Same change.
+	* init.c: Same change.
+	* libobjc_entry.c: Same change.
+	* linking.m: Same change.
+	* misc.c: Same change (and added a comment).
+	* nil_method.c: Same change.
+	* objects.c: Same change.
+	* sarray.c: Same change.
+	* selector.c: Same change.
+	* sendmsg.c: Same change.
+	* thr.c: Same change.
+
+2010-09-11  Nicola Pero  <nicola.pero@meta-innovation.com>
+
+	* objc/objc-api.h: Removed obsolete #ifdef for NeXTSTEP.
+
+2010-09-11  Nicola Pero  <nicola.pero@meta-innovation.com>
+
+	* archive.c: Removed not needed includes.
+	* class.c: Same change.
+	* hash.c: Same change.
+	* misc.c: Same change.
+	* nil_method.c: Same change.
+	* objects.c: Same change.
+	* sarray.c: Same change.
+	* sendmsg.c: Same change.
+	* thr.c: Same change.
+
+2010-09-11  Nicola Pero  <nicola.pero@meta-innovation.com>
+
+	* objc/runtime.h: Moved to objc-private/runtime.h.  Do not include
+	all the objc/*.h files.
+	* objc-private/runtime.h: New file.
+	* archive.c: Include objc-private/runtime.h (and required objc/*.h
+	files) instead of objc/runtime.h.
+	* class.c: Same change.
+	* hash.c: Same change.
+	* init.c: Same change.
+	* misc.c: Same change.
+	* nil_method.c: Same change.
+	* objects.c: Same change.
+	* sarray.c: Same change.
+	* selector.c: Same change.
+	* sendmsg.c: Same change.
+	* thr.c: Same change.
+
+2010-09-11  Nicola Pero  <nicola.pero@meta-innovation.com>
+
+	* objc/deprecated/struct_objc_selector.h: New file.  Definition of
+	'struct objc_selector' and 'sel_eq' moved here.
+	* objc/deprecated/struct_objc_protocol.h: New file.  Definition of
+	'struct objc_procotol' moved here.
+	* objc/deprecated/struct_objc_class.h: New file.  Definition of
+	'struct objc_class' moved here.
+	* objc/deprecated/MetaClass.h: New file.  Definition of MetClass
+	moved here.
+	* objc/deprecated/STR.h: New file.  Definition of STR moved here.
+	* objc/message.h: New file.  Definitions for relval_t, apply_t,
+	arglist, arglist_t and objc_msg_lookup were moved here.
+	* objc/objc.h: Include the above files instead of defining the
+	corresponding structs, types and functions here.  Added new opaque
+	definitions for SEL and Class.  Use Class and not 'struct
+	objc_class *' in the definition of 'struct objc_object'.
+	Commented all types defined in the file.  Removed special
+	definition of BOOL as 'int' on __vxworks; use 'unsigned char'
+	there as well.
+	* objc/deprecated/objc-unexpected-exception.h: Renamed to
+	objc_unexpected_exception.h.
+	* objc/objc-api.h: Updated include of
+	objc-unexpetected-exception.h
+	* objc/objc-exception.h: Updated comments.
+	* Makefile.in (OBJC_H, OBJC_DEPRECATED_H): Added the new header
+	files.  Reindented list of files.
+
+2010-09-10  Nicola Pero  <nicola.pero@meta-innovation.com>
+
+	* objc/objc-api.h (objc_trace): Unused variable removed.
+
+2010-09-10  Nicola Pero  <nicola.pero@meta-innovation.com>
+
+	* objc/deprecated: New directory.
+	* objc/deprecated/README: New file.
+	* objc/README: New file.
+	* objc/typedstream.h: Moved into objc/deprecated/typedstream.h;
+	objc/typedstream.h replaced with a placeholder including the file
+	from the deprecated/ directory.
+	* objc/deprecated/objc-unexpected-exception.h: New file with the
+	definition of _objc_unexpected_exception.
+	* objc/objc-api.h: Include deprecated/objc-unexcepted-exception.h
+	instead of defining _objc_unexpected_exception.
+	* objc/deprecated/Object.h: New file with the deprecated Object
+	methods in a 'Deprecated' category.
+	* objc/Object.h Include deprecated/Object.h instead of defining
+	the deprecated methods.
+	* Object.m: Moved deprecated methods into 'Deprecated' category.
+	* objc-private: New directory.
+	* objc-private/README: New file.
+	* Makefile.in (OBJC_DEPRECATED_H): New variable.
+	(install-headers): Create installation directory for
+	OBJC_DEPRECATED_H headers, and install them.
+
+2010-09-10  Nicola Pero  <nicola.pero@meta-innovation.com>
+
+	* objc/objc-exception.h: Fixed include of objc.h.
+
+2010-09-08  Nicola Pero  <nicola.pero@meta-innovation.com>
+
+	* objc/objc-exception.h: New file.
+	* exception.c (objc_set_uncaught_exception_handler): Implemented.
+	(objc_set_exception_matcher): Implemented.
+	(objc_exception_throw): Use the uncaught exception handler if set.
+	(PERSONALITY_FUNCTION): Use the exception matcher instead of the
+	hardcoded isKindOf.
+	(isKindOf): Renamed to is_kind_of_exception_matcher.  Tidied code
+	up.  Removed segmentation fault when value is 'nil'.
+	* objc/objc-api.h (_objc_unexpected_exception): Mark as
+	deprecated.
+	* Makefile.in (exception.lo, exception_gc.lo): Use
+	-Wno-deprecated-declarations when compiling.
+	(OBJC_H): Added objc-exception.h
+
+2010-09-08  Nicola Pero  <nicola.pero@meta-innovation.com>
+
+	* objc/typedstream.h: Deprecate all functions in the file.  This
+	file is obsolete.
+	* objc/Object.h ([+streamVersion:], [-read:], [-write:],
+	[-awake]): Documented that these methods are deprecated.  Added a
+	brief description of the Object class and its relationship to the
+	NSObject class.
+	* Makefile.in: Compile archive.c and Object.m with
+	-Wno-deprecated-declarations.
+
+2010-09-08  Nicola Pero  <nicola.pero@meta-innovation.com>
+
+	Removed obsolete intermediate threading layer.
+	* thr.c: Use __gthread_objc_xxx functions directly instead of
+	__objc_thread_xxx ones.
+	* objc/thr.h: Removed prototypes of no longer existing
+	__objc_thread_xxx functions.
+	* Makefile.in: Removed thr-objc.lo.
+	* thr-dce.c: File removed.
+	* thr-decosf1.c: File removed.
+	* thr-irix.c: File removed.
+	* thr-mach.c: File removed.
+	* thr-objc.c: File removed.
+	* thr-os2.c: File removed.
+	* thr-posix.c: File removed.
+	* thr-pthreads.c: File removed.
+	* thr-rtems.c: File removed.
+	* thr-single.c: File removed.
+	* thr-solaris.c: File removed.
+	* thr-vxworks.c: File removed.
+	* thr-win32.c: File removed.
+	* README.threads: File removed.
+	* THREADS.MACH: File removed.
+	* THREADS: Updated.
+
+2010-09-07  Nicola Pero  <nicola.pero@meta-innovation.com>
+
+	* Object.m (MAX_CLASS_NAME_LEN): Unused define removed.
+
+2010-09-06  Iain Sandoe  <iains@gcc.gnu.org>
+
+	* encoding.c: Add TARGET_ALIGN_NATURAL definition for m64 powerpc darwin.
+	Add a comment as to why, update FIXME comments.
+
+2010-09-06  Nicola Pero  <nicola.pero@meta-innovation.com>
+
+	* makefile.dos: Obsolete file removed.
+
+2010-04-02  Ralf Wildenhues  <Ralf.Wildenhues@gmx.de>
+
+	* aclocal.m4: Regenerate.
+
+2010-03-23  Dave Korn  <dave.korn.cygwin@gmail.com>
+
+	PR libobjc/30445
+	* configure.ac (extra_ldflags_libobjc): Define appropriately for
+	Cygwin and MinGW hosts.
+	* Makefile.am (libobjc_s.a): Remove dead pre-libtool target.
+	(libobjc.dll): Likewise.
+	* configure: Regenerate.
+
+2009-12-05  Ralf Wildenhues  <Ralf.Wildenhues@gmx.de>
+
+	* configure: Regenerate.
+
+2009-11-28  Jakub Jelinek  <jakub@redhat.com>
+
+	* sarray.c (sarray_free): Use old_buckets variable.
+	* encoding.c (objc_layout_structure_next_member): Remove unused
+	bfld_type_size variable.
+
+2009-08-24  Ralf Wildenhues  <Ralf.Wildenhues@gmx.de>
+
+	* configure.ac (AC_PREREQ): Bump to 2.64.
+
+2009-08-22  Ralf Wildenhues  <Ralf.Wildenhues@gmx.de>
+
+	* aclocal.m4: Regenerate.
+	* configure: Regenerate.
+	* config.h.in: Regenerate.
+
+2009-08-22  Ralf Wildenhues  <Ralf.Wildenhues@gmx.de>
+
+	* Makefile.in (LIBTOOL): Add $(LIBTOOLFLAGS).
+
+2009-07-30  Ralf Wildenhues  <Ralf.Wildenhues@gmx.de>
+
+	* Makefile.in (AUTOCONF, ACLOCAL, ACLOCAL_AMFLAGS, aclocal_deps):
+	New variables.
+	($(srcdir)/configure, $(srcdir)/aclocal.m4): New rules.
+
+2009-07-30  Ralf Wildenhues  <Ralf.Wildenhues@gmx.de>
+
+	* configure.ac (_AC_ARG_VAR_PRECIOUS): Use m4_rename_force.
+
+2009-04-09  Nick Clifton  <nickc@redhat.com>
+
+	* sendmsg.c: Change copyright header to refer to version 3 of
+	the GNU General Public License with version 3.1 of the GCC
+	Runtime Library Exception and to point readers at the COPYING3
+	and COPYING3.RUNTIME files and the FSF's license web page.
+	* NXConstStr.m: Likewise.
+	* Object.m: Likewise.
+	* Protocol.m: Likewise.
+	* archive.c: Likewise.
+	* class.c: Likewise.
+	* encoding.c: Likewise.
+	* exception.c: Likewise.
+	* gc.c: Likewise.
+	* hash.c: Likewise.
+	* init.c: Likewise.
+	* libobjc_entry.c: Likewise.
+	* linking.m: Likewise.
+	* misc.c: Likewise.
+	* nil_method.c: Likewise.
+	* objc/NXConstStr.h: Likewise.
+	* objc/Object.h: Likewise.
+	* objc/Protocol.h: Likewise.
+	* objc/encoding.h: Likewise.
+	* objc/hash.h: Likewise.
+	* objc/objc-api.h: Likewise.
+	* objc/objc-decls.h: Likewise.
+	* objc/objc-list.h: Likewise.
+	* objc/objc.h: Likewise.
+	* objc/runtime.h: Likewise.
+	* objc/sarray.h: Likewise.
+	* objc/thr.h: Likewise.
+	* objc/typedstream.h: Likewise.
+	* objects.c: Likewise.
+	* sarray.c: Likewise.
+	* selector.c: Likewise.
+	* thr-dce.c: Likewise.
+	* thr-decosf1.c: Likewise.
+	* thr-irix.c: Likewise.
+	* thr-mach.c: Likewise.
+	* thr-objc.c: Likewise.
+	* thr-os2.c: Likewise.
+	* thr-posix.c: Likewise.
+	* thr-pthreads.c: Likewise.
+	* thr-rtems.c: Likewise.
+	* thr-single.c: Likewise.
+	* thr-solaris.c: Likewise.
+	* thr-vxworks.c: Likewise.
+	* thr-win32.c: Likewise.
+	* thr.c: Likewise.
+	* libobjc.def: Change copyright header to refer to version 3 of
+	the GNU General Public License and to point readers at the COPYING3
+	file and the FSF's license web page.
+	* makefile.dos: Likewise.
+
+2009-04-09  Jakub Jelinek  <jakub@redhat.com>
+
+	* Makefile.in: Change copyright header to refer to version
+	3 of the GNU General Public License and to point readers at the
+	COPYING3 file and the FSF's license web page.
+	* configure.ac: Likewise.
+
+2009-03-12  Richard Frith-Macdonald  <rfm@gnu.org>
+	    David Ayers  <ayers@fsfe.org>
+
+	PR libobjc/27466
+	* objc/objc-api.h (_objc_unexpected_exception): Declare
+	new hook.  Update copyright dates.
+	* exception.c (objc_exception_throw): Use hook.  Update
+	copyright dates.
+	* libobjc.def (_objc_unexpected_exception): Export hook.
+	Update copyright dates.
+
+2009-03-01  Ralf Wildenhues  <Ralf.Wildenhues@gmx.de>
+
+	* configure: Regenerate.
+
+2008-12-18  Ralf Wildenhues  <Ralf.Wildenhues@gmx.de>
+
+	* configure: Regenerate.
+
+2008-11-21  Kai Tietz  <kai.tietz@onevision.com>
+
+	*  Object.m (errno): Replaced by errno.h include.
+	(compare): Cast self to id to prevent warning on comparison.
+	* objc/objc.h (BOOL): Prevent redeclaration of BOOL, if it is
+	already there.
+	* sendmsg.c (__objc_print_dtable_stats): Remove type warnings.
+	* thr-win32.c (__objc_thread_detach): Remove type warning.
+	(__objc_thread_id): Likewise.
+	* thr.c (__objc_thread_detach_functiont): Add __builtin_trap ()
+	for noreturn.
+
+2008-09-26  Peter O'Gorman  <pogma@thewrittenword.com>
+	    Steve Ellcey  <sje@cup.hp.com>
+
+	* configure: Regenerate for new libtool.
+	* config.h.in: Regenerate for new libtool.
+
+2008-07-18  Matthias Klose  <doko@ubuntu.com>
+
+	* Makefile.in: Ignore missing ../boehm-gc/threads.mk.
+
+2008-07-18  Matthias Klose  <doko@ubuntu.com>
+
+	* Makefile.in: Include ../boehm-gc/threads.mk.
+	(OBJC_BOEHM_GC_LIBS): Define, (libobjc_gc$(libsuffix).la): Use it.
+
+2008-07-06  Ralf Wildenhues  <Ralf.Wildenhues@gmx.de>
+
+	* Makefile.in (install-info): New stub target.
+
+2008-06-17  Ralf Wildenhues  <Ralf.Wildenhues@gmx.de>
+
+	* configure: Regenerate.
+
+2008-06-14  Kai Tietz  <kai.tietz@onevision.com>
+
+	* exception.c (PERSONALITY_FUNCTION): Remove extra decrement
+	if HAVE_GETIPINFO is not defined.
+
+2008-06-10  Kai Tietz  <kai.tietz@onevision.com>
+
+	* Object.m (compare): Add type id.
+	* objc/Object.h: Likewise.
+	* archive.c (objc_read_class): Use size_t to extend version to be
+	size of pointer scalar width.
+	* sendmsg.c (rtx): Undefine it before redefinition.
+	(__objc_print_dtable_stats): Cast arguments to long as intended.
+
+2008-05-30  Julian Brown  <julian@codesourcery.com>
+
+	* exception.c (__objc_exception_class): Initialise as constant
+	array for ARM EABI. Change macro to static const for non-ARM EABI.
+	(ObjcException): Add note about structure layout. Remove landingPad
+	and handlerSwitchValue for ARM EABI.
+	(get_ttype_entry): Add __ARM_EABI_UNWINDER__ version
+	of function.
+	(CONTINUE_UNWINDING): Define for ARM EABI/otherwise cases.
+	(PERSONALITY_FUNCTION): Use ARM EABI-specific arguments, and add
+	ARM EABI unwinding support.
+	(objc_exception_throw): Use memcpy to initialise exception class.
+
+2008-05-25  Alan Modra  <amodra@bigpond.net.au>
+
+	* encoding.c (strip_array_types): Rename from get_inner_array_type.
+	(rs6000_special_round_type_align): Update.
+
+2008-05-09  Julian Brown  <julian@codesourcery.com>
+
+	* Makefile.in (LTLDFLAGS): New.
+	(libobjc$(libsuffix).la, libobjc_gc$(libsuffix).la): Use above.
+
+2008-04-18  Paolo Bonzini  <bonzini@gnu.org>
+
+	PR bootstrap/35457
+	* aclocal.m4: Regenerate.
+	* configure: Regenerate.
+
+2008-01-24  David Edelsohn  <edelsohn@gnu.org>
+
+	* configure: Regenerate.
+
+2007-10-14  H.J. Lu  <hongjiu.lu@intel.com>
+
+	* configure.ac: Don't run config-ml.in directly.
+	(multilib_arg): New.
+	* configure: Regenerated.
+
+2007-08-06  Andrew Pinski  <pinskia@gmail.com>
+
+	PR libobjc/30731
+	* exception.c (parse_lsda_header): Use _uleb128_t/_sleb128_t instead
+	of _Unwind_Word for variables which are used in
+	read_uleb128/read_sleb128.
+	(PERSONALITY_FUNCTION): Likewise.
+
+2007-07-05  H.J. Lu  <hongjiu.lu@intel.com>
+
+	* aclocal.m4: Regenerated.
+
+2007-06-03  Andrew Pinski  <andrew_pinski@playstation.sony.com>
+
+	* configure.ac: Fix a typo in *-*-darwin clause.
+	* configure: Regenerated.
+
+2007-06-02  H.J. Lu  <hongjiu.lu@intel.com>
+
+	* configure.ac: Fix a typo.
+	* configure: Regenerated.
+
+2007-06-02  Paolo Bonzini  <bonzini@gnu.org>
+
+	* configure: Regenerate.
+
+2007-06-01  Andrew Pinski  <andrew_pinski@playstation.sony.com>
+
+	* Makefile.in: Replace all uses of libext with libsuffix.
+	* configure.ac: Likewise.
+	* configure: Regenerate.
+
+	Revert:
+	* Makefile.in: Remove all uses of $(libext).
+
+2007-05-23  Andrew Pinski  <andrew_pinski@playstation.sony.com>
+
+	* Makefile.in: Remove all uses of $(libext).
+
+2007-05-23  Steve Ellcey  <sje@cup.hp.com>
+
+	* configure: Regenerate.
+	* aclocal.m4: Regenerate.
+
+2007-04-21  Andrew Ruder  <andy@aeruder.net>
+
+	* sendmsg.c (__objc_get_forward_imp): Call
+	__objc_msg_forward2 for real.
+
+2007-04-09  Andrew Ruder  <andy@aeruder.net>
+
+	* sendmsg.c: Added __objc_msg_forward2, a hook that allows
+	external libraries to provide a function that returns the real
+	forwarding function based on both the selector and the receiver.
+	* objc/objc-api.h: Define __objc_msg_forward2.
+
+2007-03-01  Brooks Moses  <brooks.moses@codesourcery.com>
+
+	* Makefile.in: Add dummy install-pdf target.
+
+2007-02-18  Manuel Lopez-Ibanez  <manu@gcc.gnu.org>
+
+	* objc/objc-list.h (list_free): Add keyword 'inline' to avoid
+	unused warning.
+
+2006-10-31  Geoffrey Keating  <geoffk@apple.com>
+
+	* encoding.c (darwin_rs6000_special_round_type_align): New.
+
+2006-10-14  Geoffrey Keating  <geoffk@apple.com>
+
+	* Makefile.in: Use multi_basedir instead of toplevel_srcdir.
+	* configure.ac: Use multi.m4 from aclocal rather than custom
+	code.  Use multi_basedir instead of toplevel_srcdir.
+	* aclocal.m4: Regenerate.
+	* configure: Regenerate.
+
+2006-10-10  Brooks Moses  <bmoses@stanford.edu>
+
+	* Makefile.in: Added empty "pdf" target.
+
+2006-07-18  Paolo Bonzini  <bonzini@gnu.org>
+
+	* configure: Regenerate.
+
+2006-05-23  Carlos O'Donell  <carlos@codesourcery.com>
+
+	* Makefile.in: Add install-html target. Add install-html to .PHONY
+
+2006-02-21  Rainer Orth  <ro@TechFak.Uni-Bielefeld.DE>
+
+	PR libobjc/26309
+	* thr-objc.c (_XOPEN_SOURCE): Don't define on Tru64 UNIX.
+
+2006-01-24  David Ayers  <d.ayers@inode.at>
+
+	PR libobjc/9751
+	* gc.c (class_ivar_set_gcinvisible): Replace strncpy with memcpy
+	and insure the new strings are '\0' termintated.
+
+2006-01-24  David Ayers  <d.ayers@inode.at>
+
+	PR libobjc/13946
+	* configure.ac: Add include directives for --enable-objc-gc.
+	* Makefile.in: Ditto.
+	* configure: Regenerate.
+
+	* gc.c (__objc_class_structure_encoding): Increment the used bytes
+	instead of the local pointer to them.
+
+2005-12-14  Andrew Pinski  <pinskia@physics.uc.edu>
+
+	PR objc/25360
+	* objc/objc-api.c (_C_COMPLEX): New define.
+	* encoding.c (objc_sizeof_type): Handle _C_Complex.
+	(objc_alignof_type): Likewise.
+	(objc_skip_typespec): Likewise.
+
+2005-12-15  David Ayers  <d.ayers@inode.at>
+
+	PR libobjc/14382
+	* README (+load,+initialize): Fix documentation to reflect
+	intended and implemented semantics for +load and +initialize.
+
+2005-12-12  Andrew Pinski  <pinskia@physics.uc.edu>
+
+	* encoding.c (TYPE_FIELDS): Fix to skip over just _C_STRUCT_B and
+	the name.
+	(get_inner_array_type): Fix to skip over _C_ARY_B and size.
+	(rs6000_special_round_type_align): Update for the ABI fix.
+	(objc_layout_finish_structure): Correct the encoding which is passed to
+	ROUND_TYPE_ALIGN.
+
+2005-12-11  Andrew Pinski  <pinskia@physics.uc.edu>
+
+	PR libobjc/25347
+	* encoding.c (objc_sizeof_type): Don't handle _C_UNION_B special
+	but use the struct layout functions.
+	(objc_alignof_type): Likewise.
+	(objc_layout_structure): Handle _C_UNION_B also.
+	(objc_layout_structure_next_member): Likewise.
+	(objc_layout_finish_structure): Likewise.
+
+2005-12-11  Andrew Pinski  <pinskia@physics.uc.edu>
+
+	PR libobjc/25346
+	* objc/objc-api.h (_C_BOOL): New define.
+	* encoding.c (objc_sizeof_type): Handle _C_BOOL.
+	(objc_alignof_type): Likewise.
+	(objc_skip_typespec): Likewise.
+
+2005-11-20  David Ayers  <d.ayers@inode.at>
+
+	PR libobjc/19024
+	* objc/hash.h: Remove deprecated hash API.
+	* hash_compat.c: Remove.
+	* Makefile.in: Remove reference to hash_compat.c.
+
+	* configure.ac (VERSION): Bump library version to 2:0:0.
+	* configure: Regenerate.
+
+2005-11-09  Alexandre Oliva  <aoliva@redhat.com>
+
+	PR other/4372
+	* thr-objc.c (_XOPEN_SOURCE): Define.
+
+2005-10-07  Ulrich Weigand  <uweigand@de.ibm.com>
+
+	PR libobjc/23612
+	* objc/objc-api.h (struct objc_ivar): Move definition to
+	global scope.
+
+2005-09-04  Andrew Pinski  <pinskia@physics.uc.edu>
+	    Rasmus Hahn  <rassahah@neofonie.de>
+
+	PR libobjc/23108
+	* archive.c (objc_write_type): Correct the element offset.
+	(objc_read_type): Likewise.
+
+2005-08-17  Kelley Cook  <kcook@gcc.gnu.org>
+
+	* All files: Update FSF address.
+
+2005-08-13  Marcin Koziej  <creep@desk.pl>
+	    Andrew Pinski  <pinskia@physics.uc.edu>
+
+	PR libobjc/22492
+	* exception.c (PERSONALITY_FUNCTION): Fix the PC with finally.
+
+2005-08-13  Andrew Pinski  <pinskia@physics.uc.edu>
+
+	* Makefile.in (extra_ldflags_libobjc): New.
+	(libobjc$(libext).la): Add extra_ldflags_libobjc to the link line.
+	(libobjc_gc$(libext).la): Likewise.
+	* configure.ac (extra_ldflags_libgfortran): Set for *-darwin* to
+	"-Wl,-single_module".
+	* configure: Regenerate.
+	* linking.m (_objcInit): Remove.
+
+2005-07-26  Andrew Pinski  <pinskia@physics.uc.edu>
+
+	PR libobjc/22606
+	* Makefile.in (ALL_CFLAGS): Add -fexceptions.
+
+2005-06-08  David Ayers  <d.ayers@inode.at>
+
+	* objc/NXConstStr.h, objc/Object.h, objc/Protocol.h,
+	objc/encoding.h, objc/hash.h, objc/objc-api.h,
+	objc/runtime.h, objc/sarray.h, objc/thr.h,
+	objc/typedstream.h: Do not include Objective-C headers as
+	system headers.
+
+2005-06-07  David Ayers  <d.ayers@inode.at>
+
+	* archive.c, init.c, selector.c: Include hash.h.
+	* archive.c, class.c, encoding.c, gc.c, hash.c, hash_compat.c,
+	init.c, misc.c, nil_method.c, objects.c, sarray.c, selector.c,
+	sendmsg.c, thr-dce.c, thr-decosf1.c, thr-irix.c, thr-mach.c,
+	thr-objc.c, thr-os2.c, thr-posix.c, thr-pthreads.c, thr-rtems.c,
+	thr-single.c, thr-solaris.c, thr-vxworks.c, thr-win32.c, thr.c:
+	Include Objective-C headers with quotes and objc/ directory
+	prefix.
+
+2005-05-19  Richard Henderson  <rth@redhat.com>
+
+	* exception.c: Revert last change.
+
+2005-05-19  David Ayers  <d.ayers@inode.at>
+
+	* exception.c: Include tsystem.h for unwind.h.
+
+2005-05-09  Mike Stump  <mrs@apple.com>
+
+	* configure: Regenerate.
+
+2005-04-12  Mike Stump  <mrs@apple.com>
+
+	* configure: Regenerate.
+
+2005-03-21  Zack Weinberg  <zack@codesourcery.com>
+
+	* Makefile.in: Set gcc_version here.
+	* configure.ac: Do not invoke TL_AC_GCC_VERSION.  Adjust quoting
+	in definition of toolexeclibdir so that $(gcc_version) is expanded
+	by the Makefile.
+	* aclocal.m4, configure: Regenerate.
+
+2005-03-03  David Ayers  <d.ayers@inode.at>
+
+	* objc/hash.h (OBJC_IGNORE_DEPRECATED_API): Update deprecated
+	version reference.  Correct typo.
+
+2005-03-02  David Ayers  <d.ayers@inode.at>
+
+	PR libobjc/19024
+	* Makefile.in (OBJS): Add hash_compat.lo.
+	(OBJS_GC): Add hash_compat_gc.lo.
+	(hash_compat_gc.lo): New target and rule.
+	* objc/hash.h (hash_new, hash_delete, hash_add, hash_remove)
+	(hash_next, hash_value_for_key, hash_is_key_in_hash)
+	(hash_ptr, hash_string, compare_ptrs, compare_strings): Prefix
+	with objc_.  Add deprecated non prefixed inlined versions.
+	(OBJC_IGNORE_DEPRECATED_API): New macro to hide deprecated
+	declarations.
+	* hash.c (hash_new, hash_delete, hash_add, hash_remove, hash_next)
+	(hash_value_for_key, hash_is_key_in_hash): Prefix with objc_ and
+	update callers.
+	* hash_compat.c: New file.
+	* archive.c: Update callers.
+	* init.c: Likewise.
+	* selector.c: Likewise.
+	* libobjc.def: Add objc_ versions of hash functions.
+
+2005-02-28  Andrew Pinski <pinskia@physics.uc.edu>
+
+	PR libobjc/20252
+	* Makefile.in (GTHREAD_FLAGS): Remove.
+	(ALL_CFLAGS): Remove usage of GTHREAD_FLAGS.
+	* thr-objc.c: Include config.h.
+	* configure.ac: Instead of looking at GCC's makefile, figure out if
+	GTHREAD_FLAGS should be defined by looking at the `thread model'
+	of the current gcc.
+	* configure: Regenerate.
+	* config.h.in: Regenerate.
+
+2005-02-28  Paolo Bonzini  <bonzini@gnu.org>
+
+	PR bootstrap/17383
+	* configure.ac: Call GCC_TOPLEV_SUBDIRS.
+	(Determine CFLAGS for gthread): Use $host_subdir.
+	* configure: Regenerate.
+	* Makefile.in (host_subdir): New.
+	(INCLUDES): Use it.
+
+2004-12-20  Andrew Pinski  <pinskia@physics.uc.edu>
+
+	PR libobjc/12035
+	* gc.c: Remove definition of LOGWL, modWORDSZ, and divWORDSZ since
+	they are not used.
+	Include limits.h and stdlib.h.
+	Define BITS_PER_WORD.
+
+2004-12-12  Alexander Malmberg  <alexander@malmberg.org>
+
+	* selector.c (__objc_init_selector_tables): Add missing void to
+	definition.
+
+2004-12-02  Richard Sandiford  <rsandifo@redhat.com>
+
+	* configure.ac: Use TL_AC_GCC_VERSION to set gcc_version.
+	* configure, aclocal.m4: Regenerate.
+
+2004-11-29  Kelley Cook  <kcook@gcc.gnu.org>
+
+	* configure: Regenerate for libtool change.
+
+2004-11-25  Kelley Cook  <kcook@gcc.gnu.org>
+
+	* configure: Regenerate for libtool reversion.
+
+2004-11-24  Kelley Cook  <kcook@gcc.gnu.org>
+
+	* configure: Regenerate for libtool change.
+
+2004-11-24  Kelley Cook  <kcook@gcc.gnu.org>
+
+	* aclocal.m4, config.h.in: Regenerate.
+
+2004-10-08  Mike Stump  <mrs@apple.com>
+	    Andrew Pinski  <pinskia@physics.uc.edu>
+
+	* aclocal.m4: Rename to ...
+	* acinclude.m4: here and also use m4_include instead of sinclude.
+	* aclocal.m4: Regenerate.
+	* configure: Regenerate.
+	* configure.ac: Add AM_MAINTAINER_MODE and AM_PROG_CC_C_O.
+	* Makefile.in (configure): Add @MAINT@ infront of configure.ac
+
+2004-10-08  Andrew Pinski  <pinskia@physics.uc.edu>
+
+	* archive.c: Fix all the warnings about passing unsigned char*
+	to char* and the other way too.
+
+2004-09-16  Andrew Pinski  <pinskia@physics.uc.edu>
+
+	PR libobjc/16448
+	* exception.c: Include config.h
+	(objc_exception_throw): Change _GLIBCXX_SJLJ_EXCEPTIONS to
+	SJLJ_EXCEPTIONS.
+	* configure.ac: Find out what exception handling code we use.
+	* configure: Regenerate.
+	* config.h.in: New file, regenerate.
+
+2004-09-16  Andrew Pinski  <apinski@apple.com>
+
+	* encoding.c (ALTIVEC_VECTOR_MODE): Define a bogus macro.
+
+2004-08-28  Nathanael Nerode  <neroden@gcc.gnu.org>
+
+	* configure.ac: Switch from _GCC_TOPLEV_NONCANONICAL_TARGET to
+	ACX_NONCANONICAL_TARGET.
+	* configure: Regenerate.
+
+2004-08-13  Ziemowit Laski  <zlaski@apple.com>
+
+	* objc/sarray.h: Hoist include of assert.h near the top of file,
+	and mark the remainder of the file 'extern "C"'.
+
+2004-08-13  Andrew Pinski  <pinskia@physics.uc.edu>
+
+	* objc/Object.h: Move includes out of extern "C" blocks.
+	* objc/encoding.h: Likewise.
+	* objc/hash.h: Likewise.
+	* objc/objc-api.h: Likewise.
+	* objc/runtime.h: Likewise.
+	* objc/sarray.h: Likewise.
+	* objc/typedstream.h: Likewise.
+
+2004-08-12  Ziemowit Laski  <zlaski@apple.com>
+
+	* objc/NXConstStr.h: Update copyright date; bracket with
+	'extern "C"' for C++ use; make include syntax consistent
+	by using <...> instead of "..."; hoist <objc/...> includes
+	above the 'extern "C"' block.
+	* objc/Object.h: Likewise.
+	* objc/Protocol.h: Likewise.
+	* objc/encoding.h: Likewise.
+	* objc/hash.h: Likewise.
+	* objc/runtime.h: Likewise.
+	* objc/sarray.h: Likewise.
+	* objc/thr.h: Likewise.
+	* objc/typedstream.h: Likewise.
+	* objc/objc-api.h: Add 'extern "C"' block for C++ use.
+	(objc_static_instances): For C++ case, do away with
+	zero-sized array.
+	(objc_method): Hoist definition to file scope.
+	(_objc_load_callback, _objc_object_alloc, class_get_class_method,
+	class_get_instance_method, class_create_instance,
+	class_get_class_name, class_get_instance_size,
+	class_get_meta_class, class_get_super_class, class_get_version,
+	class_is_class, class_is_meta_class, class_set_version,
+	class_get_gc_object_type, class_ivar_set_gcinvisible,
+	get_imp): Rename 'class' parameter to '_class'.
+	* objc/objc-list.h: Add 'extern "C"' block for C++ use.
+	* objc/objc.h: Update copyright date.
+	(arglist_t): Provide a union tag.
+
+2004-07-22  Andrew Pinski  <pinskia@physics.uc.edu>
+
+	* thr.c (__objc_thread_detach_function): Do not mark as volatile
+	but instead use the attribute noreturn.
+
+2004-06-28  Zack Weinberg  <zack@codesourcery.com>
+
+	* encoding.c: Rename target_flags with a #define to avoid
+	conflict with a prior declaration.
+
+2004-06-24  Andrew Pinski  <apinski@apple.com>
+
+	* objc/encoding.h: Wrap the functions with extern "C" for C++
+	mode.
+	* objc/hash.h: Likewise.
+	* objc/objc-api.h: Likewise.
+	* objc/objc-list.h: Likewise.
+	* objc/runtime.h: Likewise.
+	* objc/sarray.h: Likewise.
+	* objc/thr.h: Likewise.
+	* objc/typedstream.h: Likewise.
+
+
+2004-06-21  Nick Clifton  <nickc@redhat.com>
+
+	* encoding.c (BITS_PER_UNIT): Define if a definition is not
+	provided.
+
+2004-06-20  Alexander Malmberg  <alexander@malmberg.org>
+
+	* Makefile.in (exception.lo): Remove $(OBJC_GCFLAGS).
+	(exception_gc.lo): New.
+	(OBJS_GC): Add exception_gc.lo.
+
+2004-06-17  Richard Henderson  <rth@redhat.com>
+
+	* exception.c: New file.
+	* Makefile.in (exception.lo): New.
+	(OBJS): Add it.
+
+2004-06-14  Andrew Pinski  <pinskia@physics.uc.edu>
+
+	* linking.m (_objcInit): New empty function
+	for Darwin only.
+
+2004-06-11  Andrew Pinski  <pinskia@physics.uc.edu>
+
+	* configure.ac: Support --enable-shared=libobjc.
+	* configure: Regenerate.
+
+	PR libobjc/15901
+	* configure.ac: Do not disable shared by default.
+	* configure: Regenerate.
+
+2004-06-03  Nicola Pero  <n.pero@mi.flashnet.it>
+
+	* Protocol.m ([-isEqual:]): Small optimizations returning
+	immediately if the argument is equal to self, and accessing
+	the argument's name directly if it's a protocol.
+
+2004-06-03  David Ayers  <d.ayers@inode.at>
+
+	* Protocol.m ([-isEqual:]): Test the class of the argument.
+
+2004-05-25  Andrew Pinski  <pinskia@physics.uc.edu>
+
+	* configure.ac (includedir): Rename to ...
+	(includedirname).
+	* Makefile.in: s/includedir/includedirname/.
+
+	PR target/11572
+	* configure.ac (includedir): Set to "include"
+	except for Darwin.
+	(libext) Set to empty except for Darwin.
+	* configure: Regenerate
+	* Makefile.in: s/libobjc.la/libobjc$(libext).la/g.
+	s/include/$(includedir)/g.
+
+2004-05-25  Daniel Jacobowitz  <drow@false.org>
+
+	* Makefile.in: Add .NOEXPORT.
+
+2004-05-25  Andrew Pinski  <pinskia@physics.uc.edu>
+
+	Merge from the libobjc-branch
+	2004-02-09  Andrew Pinski  <pinskia@physics.uc.edu>
+
+		* Makefile.in (OBJC_H): Change objc-deps.h to objc-decls.h.
+
+	2004-02-03  Andrew Pinski  <pinskia@physics.uc.edu>
+
+		* Makefile.in (OBJC_H): Add objc-deps.h.
+
+	2004-01-27  Nicola Pero  <n.pero@mi.flashnet.it>
+
+		* Protocol.m ([-conformsTo:]): If the argument is nil, return NO.
+		([-hash], [-isEqual:]): New methods.
+
+	2004-01-27  Richard Frith-Macdonald <rfm@gnu.org>
+
+		* sarray.c (sarray_free): Add a better comment.
+
+	2004-01-27  Adam Fedor  <fedor@gnu.org>
+
+		* hash.c (hash_add): Cast cachep to int.
+		* selector.c (__sel_register_typed_name): Cast
+		soffset_decode to int.
+
+	2004-01-27  Alexander Malmberg  <alexander@malmberg.org>
+
+		* selector.c: Rename register_selectors_from_list to
+		__objc_register_selectors_from_list. Update caller.
+		(__objc_register_selectors_from_list): Lock __objc_runtime_mutex
+		while registering selectors. Use __sel_register_typed_name instead
+		of sel_register_typed_name. Check for NULL method_name:s.
+		(pool_alloc_selector): New function.
+		(__sel_register_typed_name): Use pool_alloc_selector to allocate
+		selector structures.
+		* sendmsg.c (class_add_method_list): Use
+		__objc_register_selectors_from_list.
+		* objc/runtime.h: Add __objc_register_selectors_from_list.
+
+	2004-01-25  Adam Fedor  <fedor@gnu.org>
+		    Nicola Pero  <n.pero@mi.flashnet.it>
+		    Andrew Pinski  <pinskia@physics.uc.edu>
+
+		* objc/objc-decls.h: New file.
+		* objc/objc-api.h (_objc_lookup_class): Mark as export.
+		(_objc_load_callback): Likewise.
+		(_objc_object_alloc): Likewise.
+		(_objc_object_copy): Likewise.
+		(_objc_object_dispose): Likewise.
+
+	2004-01-25  Andrew Pinski  <pinskia@physics.uc.edu>
+
+		* archive.c: s/__inline__/inline
+		* sendmsg.c: Likewise.
+
+		* encoding.c: Remove FIXME about the warning
+		about unused variable.
+		* sendmsg.c: Add a FIXME comment saying that
+		this should be using libffi.
+
+		* Makefile.in (LIBTOOL): Use @LIBTOOL@ now as it works.
+
+
+2004-05-13  Andrew Pinski  <pinskia@physics.uc.edu>
+
+	* archive.c (objc_read_class): Initialize class_name.
+	(objc_read_selector): Initialize selector_name.
+
+2004-05-09  Richard Sandiford  <rsandifo@redhat.com>
+
+	* Makefile.in (toolexecdir): Remove trailing space.
+
+2004-04-15  Nathanael Nerode  <neroden@gcc.gnu.org>
+
+	PR libobjc/14948
+	* configure.ac: De-precious CC so multilibs work.
+	* configure: Regenerate.
+
+2004-04-14  Nathanael Nerode  <neroden@gcc.gnu.org>
+
+	* configure.ac: Restore toolexecdir.
+	* Makefile.in: Restore toolexecdir.
+	* configure: Regenerate.
+
+2004-04-09  Nathanael Nerode  <neroden@gcc.gnu.org>
+
+	* configure.ac: Remove (unused) glibcpp_prefixdir.
+	* configure: Regenerate.
+
+	* configure.in: Rename to configure.ac.
+	* Makefile.in: Update to match.
+
+	* Makefile.in: Remove toolexecdir, glibcpp_toolexecdir (unused).
+	Replace glibcpp_toolexeclibdir with toolexeclibdir.
+	* configure.in: Remove glibcpp_toolexecdir (unused).
+	Replace glibcpp_toolexeclibdir with toolexeclibdir.  Don't generate
+	config.h or stamp-h (unused).  Move one comment to the right place.
+	* configure: Regenerate.
+	* config.h.in: Remove (unused).
+
+	* config.h.in: Regenerate with autoheader.
+
+	* Makefile.in: Remove (unused) gcc_version_trigger.
+	* configure.in: Remove (unused) glibcpp_builddir.  Don't AC_SUBST
+	gcc_version_trigger.
+	* configure: Regenerate.
+
+	* configure.in: Switch to modern style for AC_INIT, AC_OUTPUT.
+	Sort file into sections.  Remove dnl where appropriate.  Fix
+	other style issues.
+	* configure: Regenerate.
+
+	* configure.in: Replace old AC_PROG_CC hack with new one.
+	Define toplevel_srcdir in terms of srcdir, not top_srcdir (there
+	are no subdirectory output files, so this is fine).  Change prereq
+	to autoconf 2.59.
+	* aclocal.m4: Include ../config/no-executables.m4.
+	* configure: Regenerate with autoconf 2.59.
+
+	* configure.in: Improve comments on gthread_cflags.  Improve m4
+	quotation, and replace 'if test' with 'case', for --enable-objc-gc.
+	* configure: Regenerate.
+
+	* configure.in: Move PACKAGE and VERSION settings up top.  Remove
+	unused call to AC_PROG_LN_S.  Default RANLIB to ':'.  Remove
+	redundant checks for values of RANLIB, AR, INSTALL.
+	* configure: Regenerate.
+
+	* configure.in: Clean up handling of
+	--enable-version-specific-runtime-libs and related variables;
+	replace 'if test' with 'case' where reasonable.  Fix comments.
+	Remove useless libstdcxx_interface.
+	* configure: Regenerate.
+
+	* configure.in: Use _GCC_TOPLEV_NONCANONICAL_TARGET.
+	Replace uses of target_alias with target_noncanonical.
+	* aclocal.m4: Include ../config/acx.m4.
+	* configure: Regenerate.
+	* Makefile.in: Replace uses of target_alias with target_noncanonical.
+	Fix copyright statement.
+
+	* configure.in: Hand-inline bulky, confusing macros from
+	aclocal.m4.  Replace references to "GNU Objective C" with "GCC".
+	Update copyright notice.  Remove stuff for automake, which isn't
+	used in this directory.  Remove emacs local variables.
+	* aclocal.m4: Remove hand-inlined macros.  Update copyright notice.
+	* configure: Regenerate.
+
+2004-03-16  Manfred Hollstein  <mh@suse.com>
+
+	* Makefile.in, configure.in, configure: Update copyright years.
+
+2004-03-15  Manfred Hollstein  <mh@suse.com>
+
+	* Makefile.in (LIBOBJC_VERSION, LIBOBJC_GC_VERSION): Use
+	definition from configure.in.
+	* configure.in (PACKAGE): Add definition.
+	(VERSION): Add definition; substitute it in output files.
+	* configure: Re-generate.
+
+2004-03-05  Ziemowit Laski  <zlaski@apple.com>
+
+	* objc/hash.h (hash_string, compare_strings):
+	Add type-casts to make Objective-C++ happy.
+	* objc/typedstream.h (objc_get_stream_class_version):
+	Rename parameter from 'class' to 'class_name' to make
+	Objective-C++ happy.
+
+2004-03-01  Michael Matz  <matz@suse.de>
+
+	* Makefile.in (ALL_CFLAGS): Add -fno-strict-aliasing.
+
+2004-02-06  Ziemowit Laski  <zlaski@apple.com>
+
+	* objc/objc-api.h (objc_super): The 'class' field shall
+	be named 'super_class' #ifdef __cplusplus.
+
+2004-01-17  Andrew Pinski  <pinskia@physics.uc.edu>
+
+	PR target/10781
+	* encoding.c (rs6000_special_round_type_align): Define.
+
+2004-01-14  Adam Fedor  <fedor@gnu.org>
+
+	PR libobjc/12155
+	* selector.c (__objc_register_instance_methods_to_class): Free
+	new_list if not used.
+
+2004-01-09  Andrew Ruder  <aeruder@ksu.edu>
+
+	PR libobjc/11904
+	* sarray.c (sarray_free): Free array->is_copy_of latter.
+
+2003-12-01  Zack Weinberg  <zack@codesourcery.com>
+
+	PR 11433
+	* Protocol.m (descriptionForInstanceMethod): Don't dereference
+	instance_methods if it's NULL.
+	(descriptionForClassMethod): Likewise for class_methods.
+
+2003-10-24  Rainer Orth  <ro@TechFak.Uni-Bielefeld.DE>
+
+	* Makefile.in (runtime-info.h): Remove -Wp.
+
+2003-10-21  Rainer Orth  <ro@TechFak.Uni-Bielefeld.DE>
+
+	* Makefile.in (CC1OBJ): Remove.
+	(runtime-info.h): Invoke $(CC) so all MULTIFLAGS are handled
+	correctly.
+	Use .m extension for temporary file.
+	Remove assembler temp file.
+
+2003-10-20  Joseph S. Myers  <jsm@polyomino.org.uk>
+
+	* objc/hash.h (hash_string): Don't use a cast as an lvalue.
+
+2003-10-17  Rainer Orth  <ro@TechFak.Uni-Bielefeld.DE>
+
+	* Makefile.in (runtime-info.h): Use MULTIFLAGS.
+
+2003-09-09  Alan Modra  <amodra@bigpond.net.au>
+
+	* configure: Regenerate.
+
+2003-08-27  Alexander Malmberg  <alexander@malmberg.org>
+
+	* Makefile.in, aclocal.m4: Update to $(libdir)/gcc/ instead of
+	(libdir)/gcc-lib/ when installing.
+	* configure: Regenerate.
+
+Thu Jul 10 10:27:43 2003  Nicola Pero  <n.pero@mi.flashnet.it>
+
+	libobjc/9969
+	* sendmsg.c (get_imp): Fixed rare threading problem.
+	(__objc_responds_to): Similar fixes.
+	(objc_msg_lookup): Similar fixes.
+	(__objc_init_install_dtable): Lock the runtime before checking if the
+	table is installed.
+
+2003-05-23  Nathanael Nerode  <neroden@gcc.gnu.org>
+
+	* hash.c, init.c, libobjc.def, libobjc_entry.c, linking.m,
+	makefile.dos, misc.c, nil_method.c, objects.c, sarray.c,
+	selector.c, sendmsg.c, thr-dce.c, thr-decosf1.c, thr-irix.c,
+	thr-mach.c, thr-objc.c, thr-os2.c, thr-posix.c, thr-pthreads.c,
+	thr-rtems.c, thr-single.c, thr-solaris.c, thr-vxworks.c,
+	thr-win32.c, thr.c: Replace "GNU CC" with "GCC".
+	* Makefile.in, NXConstStr.m, Object.m, Protocol.m, archive.c,
+	class.c, encoding.c, gc.c, objc/NXConstStr.h, objc/Object.h,
+	objc/Protocol.h, objc/encoding.h, objc/hash.h, objc/objc-api.h,
+	objc/objc-list.h, objc/objc.h, ocjc/runtime.h, objc/sarray.h,
+	objc/thr.h, objc/typedstream.h: Replace "GNU CC" with "GCC".
+
+Tue May 13 14:56:03 2003  Richard Frith-Macdonald <rfm@gnu.org>
+			  Nicola Pero  <n.pero@mi.flashnet.it>
+
+	libobjc/10742
+	* init.c (class_superclass_of_class): New function.
+	(create_tree_of_subclasses_inherited_from): Use it.
+	(__objc_tree_insert_class): Likewise.
+	(class_is_subclass_of_class): Likewise.
+
+2003-04-11  David Chad  <davidc@freebsd.org>
+	    Loren J. Rittle  <ljrittle@acm.org>
+
+	libobjc/8562
+	* objc/hash.h (hash_string): Constify correctly.
+	(compare_ptrs): Use direct compare.
+	* objc/objc-list.h (list_nth): Rename index to indx to avoid shadow.
+	* objc/sarray.h: Global rename index to indx to avoid shadow.
+
+2003-03-12  Andreas Schwab  <schwab@suse.de>
+
+	* aclocal.m4 (GLIBCPP_EXPORT_INSTALL_INFO): Avoid trailing /. in
+	glibcpp_toolexeclibdir.
+	* configure: Rebuilt.
+
+2003-02-20  Alexandre Oliva  <aoliva@redhat.com>
+
+	* configure.in: Propagate ORIGINAL_LD_FOR_MULTILIBS to
+	config.status.
+	* configure: Rebuilt.
+
+2003-01-27  Alexandre Oliva  <aoliva@redhat.com>
+
+	* aclocal.m4 (glibcpp_toolexeclibdir): Instead of
+	$(MULTISUBDIR), use `$CC -print-multi-os-directory`, unless
+	version_specific_libs is enabled.
+	* configure: Rebuilt.
+
+2003-01-09  Christian Cornelssen  <ccorn@cs.tu-berlin.de>
+
+	* Makefile.in (FLAGS_TO_PASS): Also pass DESTDIR.
+	(install-libs, install-headers): Prepend $(DESTDIR) to
+	destination paths in all (un)installation commands.
+
+2002-12-02  Zack Weinberg  <zack@codesourcery.com>
+
+	* thr-objc.c: Include coretypes.h and tm.h.
+
+2002-12-01  Zack Weinberg  <zack@codesourcery.com>
+
+	* encoding.c, sendmsg.c: Include coretypes.h and tm.h.
+
+2002-11-26  Nathanael Nerode  <neroden@gcc.gnu.org>
+
+	* configure.in: Remove skip-this-dir support.
+	* configure: Regenerate.
+
+2002-09-22  Kaveh R. Ghazi  <ghazi@caip.rutgers.edu>
+
+	* Makefile.in (all): Fix multilib parallel build.
+
+Thu Sep 12 12:44:37 2002  Nicola Pero  <n.pero@mi.flashnet.it>
+
+	* sendmsg.c (nil_method): Declare not to take a variable number of
+	args.
+	(objc_msg_lookup): Cast nil_method to IMP before returning it.
+	(objc_msg_lookup_super): The same.
+
+2002-09-10  Jan Hubicka  <jh@suse.cz>
+
+	* nil_method.c (nil_method): No longer defined with variable
+	arguments.
+
+2002-07-02  Rodney Brown  <rbrown64@csc.com.au>
+
+	* objc/encoding.h: Fix formatting.
+	* objc/hash.h: Likewise.
+	* objc/objc-api.h: Likewise.
+	* objc/runtime.h: Likewise.
+	* objc/thr.h: Likewise.
+	* archive.c: Likewise.
+	* class.c: Likewise.
+	* encoding.c: Likewise.
+	* gc.c: Likewise.
+	* hash.c: Likewise.
+	* init.c: Likewise.
+	* misc.c: Likewise.
+	* nil_method.c: Likewise.
+	* objects.c: Likewise.
+	* sarray.c: Likewise.
+	* selector.c: Likewise.
+	* sendmsg.c: Likewise.
+	* thr-mach.c: Likewise.
+	* thr.c: Likewise.
+
+2002-06-25  DJ Delorie  <dj@redhat.com>
+
+	* aclocal.m4 (GLIBCPP_CONFIGURE): Split out
+	GLIBCPP_TOPREL_CONFIGURE.
+	* configure.in: Call it before AC_CANONICAL_SYSTEM.
+	* configure: Regenerate.
+
+2002-06-21  Kaveh R. Ghazi  <ghazi@caip.rutgers.edu>
+
+	* Object.m (forward, read, write): Fix unused parameter warnings.
+	* encoding.c: Include <stdlib.h>.
+	(target_flags): Mark with attribute unused.
+	(atoi): Delete.
+	* runtime.h (__objc_selector_max_index): Change to unsigned int.
+	(__objc_generate_gc_type_description): Prototype.
+	* selector.c (__objc_selector_max_index): Change to unsigned int.
+
+Mon Jun 17 18:37:42 2002  Nicola Pero  <n.pero@mi.flashnet.it>
+
+	* sendmsg.c (__objc_get_forward_imp): Fix warning by making sure
+	we always have a return value: if __objc_msg_forward does not
+	supply a forwarding implementation, return the default
+	__builtin_apply based one.
+
+2002-06-15  Kaveh R. Ghazi  <ghazi@caip.rutgers.edu>
+
+	* Object.m: Fix signed/unsigned warning.
+	* Protocol.m: Likewise.
+	* archive.c: Always include stdlib.h.
+	(objc_read_short, objc_read_unsigned_short, objc_read_int,
+	objc_read_long, __objc_read_nbyte_uint, __objc_read_nbyte_ulong):
+	Fix signed/unsigned warning.
+	(objc_write_type, objc_read_type, objc_write_types,
+	objc_read_types): Ensure ctype 8-bit safety.
+	(__objc_no_write, __objc_no_read): Mark unused parameters.
+	* class.c (class_table_setup): Specify void arg.
+	* encoding.c (atoi, objc_sizeof_type, objc_alignof_type,
+	objc_skip_typespec, objc_skip_offset,
+	objc_layout_structure_next_member): Ensure ctype 8-bit safety.
+	(objc_layout_structure_next_member): Ensure variables are
+	initialized.
+	* gc.c (__objc_generate_gc_type_description,
+	class_ivar_set_gcinvisible): Mark unused parameters.
+	* init.c (__objc_send_load, __objc_destroy_class_tree_node): Mark
+	unused parameters.
+	(__objc_init_protocols) Fix signed/unsigned warning.
+	* nil_method.c (nil_method): Mark unused parameters.
+	* thr.h (objc_thread_callback): Specify void arg.
+	* sarray.c (sarray_new, sarray_realloc, sarray_free): Fix
+	signed/unsigned warning.
+	(sarray_free): Fix formatting.
+	* selector.c (sel_types_match): Ensure ctype 8-bit safety.
+	* sendmsg.c (__objc_init_install_dtable) Mark unused parameters.
+
+2002-06-09  Andreas Jaeger  <aj@suse.de>
+
+	* encoding.c (objc_layout_structure_next_member): Remove unused
+	variable.
+
+2002-05-20  Kaveh R. Ghazi  <ghazi@caip.rutgers.edu>
+
+	* Makefile.in (SHELL): Set to @SHELL@.
+	(WARN_CFLAGS): New.
+	(ALL_CFLAGS): Add $(WARN_CFLAGS).
+
+2002-05-16  Rainer Orth  <ro@TechFak.Uni-Bielefeld.DE>
+
+	* aclocal.m4: Allow for PWDCMD to override hardcoded pwd.
+	* configure: Regenerate.
+
+2002-05-08  Alexandre Oliva  <aoliva@redhat.com>
+
+	* configure.in (ORIGINAL_LD_FOR_MULTILIBS): Preserve LD at
+	script entry, and set LD to it when configuring multilibs.
+	* configure: Rebuilt.
+
+2002-04-19  David O'Brien  <obrien@FreeBSD.org>
+
+	* encoding.c (MAX, MIN, ROUNDING): #undef before defining.
+
+2002-04-09  Hans-Peter Nilsson  <hp@bitrange.com>
+
+	PR objc/6107
+	* objc/objc-api.h (struct objc_protocol_list): Change type of
+	member count from int to size_t.
+
+2002-02-11  Franz Sirl  <Franz.Sirl-kernel@lauterbach.com>
+
+	PR libobjc/4039
+	* aclocal.m4: Replace with version copied from libstdc++-v3.
+	* configure.in: Update for changes to aclocal and Makefile.
+	* configure: Regenerate.
+	* Makefile.in: Correct install of multilibs and shared libs, use
+	INSTALL_DATA for include files.
+
+Mon Dec 17 17:02:12 2001  Nicola Pero  <nicola@brainstorm.co.uk>
+
+	* init.c (__objc_exec_class): Fixed bug in the loop on unclaimed
+	categories - when an unclaimed category was found, the loop was
+	doing two steps forward instead of one, so that in certain cases
+	it was failing to properly load all the categories.  (Reported
+	with fix by Alexander Malmberg <alexander@malmberg.org>).
+
+2001-11-14  Aldy Hernandez  <aldyh@redhat.com>
+
+	* encoding.c: Add target_flags.
+
+2001-11-07  Aldy Hernandez  <aldyh@redhat.com>
+
+	* objc/objc-api.h (_C_VECTOR): New.
+
+	* encoding.c (VECTOR_TYPE): New.
+
+Mon Oct 29 21:29:21 2001  Nicola Pero  <n.pero@mi.flashnet.it>
+
+	* class.c: Rewritten the class table to use optimized, lock-free
+	lookup.  This more than doubles the speed of class method
+	invocations.  (class_table_setup), (class_table_insert),
+	(class_table_replace), (class_table_get_safe),
+	(class_table_next), (class_table_print),
+	(class_table_print_histogram): New functions.
+	(__objc_init_class_tables): Use class_table_setup.
+	(__objc_add_class_to_hash): Use class_table_get_safe and
+	class_table_insert.  (objc_lookup_class), (objc_get_class): Do not
+	assert the existence of the table; do not lock the runtime; use
+	class_table_get_safe.  (objc_next_class): Use class_table_next.
+	(__objc_resolve_class_links): Use class_table_next.
+	(class_pose_as): Use class_table_replace.
+
+2001-09-10  Ovidiu Predescu  <ovidiu@cup.hp.com>
+
+	* gc.c: Removed the DEBUG declaration.
+
+Wed Jul 18 12:48:56 2001  Nicola Pero  <n.pero@mi.flashnet.it>
+
+	* thr.c (objc_mutex_lock): Invoke __objc_thread_id directly,
+	rather than through objc_thread_id, to save a function call.
+	(objc_mutex_trylock, objc_mutex_unlock, objc_condition_wait):
+	Ditto.
+
+Mon Jul 16 12:15:00 2001  Nicola Pero  <n.pero@mi.flashnet.it>
+
+	* objc/objc-api.h (object_is_class): Fixed - buggy code was trying
+	to cast an id to a Class, which can not be done.  Make the check
+	by using CLS_ISMETA on the class pointer instead.
+	(object_is_meta_class): Similar fix.
+
+2001-06-09  Alexandre Oliva  <aoliva@redhat.com>, Stephen L Moshier  <moshier@mediaone.net>
+
+	* configure.in (AC_EXEEXT): Work around in case it expands to
+	nothing, as in autoconf 2.50.
+	* acinclude.m4: Likewise.
+	* configure: Rebuilt.
+
+2001-06-08  Nicola Pero  <n.pero@mi.flashnet.it>
+
+	* THREADS: Explain that when we compile libobjc inside GCC, we
+	always use thr-objc.c as a backend, which uses GCC's thread code.
+
+2001-06-06  Richard Frith-Macdonald  <rrfm@gnu.org>
+
+	* init.c (__objc_send_message_in_list): When setting a new entry
+	in __objc_load_methods use the method IMP as key, but check to see
+	if the method is in the hashtable by looking at the IMP also.
+	Also ... call the method after adding it to the hashtable rather
+	than before ... thus preventing an obscure possibility of infinite
+	recursion if a +load method itself loads a subclass.
+
+2001-05-25  Ovidiu Predescu  <ovidiu@cup.hp.com>
+
+	* init.c (__objc_send_message_in_list): When setting a new entry
+	in __objc_load_methods use the method name as key, not the method
+	IMP (reported by Richard Frith-Macdonald <richard@brainstorm.co.uk>).
+
+2001-05-09  Joseph S. Myers  <jsm28@cam.ac.uk>
+
+	* objc-features.texi: Move to ../gcc/objc.texi.
+	* fdl.texi: Remove.
+	* Makefile.in: Don't generate documentation from
+	objc-features.texi.
+
+2001-05-01  Mark Mitchell  <mark@codesourcery.com>
+
+	* fdl.texi: New file.
+	* objc-features.texi: Simplify.
+	* Makefile.in: Adjust accordingly.
+
+2001-04-30  Mark Mitchell  <mark@codesourcery.com>
+
+	* objc-features.texi: Use the GFDL.
+
+Wed Mar 21 04:44:58 EST 2001  John Wehle  (john@feith.com)
+
+	* encoding.c (REAL_TYPE): Define.
+
+2001-03-19  David Edelsohn  <edelsohn@gnu.org>
+
+	* encoding.c (TYPE_MODE): Define.
+
+2001-03-14  Nicola Pero  <n.pero@mi.flashnet.it>
+
+	* thr.c (objc_thread_add): New function.
+	(objc_thread_remove): Ditto.
+	* objc/thr.h: Declare them.
+	* libobjc.def: Mention them.
+
+2001-02-28  Ovidiu Predescu  <ovidiu@cup.hp.com>
+
+	* objc-features.texi: Document the @compatibility_alias compiler
+	directive (description from Nicola Pero <n.pero@mi.flashnet.it>).
+
+Fri Feb 23 18:12:00 2001  Rainer Orth  <ro@TechFak.Uni-Bielefeld.DE>
+
+	* sendmsg.c (__objc_forward): Delete strlen() declaration.
+
+2001-02-08  Geoffrey Keating  <geoffk@redhat.com>
+
+	* configure.in: Don't run AC_PROG_CC_WORKS or AC_EXEEXT, because
+	we're not interested in the result and they might fail.
+	* configure: Regenerated.
+
+2001-01-12  Joseph S. Myers  <jsm28@cam.ac.uk>
+
+	* objc-features.texi: Use @email.
+
+2001-01-12  Joseph S. Myers  <jsm28@cam.ac.uk>
+
+	* sendmsg.c (__objc_print_dtable_stats): Don't use #ifdef inside
+	printf.
+
+2000-01-11  Richard Earnshaw  <rearnsha@arm.com>
+
+	* encoding.c (STRUCTURE_SIZE_BOUNDARY): Redefine in a way that
+	determines the value dynamically.
+
+Wed Jan  3 00:49:10 2001  Ovidiu Predescu  <ovidiu@cup.hp.com>
+
+	* sendmsg.c: Added __objc_msg_forward, a hook that allows external
+	libraries to provide a function that returns the real forwarding
+	function. This can alleviate problems __builtin_apply() and
+	friends have on various platforms. (Solution suggested by Helge
+	Hess.)
+
+	* objc/objc-api.h: Define __objc_msg_forward.
+
+	* sendmsg.c: Define gen_rtx_REG.
+
+2000-12-06      Ralf Corsepius <corsepiu@faw.uni-ulm.de>
+
+	* thr-rtems.c: New file. Stub to compile.
+
+2000-09-06  Alexandre Oliva  <aoliva@redhat.com>
+
+	* configure: Rebuilt with new libtool.m4.
+
+Tue Aug 15 00:38:56 2000  Ovidiu Predescu  <ovidiu@cup.hp.com>
+
+	* configure.in: Create a config.h file. Check for <sched.h>.
+	* configure: Regenerate.
+
+	* config.h.in: Check for <sched.h>.
+
+2000-08-14  Zack Weinberg  <zack@wolery.cumb.org>
+
+	* configure: Regenerate after change to ../libtool.m4.
+
+2000-08-14  Andreas Schwab  <schwab@suse.de>
+
+	* objc-features.texi (Top): Move @menu at end of node.
+
+2000-08-11  Manfred Hollstein  <manfredh@redhat.com>
+
+	* objc-features.texi: Move @node Top before @menu.
+
+Sun Aug  6 23:27:49 2000  Ovidiu Predescu  <ovidiu@cup.hp.com>
+
+	* objc-features.texi: Documented the new -fconstant-string-class
+	option.
+
+Sun Aug  6 22:51:16 2000  Ovidiu Predescu  <ovidiu@cup.hp.com>
+
+	* thr-posix.c: Integrated Chris Ball's <cball@fmco.com> changes to
+	improve the Posix thread support for Objective-C.
+
+2000-08-04  Zack Weinberg  <zack@wolery.cumb.org>
+
+	* aclocal.m4: Replace copy of ../libtool.m4 with
+	sinclude(../libtool.m4).
+
+Fri Jul 28 08:58:02 2000  Nicola Pero  <nicola@brainstorm.co.uk>
+
+	* configure.in: Added libtool support; build shared libraries
+	if --enable-shared was passed on command line.
+	* Makefile.in: Modified most compilation commands to use libtool.
+	* aclocal.m4: New symbolic link to the ../libtool.m4, from the
+	libtool distribution.
+
+Sat Jul 29 00:10:21 2000  Ovidiu Predescu  <ovidiu@cup.hp.com>
+
+	* sarray.c, Object.m: Removed the explicit prototypes for strlen
+	and memcpy on 64-bit platforms (Suggested by Rodney Brown
+	<rdb@cup.hp.com>).
+
+2000-05-12  H.J. Lu  (hjl@gnu.org)
+
+	* Makefile.in (GTHREAD_FLAGS): New.
+	(ALL_CFLAGS): Add $(GTHREAD_FLAGS).
+	(OBJC_THREAD_FILE): Changed to thr-objc.
+
+	* configure.in (GTHREAD_FLAGS): New, check and replace it for
+	Makefile.
+	(OBJC_THREAD_FILE): Removed.
+
+	* thr-objc.c: New.
+
+2000-07-13  Kaveh R. Ghazi  <ghazi@caip.rutgers.edu>
+
+	* objc/hash.h: Include string.h.
+
+2000-04-15  David Edelsohn  <edelsohn@gnu.org>
+
+	* Object.m (strlen): 64-bit PowerPC is a 64bit platform as well.
+
+2000-04-12  Jakub Jelinek  <jakub@redhat.com>
+
+	* Object.m (strlen): Provide prototype on all 64bit platforms,
+	not only alpha.
+	* sarray.c (memcpy): Likewise.
+	* encoding.c (objc_layout_finish_structure): Don't use
+	ROUND_TYPE_ALIGN on sparc.
+
+	* encoding.c (objc_layout_structure_next_member): Do the whole
+	procedure even for the first member, so that we get correct
+	alignment.
+
+2000-03-29  Zack Weinberg  <zack@wolery.cumb.org>
+
+	* objc/Protocol.h, objc/objc-list.h: Change #endif labels to
+	comments.
+
+2000-02-23  Zack Weinberg  <zack@wolery.cumb.org>
+
+	* Makefile.in: Add -DIN_TARGET_LIBS to ALL_CFLAGS.
+
+Thu Sep 23 07:19:12 1999   Chris Ball <cball@fmco.com>
+
+	* thr-posix.c (__objc_mutex_deallocate): made deallocate work.
+
+Tue Sep 21 07:47:10 1999  Jeffrey A Law  (law@cygnus.com)
+
+	* Makefile.in (gc.o, gc_gc.o): Do not pass -fgnu-runtime to
+	the compiler when building C code.
+
+Fri Aug  6 23:32:29 1999  Daniel Jacobowitz <drow@drow.them.org>
+
+	* Makefile.in (FLAGS_TO_PASS): Include prefix, exec_prefix,
+	libdir, libsubdir and tooldir.
+
+Mon Jun 21 05:40:15 1999  John David Anglin <dave@hiauly1>
+
+	* init.c (__objc_force_linking): Make global.
+
+Thu May 20 03:20:59 1999  Jeffrey A Law  (law@cygnus.com)
+
+	* configure.in (AC_EXEEXT): Remove call.
+	(compiler_name): Explicitly check with no extension and .exe
+	extension.
+	* configure: Regenerate.
+
+Sun Apr 25 01:15:34 1999  Mumit Khan  <khan@xraylith.wisc.edu>
+
+	* Makefile.in (CC1OBJ): Define in terms of CC.
+	(runtime-info.h): Use.
+
+Fri April 8 08:21:07 1999 Ovidiu Predescu <ovidiu@cup.hp.com>
+
+	* objc-features.texi: Updated the URL to Boehm's GC page.
+
+Fri Mar 26 23:41:07 1999 Ovidiu Predescu <ovidiu@cup.hp.com>
+
+	* archive.c (__objc_code_char, __objc_write_char): Explicitly specify
+	the char as being signed (patch from Daniel Jacobowitz
+	<drow@false.org>).
+
+Wed Mar 24 22:41:28 1999  Mumit Khan  <khan@xraylith.wisc.edu>
+
+	* configure.in (AC_PREREQ): Update to 2.13.
+	(AC_EXEEXT): Call to find possible file extension.
+	(compiler_name): Use.
+	* configure: Regenerate.
+
+Wed Jan 27 02:31:01 1999  Jeffrey A Law  (law@cygnus.com)
+
+	* Makefile.in (ALL_CFLAGS): Add -DIN_GCC.
+
+Tue Jan  5 01:38:53 1999  Jeffrey A Law  (law@cygnus.com)
+
+	* configure.in (thread_file): Correct and simplify code to find
+	the thread file.
+	* configure: Rebuilt.
+
+1998-11-26  Manfred Hollstein  <manfred@s-direktnet.de>
+
+	* configure.in (compiler_name): Add check to detect if this
+	language's compiler has been built.
+	* configure: Regenerate.
+
+Mon Nov 23 16:50:28 1998  Kaveh R. Ghazi  <ghazi@caip.rutgers.edu>
+
+	*  configure.in: Use AC_PREREQ(2.12.1).
+
+Thu Nov 19 20:33:37 1998  Jeffrey A Law  (law@cygnus.com)
+
+	* Makefile.in (runtime-info.h): Avoid GNU make extensions.
+
+Sun Nov  8 17:46:14 1998  Kaveh R. Ghazi  <ghazi@caip.rutgers.edu>
+
+	* Makefile.in (INCLUDES): Add -I$(srcdir)/$(MULTISRCTOP)../include.
+
+Thu Oct 22 14:34:06 1998  Kaveh R. Ghazi  <ghazi@caip.rutgers.edu>
+
+	* configure.in: Use AC_CONFIG_AUX_DIR($topsrcdir).
+
+Sat Oct 17 05:21:31 1998  Ovidiu Predescu  <ovidiu@slip.net>
+
+	* objc-features.texi (Top): Changed the email address.
+	* objc-features.texi (Garbage Collection): Use @uref instead of @url.
+
+Mon Oct 11 21:25:27 1998  Ovidiu Predescu  <ovidiu@slip.net>
+
+	* encoding.c: Redefine get_inner_array_type to get the first entry
+	in the structure.
+
+Thu Oct  8 12:21:14 1998  Richard Frith-Macdonald <richard@brainstorm.co.uk>
+
+	* encoding.c (objc_skip_type_qualifiers): Handle _C_BYREF.
+	(objc_get_type_qualifiers): Similarly.
+	* objc/encoding.h (_C_BYREF): Define.
+	(_F_BYREF): Define.
+
+1998-10-07  David S. Miller  <davem@pierdol.cobaltmicro.com>
+
+	* objc/sarray.h: Make boffset be an unsigned long when sparc so it
+	works out on 64-bit systems.
+
+Tue Oct  6 20:32:06 1998  Alexandre Oliva  <oliva@dcc.unicamp.br>
+
+	* Makefile.in (INCLUDES): Make it multilib-friendly.
+
+Fri Oct  2 07:12:14 1998  H.J. Lu  (hjl@gnu.org)
+
+	* Makefile.in (INCLUDES): Add -I$(srcdir)/../gcc.
+
+Thu Oct  1 22:33:03 1998 Robert Lipe  <robertl@dgii.com>
+			 Jeffrey A Law  (law@cygnus.com)
+
+	* Makefile.in (INCLUDES): Reference gcc via $MULTIBUILDTOP.
+	(FLAGS_TO_PASS): Added.
+	(runtime-info.h): Reference cc1ibj via $MULTIBUILDTOP.
+
+	* archive.c: Change config.h to tconfig.h.
+
+	* configure.in: Find gcc's object directory even for multilibs.
+
+Wed Sep 30 18:17:17 1998  Robert Lipe  <robertl@dgii.com>
+
+	* configure.in: Escape ^ in grep string.
+	* configure: Rebuilt.
+
+Wed Sep 30 09:14:52 1998  Jeffrey A Law  (law@cygnus.com)
+
+	* All .h files pushed down into the objc/ subdirectory.
+	* Makefile.in (copy_headers): Corresponding changes.
+	* configure.in (AC_INIT): Corresponding changes.
+	* configure: Rebuilt.
+
+1998-09-30  Ben Elliston  <bje@cygnus.com>
+	    Jeff Law	  <law@cygnus.com>
+
+	* Makefile.in: Rewrite.
+
+	* configure.in: Likewise.
+
+	* configure: Regenerate.
+
+	* All .c files.  Remove "objc" prefix when including objc header
+	files.  Include tconfig.h, not ../tconfig.h.
+
+Mon Sep 21 23:27:10 1998  Ovidiu Predescu <ovidiu@slip.net>
+
+	* encoding.c (TREE_TYPE, ARRAY_TYPE): Define.
+	(get_inner_array_type): Define.
+
+1998-09-21  Ben Elliston  <bje@cygnus.com>
+
+	* New directory.  Moved files from ../gcc/objc.
+
+Copyright (C) 1998-2026 Free Software Foundation, Inc.
+
+Copying and distribution of this file, with or without modification,
+are permitted in any medium without royalty provided the copyright
+notice and this notice are preserved.

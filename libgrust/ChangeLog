@@ -1,0 +1,1386 @@
+2025-12-29  Rainer Orth  <ro@CeBiTec.Uni-Bielefeld.DE>
+
+	* configure: Regenerate.
+
+2025-11-03  Sam James  <sam@gentoo.org>
+
+	* configure: Regenerate.
+
+2025-10-30  Owen Avery  <powerboat9.gamer@gmail.com>
+
+	* libformat_parser/src/lib.rs (struct FFIOpt): Likewise and
+	remove some now-redundant methods.
+
+2025-10-30  Owen Avery  <powerboat9.gamer@gmail.com>
+
+	* rustc-lib/stdarch/.cirrus.yml: New file.
+	* rustc-lib/stdarch/.github/workflows/main.yml: New file.
+	* rustc-lib/stdarch/.gitignore: New file.
+	* rustc-lib/stdarch/CONTRIBUTING.md: New file.
+	* rustc-lib/stdarch/Cargo.toml: New file.
+	* rustc-lib/stdarch/LICENSE-APACHE: New file.
+	* rustc-lib/stdarch/LICENSE-MIT: New file.
+	* rustc-lib/stdarch/README.md: New file.
+	* rustc-lib/stdarch/ci/android-install-ndk.sh: New file.
+	* rustc-lib/stdarch/ci/android-install-sdk.sh: New file.
+	* rustc-lib/stdarch/ci/android-sysimage.sh: New file.
+	* rustc-lib/stdarch/ci/docker/aarch64-linux-android/Dockerfile: New file.
+	* rustc-lib/stdarch/ci/docker/aarch64-unknown-linux-gnu/Dockerfile: New file.
+	* rustc-lib/stdarch/ci/docker/arm-linux-androideabi/Dockerfile: New file.
+	* rustc-lib/stdarch/ci/docker/arm-unknown-linux-gnueabihf/Dockerfile: New file.
+	* rustc-lib/stdarch/ci/docker/armv7-unknown-linux-gnueabihf/Dockerfile: New file.
+	* rustc-lib/stdarch/ci/docker/i586-unknown-linux-gnu/Dockerfile: New file.
+	* rustc-lib/stdarch/ci/docker/i686-unknown-linux-gnu/Dockerfile: New file.
+	* rustc-lib/stdarch/ci/docker/mips-unknown-linux-gnu/Dockerfile: New file.
+	* rustc-lib/stdarch/ci/docker/mips64-unknown-linux-gnuabi64/Dockerfile: New file.
+	* rustc-lib/stdarch/ci/docker/mips64el-unknown-linux-gnuabi64/Dockerfile: New file.
+	* rustc-lib/stdarch/ci/docker/mipsel-unknown-linux-musl/Dockerfile: New file.
+	* rustc-lib/stdarch/ci/docker/nvptx64-nvidia-cuda/Dockerfile: New file.
+	* rustc-lib/stdarch/ci/docker/powerpc-unknown-linux-gnu/Dockerfile: New file.
+	* rustc-lib/stdarch/ci/docker/powerpc64-unknown-linux-gnu/Dockerfile: New file.
+	* rustc-lib/stdarch/ci/docker/powerpc64le-unknown-linux-gnu/Dockerfile: New file.
+	* rustc-lib/stdarch/ci/docker/s390x-unknown-linux-gnu/Dockerfile: New file.
+	* rustc-lib/stdarch/ci/docker/wasm32-wasi/Dockerfile: New file.
+	* rustc-lib/stdarch/ci/docker/x86_64-linux-android/Dockerfile: New file.
+	* rustc-lib/stdarch/ci/docker/x86_64-unknown-linux-gnu-emulated/Dockerfile: New file.
+	* rustc-lib/stdarch/ci/docker/x86_64-unknown-linux-gnu/Dockerfile: New file.
+	* rustc-lib/stdarch/ci/dox.sh: New file.
+	* rustc-lib/stdarch/ci/gba.json: New file.
+	* rustc-lib/stdarch/ci/run-docker.sh: New file.
+	* rustc-lib/stdarch/ci/run.sh: New file.
+	* rustc-lib/stdarch/ci/runtest-android.rs: New file.
+	* rustc-lib/stdarch/ci/style.sh: New file.
+	* rustc-lib/stdarch/crates/assert-instr-macro/Cargo.toml: New file.
+	* rustc-lib/stdarch/crates/assert-instr-macro/build.rs: New file.
+	* rustc-lib/stdarch/crates/assert-instr-macro/src/lib.rs: New file.
+	* rustc-lib/stdarch/crates/core_arch/Cargo.toml: New file.
+	* rustc-lib/stdarch/crates/core_arch/LICENSE-APACHE: New file.
+	* rustc-lib/stdarch/crates/core_arch/LICENSE-MIT: New file.
+	* rustc-lib/stdarch/crates/core_arch/README.md: New file.
+	* rustc-lib/stdarch/crates/core_arch/avx512f.md: New file.
+	* rustc-lib/stdarch/crates/core_arch/build.rs: New file.
+	* rustc-lib/stdarch/crates/core_arch/rustfmt.toml: New file.
+	* rustc-lib/stdarch/crates/core_arch/src/aarch64/crc.rs: New file.
+	* rustc-lib/stdarch/crates/core_arch/src/aarch64/crypto.rs: New file.
+	* rustc-lib/stdarch/crates/core_arch/src/aarch64/mod.rs: New file.
+	* rustc-lib/stdarch/crates/core_arch/src/aarch64/neon/generated.rs: New file.
+	* rustc-lib/stdarch/crates/core_arch/src/aarch64/neon/mod.rs: New file.
+	* rustc-lib/stdarch/crates/core_arch/src/aarch64/prefetch.rs: New file.
+	* rustc-lib/stdarch/crates/core_arch/src/aarch64/test_support.rs: New file.
+	* rustc-lib/stdarch/crates/core_arch/src/aarch64/tme.rs: New file.
+	* rustc-lib/stdarch/crates/core_arch/src/aarch64/v8.rs: New file.
+	* rustc-lib/stdarch/crates/core_arch/src/acle/barrier/common.rs: New file.
+	* rustc-lib/stdarch/crates/core_arch/src/acle/barrier/cp15.rs: New file.
+	* rustc-lib/stdarch/crates/core_arch/src/acle/barrier/mod.rs: New file.
+	* rustc-lib/stdarch/crates/core_arch/src/acle/barrier/not_mclass.rs: New file.
+	* rustc-lib/stdarch/crates/core_arch/src/acle/barrier/v8.rs: New file.
+	* rustc-lib/stdarch/crates/core_arch/src/acle/dsp.rs: New file.
+	* rustc-lib/stdarch/crates/core_arch/src/acle/ex.rs: New file.
+	* rustc-lib/stdarch/crates/core_arch/src/acle/hints.rs: New file.
+	* rustc-lib/stdarch/crates/core_arch/src/acle/mod.rs: New file.
+	* rustc-lib/stdarch/crates/core_arch/src/acle/registers/aarch32.rs: New file.
+	* rustc-lib/stdarch/crates/core_arch/src/acle/registers/mod.rs: New file.
+	* rustc-lib/stdarch/crates/core_arch/src/acle/registers/v6m.rs: New file.
+	* rustc-lib/stdarch/crates/core_arch/src/acle/registers/v7m.rs: New file.
+	* rustc-lib/stdarch/crates/core_arch/src/acle/sat.rs: New file.
+	* rustc-lib/stdarch/crates/core_arch/src/acle/simd32.rs: New file.
+	* rustc-lib/stdarch/crates/core_arch/src/arm/armclang.rs: New file.
+	* rustc-lib/stdarch/crates/core_arch/src/arm/crc.rs: New file.
+	* rustc-lib/stdarch/crates/core_arch/src/arm/mod.rs: New file.
+	* rustc-lib/stdarch/crates/core_arch/src/arm/neon/generated.rs: New file.
+	* rustc-lib/stdarch/crates/core_arch/src/arm/neon/mod.rs: New file.
+	* rustc-lib/stdarch/crates/core_arch/src/arm/neon/table_lookup_tests.rs: New file.
+	* rustc-lib/stdarch/crates/core_arch/src/arm/test_support.rs: New file.
+	* rustc-lib/stdarch/crates/core_arch/src/arm/v6.rs: New file.
+	* rustc-lib/stdarch/crates/core_arch/src/arm/v7.rs: New file.
+	* rustc-lib/stdarch/crates/core_arch/src/core_arch_docs.md: New file.
+	* rustc-lib/stdarch/crates/core_arch/src/lib.rs: New file.
+	* rustc-lib/stdarch/crates/core_arch/src/macros.rs: New file.
+	* rustc-lib/stdarch/crates/core_arch/src/mips/mod.rs: New file.
+	* rustc-lib/stdarch/crates/core_arch/src/mips/msa.rs: New file.
+	* rustc-lib/stdarch/crates/core_arch/src/mips/msa/macros.rs: New file.
+	* rustc-lib/stdarch/crates/core_arch/src/mod.rs: New file.
+	* rustc-lib/stdarch/crates/core_arch/src/nvptx/mod.rs: New file.
+	* rustc-lib/stdarch/crates/core_arch/src/powerpc/altivec.rs: New file.
+	* rustc-lib/stdarch/crates/core_arch/src/powerpc/mod.rs: New file.
+	* rustc-lib/stdarch/crates/core_arch/src/powerpc/vsx.rs: New file.
+	* rustc-lib/stdarch/crates/core_arch/src/powerpc64/mod.rs: New file.
+	* rustc-lib/stdarch/crates/core_arch/src/simd.rs: New file.
+	* rustc-lib/stdarch/crates/core_arch/src/simd_llvm.rs: New file.
+	* rustc-lib/stdarch/crates/core_arch/src/v64.rs: New file.
+	* rustc-lib/stdarch/crates/core_arch/src/wasm32/atomic.rs: New file.
+	* rustc-lib/stdarch/crates/core_arch/src/wasm32/memory.rs: New file.
+	* rustc-lib/stdarch/crates/core_arch/src/wasm32/mod.rs: New file.
+	* rustc-lib/stdarch/crates/core_arch/src/wasm32/simd128.rs: New file.
+	* rustc-lib/stdarch/crates/core_arch/src/x86/abm.rs: New file.
+	* rustc-lib/stdarch/crates/core_arch/src/x86/adx.rs: New file.
+	* rustc-lib/stdarch/crates/core_arch/src/x86/aes.rs: New file.
+	* rustc-lib/stdarch/crates/core_arch/src/x86/avx.rs: New file.
+	* rustc-lib/stdarch/crates/core_arch/src/x86/avx2.rs: New file.
+	* rustc-lib/stdarch/crates/core_arch/src/x86/avx512f.rs: New file.
+	* rustc-lib/stdarch/crates/core_arch/src/x86/avx512ifma.rs: New file.
+	* rustc-lib/stdarch/crates/core_arch/src/x86/bmi1.rs: New file.
+	* rustc-lib/stdarch/crates/core_arch/src/x86/bmi2.rs: New file.
+	* rustc-lib/stdarch/crates/core_arch/src/x86/bswap.rs: New file.
+	* rustc-lib/stdarch/crates/core_arch/src/x86/bt.rs: New file.
+	* rustc-lib/stdarch/crates/core_arch/src/x86/cpuid.rs: New file.
+	* rustc-lib/stdarch/crates/core_arch/src/x86/eflags.rs: New file.
+	* rustc-lib/stdarch/crates/core_arch/src/x86/f16c.rs: New file.
+	* rustc-lib/stdarch/crates/core_arch/src/x86/fma.rs: New file.
+	* rustc-lib/stdarch/crates/core_arch/src/x86/fxsr.rs: New file.
+	* rustc-lib/stdarch/crates/core_arch/src/x86/macros.rs: New file.
+	* rustc-lib/stdarch/crates/core_arch/src/x86/mod.rs: New file.
+	* rustc-lib/stdarch/crates/core_arch/src/x86/pclmulqdq.rs: New file.
+	* rustc-lib/stdarch/crates/core_arch/src/x86/rdrand.rs: New file.
+	* rustc-lib/stdarch/crates/core_arch/src/x86/rdtsc.rs: New file.
+	* rustc-lib/stdarch/crates/core_arch/src/x86/rtm.rs: New file.
+	* rustc-lib/stdarch/crates/core_arch/src/x86/sha.rs: New file.
+	* rustc-lib/stdarch/crates/core_arch/src/x86/sse.rs: New file.
+	* rustc-lib/stdarch/crates/core_arch/src/x86/sse2.rs: New file.
+	* rustc-lib/stdarch/crates/core_arch/src/x86/sse3.rs: New file.
+	* rustc-lib/stdarch/crates/core_arch/src/x86/sse41.rs: New file.
+	* rustc-lib/stdarch/crates/core_arch/src/x86/sse42.rs: New file.
+	* rustc-lib/stdarch/crates/core_arch/src/x86/sse4a.rs: New file.
+	* rustc-lib/stdarch/crates/core_arch/src/x86/ssse3.rs: New file.
+	* rustc-lib/stdarch/crates/core_arch/src/x86/tbm.rs: New file.
+	* rustc-lib/stdarch/crates/core_arch/src/x86/test.rs: New file.
+	* rustc-lib/stdarch/crates/core_arch/src/x86/xsave.rs: New file.
+	* rustc-lib/stdarch/crates/core_arch/src/x86_64/abm.rs: New file.
+	* rustc-lib/stdarch/crates/core_arch/src/x86_64/adx.rs: New file.
+	* rustc-lib/stdarch/crates/core_arch/src/x86_64/avx.rs: New file.
+	* rustc-lib/stdarch/crates/core_arch/src/x86_64/avx2.rs: New file.
+	* rustc-lib/stdarch/crates/core_arch/src/x86_64/avx512f.rs: New file.
+	* rustc-lib/stdarch/crates/core_arch/src/x86_64/bmi.rs: New file.
+	* rustc-lib/stdarch/crates/core_arch/src/x86_64/bmi2.rs: New file.
+	* rustc-lib/stdarch/crates/core_arch/src/x86_64/bswap.rs: New file.
+	* rustc-lib/stdarch/crates/core_arch/src/x86_64/bt.rs: New file.
+	* rustc-lib/stdarch/crates/core_arch/src/x86_64/cmpxchg16b.rs: New file.
+	* rustc-lib/stdarch/crates/core_arch/src/x86_64/fxsr.rs: New file.
+	* rustc-lib/stdarch/crates/core_arch/src/x86_64/mod.rs: New file.
+	* rustc-lib/stdarch/crates/core_arch/src/x86_64/rdrand.rs: New file.
+	* rustc-lib/stdarch/crates/core_arch/src/x86_64/sse.rs: New file.
+	* rustc-lib/stdarch/crates/core_arch/src/x86_64/sse2.rs: New file.
+	* rustc-lib/stdarch/crates/core_arch/src/x86_64/sse41.rs: New file.
+	* rustc-lib/stdarch/crates/core_arch/src/x86_64/sse42.rs: New file.
+	* rustc-lib/stdarch/crates/core_arch/src/x86_64/xsave.rs: New file.
+	* rustc-lib/stdarch/crates/core_arch/tests/cpu-detection.rs: New file.
+	* rustc-lib/stdarch/crates/simd-test-macro/Cargo.toml: New file.
+	* rustc-lib/stdarch/crates/simd-test-macro/src/lib.rs: New file.
+	* rustc-lib/stdarch/crates/std_detect/Cargo.toml: New file.
+	* rustc-lib/stdarch/crates/std_detect/LICENSE-APACHE: New file.
+	* rustc-lib/stdarch/crates/std_detect/LICENSE-MIT: New file.
+	* rustc-lib/stdarch/crates/std_detect/README.md: New file.
+	* rustc-lib/stdarch/crates/std_detect/src/detect/arch/aarch64.rs: New file.
+	* rustc-lib/stdarch/crates/std_detect/src/detect/arch/arm.rs: New file.
+	* rustc-lib/stdarch/crates/std_detect/src/detect/arch/mips.rs: New file.
+	* rustc-lib/stdarch/crates/std_detect/src/detect/arch/mips64.rs: New file.
+	* rustc-lib/stdarch/crates/std_detect/src/detect/arch/powerpc.rs: New file.
+	* rustc-lib/stdarch/crates/std_detect/src/detect/arch/powerpc64.rs: New file.
+	* rustc-lib/stdarch/crates/std_detect/src/detect/arch/x86.rs: New file.
+	* rustc-lib/stdarch/crates/std_detect/src/detect/bit.rs: New file.
+	* rustc-lib/stdarch/crates/std_detect/src/detect/cache.rs: New file.
+	* rustc-lib/stdarch/crates/std_detect/src/detect/error_macros.rs: New file.
+	* rustc-lib/stdarch/crates/std_detect/src/detect/macros.rs: New file.
+	* rustc-lib/stdarch/crates/std_detect/src/detect/mod.rs: New file.
+	* rustc-lib/stdarch/crates/std_detect/src/detect/os/aarch64.rs: New file.
+	* rustc-lib/stdarch/crates/std_detect/src/detect/os/freebsd/aarch64.rs: New file.
+	* rustc-lib/stdarch/crates/std_detect/src/detect/os/freebsd/arm.rs: New file.
+	* rustc-lib/stdarch/crates/std_detect/src/detect/os/freebsd/auxvec.rs: New file.
+	* rustc-lib/stdarch/crates/std_detect/src/detect/os/freebsd/mod.rs: New file.
+	* rustc-lib/stdarch/crates/std_detect/src/detect/os/freebsd/powerpc.rs: New file.
+	* rustc-lib/stdarch/crates/std_detect/src/detect/os/linux/aarch64.rs: New file.
+	* rustc-lib/stdarch/crates/std_detect/src/detect/os/linux/arm.rs: New file.
+	* rustc-lib/stdarch/crates/std_detect/src/detect/os/linux/auxvec.rs: New file.
+	* rustc-lib/stdarch/crates/std_detect/src/detect/os/linux/cpuinfo.rs: New file.
+	* rustc-lib/stdarch/crates/std_detect/src/detect/os/linux/mips.rs: New file.
+	* rustc-lib/stdarch/crates/std_detect/src/detect/os/linux/mod.rs: New file.
+	* rustc-lib/stdarch/crates/std_detect/src/detect/os/linux/powerpc.rs: New file.
+	* rustc-lib/stdarch/crates/std_detect/src/detect/os/other.rs: New file.
+	* rustc-lib/stdarch/crates/std_detect/src/detect/os/windows/aarch64.rs: New file.
+	* rustc-lib/stdarch/crates/std_detect/src/detect/os/x86.rs: New file.
+	* rustc-lib/stdarch/crates/std_detect/src/detect/test_data/linux-rpi3.auxv: New file.
+	* rustc-lib/stdarch/crates/std_detect/src/detect/test_data/linux-x64-i7-6850k.auxv:
+	New file.
+	* rustc-lib/stdarch/crates/std_detect/src/detect/test_data/macos-virtualbox-linux-x86-4850HQ.auxv:
+	New file.
+	* rustc-lib/stdarch/crates/std_detect/src/lib.rs: New file.
+	* rustc-lib/stdarch/crates/std_detect/src/mod.rs: New file.
+	* rustc-lib/stdarch/crates/std_detect/tests/cpu-detection.rs: New file.
+	* rustc-lib/stdarch/crates/std_detect/tests/macro_trailing_commas.rs: New file.
+	* rustc-lib/stdarch/crates/std_detect/tests/x86-specific.rs: New file.
+	* rustc-lib/stdarch/crates/stdarch-gen/Cargo.toml: New file.
+	* rustc-lib/stdarch/crates/stdarch-gen/README.md: New file.
+	* rustc-lib/stdarch/crates/stdarch-gen/neon.spec: New file.
+	* rustc-lib/stdarch/crates/stdarch-gen/src/main.rs: New file.
+	* rustc-lib/stdarch/crates/stdarch-test/Cargo.toml: New file.
+	* rustc-lib/stdarch/crates/stdarch-test/src/disassembly.rs: New file.
+	* rustc-lib/stdarch/crates/stdarch-test/src/lib.rs: New file.
+	* rustc-lib/stdarch/crates/stdarch-test/src/wasm.rs: New file.
+	* rustc-lib/stdarch/crates/stdarch-verify/.gitattributes: New file.
+	* rustc-lib/stdarch/crates/stdarch-verify/Cargo.toml: New file.
+	* rustc-lib/stdarch/crates/stdarch-verify/arm-intrinsics.html: New file.
+	* rustc-lib/stdarch/crates/stdarch-verify/build.rs: New file.
+	* rustc-lib/stdarch/crates/stdarch-verify/mips-msa.h: New file.
+	* rustc-lib/stdarch/crates/stdarch-verify/src/lib.rs: New file.
+	* rustc-lib/stdarch/crates/stdarch-verify/tests/arm.rs: New file.
+	* rustc-lib/stdarch/crates/stdarch-verify/tests/mips.rs: New file.
+	* rustc-lib/stdarch/crates/stdarch-verify/tests/x86-intel.rs: New file.
+	* rustc-lib/stdarch/crates/stdarch-verify/x86-intel.xml: New file.
+	* rustc-lib/stdarch/examples/Cargo.toml: New file.
+	* rustc-lib/stdarch/examples/hex.rs: New file.
+	* rustc-lib/stdarch/examples/wasm.rs: New file.
+	* rustc-lib/stdarch/triagebot.toml: New file.
+	* rustc-lib/stdarch/vendor.yml: New file.
+
+2025-10-30  Owen Avery  <powerboat9.gamer@gmail.com>
+
+	* rustc-lib/LICENSE-APACHE: New file.
+	* rustc-lib/LICENSE-MIT: New file.
+	* rustc-lib/version-info: New file.
+
+2025-10-30  Owen Avery  <powerboat9.gamer@gmail.com>
+
+	* libformat_parser/src/lib.rs (struct FFIVec): New.
+	(trait StringLeakExt): Remove.
+	(struct FFIOpt): New.
+	(trait IntoFFI): Adjust implementation for Option.
+	(struct RustHamster): Add lifetime and adjust conversion to and
+	from &str.
+	(enum Piece): Adjust definition to handle changes to
+	RustHamster.
+	(struct Argument): Likewise.
+	(struct FormatSpec): Use FFIOpt and RustHamster.
+	(enum Position): Use RustHamster.
+	(enum Count): Likewise.
+	(struct PieceSlice): Replace with...
+	(typedef PieceVec): ...this.
+	(struct RustString): Remove.
+	(struct FormatArgsHandle): Likewise.
+	(fn collect_pieces): Adjust signature, greatly simplifying
+	implementation.
+	(fn clone_pieces): Likewise.
+	(fn destroy_pieces): Remove.
+	(trait LayoutExt): New.
+	(fn rust_ffi_alloc): New.
+	(fn rust_ffi_dealloc): New.
+
+2025-10-05  Sam James  <sam@gentoo.org>
+
+	* Makefile.in: Regenerate.
+	* aclocal.m4: Regenerate.
+	* configure: Regenerate.
+	* libformat_parser/Makefile.in: Regenerate.
+	* libproc_macro_internal/Makefile.in: Regenerate.
+
+2025-08-05  Marc Poulhiès  <dkm@kataplop.net>
+
+	* libproc_macro_internal/ffistring.h (FFIString__new): Likewise.
+	(FFIString__drop): Likewise.
+	* libproc_macro_internal/ident.h (Ident__new): Likewise.
+	(Ident__new_raw): Likewise.
+	(Ident__drop): Likewise.
+	(Ident__clone): Likewise.
+	* libproc_macro_internal/literal.h (Literal__from_string): Likewise.
+	* libproc_macro_internal/proc_macro.h (bridge_is_available): Likewise.
+	* libproc_macro_internal/tokenstream.h (TokenStream__new): Likewise.
+	(TokenStream__with_capacity): Likewise.
+	(TokenSream__push): Likewise.
+	(TokenStream__from_string): Likewise.
+	(TokenStream__clone): Likewise.
+	(TokenStream__drop): Likewise.
+
+2025-03-31  Arthur Cohen  <arthur.cohen@embecosm.com>
+
+	* libformat_parser/Makefile.am: Avoid using --config as it is unsupported by cargo 1.49.
+	* libformat_parser/Makefile.in: Regenerate.
+	* libformat_parser/generic_format_parser/src/lib.rs: Use extension trait for missing
+	features.
+	* libformat_parser/src/lib.rs: Likewise.
+	* libformat_parser/.cargo/config: Moved to...
+	* libformat_parser/.cargo/config.toml: ...here.
+
+2025-03-17  badumbatish  <tanghocle456@gmail.com>
+
+	* libformat_parser/generic_format_parser/src/lib.rs:
+	Remove repr(C)
+	* libformat_parser/src/bin.rs: Use ffi
+	* libformat_parser/src/lib.rs: pub ffi, create ParseMode and match
+	rustc's parse mode
+
+2025-03-17  badumbatish  <tanghocle456@gmail.com>
+
+	* libformat_parser/generic_format_parser/src/lib.rs: Likewise.
+	* libformat_parser/src/bin.rs: Likewise.
+	* libformat_parser/src/lib.rs: Likewise.
+
+2025-03-17  Kushal Pal  <kushalpal109@gmail.com>
+
+	* libformat_parser/Cargo.toml:
+	Used crate-type instead of depricated crate_type.
+	* libformat_parser/generic_format_parser/src/lib.rs:
+	Remove dead code.
+	* libformat_parser/src/lib.rs: Likewise.
+
+2024-12-09  Arthur Cohen  <arthur.cohen@embecosm.com>
+
+	* libformat_parser/Cargo.toml: Change Rust edition from 2021 to 2018.
+	* libformat_parser/generic_format_parser/Cargo.toml: Likewise.
+	* libformat_parser/generic_format_parser/src/lib.rs: Remove usage of
+	then-unstable std features and language constructs.
+	* libformat_parser/src/lib.rs: Likewise, plus provide extension trait
+	for String::leak.
+
+2024-12-09  Thomas Schwinge  <tschwinge@baylibre.com>
+
+	* libformat_parser/src/lib.rs: Work around 'error[E0599]:
+	no method named `leak` found for struct `std::string::String` in the current scope'.
+
+2024-12-09  Thomas Schwinge  <tschwinge@baylibre.com>
+
+	* libformat_parser/generic_format_parser/src/lib.rs: Work around
+	'error[E0658]: `let...else` statements are unstable'.
+
+2024-08-01  Arthur Cohen  <arthur.cohen@embecosm.com>
+
+	* libformat_parser/src/lib.rs: Use new Handle struct and expose it.
+
+2024-08-01  Arthur Cohen  <arthur.cohen@embecosm.com>
+
+	* libformat_parser/src/lib.rs: Switch interface to use more parser
+	parameters.
+	* libformat_parser/src/bin.rs: Use new interface.
+
+2024-08-01  Arthur Cohen  <arthur.cohen@embecosm.com>
+
+	* libformat_parser/generic_format_parser/src/lib.rs: Add IsSomeAnd<T>
+	trait, impl it for Option<T>.
+
+2024-08-01  Arthur Cohen  <arthur.cohen@embecosm.com>
+
+	* libformat_parser/generic_format_parser/src/lib.rs: Remove
+	unused deprecated attribute and unused import.
+	* libformat_parser/src/lib.rs: Remove unused import.
+
+2024-08-01  Arthur Cohen  <arthur.cohen@embecosm.com>
+
+	* libformat_parser/src/lib.rs: Add debug prompt.
+
+2024-08-01  Arthur Cohen  <arthur.cohen@embecosm.com>
+
+	* libformat_parser/src/lib.rs: Leak Boxes properly for C++ to
+	see them, add memory release function.
+
+2024-08-01  Arthur Cohen  <arthur.cohen@embecosm.com>
+
+	* libformat_parser/src/lib.rs: Add IntoFFI trait.
+	* libformat_parser/libformat-parser.h: Removed.
+
+2024-08-01  Arthur Cohen  <arthur.cohen@embecosm.com>
+
+	* libformat_parser/cbindgen.toml: New file.
+	* libformat_parser/libformat-parser.h: New file.
+
+2024-08-01  Arthur Cohen  <arthur.cohen@embecosm.com>
+
+	* libformat_parser/generic_format_parser/src/lib.rs: Add generic
+	library.
+	* libformat_parser/src/lib.rs: Add base for FFI interface.
+
+2024-08-01  Thomas Schwinge  <tschwinge@baylibre.com>
+
+	* libformat_parser/Makefile.am: New.
+	* Makefile.am [!TARGET_LIBRARY] (SUBDIRS): Add 'libformat_parser'.
+	* configure.ac: Handle it.
+	(TARGET_LIBRARY): New 'AM_CONDITIONAL'.
+	* libformat_parser/Makefile.in: Generate.
+	* Makefile.in: Regenerate.
+	* configure: Likewise.
+
+2024-08-01  Arthur Cohen  <arthur.cohen@embecosm.com>
+
+	* libformat_parser/.cargo/config: New file.
+	* libformat_parser/vendor.NOTES: New file.
+	* libformat_parser/vendor/libc/.cargo-checksum.json: New file.
+	* libformat_parser/vendor/libc/CONTRIBUTING.md: New file.
+	* libformat_parser/vendor/libc/Cargo.toml: New file.
+	* libformat_parser/vendor/libc/LICENSE-APACHE: New file.
+	* libformat_parser/vendor/libc/LICENSE-MIT: New file.
+	* libformat_parser/vendor/libc/README.md: New file.
+	* libformat_parser/vendor/libc/build.rs: New file.
+	* libformat_parser/vendor/libc/rustfmt.toml: New file.
+	* libformat_parser/vendor/libc/src/fixed_width_ints.rs: New file.
+	* libformat_parser/vendor/libc/src/fuchsia/aarch64.rs: New file.
+	* libformat_parser/vendor/libc/src/fuchsia/align.rs: New file.
+	* libformat_parser/vendor/libc/src/fuchsia/mod.rs: New file.
+	* libformat_parser/vendor/libc/src/fuchsia/no_align.rs: New file.
+	* libformat_parser/vendor/libc/src/fuchsia/riscv64.rs: New file.
+	* libformat_parser/vendor/libc/src/fuchsia/x86_64.rs: New file.
+	* libformat_parser/vendor/libc/src/hermit/aarch64.rs: New file.
+	* libformat_parser/vendor/libc/src/hermit/mod.rs: New file.
+	* libformat_parser/vendor/libc/src/hermit/x86_64.rs: New file.
+	* libformat_parser/vendor/libc/src/lib.rs: New file.
+	* libformat_parser/vendor/libc/src/macros.rs: New file.
+	* libformat_parser/vendor/libc/src/psp.rs: New file.
+	* libformat_parser/vendor/libc/src/sgx.rs: New file.
+	* libformat_parser/vendor/libc/src/solid/aarch64.rs: New file.
+	* libformat_parser/vendor/libc/src/solid/arm.rs: New file.
+	* libformat_parser/vendor/libc/src/solid/mod.rs: New file.
+	* libformat_parser/vendor/libc/src/switch.rs: New file.
+	* libformat_parser/vendor/libc/src/teeos/mod.rs: New file.
+	* libformat_parser/vendor/libc/src/unix/aix/mod.rs: New file.
+	* libformat_parser/vendor/libc/src/unix/aix/powerpc64.rs: New file.
+	* libformat_parser/vendor/libc/src/unix/align.rs: New file.
+	* libformat_parser/vendor/libc/src/unix/bsd/apple/b32/align.rs: New file.
+	* libformat_parser/vendor/libc/src/unix/bsd/apple/b32/mod.rs: New file.
+	* libformat_parser/vendor/libc/src/unix/bsd/apple/b64/aarch64/align.rs: New file.
+	* libformat_parser/vendor/libc/src/unix/bsd/apple/b64/aarch64/mod.rs: New file.
+	* libformat_parser/vendor/libc/src/unix/bsd/apple/b64/align.rs: New file.
+	* libformat_parser/vendor/libc/src/unix/bsd/apple/b64/mod.rs: New file.
+	* libformat_parser/vendor/libc/src/unix/bsd/apple/b64/x86_64/align.rs: New file.
+	* libformat_parser/vendor/libc/src/unix/bsd/apple/b64/x86_64/mod.rs: New file.
+	* libformat_parser/vendor/libc/src/unix/bsd/apple/long_array.rs: New file.
+	* libformat_parser/vendor/libc/src/unix/bsd/apple/mod.rs: New file.
+	* libformat_parser/vendor/libc/src/unix/bsd/freebsdlike/dragonfly/errno.rs: New file.
+	* libformat_parser/vendor/libc/src/unix/bsd/freebsdlike/dragonfly/mod.rs: New file.
+	* libformat_parser/vendor/libc/src/unix/bsd/freebsdlike/freebsd/aarch64.rs: New file.
+	* libformat_parser/vendor/libc/src/unix/bsd/freebsdlike/freebsd/arm.rs: New file.
+	* libformat_parser/vendor/libc/src/unix/bsd/freebsdlike/freebsd/freebsd11/b64.rs: New file.
+	* libformat_parser/vendor/libc/src/unix/bsd/freebsdlike/freebsd/freebsd11/mod.rs: New file.
+	* libformat_parser/vendor/libc/src/unix/bsd/freebsdlike/freebsd/freebsd12/b64.rs: New file.
+	* libformat_parser/vendor/libc/src/unix/bsd/freebsdlike/freebsd/freebsd12/mod.rs: New file.
+	* libformat_parser/vendor/libc/src/unix/bsd/freebsdlike/freebsd/freebsd12/x86_64.rs:
+	New file.
+	* libformat_parser/vendor/libc/src/unix/bsd/freebsdlike/freebsd/freebsd13/b64.rs: New file.
+	* libformat_parser/vendor/libc/src/unix/bsd/freebsdlike/freebsd/freebsd13/mod.rs: New file.
+	* libformat_parser/vendor/libc/src/unix/bsd/freebsdlike/freebsd/freebsd13/x86_64.rs:
+	New file.
+	* libformat_parser/vendor/libc/src/unix/bsd/freebsdlike/freebsd/freebsd14/b64.rs: New file.
+	* libformat_parser/vendor/libc/src/unix/bsd/freebsdlike/freebsd/freebsd14/mod.rs: New file.
+	* libformat_parser/vendor/libc/src/unix/bsd/freebsdlike/freebsd/freebsd14/x86_64.rs:
+	New file.
+	* libformat_parser/vendor/libc/src/unix/bsd/freebsdlike/freebsd/freebsd15/b64.rs: New file.
+	* libformat_parser/vendor/libc/src/unix/bsd/freebsdlike/freebsd/freebsd15/mod.rs: New file.
+	* libformat_parser/vendor/libc/src/unix/bsd/freebsdlike/freebsd/freebsd15/x86_64.rs:
+	New file.
+	* libformat_parser/vendor/libc/src/unix/bsd/freebsdlike/freebsd/mod.rs: New file.
+	* libformat_parser/vendor/libc/src/unix/bsd/freebsdlike/freebsd/powerpc.rs: New file.
+	* libformat_parser/vendor/libc/src/unix/bsd/freebsdlike/freebsd/powerpc64.rs: New file.
+	* libformat_parser/vendor/libc/src/unix/bsd/freebsdlike/freebsd/riscv64.rs: New file.
+	* libformat_parser/vendor/libc/src/unix/bsd/freebsdlike/freebsd/x86.rs: New file.
+	* libformat_parser/vendor/libc/src/unix/bsd/freebsdlike/freebsd/x86_64/align.rs: New file.
+	* libformat_parser/vendor/libc/src/unix/bsd/freebsdlike/freebsd/x86_64/mod.rs: New file.
+	* libformat_parser/vendor/libc/src/unix/bsd/freebsdlike/mod.rs: New file.
+	* libformat_parser/vendor/libc/src/unix/bsd/mod.rs: New file.
+	* libformat_parser/vendor/libc/src/unix/bsd/netbsdlike/mod.rs: New file.
+	* libformat_parser/vendor/libc/src/unix/bsd/netbsdlike/netbsd/aarch64.rs: New file.
+	* libformat_parser/vendor/libc/src/unix/bsd/netbsdlike/netbsd/arm.rs: New file.
+	* libformat_parser/vendor/libc/src/unix/bsd/netbsdlike/netbsd/mips.rs: New file.
+	* libformat_parser/vendor/libc/src/unix/bsd/netbsdlike/netbsd/mod.rs: New file.
+	* libformat_parser/vendor/libc/src/unix/bsd/netbsdlike/netbsd/powerpc.rs: New file.
+	* libformat_parser/vendor/libc/src/unix/bsd/netbsdlike/netbsd/riscv64.rs: New file.
+	* libformat_parser/vendor/libc/src/unix/bsd/netbsdlike/netbsd/sparc64.rs: New file.
+	* libformat_parser/vendor/libc/src/unix/bsd/netbsdlike/netbsd/x86.rs: New file.
+	* libformat_parser/vendor/libc/src/unix/bsd/netbsdlike/netbsd/x86_64.rs: New file.
+	* libformat_parser/vendor/libc/src/unix/bsd/netbsdlike/openbsd/aarch64.rs: New file.
+	* libformat_parser/vendor/libc/src/unix/bsd/netbsdlike/openbsd/arm.rs: New file.
+	* libformat_parser/vendor/libc/src/unix/bsd/netbsdlike/openbsd/mips64.rs: New file.
+	* libformat_parser/vendor/libc/src/unix/bsd/netbsdlike/openbsd/mod.rs: New file.
+	* libformat_parser/vendor/libc/src/unix/bsd/netbsdlike/openbsd/powerpc.rs: New file.
+	* libformat_parser/vendor/libc/src/unix/bsd/netbsdlike/openbsd/powerpc64.rs: New file.
+	* libformat_parser/vendor/libc/src/unix/bsd/netbsdlike/openbsd/riscv64.rs: New file.
+	* libformat_parser/vendor/libc/src/unix/bsd/netbsdlike/openbsd/sparc64.rs: New file.
+	* libformat_parser/vendor/libc/src/unix/bsd/netbsdlike/openbsd/x86.rs: New file.
+	* libformat_parser/vendor/libc/src/unix/bsd/netbsdlike/openbsd/x86_64.rs: New file.
+	* libformat_parser/vendor/libc/src/unix/haiku/b32.rs: New file.
+	* libformat_parser/vendor/libc/src/unix/haiku/b64.rs: New file.
+	* libformat_parser/vendor/libc/src/unix/haiku/mod.rs: New file.
+	* libformat_parser/vendor/libc/src/unix/haiku/native.rs: New file.
+	* libformat_parser/vendor/libc/src/unix/haiku/x86_64.rs: New file.
+	* libformat_parser/vendor/libc/src/unix/hurd/align.rs: New file.
+	* libformat_parser/vendor/libc/src/unix/hurd/b32.rs: New file.
+	* libformat_parser/vendor/libc/src/unix/hurd/b64.rs: New file.
+	* libformat_parser/vendor/libc/src/unix/hurd/mod.rs: New file.
+	* libformat_parser/vendor/libc/src/unix/hurd/no_align.rs: New file.
+	* libformat_parser/vendor/libc/src/unix/linux_like/android/b32/arm.rs: New file.
+	* libformat_parser/vendor/libc/src/unix/linux_like/android/b32/mod.rs: New file.
+	* libformat_parser/vendor/libc/src/unix/linux_like/android/b32/x86/align.rs: New file.
+	* libformat_parser/vendor/libc/src/unix/linux_like/android/b32/x86/mod.rs: New file.
+	* libformat_parser/vendor/libc/src/unix/linux_like/android/b64/aarch64/align.rs: New file.
+	* libformat_parser/vendor/libc/src/unix/linux_like/android/b64/aarch64/int128.rs: New file.
+	* libformat_parser/vendor/libc/src/unix/linux_like/android/b64/aarch64/mod.rs: New file.
+	* libformat_parser/vendor/libc/src/unix/linux_like/android/b64/mod.rs: New file.
+	* libformat_parser/vendor/libc/src/unix/linux_like/android/b64/riscv64/align.rs: New file.
+	* libformat_parser/vendor/libc/src/unix/linux_like/android/b64/riscv64/mod.rs: New file.
+	* libformat_parser/vendor/libc/src/unix/linux_like/android/b64/x86_64/align.rs: New file.
+	* libformat_parser/vendor/libc/src/unix/linux_like/android/b64/x86_64/mod.rs: New file.
+	* libformat_parser/vendor/libc/src/unix/linux_like/android/mod.rs: New file.
+	* libformat_parser/vendor/libc/src/unix/linux_like/emscripten/align.rs: New file.
+	* libformat_parser/vendor/libc/src/unix/linux_like/emscripten/lfs64.rs: New file.
+	* libformat_parser/vendor/libc/src/unix/linux_like/emscripten/mod.rs: New file.
+	* libformat_parser/vendor/libc/src/unix/linux_like/emscripten/no_align.rs: New file.
+	* libformat_parser/vendor/libc/src/unix/linux_like/linux/align.rs: New file.
+	* libformat_parser/vendor/libc/src/unix/linux_like/linux/arch/generic/mod.rs: New file.
+	* libformat_parser/vendor/libc/src/unix/linux_like/linux/arch/mips/mod.rs: New file.
+	* libformat_parser/vendor/libc/src/unix/linux_like/linux/arch/mod.rs: New file.
+	* libformat_parser/vendor/libc/src/unix/linux_like/linux/arch/powerpc/mod.rs: New file.
+	* libformat_parser/vendor/libc/src/unix/linux_like/linux/arch/sparc/mod.rs: New file.
+	* libformat_parser/vendor/libc/src/unix/linux_like/linux/gnu/align.rs: New file.
+	* libformat_parser/vendor/libc/src/unix/linux_like/linux/gnu/b32/arm/align.rs: New file.
+	* libformat_parser/vendor/libc/src/unix/linux_like/linux/gnu/b32/arm/mod.rs: New file.
+	* libformat_parser/vendor/libc/src/unix/linux_like/linux/gnu/b32/csky/align.rs: New file.
+	* libformat_parser/vendor/libc/src/unix/linux_like/linux/gnu/b32/csky/mod.rs: New file.
+	* libformat_parser/vendor/libc/src/unix/linux_like/linux/gnu/b32/m68k/align.rs: New file.
+	* libformat_parser/vendor/libc/src/unix/linux_like/linux/gnu/b32/m68k/mod.rs: New file.
+	* libformat_parser/vendor/libc/src/unix/linux_like/linux/gnu/b32/mips/align.rs: New file.
+	* libformat_parser/vendor/libc/src/unix/linux_like/linux/gnu/b32/mips/mod.rs: New file.
+	* libformat_parser/vendor/libc/src/unix/linux_like/linux/gnu/b32/mod.rs: New file.
+	* libformat_parser/vendor/libc/src/unix/linux_like/linux/gnu/b32/powerpc.rs: New file.
+	* libformat_parser/vendor/libc/src/unix/linux_like/linux/gnu/b32/riscv32/align.rs: New file.
+	* libformat_parser/vendor/libc/src/unix/linux_like/linux/gnu/b32/riscv32/mod.rs: New file.
+	* libformat_parser/vendor/libc/src/unix/linux_like/linux/gnu/b32/sparc/align.rs: New file.
+	* libformat_parser/vendor/libc/src/unix/linux_like/linux/gnu/b32/sparc/mod.rs: New file.
+	* libformat_parser/vendor/libc/src/unix/linux_like/linux/gnu/b32/x86/align.rs: New file.
+	* libformat_parser/vendor/libc/src/unix/linux_like/linux/gnu/b32/x86/mod.rs: New file.
+	* libformat_parser/vendor/libc/src/unix/linux_like/linux/gnu/b64/aarch64/align.rs: New file.
+	* libformat_parser/vendor/libc/src/unix/linux_like/linux/gnu/b64/aarch64/fallback.rs:
+	New file.
+	* libformat_parser/vendor/libc/src/unix/linux_like/linux/gnu/b64/aarch64/ilp32.rs: New file.
+	* libformat_parser/vendor/libc/src/unix/linux_like/linux/gnu/b64/aarch64/int128.rs:
+	New file.
+	* libformat_parser/vendor/libc/src/unix/linux_like/linux/gnu/b64/aarch64/lp64.rs: New file.
+	* libformat_parser/vendor/libc/src/unix/linux_like/linux/gnu/b64/aarch64/mod.rs: New file.
+	* libformat_parser/vendor/libc/src/unix/linux_like/linux/gnu/b64/loongarch64/align.rs:
+	New file.
+	* libformat_parser/vendor/libc/src/unix/linux_like/linux/gnu/b64/loongarch64/mod.rs:
+	New file.
+	* libformat_parser/vendor/libc/src/unix/linux_like/linux/gnu/b64/mips64/align.rs: New file.
+	* libformat_parser/vendor/libc/src/unix/linux_like/linux/gnu/b64/mips64/mod.rs: New file.
+	* libformat_parser/vendor/libc/src/unix/linux_like/linux/gnu/b64/mod.rs: New file.
+	* libformat_parser/vendor/libc/src/unix/linux_like/linux/gnu/b64/powerpc64/align.rs:
+	New file.
+	* libformat_parser/vendor/libc/src/unix/linux_like/linux/gnu/b64/powerpc64/mod.rs: New file.
+	* libformat_parser/vendor/libc/src/unix/linux_like/linux/gnu/b64/riscv64/align.rs: New file.
+	* libformat_parser/vendor/libc/src/unix/linux_like/linux/gnu/b64/riscv64/mod.rs: New file.
+	* libformat_parser/vendor/libc/src/unix/linux_like/linux/gnu/b64/s390x.rs: New file.
+	* libformat_parser/vendor/libc/src/unix/linux_like/linux/gnu/b64/sparc64/align.rs: New file.
+	* libformat_parser/vendor/libc/src/unix/linux_like/linux/gnu/b64/sparc64/mod.rs: New file.
+	* libformat_parser/vendor/libc/src/unix/linux_like/linux/gnu/b64/x86_64/align.rs: New file.
+	* libformat_parser/vendor/libc/src/unix/linux_like/linux/gnu/b64/x86_64/mod.rs: New file.
+	* libformat_parser/vendor/libc/src/unix/linux_like/linux/gnu/b64/x86_64/not_x32.rs:
+	New file.
+	* libformat_parser/vendor/libc/src/unix/linux_like/linux/gnu/b64/x86_64/x32.rs: New file.
+	* libformat_parser/vendor/libc/src/unix/linux_like/linux/gnu/mod.rs: New file.
+	* libformat_parser/vendor/libc/src/unix/linux_like/linux/gnu/no_align.rs: New file.
+	* libformat_parser/vendor/libc/src/unix/linux_like/linux/mod.rs: New file.
+	* libformat_parser/vendor/libc/src/unix/linux_like/linux/musl/b32/arm/align.rs: New file.
+	* libformat_parser/vendor/libc/src/unix/linux_like/linux/musl/b32/arm/mod.rs: New file.
+	* libformat_parser/vendor/libc/src/unix/linux_like/linux/musl/b32/hexagon.rs: New file.
+	* libformat_parser/vendor/libc/src/unix/linux_like/linux/musl/b32/mips/align.rs: New file.
+	* libformat_parser/vendor/libc/src/unix/linux_like/linux/musl/b32/mips/mod.rs: New file.
+	* libformat_parser/vendor/libc/src/unix/linux_like/linux/musl/b32/mod.rs: New file.
+	* libformat_parser/vendor/libc/src/unix/linux_like/linux/musl/b32/powerpc.rs: New file.
+	* libformat_parser/vendor/libc/src/unix/linux_like/linux/musl/b32/riscv32/align.rs:
+	New file.
+	* libformat_parser/vendor/libc/src/unix/linux_like/linux/musl/b32/riscv32/mod.rs: New file.
+	* libformat_parser/vendor/libc/src/unix/linux_like/linux/musl/b32/x86/align.rs: New file.
+	* libformat_parser/vendor/libc/src/unix/linux_like/linux/musl/b32/x86/mod.rs: New file.
+	* libformat_parser/vendor/libc/src/unix/linux_like/linux/musl/b64/aarch64/align.rs:
+	New file.
+	* libformat_parser/vendor/libc/src/unix/linux_like/linux/musl/b64/aarch64/int128.rs:
+	New file.
+	* libformat_parser/vendor/libc/src/unix/linux_like/linux/musl/b64/aarch64/mod.rs: New file.
+	* libformat_parser/vendor/libc/src/unix/linux_like/linux/musl/b64/mips64.rs: New file.
+	* libformat_parser/vendor/libc/src/unix/linux_like/linux/musl/b64/mod.rs: New file.
+	* libformat_parser/vendor/libc/src/unix/linux_like/linux/musl/b64/powerpc64.rs: New file.
+	* libformat_parser/vendor/libc/src/unix/linux_like/linux/musl/b64/riscv64/align.rs:
+	New file.
+	* libformat_parser/vendor/libc/src/unix/linux_like/linux/musl/b64/riscv64/mod.rs: New file.
+	* libformat_parser/vendor/libc/src/unix/linux_like/linux/musl/b64/s390x.rs: New file.
+	* libformat_parser/vendor/libc/src/unix/linux_like/linux/musl/b64/x86_64/align.rs: New file.
+	* libformat_parser/vendor/libc/src/unix/linux_like/linux/musl/b64/x86_64/mod.rs: New file.
+	* libformat_parser/vendor/libc/src/unix/linux_like/linux/musl/lfs64.rs: New file.
+	* libformat_parser/vendor/libc/src/unix/linux_like/linux/musl/mod.rs: New file.
+	* libformat_parser/vendor/libc/src/unix/linux_like/linux/no_align.rs: New file.
+	* libformat_parser/vendor/libc/src/unix/linux_like/linux/non_exhaustive.rs: New file.
+	* libformat_parser/vendor/libc/src/unix/linux_like/linux/uclibc/align.rs: New file.
+	* libformat_parser/vendor/libc/src/unix/linux_like/linux/uclibc/arm/align.rs: New file.
+	* libformat_parser/vendor/libc/src/unix/linux_like/linux/uclibc/arm/mod.rs: New file.
+	* libformat_parser/vendor/libc/src/unix/linux_like/linux/uclibc/arm/no_align.rs: New file.
+	* libformat_parser/vendor/libc/src/unix/linux_like/linux/uclibc/mips/mips32/align.rs:
+	New file.
+	* libformat_parser/vendor/libc/src/unix/linux_like/linux/uclibc/mips/mips32/mod.rs:
+	New file.
+	* libformat_parser/vendor/libc/src/unix/linux_like/linux/uclibc/mips/mips32/no_align.rs:
+	New file.
+	* libformat_parser/vendor/libc/src/unix/linux_like/linux/uclibc/mips/mips64/align.rs:
+	New file.
+	* libformat_parser/vendor/libc/src/unix/linux_like/linux/uclibc/mips/mips64/mod.rs:
+	New file.
+	* libformat_parser/vendor/libc/src/unix/linux_like/linux/uclibc/mips/mips64/no_align.rs:
+	New file.
+	* libformat_parser/vendor/libc/src/unix/linux_like/linux/uclibc/mips/mod.rs: New file.
+	* libformat_parser/vendor/libc/src/unix/linux_like/linux/uclibc/mod.rs: New file.
+	* libformat_parser/vendor/libc/src/unix/linux_like/linux/uclibc/no_align.rs: New file.
+	* libformat_parser/vendor/libc/src/unix/linux_like/linux/uclibc/x86_64/l4re.rs: New file.
+	* libformat_parser/vendor/libc/src/unix/linux_like/linux/uclibc/x86_64/mod.rs: New file.
+	* libformat_parser/vendor/libc/src/unix/linux_like/linux/uclibc/x86_64/other.rs: New file.
+	* libformat_parser/vendor/libc/src/unix/linux_like/mod.rs: New file.
+	* libformat_parser/vendor/libc/src/unix/mod.rs: New file.
+	* libformat_parser/vendor/libc/src/unix/newlib/aarch64/mod.rs: New file.
+	* libformat_parser/vendor/libc/src/unix/newlib/align.rs: New file.
+	* libformat_parser/vendor/libc/src/unix/newlib/arm/mod.rs: New file.
+	* libformat_parser/vendor/libc/src/unix/newlib/espidf/mod.rs: New file.
+	* libformat_parser/vendor/libc/src/unix/newlib/generic.rs: New file.
+	* libformat_parser/vendor/libc/src/unix/newlib/horizon/mod.rs: New file.
+	* libformat_parser/vendor/libc/src/unix/newlib/mod.rs: New file.
+	* libformat_parser/vendor/libc/src/unix/newlib/no_align.rs: New file.
+	* libformat_parser/vendor/libc/src/unix/newlib/powerpc/mod.rs: New file.
+	* libformat_parser/vendor/libc/src/unix/newlib/vita/mod.rs: New file.
+	* libformat_parser/vendor/libc/src/unix/no_align.rs: New file.
+	* libformat_parser/vendor/libc/src/unix/nto/aarch64.rs: New file.
+	* libformat_parser/vendor/libc/src/unix/nto/mod.rs: New file.
+	* libformat_parser/vendor/libc/src/unix/nto/neutrino.rs: New file.
+	* libformat_parser/vendor/libc/src/unix/nto/x86_64.rs: New file.
+	* libformat_parser/vendor/libc/src/unix/redox/mod.rs: New file.
+	* libformat_parser/vendor/libc/src/unix/solarish/compat.rs: New file.
+	* libformat_parser/vendor/libc/src/unix/solarish/illumos.rs: New file.
+	* libformat_parser/vendor/libc/src/unix/solarish/mod.rs: New file.
+	* libformat_parser/vendor/libc/src/unix/solarish/solaris.rs: New file.
+	* libformat_parser/vendor/libc/src/unix/solarish/x86.rs: New file.
+	* libformat_parser/vendor/libc/src/unix/solarish/x86_64.rs: New file.
+	* libformat_parser/vendor/libc/src/unix/solarish/x86_common.rs: New file.
+	* libformat_parser/vendor/libc/src/vxworks/aarch64.rs: New file.
+	* libformat_parser/vendor/libc/src/vxworks/arm.rs: New file.
+	* libformat_parser/vendor/libc/src/vxworks/mod.rs: New file.
+	* libformat_parser/vendor/libc/src/vxworks/powerpc.rs: New file.
+	* libformat_parser/vendor/libc/src/vxworks/powerpc64.rs: New file.
+	* libformat_parser/vendor/libc/src/vxworks/x86.rs: New file.
+	* libformat_parser/vendor/libc/src/vxworks/x86_64.rs: New file.
+	* libformat_parser/vendor/libc/src/wasi.rs: New file.
+	* libformat_parser/vendor/libc/src/windows/gnu/align.rs: New file.
+	* libformat_parser/vendor/libc/src/windows/gnu/mod.rs: New file.
+	* libformat_parser/vendor/libc/src/windows/mod.rs: New file.
+	* libformat_parser/vendor/libc/src/windows/msvc/mod.rs: New file.
+	* libformat_parser/vendor/libc/src/xous.rs: New file.
+	* libformat_parser/vendor/libc/tests/const_fn.rs: New file.
+	* libformat_parser/vendor/unicode-xid/.cargo-checksum.json: New file.
+	* libformat_parser/vendor/unicode-xid/COPYRIGHT: New file.
+	* libformat_parser/vendor/unicode-xid/Cargo.toml: New file.
+	* libformat_parser/vendor/unicode-xid/LICENSE-APACHE: New file.
+	* libformat_parser/vendor/unicode-xid/LICENSE-MIT: New file.
+	* libformat_parser/vendor/unicode-xid/README.md: New file.
+	* libformat_parser/vendor/unicode-xid/benches/xid.rs: New file.
+	* libformat_parser/vendor/unicode-xid/src/lib.rs: New file.
+	* libformat_parser/vendor/unicode-xid/src/tables.rs: New file.
+	* libformat_parser/vendor/unicode-xid/src/tests.rs: New file.
+	* libformat_parser/vendor/unicode-xid/tests/exhaustive_tests.rs: New file.
+
+2024-08-01  Arthur Cohen  <arthur.cohen@embecosm.com>
+
+	* libformat_parser/Cargo.lock: New file.
+	* libformat_parser/Cargo.toml: New file.
+	* libformat_parser/generic_format_parser/Cargo.toml: New file.
+	* libformat_parser/generic_format_parser/src/lib.rs: New file.
+	* libformat_parser/src/bin.rs: New file.
+	* libformat_parser/src/lib.rs: New file.
+
+2024-01-16  Pierre-Emmanuel Patry  <pierre-emmanuel.patry@embecosm.com>
+
+	* libproc_macro_internal/proc_macro.h (enum ProcmacroTag): Add
+	explicit value for proc macro tag enum.
+
+2024-01-16  Pierre-Emmanuel Patry  <pierre-emmanuel.patry@embecosm.com>
+
+	* libproc_macro/bridge.rs: Add license text.
+	* libproc_macro/bridge/ffistring.rs: Likewise.
+	* libproc_macro/bridge/group.rs: Likewise.
+	* libproc_macro/bridge/ident.rs: Likewise.
+	* libproc_macro/bridge/literal.rs: Likewise.
+	* libproc_macro/bridge/punct.rs: Likewise.
+	* libproc_macro/bridge/span.rs: Likewise.
+	* libproc_macro/bridge/token_stream.rs: Likewise.
+	* libproc_macro/group.rs: Likewise.
+	* libproc_macro/ident.rs: Likewise.
+	* libproc_macro/lib.rs: Likewise.
+	* libproc_macro/literal.rs: Likewise.
+	* libproc_macro/punct.rs: Likewise.
+	* libproc_macro/span.rs: Likewise.
+	* libproc_macro/token_stream.rs: Likewise.
+
+2024-01-16  Pierre-Emmanuel Patry  <pierre-emmanuel.patry@embecosm.com>
+
+	* libproc_macro_internal/rust/bridge.rs: Moved to...
+	* libproc_macro/bridge.rs: ...here.
+	* libproc_macro_internal/rust/bridge/ffistring.rs: Moved to...
+	* libproc_macro/bridge/ffistring.rs: ...here.
+	* libproc_macro_internal/rust/bridge/group.rs: Moved to...
+	* libproc_macro/bridge/group.rs: ...here.
+	* libproc_macro_internal/rust/bridge/ident.rs: Moved to...
+	* libproc_macro/bridge/ident.rs: ...here.
+	* libproc_macro_internal/rust/bridge/literal.rs: Moved to...
+	* libproc_macro/bridge/literal.rs: ...here.
+	* libproc_macro_internal/rust/bridge/punct.rs: Moved to...
+	* libproc_macro/bridge/punct.rs: ...here.
+	* libproc_macro_internal/rust/bridge/span.rs: Moved to...
+	* libproc_macro/bridge/span.rs: ...here.
+	* libproc_macro_internal/rust/bridge/token_stream.rs: Moved to...
+	* libproc_macro/bridge/token_stream.rs: ...here.
+	* libproc_macro_internal/rust/group.rs: Moved to...
+	* libproc_macro/group.rs: ...here.
+	* libproc_macro_internal/rust/ident.rs: Moved to...
+	* libproc_macro/ident.rs: ...here.
+	* libproc_macro_internal/rust/lib.rs: Moved to...
+	* libproc_macro/lib.rs: ...here.
+	* libproc_macro_internal/rust/literal.rs: Moved to...
+	* libproc_macro/literal.rs: ...here.
+	* libproc_macro_internal/rust/punct.rs: Moved to...
+	* libproc_macro/punct.rs: ...here.
+	* libproc_macro_internal/rust/span.rs: Moved to...
+	* libproc_macro/span.rs: ...here.
+	* libproc_macro_internal/rust/token_stream.rs: Moved to...
+	* libproc_macro/token_stream.rs: ...here.
+
+2024-01-16  Pierre-Emmanuel Patry  <pierre-emmanuel.patry@embecosm.com>
+
+	* Makefile.am: Change library name.
+	* Makefile.in: Likewise.
+	* configure.ac: Likewise.
+	* configure: Regenerate.
+	* libproc_macro/Makefile.am: Moved to...
+	* libproc_macro_internal/Makefile.am: ...here.
+	* libproc_macro/Makefile.in: Moved to...
+	* libproc_macro_internal/Makefile.in: ...here.
+	* libproc_macro/bridge.h: Moved to...
+	* libproc_macro_internal/bridge.h: ...here.
+	* libproc_macro/ffistring.cc: Moved to...
+	* libproc_macro_internal/ffistring.cc: ...here.
+	* libproc_macro/ffistring.h: Moved to...
+	* libproc_macro_internal/ffistring.h: ...here.
+	* libproc_macro/group.cc: Moved to...
+	* libproc_macro_internal/group.cc: ...here.
+	* libproc_macro/group.h: Moved to...
+	* libproc_macro_internal/group.h: ...here.
+	* libproc_macro/ident.cc: Moved to...
+	* libproc_macro_internal/ident.cc: ...here.
+	* libproc_macro/ident.h: Moved to...
+	* libproc_macro_internal/ident.h: ...here.
+	* libproc_macro/literal.cc: Moved to...
+	* libproc_macro_internal/literal.cc: ...here.
+	* libproc_macro/literal.h: Moved to...
+	* libproc_macro_internal/literal.h: ...here.
+	* libproc_macro/proc_macro.cc: Moved to...
+	* libproc_macro_internal/proc_macro.cc: ...here.
+	* libproc_macro/proc_macro.h: Moved to...
+	* libproc_macro_internal/proc_macro.h: ...here.
+	* libproc_macro/punct.cc: Moved to...
+	* libproc_macro_internal/punct.cc: ...here.
+	* libproc_macro/punct.h: Moved to...
+	* libproc_macro_internal/punct.h: ...here.
+	* libproc_macro/registration.h: Moved to...
+	* libproc_macro_internal/registration.h: ...here.
+	* libproc_macro/rust/bridge.rs: Moved to...
+	* libproc_macro_internal/rust/bridge.rs: ...here.
+	* libproc_macro/rust/bridge/ffistring.rs: Moved to...
+	* libproc_macro_internal/rust/bridge/ffistring.rs: ...here.
+	* libproc_macro/rust/bridge/group.rs: Moved to...
+	* libproc_macro_internal/rust/bridge/group.rs: ...here.
+	* libproc_macro/rust/bridge/ident.rs: Moved to...
+	* libproc_macro_internal/rust/bridge/ident.rs: ...here.
+	* libproc_macro/rust/bridge/literal.rs: Moved to...
+	* libproc_macro_internal/rust/bridge/literal.rs: ...here.
+	* libproc_macro/rust/bridge/punct.rs: Moved to...
+	* libproc_macro_internal/rust/bridge/punct.rs: ...here.
+	* libproc_macro/rust/bridge/span.rs: Moved to...
+	* libproc_macro_internal/rust/bridge/span.rs: ...here.
+	* libproc_macro/rust/bridge/token_stream.rs: Moved to...
+	* libproc_macro_internal/rust/bridge/token_stream.rs: ...here.
+	* libproc_macro/rust/group.rs: Moved to...
+	* libproc_macro_internal/rust/group.rs: ...here.
+	* libproc_macro/rust/ident.rs: Moved to...
+	* libproc_macro_internal/rust/ident.rs: ...here.
+	* libproc_macro/rust/lib.rs: Moved to...
+	* libproc_macro_internal/rust/lib.rs: ...here.
+	* libproc_macro/rust/literal.rs: Moved to...
+	* libproc_macro_internal/rust/literal.rs: ...here.
+	* libproc_macro/rust/punct.rs: Moved to...
+	* libproc_macro_internal/rust/punct.rs: ...here.
+	* libproc_macro/rust/span.rs: Moved to...
+	* libproc_macro_internal/rust/span.rs: ...here.
+	* libproc_macro/rust/token_stream.rs: Moved to...
+	* libproc_macro_internal/rust/token_stream.rs: ...here.
+	* libproc_macro/span.cc: Moved to...
+	* libproc_macro_internal/span.cc: ...here.
+	* libproc_macro/span.h: Moved to...
+	* libproc_macro_internal/span.h: ...here.
+	* libproc_macro/tokenstream.cc: Moved to...
+	* libproc_macro_internal/tokenstream.cc: ...here.
+	* libproc_macro/tokenstream.h: Moved to...
+	* libproc_macro_internal/tokenstream.h: ...here.
+	* libproc_macro/tokentree.cc: Moved to...
+	* libproc_macro_internal/tokentree.cc: ...here.
+	* libproc_macro/tokentree.h: Moved to...
+	* libproc_macro_internal/tokentree.h: ...here.
+
+2024-01-16  Pierre-Emmanuel Patry  <pierre-emmanuel.patry@embecosm.com>
+
+	* libproc_macro/literal.cc (Literal__from_string): Add
+	implementation with call to constructor.
+	(Literal::make_literal): Add new constructor which calls the
+	callback.
+	* libproc_macro/literal.h: Add new constructor's
+	prototype.
+	* libproc_macro/proc_macro.cc (bridge_is_available):
+	Change symbol name to match convention.
+	* libproc_macro/registration.h: Add lit_from_str
+	symbol.
+	* libproc_macro/tokenstream.cc (TokenStream::make_tokenstream):
+	Change symbol name to disambiguate with literal from string.
+
+2024-01-16  Pierre-Emmanuel Patry  <pierre-emmanuel.patry@embecosm.com>
+
+	* libproc_macro/proc_macro.cc: Remove type alias.
+	* libproc_macro/registration.h: Likewise.
+
+2024-01-16  Pierre-Emmanuel Patry  <pierre-emmanuel.patry@embecosm.com>
+
+	* libproc_macro/proc_macro.h (proc_macro_register_from_str):
+	Remove rogue function prototype.
+
+2024-01-16  Pierre-Emmanuel Patry  <pierre-emmanuel.patry@embecosm.com>
+
+	* libproc_macro/proc_macro.cc (not_available): Remove
+	function.
+	* libproc_macro/proc_macro.h (not_available): Remove
+	function prototype.
+	* libproc_macro/registration.h: Change symbol type.
+	* libproc_macro/bridge.h: New file.
+
+2024-01-16  Pierre-Emmanuel Patry  <pierre-emmanuel.patry@embecosm.com>
+
+	* libproc_macro/proc_macro.cc (bridge_is_available):
+	Add bridge function.
+	* libproc_macro/proc_macro.h (bridge_is_available):
+	Likewise.
+
+2024-01-16  Pierre-Emmanuel Patry  <pierre-emmanuel.patry@embecosm.com>
+
+	* libproc_macro/proc_macro.cc (not_available): Add a
+	function to express bridge unavailability.
+	* libproc_macro/proc_macro.h (not_available): Likewise.
+	* libproc_macro/registration.h: Add symbol type.
+
+2024-01-16  Pierre-Emmanuel Patry  <pierre-emmanuel.patry@embecosm.com>
+
+	* libproc_macro/proc_macro.cc (Procmacro::make_bang):
+	Change symbol name.
+	* libproc_macro/registration.h: Likewise.
+	* libproc_macro/tokenstream.cc (TokenStream::make_tokenstream): Likewise.
+
+2024-01-16  Pierre-Emmanuel Patry  <pierre-emmanuel.patry@embecosm.com>
+
+	* libproc_macro/literal.cc (Literal__from_string):
+	Update to match rust interface.
+	* libproc_macro/literal.h (Literal__from_string):
+	Likewise.
+	* libproc_macro/tokenstream.cc (TokenStream__from_string):
+	Likewise.
+	* libproc_macro/tokenstream.h (TokenStream__from_string):
+	Likewise.
+
+2024-01-16  Pierre-Emmanuel Patry  <pierre-emmanuel.patry@embecosm.com>
+
+	* libproc_macro/rust/bridge/literal.rs: Change extern C
+	function argument from raw string pointer and length to
+	FFIString.
+	* libproc_macro/rust/bridge/token_stream.rs: Likewise.
+
+2024-01-16  Pierre-Emmanuel Patry  <pierre-emmanuel.patry@embecosm.com>
+
+	* libproc_macro/rust/bridge/ident.rs: Change raw
+	pointer string with an FFIString.
+
+2024-01-16  Pierre-Emmanuel Patry  <pierre-emmanuel.patry@embecosm.com>
+
+	* libproc_macro/ident.cc (Ident__new): Constructor
+	accepts an FFIString now.
+	(Ident__new_raw): Likewise.
+	(Ident::clone): Internal members change means clone also change.
+	(Ident::make_ident): Change constructor call.
+	(Ident::drop): Add call to FFIString::clone.
+	* libproc_macro/ident.h (struct Ident): Remove raw
+	pointer and length, add an FFIString inside instead.
+	(Ident__new): Change constructor.
+	(Ident__new_raw): Change constructor.
+
+2024-01-16  Pierre-Emmanuel Patry  <pierre-emmanuel.patry@embecosm.com>
+
+	* libproc_macro/proc_macro.cc (proc_macro_register_from_str):
+	Add registration function.
+	* libproc_macro/proc_macro.h (proc_macro_register_from_str):
+	Add registration function prototype.
+	* libproc_macro/tokenstream.cc (TokenStream::make_tokenstream):
+	Add a new constructor from a string that uses the registered
+	callback.
+	(TokenStream__from_string): Add call to new constructor.
+	* libproc_macro/tokenstream.h: Add registration
+	declaration.
+	* libproc_macro/registration.h: New file.
+
+2024-01-16  Pierre-Emmanuel Patry  <pierre-emmanuel.patry@embecosm.com>
+
+	* libproc_macro/ffistring.cc (FFIString::make_ffistring):
+	Add explicit sizeof and utf-8 warning.
+	(FFIString::clone): Add explicit sizeof and utf-8 warning.
+	* libproc_macro/ident.cc (Ident::clone): Likewise.
+	(Ident::make_ident): Likewise.
+	* libproc_macro/tokenstream.cc (TokenStream::grow):
+	Fix vector growth.
+	(TokenStream__clone): Add explicit sizeof.
+
+2024-01-16  Pierre-Emmanuel Patry  <pierre-emmanuel.patry@embecosm.com>
+
+	* libproc_macro/tokenstream.cc (TokenStream::grow): Add
+	minimum growing capacity.
+	(TokenStream::push): Change condition.
+
+2024-01-16  Pierre-Emmanuel Patry  <pierre-emmanuel.patry@embecosm.com>
+
+	* libproc_macro/proc_macro.h (struct CustomDerivePayload):
+	Rename from CustomDerivePayload to...
+	(struct CustomDerive): ... CustomDerive
+	(struct AttrPayload): Rename from AttrPayload to ...
+	(struct Attribute): ... Attribute
+	(struct BangPayload): Rename from BangPayload to ...
+	(struct Bang): ... Bang
+	(union ProcmacroPayload): Update union with new names.
+
+2024-01-16  Pierre-Emmanuel Patry  <pierre-emmanuel.patry@embecosm.com>
+
+	* libproc_macro/proc_macro.h (struct ProcmacroArray):
+	Add ProcmacroArray definition.
+
+2024-01-16  Pierre-Emmanuel Patry  <pierre-emmanuel.patry@embecosm.com>
+
+	* libproc_macro/Makefile.am: Add span.cc
+	* libproc_macro/Makefile.in: Regenerate.
+	* libproc_macro/span.cc: New file.
+	* libproc_macro/span.h: New file.
+	* libproc_macro/group.cc (Group::make_group): Add span
+	argument.
+	* libproc_macro/group.h (GROUP_H): Add include
+	directive for spans.
+	* libproc_macro/ident.cc (Ident__new): Add span
+	argument.
+	(Ident__new_raw): Likewise.
+	(Ident::make_ident): Likewise.
+	* libproc_macro/ident.h (Ident__new): Likewise.
+	(Ident__new_raw): Likewise.
+	* libproc_macro/literal.cc (Literal::clone): Clone the
+	span.
+	(Literal::make_literal): Add span argument.
+	(Literal::make_u8): Likewise.
+	(Literal::make_u16): Likewise.
+	(Literal::make_u32): Likewise.
+	(Literal::make_u64): Likewise.
+	(Literal::make_i8): Likewise.
+	(Literal::make_i16): Likewise.
+	(Literal::make_i32): Likewise.
+	(Literal::make_i64): Likewise.
+	(Literal::make_string): Likewise.
+	(Literal::make_byte_string): Likewise.
+	(Literal::make_f32): Likewise.
+	(Literal::make_f64): Likewise.
+	(Literal::make_char): Likewise.
+	(Literal::make_usize): Likewise.
+	(Literal::make_isize): Likewise.
+	* libproc_macro/literal.h (struct Literal): Add span to
+	Literal structure.
+	* libproc_macro/punct.cc (Punct::make_punct): Add span
+	argument to punct constructor.
+	* libproc_macro/punct.h (struct Punct): Add span to
+	Punct structure.
+
+2024-01-16  Pierre-Emmanuel Patry  <pierre-emmanuel.patry@embecosm.com>
+
+	* libproc_macro/rust/bridge/group.rs: Add span member
+	to the Group structure.
+	* libproc_macro/rust/bridge/ident.rs: Likewise with the
+	Ident structure.
+	* libproc_macro/rust/bridge/literal.rs: Likewise with
+	the Literal structure.
+	* libproc_macro/rust/bridge/punct.rs: Likewise with the
+	Punct structure.
+	* libproc_macro/rust/bridge/span.rs: Add span
+	internals.
+
+2024-01-16  Pierre-Emmanuel Patry  <pierre-emmanuel.patry@embecosm.com>
+
+	* libproc_macro/rust/bridge/ffistring.rs: Implement
+	From trait for FFIString.
+	* libproc_macro/rust/bridge/literal.rs: Change
+	constructor call.
+
+2024-01-16  Pierre-Emmanuel Patry  <pierre-emmanuel.patry@embecosm.com>
+
+	* libproc_macro/ffistring.cc (FFIString::make_ffistring):
+	Add copy from source pointer.
+
+2024-01-16  Pierre-Emmanuel Patry  <pierre-emmanuel.patry@embecosm.com>
+
+	* libproc_macro/literal.h: Remove has_suffix member
+	attribute from Literal.
+	* libproc_macro/literal.cc: Update constructors.
+	* libproc_macro/rust/bridge/literal.rs: Remove
+	has_suffix attribute from Literal.
+
+2024-01-16  Pierre-Emmanuel Patry  <pierre-emmanuel.patry@embecosm.com>
+
+	* libproc_macro/Makefile.am: Add ffistring unit to
+	compiled objects list.
+	* libproc_macro/Makefile.in: Regenerate.
+	* libproc_macro/literal.cc (Literal::drop): Change with
+	a call to ffistring drop function.
+	(Literal::make_literal): Add new helper constructor
+	(Literal__drop): Remove this function.
+	(Literal__string): Likewise.
+	(Literal__byte_string): Likewise.
+	(Literal__from_string): Moved this function.
+	(Literal::make_unsigned): Changed the constructor to match the
+	new layout.
+	(Literal::make_signed): Likewise.
+	(Literal::clone): Reimplement th eclone function.
+	(Literal::make_u8): Changed the constructor, make suffixed by
+	default.
+	(Literal::make_u16): Likewise.
+	(Literal::make_u32): Likewise.
+	(Literal::make_u64): Likewise.
+	(Literal::make_i8): Likewise.
+	(Literal::make_i16): Likewise.
+	(Literal::make_i32): Likewise.
+	(Literal::make_i64): Likewise.
+	(Literal::make_string): Likewise.
+	(Literal::make_byte_string): Likewise.
+	(Literal::make_f32): Likewise.
+	(Literal::make_f64): Likewise.
+	(Literal::make_char): Likewise.
+	(Literal::make_usize): Likewise.
+	(Literal::make_isize): Likewise.
+	(LitKind::make_byte): Add new helper constructor to avoid having
+	to set the payload value.
+	(LitKind::make_char): Likewise.
+	(LitKind::make_integer): Likewise.
+	(LitKind::make_float): Likewise.
+	(LitKind::make_str): Likewise.
+	(LitKind::make_str_raw): Add a new helper constructor which
+	takes the payload value as an argument.
+	(LitKind::make_byte_str): Add new helper constructor to avoid
+	mistakes with payload value.
+	(LitKind::make_byte_str_raw): Add a new helper constructor which
+	takes the payload value as an argument.
+	* libproc_macro/literal.h: Add new functions prototype.
+	(enum UnsignedTag): Removed because it is now unused.
+	(struct Payload128): Likewise.
+	(union UnsignedPayload): Likewise.
+	(struct Unsigned): Likewise.
+	(enum SignedTag): Likewise.
+	(union SignedPayload): Likewise.
+	(struct Signed): Likewise.
+	(enum LiteralTag): Likewise.
+	(enum LitKindTag): Likewise.
+	(struct StringPayload): Likewise.
+	(struct ByteStringPayload): Likewise.
+	(union LitKindPayload): Likewise.
+	(struct UnsignedSuffixPayload): Likewise.
+	(struct LitKind): Add new literal kind struct representation to
+	match the enum on rust side.
+	(struct SignedSuffixPayload): Removed because now unused.
+	(struct UsizePayload): Likewise.
+	(struct IsizePayload): Likewise.
+	(struct Float32Payload): Likewise.
+	(struct Float64Payload): Likewise.
+	(union LiteralPayload): Likewise.
+	(struct Literal): Changed the internals of the structure.
+	(Literal__drop): Removed the drop function fom the c interface.
+	(Literal__string): Removed unused function.
+	(Literal__byte_string): Removed unused function.
+	* libproc_macro/ffistring.cc: New file.
+	* libproc_macro/ffistring.h: New file.
+
+2024-01-16  Pierre-Emmanuel Patry  <pierre-emmanuel.patry@embecosm.com>
+
+	* libproc_macro/rust/bridge.rs: Add ffistring module.
+	* libproc_macro/rust/bridge/literal.rs: Rework type
+	internals.
+	* libproc_macro/rust/bridge/ffistring.rs: New file.
+
+2024-01-16  Pierre-Emmanuel Patry  <pierre-emmanuel.patry@embecosm.com>
+
+	* libproc_macro/proc_macro.cc (Procmacro::make_derive):
+	Add custom derive macro constructor.
+	(Procmacro::make_attribute): Add attribute macro constructor.
+	(Procmacro::make_bang): Add bang macro constructor.
+	* libproc_macro/proc_macro.h (struct Procmacro):
+	Add helper function prototypes.
+
+2024-01-16  Pierre-Emmanuel Patry  <pierre-emmanuel.patry@embecosm.com>
+
+	* libproc_macro/proc_macro.h (struct CustomDerivePayload):
+	Add C compatible payload structure.
+	(struct AttrPayload): Likewise.
+	(struct BangPayload): Likewise.
+	(enum ProcmacroTag): Add tag for tagged union.
+	(union ProcmacroPayload): Proc macro payload union.
+	(struct Procmacro): Tagged union.
+
+2024-01-16  Pierre-Emmanuel Patry  <pierre-emmanuel.patry@embecosm.com>
+
+	* libproc_macro/proc_macro.h: Add Literal, Punct,
+	Group, TokenTree and Tokenstream headers.
+
+2024-01-16  Pierre-Emmanuel Patry  <pierre-emmanuel.patry@embecosm.com>
+
+	* Makefile.am: Remove libtool forwarding.
+	* Makefile.in: Regenerate.
+	* libproc_macro/Makefile.am: Creates an archive instead
+	of using libtool.
+	* libproc_macro/Makefile.in: Regenerate.
+
+2024-01-16  Pierre-Emmanuel Patry  <pierre-emmanuel.patry@embecosm.com>
+
+	* libproc_macro/group.cc (Group::make_group): Remove
+	internal namespace.
+	(Group::drop): Likewise.
+	* libproc_macro/group.h (enum Delimiter): Make members
+	upercase.
+	(struct Group):
+	* libproc_macro/ident.cc (Ident::drop): Remove internal
+	namespace.
+	* libproc_macro/ident.h (Ident__clone): Likewise.
+	* libproc_macro/literal.cc (Literal::make_isize):
+	Likewise.
+	* libproc_macro/literal.h (union LiteralPayload):
+	Likewise.
+	(Literal__from_string): Likewise.
+	* libproc_macro/punct.cc (Punct::make_punct): Likewise.
+	* libproc_macro/punct.h (enum Spacing): Make members
+	uppercase.
+	* libproc_macro/tokenstream.cc (TokenStream::make_tokenstream):
+	Remove internal namespace.
+	(TokenStream::grow): Likewise.
+	(TokenStream::push): Likewise.
+	(TokenSream__push): Likewise.
+	(TokenStream__clone): Likewise.
+	(TokenStream__drop): Likewise.
+	* libproc_macro/tokenstream.h (struct TokenStream):
+	Likewise.
+	(TokenSream__push): Likewise.
+	(TokenStream__drop): Likewise.
+	* libproc_macro/tokentree.cc (TokenTree::make_tokentree):
+	Likewise.
+	(TokenTree::drop): Likewise.
+	* libproc_macro/tokentree.h (union TokenTreePayload):
+	Likewise.
+
+2024-01-16  Pierre-Emmanuel Patry  <pierre-emmanuel.patry@embecosm.com>
+
+	* libproc_macro/group.cc (Group::drop): Add Procmacro
+	namespace.
+	* libproc_macro/group.h: Likewise.
+	* libproc_macro/ident.cc (Ident::drop): Likewise.
+	* libproc_macro/ident.h (Ident__clone): Likewise.
+	* libproc_macro/literal.cc (Literal::make_isize):
+	Likewise.
+	* libproc_macro/literal.h (Literal__from_string):
+	Likewise.
+	* libproc_macro/punct.cc (Punct::make_punct): Likewise.
+	* libproc_macro/punct.h: Likewise.
+	* libproc_macro/tokenstream.cc (TokenStream__drop):
+	Likewise.
+	* libproc_macro/tokenstream.h (TokenStream__drop):
+	Likewise.
+	* libproc_macro/tokentree.cc (TokenTree::drop):
+	Likewise.
+	* libproc_macro/tokentree.h: Likewise.
+
+2024-01-16  Pierre-Emmanuel Patry  <pierre-emmanuel.patry@embecosm.com>
+
+	* libproc_macro/literal.cc (Literal::drop): Change
+	delete operator to delete[].
+
+2024-01-16  Pierre-Emmanuel Patry  <pierre-emmanuel.patry@embecosm.com>
+
+	* libproc_macro/rust/bridge/token_stream.rs: Implement
+	drop.
+
+2024-01-16  Pierre-Emmanuel Patry  <pierre-emmanuel.patry@embecosm.com>
+
+	* libproc_macro/group.cc (Group::drop): Add drop
+	implementation.
+	* libproc_macro/group.h: Add drop prototype.
+	* libproc_macro/tokenstream.cc (TokenStream::drop): Add
+	drop implementation.
+	(TokenStream__drop): Change to a call to TokenStream::drop.
+	* libproc_macro/tokenstream.h: Add drop prototype.
+	* libproc_macro/tokentree.cc (TokenTree::drop): Add
+	drop implementation.
+	* libproc_macro/tokentree.h: Add drop prototype.
+
+2024-01-16  Pierre-Emmanuel Patry  <pierre-emmanuel.patry@embecosm.com>
+
+	* libproc_macro/literal.cc (Literal__drop): Replace
+	implementation by a call to Literal::drop.
+	(Literal::drop): Add drop implementation.
+	* libproc_macro/literal.h: Add function prototype.
+
+2024-01-16  Pierre-Emmanuel Patry  <pierre-emmanuel.patry@embecosm.com>
+
+	* libproc_macro/ident.cc (Ident__drop): Replace by call
+	to Ident::drop.
+	(Ident::drop): Add drop function.
+	* libproc_macro/ident.h: Add drop prototype.
+
+2024-01-16  Pierre-Emmanuel Patry  <pierre-emmanuel.patry@embecosm.com>
+
+	* libproc_macro/group.cc: New file.
+	* libproc_macro/group.h: New file.
+	* libproc_macro/tokenstream.cc: New file.
+	* libproc_macro/tokenstream.h: New file.
+	* libproc_macro/tokentree.cc: New file.
+	* libproc_macro/tokentree.h: New file.
+
+2024-01-16  Pierre-Emmanuel Patry  <pierre-emmanuel.patry@embecosm.com>
+
+	* libproc_macro/punct.cc: New file.
+	* libproc_macro/punct.h: New file.
+
+2024-01-16  Pierre-Emmanuel Patry  <pierre-emmanuel.patry@embecosm.com>
+
+	* libproc_macro/ident.cc (Ident::make_ident): Add Ident
+	namespace.
+	* libproc_macro/ident.h (Ident__clone): Likewise.
+
+2024-01-16  Pierre-Emmanuel Patry  <pierre-emmanuel.patry@embecosm.com>
+
+	* libproc_macro/ident.cc (Ident__new): Use named
+	constructor.
+	(Ident__new_raw): Use named constructor.
+	(Ident__clone): Use clone member function.
+	(Ident::clone): Make clone const.
+	(Ident::make_ident): Add named construcot.
+	* libproc_macro/ident.h (struct Ident): Add named
+	constructor prototypes.
+
+2024-01-16  Pierre-Emmanuel Patry  <pierre-emmanuel.patry@embecosm.com>
+
+	* libproc_macro/rust/bridge/ident.rs: Change drop
+	function interface.
+
+2024-01-16  Pierre-Emmanuel Patry  <pierre-emmanuel.patry@embecosm.com>
+
+	* libproc_macro/ident.cc: New file.
+	* libproc_macro/ident.h: New file.
+
+2024-01-16  Pierre-Emmanuel Patry  <pierre-emmanuel.patry@embecosm.com>
+
+	* libproc_macro/literal.cc (Literal__string): Add call
+	to named constructor.
+	(Literal__byte_string): Likewise.
+	(Literal::make_unsigned): Add function.
+	(Literal::make_signed): Add function.
+	(Literal::clone): Likewise.
+	(Literal::make_u8): Likewise.
+	(Literal::make_u16): Likewise.
+	(Literal::make_u32): Likewise.
+	(Literal::make_u64): Likewise.
+	(Literal::make_i8): Likewise.
+	(Literal::make_i16): Likewise.
+	(Literal::make_i32): Likewise.
+	(Literal::make_i64): Likewise.
+	(Literal::make_string): Likewise.
+	(Literal::make_byte_string): Likewise.
+	(Literal::make_f32): Likewise.
+	(Literal::make_f64): Likewise.
+	(make_char): Likewise.
+	(Literal::make_char): Likewise.
+	(make_usize): Likewise.
+	(Literal::make_usize): Likewise.
+	(make_isize): Likewise.
+	(Literal::make_isize): Likewise.
+	* libproc_macro/literal.h: Add prototypes.
+
+2024-01-16  Pierre-Emmanuel Patry  <pierre-emmanuel.patry@embecosm.com>
+
+	* libproc_macro/literal.cc (Literal__from_string):
+	Add abort because unimplemented.
+	* libproc_macro/literal.h (Literal__from_string): Add
+	namespace.
+
+2024-01-16  Pierre-Emmanuel Patry  <pierre-emmanuel.patry@embecosm.com>
+
+	* libproc_macro/rust/bridge/literal.rs: Make the
+	pointer mutable.
+
+2024-01-16  Pierre-Emmanuel Patry  <pierre-emmanuel.patry@embecosm.com>
+
+	* libproc_macro/literal.h (Literal__drop): Implement
+	drop.
+	(Literal__string): Constructor from a string function prototype.
+	(Literal__byte_string): Constructor from a byte string function
+	prototype.
+	(Literal__from_string): Add function body, no implementation
+	yet.
+	* libproc_macro/literal.cc: New file.
+
+2024-01-16  Pierre-Emmanuel Patry  <pierre-emmanuel.patry@embecosm.com>
+
+	* libproc_macro/proc_macro.h (PROC_MACRO_H): Add
+	literal header include directive.
+	* libproc_macro/literal.h: New file.
+
+2024-01-16  Pierre-Emmanuel Patry  <pierre-emmanuel.patry@embecosm.com>
+
+	* libproc_macro/proc_macro.cc (test): Remove dummy
+	function.
+	* libproc_macro/proc_macro.h (test): Likewise.
+
+2024-01-16  Pierre-Emmanuel Patry  <pierre-emmanuel.patry@embecosm.com>
+
+	* libproc_macro/rust/bridge.rs: New file.
+	* libproc_macro/rust/bridge/group.rs: New file.
+	* libproc_macro/rust/bridge/ident.rs: New file.
+	* libproc_macro/rust/bridge/literal.rs: New file.
+	* libproc_macro/rust/bridge/punct.rs: New file.
+	* libproc_macro/rust/bridge/span.rs: New file.
+	* libproc_macro/rust/bridge/token_stream.rs: New file.
+	* libproc_macro/rust/group.rs: New file.
+	* libproc_macro/rust/ident.rs: New file.
+	* libproc_macro/rust/lib.rs: New file.
+	* libproc_macro/rust/literal.rs: New file.
+	* libproc_macro/rust/punct.rs: New file.
+	* libproc_macro/rust/span.rs: New file.
+	* libproc_macro/rust/token_stream.rs: New file.
+
+2024-01-08  Thomas Schwinge  <thomas@codesourcery.com>
+
+	PR rust/113056
+	* configure.ac: 'AM_ENABLE_MULTILIB' only for target builds.
+	* configure: Regenerate.
+
+2023-12-14  Pierre-Emmanuel Patry  <pierre-emmanuel.patry@embecosm.com>
+	    Arthur Cohen  <arthur.cohen@embecosm.com>
+
+	* Makefile.am: New file.
+	* Makefile.in: Generate.
+	* configure.ac: New file.
+	* configure: Generate.
+	* aclocal.m4: Generate.
+	* libproc_macro/Makefile.am: New file.
+	* libproc_macro/proc_macro.cc: New file.
+	* libproc_macro/proc_macro.h: New file.
+	* libproc_macro/Makefile.in: Generate.
+
+Copyright (C) 2023-2026 Free Software Foundation, Inc.
+
+Copying and distribution of this file, with or without modification,
+are permitted in any medium without royalty provided the copyright
+notice and this notice are preserved.

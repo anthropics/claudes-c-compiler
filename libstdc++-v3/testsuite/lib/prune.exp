@@ -1,0 +1,130 @@
+#   Copyright (C) 1997-2026 Free Software Foundation, Inc.
+
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; see the file COPYING3.  If not see
+# <http://www.gnu.org/licenses/>.
+
+# Prune messages from g++ that aren't useful.
+
+# Prune any messages matching ARGS[1] (a regexp) from test output.
+proc dg-prune-output { args } {
+    global additional_prunes
+
+    if { [llength $args] != 2 } {
+	error "[lindex $args 1]: need one argument"
+	return
+    }
+
+    lappend additional_prunes [lindex $args 1]
+}
+
+proc libstdc++-dg-prune { system text } {
+    global additional_prunes
+
+#    send_user "Before:$text\n"
+
+    if { [string match "*This header is not available in freestanding mode.*" $text] } {
+      return "::unsupported::hosted C++ headers not supported"
+    }
+
+    regsub -all "std::__8::" $text "std::" text
+
+    # Ignore caret diagnostics. Unfortunately dejaGNU trims leading
+    # spaces, so one cannot rely on them being present.
+    regsub -all "(^|\n)\[^\n\]+\n *\\^\n" $text "\n" text
+
+    # Cygwin warns about -ffunction-sections
+    regsub -all "(^|\n)\[^\n\]*: -ffunction-sections may affect debugging on some targets\[^\n\]*" $text "" text
+
+    # Remove parts of warnings that refer to location of previous
+    # definitions, etc as these confuse dejagnu
+    regsub -all "(^|\n)(\[^\n\]*: )?In ((static member |lambda )?function|member|method|(copy )?constructor|destructor|instantiation|substitution|program|subroutine|block-data)\[^\n\]*" $text "" text
+    regsub -all "(^|\n)\[^\n\]*(: )?At (top level|global scope):\[^\n\]*" $text "" text
+    regsub -all "(^|\n)\[^\n\]*:   (recursively )?required \[^\n\]*" $text "" text
+    regsub -all "(^|\n)\[^\n\]*:   . skipping \[0-9\]* instantiation contexts \[^\n\]*" $text "" text
+    regsub -all "(^|\n)\[^\n\]*:   in .constexpr. expansion \[^\n\]*" $text "" text
+    regsub -all "(^|\n)\[^\n\]*:   in requirements \[^\n\]*" $text "" text
+    regsub -all "(^|\n)    inlined from \[^\n\]*" $text "" text
+
+    # Diagnostic inclusion stack
+    regsub -all "(^|\n)(In file)?\[ \]+included from \[^\n\]*" $text "" text
+    regsub -all "(^|\n)\[ \]+from \[^\n\]*" $text "" text
+    regsub -all "(^|\n)(In|of) module( \[^\n \]*,)? imported at \[^\n\]*" $text "" text
+
+    # Ignore informational notes.
+    #TODO As this isn't even using 'gcc-dg.exp', cannot consider its
+    # 'variable prune_notes' (for 'dg-note') here.
+    regsub -all "(^|\n)\[^\n\]*: note: \[^\n\]*" $text "" text
+
+    # Ignore errata warning from IA64 assembler.
+    regsub -all "(^|\n)\[^\n\]*: Additional NOP may be necessary to workaround Itanium processor A/B step errata" $text "" text
+    regsub -all "(^|\n)\[^\n*\]*: Assembler messages:\[^\n\]*" $text "" text
+
+    # Ignore harmless warnings from Xcode 3.2.x.
+    regsub -all "(^|\n)\[^\n\]*ld: warning: can't add line info to anonymous symbol\[^\n\]*" $text "" text
+    regsub -all "(^|\n)\[^\n\]*warning: DWARFDebugInfoEntry::AppendDependants\[^\n\]*AT_\[^\n\]*_bound\[^\n\]*FORM_ref4\[^\n\]*" $text "" text
+    regsub -all "(^|\n)\[^\n\]*warning:\[^\n\]*TAG_variable:  AT_location\[^\n\]*didn't have valid function low pc\[^\n\]*" $text "" text
+
+    # Ignore harmless warnings from Xcode 4+.
+    regsub -all "(^|\n)\[^\n\]*ld: warning: could not create compact unwind for\[^\n\]*" $text "" text
+
+    # Ignore duplicate path warnings from Xcode 16+.
+    regsub -all "(^|\n)\[^\n\]*ld: warning: duplicate -rpath\[^\n\]*" $text "" text
+
+    # Ignore dsymutil warning (tool bug is actually in the linker)
+    regsub -all "(^|\n)\[^\n\]*could not find object file symbol for symbol\[^\n\]*" $text "" text
+
+    # This pattern, except requiring a capitalized "In" and with a
+    # sub-pattern matching a subsequent line "is not implemented and will
+    # always fail", is part of the standard dejagnu prune_warnings function.
+    # There's also a separate single-line pattern pruning the "is not
+    # implemented and will always fail".  Since that pattern is processed
+    # before this ${tool}-dg-prune function is called, we have to handle
+    # the single uncapitalized "in function" line.
+    regsub -all "(^|\n)\[^\n\]*: in function\[^\n\]*" $text "" text
+
+    # If exception handling is not supported, expectant tests are UNSUPPORTED.
+    if { ![check_effective_target_exceptions] } {
+	if [regexp "(^|\n)\[^\n\]*: sorry, unimplemented: exception handling not supported" $text] {
+	    return "::unsupported::exception handling not supported"
+	}
+    }
+
+    # If exception handling is disabled, expectant tests are UNSUPPORTED.
+    if { ![check_effective_target_exceptions_enabled] } {
+	if [regexp "(^|\n)\[^\n\]*: error: exception handling disabled" $text] {
+	    return "::unsupported::exception handling disabled"
+	}
+
+	if [regexp "(^|\n)\[^\n\]*: error: #error .__cpp_exceptions." $text] {
+	    return "::unsupported::exception handling disabled"
+	}
+    }
+
+    # If dynamic stack allocation is not supported, expectant tests are UNSUPPORTED.
+    if { ![check_effective_target_alloca] } {
+	if [regexp "(^|\n)\[^\n\]*: sorry, unimplemented: dynamic stack allocation not supported" $text] {
+	    return "::unsupported::dynamic stack allocation not supported"
+	}
+    }
+
+    foreach p $additional_prunes {
+	if { [string length $p] > 0 } {
+	    # Following regexp matches a complete line containing $p.
+	    regsub -all "(^|\n)\[^\n\]*$p\[^\n\]*" $text "" text
+	}
+    }
+
+#    send_user "After:$text\n"
+    return $text
+}

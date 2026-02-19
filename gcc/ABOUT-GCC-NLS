@@ -1,0 +1,72 @@
+Notes on GCC's Native Language Support
+
+By and large, only diagnostic messages have been internationalized.
+Some work remains in other areas; for example, GCC does not yet allow
+non-ASCII letters in identifiers.
+
+Not all of GCC's diagnostic messages have been internationalized. Programs
+like `genattr' (in fact all gen* programs) are not internationalized, as
+their users are GCC maintainers who typically need to be able to read
+English anyway; internationalizing them would thus entail needless work for
+the human translators. Messages used for debugging, such as used in dumped
+tables, should also not be translated.
+
+The GCC library should not contain any messages that need
+internationalization, because it operates below the internationalization
+library.
+
+Unlike some other GNU programs, the GCC sources contain few instances
+of explicit translation calls like _("string").  Instead, the
+diagnostic printing routines automatically translate their arguments.
+For example, GCC source code should not contain calls like `error
+(_("unterminated comment"))'; it should contain calls like `error
+("unterminated comment")' instead, as it is the `error' function's
+responsibility to translate the message before the user sees it.
+
+In general, use no markup for strings that are the immediate format string
+argument of a diagnostic function.  Use G_("str") for strings that will be
+used as the format string for a diagnostic but are e.g. assigned to a
+variable first.  Use N_("str") for strings that are not diagnostic format
+strings, but will still be translated later.  Use _("str") for strings that
+will not be translated elsewhere.  It's important not to use _("str") in
+the initializer of a statically allocated variable; use one of the others
+instead and make sure that uses of that variable translate the string,
+whether directly with _(msg) or by passing it to a diagnostic or other
+function that performs the translation.
+
+Avoid using %s to compose a diagnostic message from multiple translatable
+strings; instead, write out the full diagnostic message for each variant.
+Only use %s for message components that do not need translation, such as
+keywords.
+
+By convention, any function parameter in the GCC sources whose name
+ends in `msgid' is expected to be a message requiring translation.
+If the parameter name ends with `gmsgid', it is assumed to be a GCC
+diagnostics format string requiring translation, if it ends with
+`cmsgid', it is assumed to be a format string for `printf' family
+of functions, requiring a translation.
+For example, the `error' function's first parameter is named `gmsgid'.
+GCC's exgettext script uses this convention to determine which
+function parameter strings need to be translated.  The exgettext
+script also assumes that any occurrence of `%eMSGID}' on a source
+line, where MSGID does not contain `%' or `}', corresponds to a
+message MSGID that requires translation; this is needed to identify
+diagnostics in GCC spec strings.
+The `G_(GMSGID)' macro defined in intl.h can be used to mark GCC diagnostics
+format strings as requiring translation, but other than that it is a
+no-op at runtime.
+
+If you modify source files, you'll need at least version 0.14.15 of the
+GNU gettext package to propagate the modifications to the translation
+tables.
+
+After having built and installed these gettext tools, you have to
+configure GCC with --enable-maintainer-mode to get the master catalog
+rebuilt.
+
+
+Copyright (C) 1998-2026 Free Software Foundation, Inc.
+
+Copying and distribution of this file, with or without modification,
+are permitted in any medium without royalty provided the copyright
+notice and this notice are preserved.

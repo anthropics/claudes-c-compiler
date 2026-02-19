@@ -1,0 +1,214 @@
+#! /bin/sh
+
+# Compare stripped copies of two given object files.
+
+# Copyright (C) 2007-2026 Free Software Foundation, Inc.
+# Originally by Alexandre Oliva <aoliva@redhat.com>
+
+# This file is part of GCC.
+
+# GCC is free software; you can redistribute it and/or modify it under
+# the terms of the GNU General Public License as published by the Free
+# Software Foundation; either version 3, or (at your option) any later
+# version.
+
+# GCC is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+# or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+# License for more details.
+
+# You should have received a copy of the GNU General Public License
+# along with GCC; see the file COPYING3.  If not see
+# <http://www.gnu.org/licenses/>.
+
+rm='rm -f'
+
+case $1 in
+-p | --preserve)
+  rm='echo preserving'
+  shift
+  ;;
+esac
+
+if test $# != 2; then
+  echo 'usage: compare-debug file1.o file2.o' >&2
+  exit 1
+fi
+
+if test ! -f "$1"; then
+  echo "$1" does not exist >&2
+  exit 1
+fi
+
+if test ! -f "$2"; then
+  echo "$2" does not exist >&2
+  exit 1
+fi
+
+suf1=stripped
+while test -f "$1.$suf1"; do
+  suf1=$suf1.
+done
+
+suf2=stripped
+while test -f "$2.$suf2"; do
+  suf2=$suf2.
+done
+
+trap 'rm -f "$1.$suf1" "$2.$suf2"' 0 1 2 15
+
+case `uname -s` in
+Darwin)
+  # The strip command on darwin does not remove all debug info.
+  # Fortunately, we can use ld to do it instead.
+  ld -S -r -no_uuid "$1" -o "$1.$suf1"
+  ld -S -r -no_uuid "$2" -o "$2.$suf2"
+  ;;
+*)
+  cp "$1" "$1.$suf1"
+  strip "$1.$suf1"
+
+  cp "$2" "$2.$suf2"
+  strip "$2.$suf2"
+  ;;
+esac
+
+remove_comment ()
+{
+  file=$1
+  opts=
+  for s in `objdump --section-headers "$file" | awk '{ print $2 }'`; do
+    case "$s" in
+    .comment*)
+      opts="$opts --remove-section $s"
+      ;;
+    esac
+  done
+  [ -n "$opts" ] && objcopy $opts $file
+}
+
+if cmp "$1.$suf1" "$2.$suf2"; then
+  status=0
+else
+  status=1
+
+  # Remove any .comment sections.
+  if (objcopy -v) 2>&1 | grep ' --remove-section' > /dev/null \
+     && (objdump --help) 2>&1 | grep ' --\[*section-\]*headers' > /dev/null; then
+    remove_comment "$1.$suf1"
+    remove_comment "$2.$suf2"
+    if cmp "$1.$suf1" "$2.$suf2"; then
+      status=0
+    fi
+  fi
+
+  # Assembler-generated CFI will add an .eh_frame section for -g not
+  # present in -g0.  Try to cope with it by checking that an .eh_frame
+  # section is present in either object file, and then stripping it
+  # off before re-comparing.
+
+  cmd=
+  cmp1=
+  cmp2=
+
+  for t in objdump readelf eu-readelf; do
+    if ($t --help) 2>&1 | grep ' --\[*section-\]*headers' > /dev/null; then
+      cmd=$t
+
+      $cmd --section-headers "$1.$suf1" | grep '\.eh_frame' > /dev/null
+      cmp1=$?
+
+      $cmd --section-headers "$2.$suf2" | grep '\.eh_frame' > /dev/null
+      cmp2=$?
+
+      break
+    fi
+  done
+
+  # If we found .eh_frame in one but not the other, or if we could not
+  # find a command to tell, or if there are LTO sections, try to strip
+  # off the .eh_frame and LTO sections from both.
+  if test "x$cmp1" != "x$cmp2" || test "x$cmd" = "x" ||
+     $cmd --section-headers "$1.$suf1" | grep '.gnu.lto_' > /dev/null ||
+     $cmd --section-headers "$2.$suf2" | grep '.gnu.lto_' > /dev/null ; then
+    suf3=$suf1.
+    while test -f "$1.$suf3"; do
+      suf3=$suf3.
+    done
+
+    suf4=$suf2.
+    while test -f "$2.$suf4"; do
+      suf4=$suf4.
+    done
+
+    trap 'rm -f "$1.$suf1" "$2.$suf2" "$1.$suf3" "$2.$suf4"' 0 1 2 15
+
+    echo stripping off .eh_frame and LTO sections, then retrying >&2
+
+    seclist=".eh_frame .rel.eh_frame .rela.eh_frame"
+    if test "x$cmd" != "x"; then
+      seclist="$seclist "`{ $cmd --section-headers "$1.$suf1"; $cmd --section-headers "$2.$suf2"; } | sed -n 's,.* \(\.gnu\.lto_[^ 	]*\).*,\1,p' | sort -u`
+    fi
+    rsopts=`for sec in $seclist; do echo " --remove-section $sec"; done`
+
+    if (objcopy -v) 2>&1 | grep ' --remove-section' > /dev/null; then
+      objcopy $rsopts "$1.$suf1" "$1.$suf3"
+      mv "$1.$suf3" "$1.$suf1"
+
+      objcopy $rsopts "$2.$suf2" "$2.$suf4"
+      mv "$2.$suf4" "$2.$suf2"
+    elif (strip --help) 2>&1 | grep ' --remove-section' > /dev/null; then
+      cp "$1.$suf1" "$1.$suf3"
+      strip $rsopts "$1.$suf3"
+      mv "$1.$suf3" "$1.$suf1"
+
+      cp "$2.$suf2" "$2.$suf4"
+      strip $rsopts "$2.$suf4"
+      mv "$2.$suf4" "$2.$suf2"
+    else
+      echo failed to strip off .eh_frame >&2
+    fi
+
+    trap 'rm -f "$1.$suf1" "$2.$suf2"' 0 1 2 15
+
+    if cmp "$1.$suf1" "$2.$suf2"; then
+      status=0
+    else
+      status=1
+    fi
+  fi
+fi
+
+$rm "$1.$suf1" "$2.$suf2"
+
+trap "exit $status; exit" 0 1 2 15
+
+# Replace the suffix in $1 and $2 with .*.gkd, compare them if a
+# single file is found by the globbing.
+base1=`echo "$1" | sed '$s,\.[^.]*$,,'` gkd1=
+for f in "$base1".*.gkd; do
+  if test "x$gkd1" != x; then
+    gkd1=
+    break
+  elif test -f "$f"; then
+    gkd1=$f
+  fi
+done
+base2=`echo "$2" | sed '$s,\.[^.]*$,,'` gkd2=
+for f in "$base2".*.gkd; do
+  if test "x$gkd2" != x; then
+    gkd2=
+    break
+  elif test -f "$f"; then
+    gkd2=$f
+  fi
+done
+if test "x$gkd1" != x || test "x$gkd2" != x; then
+  if cmp "${gkd1-/dev/null}" "${gkd2-/dev/null}"; then
+    :
+  else
+    status=$?
+  fi
+fi
+
+exit $status

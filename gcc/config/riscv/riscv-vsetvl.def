@@ -1,0 +1,180 @@
+/* VSETVL pass def for RISC-V 'V' Extension for GNU compiler.
+   Copyright (C) 2023-2026 Free Software Foundation, Inc.
+   Contributed by Juzhe Zhong (juzhe.zhong@rivai.ai), RiVAI Technologies Ltd.
+
+This file is part of GCC.
+
+GCC is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 3, or(at your option)
+any later version.
+
+GCC is distributed in the hope that it will be useful,
+but WITHOUT ANY, WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with GCC; see the file COPYING3.  If not see
+<http://www.gnu.org/licenses/>.  */
+
+/* DEF_XXX_RULE (prev_demand, next_demand, fused_demand, compatible_p,
+   available_p, fuse)
+       prev_demand: the prev vector insn's sew_lmul_type
+       next_demand: the next vector insn's sew_lmul_type
+       fused_demand: if them are compatible, change prev_info demand to the
+		     fused_demand after fuse prev_info and next_info
+       compatible_p: check if prev_demand and next_demand are compatible
+       available_p: check if prev_demand is available for next_demand
+       fuse: if them are compatible, how to modify prev_info  */
+
+#ifndef DEF_SEW_LMUL_RULE
+#define DEF_SEW_LMUL_RULE(prev_demand, next_demand, fused_demand,              \
+			  compatible_p, available_p, fuse)
+#endif
+
+#ifndef DEF_POLICY_RULE
+#define DEF_POLICY_RULE(prev_demand, next_demand, fused_demand, compatible_p,  \
+			available_p, fuse)
+#endif
+
+#ifndef DEF_AVL_RULE
+#define DEF_AVL_RULE(prev_demand, next_demand, fused_demand, compatible_p,     \
+		     available_p, fuse)
+#endif
+
+/* Define SEW and LMUL rules.  */
+DEF_SEW_LMUL_RULE (sew_lmul, sew_lmul, sew_lmul, sew_lmul_eq_p, sew_lmul_eq_p,
+		   nop)
+DEF_SEW_LMUL_RULE (sew_lmul, ratio_only, sew_lmul, ratio_eq_p, ratio_eq_p, nop)
+DEF_SEW_LMUL_RULE (sew_lmul, sew_only, sew_lmul, sew_eq_p, sew_eq_p, nop)
+DEF_SEW_LMUL_RULE (sew_lmul, ge_sew, sew_lmul,
+		   sew_ge_and_prev_sew_le_next_max_sew_p,
+		   sew_ge_and_prev_sew_le_next_max_sew_p, nop)
+DEF_SEW_LMUL_RULE (
+  sew_lmul, ratio_and_ge_sew, sew_lmul,
+  sew_ge_and_prev_sew_le_next_max_sew_and_ratio_eq_p,
+  sew_ge_and_prev_sew_le_next_max_sew_and_ratio_eq_p, nop)
+
+DEF_SEW_LMUL_RULE (ratio_only, sew_lmul, sew_lmul, ratio_eq_p, always_false,
+		   use_next_sew_lmul)
+/* use_next_sew_lmul for testcase no change.  */
+DEF_SEW_LMUL_RULE (ratio_only, ratio_only, ratio_only, ratio_eq_p, ratio_eq_p,
+		   use_next_sew_lmul)
+DEF_SEW_LMUL_RULE (ratio_only, sew_only, sew_lmul,
+		   prev_ratio_valid_for_next_sew_p, always_false,
+		   use_next_sew_with_prev_ratio)
+DEF_SEW_LMUL_RULE (ratio_only, ge_sew, ratio_and_ge_sew,
+		   prev_ratio_valid_for_next_sew_p, always_false,
+		   use_next_sew_with_prev_ratio)
+DEF_SEW_LMUL_RULE (ratio_only, ratio_and_ge_sew, ratio_and_ge_sew, ratio_eq_p,
+		   always_false, use_next_sew_lmul)
+
+DEF_SEW_LMUL_RULE (sew_only, sew_lmul, sew_lmul, sew_eq_p, always_false,
+		   use_next_sew_lmul)
+DEF_SEW_LMUL_RULE (sew_only, ratio_only, sew_lmul,
+		   next_ratio_valid_for_prev_sew_p, always_false,
+		   modify_lmul_with_next_ratio)
+DEF_SEW_LMUL_RULE (sew_only, sew_only, sew_only, sew_eq_p, sew_eq_p, nop)
+DEF_SEW_LMUL_RULE (sew_only, ge_sew, sew_only,
+		   sew_ge_and_prev_sew_le_next_max_sew_p, sew_ge_p, nop)
+DEF_SEW_LMUL_RULE (
+  sew_only, ratio_and_ge_sew, ratio_and_ge_sew,
+  sew_ge_and_prev_sew_le_next_max_sew_and_next_ratio_valid_for_prev_sew_p,
+  always_false, modify_lmul_with_next_ratio)
+
+DEF_SEW_LMUL_RULE (ge_sew, sew_lmul, sew_lmul,
+		   sew_le_and_next_sew_le_prev_max_sew_p, always_false,
+		   use_next_sew_lmul)
+DEF_SEW_LMUL_RULE (ge_sew, ratio_only, ratio_and_ge_sew,
+		   next_ratio_valid_for_prev_sew_p, always_false,
+		   modify_lmul_with_next_ratio)
+DEF_SEW_LMUL_RULE (ge_sew, sew_only, sew_only,
+		   sew_le_and_next_sew_le_prev_max_sew_p, always_false,
+		   use_next_sew)
+DEF_SEW_LMUL_RULE (ge_sew, ge_sew, ge_sew, max_sew_overlap_p, sew_ge_p,
+		   use_max_sew)
+DEF_SEW_LMUL_RULE (ge_sew, ratio_and_ge_sew, ratio_and_ge_sew,
+		   max_sew_overlap_and_next_ratio_valid_for_prev_sew_p,
+		   always_false, use_max_sew_and_lmul_with_next_ratio)
+
+DEF_SEW_LMUL_RULE (ratio_and_ge_sew, sew_lmul, sew_lmul,
+		   sew_le_and_next_sew_le_prev_max_sew_and_ratio_eq_p,
+		   always_false, use_next_sew_lmul)
+DEF_SEW_LMUL_RULE (ratio_and_ge_sew, ratio_only, ratio_and_ge_sew, ratio_eq_p,
+		   ratio_eq_p, use_max_sew_and_lmul_with_prev_ratio)
+DEF_SEW_LMUL_RULE (
+  ratio_and_ge_sew, sew_only, ratio_and_ge_sew,
+  sew_le_and_next_sew_le_prev_max_sew_and_prev_ratio_valid_for_next_sew_p,
+  sew_eq_p, use_next_sew_with_prev_ratio)
+DEF_SEW_LMUL_RULE (ratio_and_ge_sew, ge_sew, ratio_and_ge_sew,
+		   max_sew_overlap_and_prev_ratio_valid_for_next_sew_p,
+		   sew_ge_p, use_max_sew_and_lmul_with_prev_ratio)
+DEF_SEW_LMUL_RULE (ratio_and_ge_sew, ratio_and_ge_sew, ratio_and_ge_sew,
+		   max_sew_overlap_and_ratio_eq_p, sew_ge_and_ratio_eq_p,
+		   use_max_sew_and_lmul_with_prev_ratio)
+
+/* Define TAIL and MASK compatible and merge rules.  */
+
+DEF_POLICY_RULE (tail_mask_policy, tail_mask_policy, tail_mask_policy,
+		 tail_mask_policy_eq_p, tail_mask_policy_eq_p,
+		 use_tail_mask_policy)
+DEF_POLICY_RULE (tail_mask_policy, tail_policy_only, tail_mask_policy,
+		 tail_policy_eq_p, tail_policy_eq_p, use_tail_policy)
+DEF_POLICY_RULE (tail_mask_policy, mask_policy_only, tail_mask_policy,
+		 mask_policy_eq_p, mask_policy_eq_p, use_mask_policy)
+DEF_POLICY_RULE (tail_mask_policy, ignore_policy, tail_mask_policy, always_true,
+		 always_true, nop)
+
+DEF_POLICY_RULE (tail_policy_only, tail_mask_policy, tail_mask_policy,
+		 tail_policy_eq_p, always_false, use_mask_policy)
+DEF_POLICY_RULE (tail_policy_only, tail_policy_only, tail_policy_only,
+		 tail_policy_eq_p, tail_policy_eq_p, use_tail_policy)
+DEF_POLICY_RULE (tail_policy_only, mask_policy_only, tail_mask_policy,
+		 always_true, always_false, use_mask_policy)
+DEF_POLICY_RULE (tail_policy_only, ignore_policy, tail_policy_only, always_true,
+		 always_true, nop)
+
+DEF_POLICY_RULE (mask_policy_only, tail_mask_policy, tail_mask_policy,
+		 mask_policy_eq_p, always_false, use_tail_policy)
+DEF_POLICY_RULE (mask_policy_only, tail_policy_only, tail_mask_policy,
+		 always_true, always_false, use_tail_policy)
+DEF_POLICY_RULE (mask_policy_only, mask_policy_only, mask_policy_only,
+		 mask_policy_eq_p, mask_policy_eq_p, use_mask_policy)
+DEF_POLICY_RULE (mask_policy_only, ignore_policy, mask_policy_only, always_true,
+		 always_true, nop)
+
+DEF_POLICY_RULE (ignore_policy, tail_mask_policy, tail_mask_policy, always_true,
+		 always_false, use_tail_mask_policy)
+DEF_POLICY_RULE (ignore_policy, tail_policy_only, tail_policy_only, always_true,
+		 always_false, use_tail_policy)
+DEF_POLICY_RULE (ignore_policy, mask_policy_only, mask_policy_only, always_true,
+		 always_false, use_mask_policy)
+DEF_POLICY_RULE (ignore_policy, ignore_policy, ignore_policy, always_true,
+		 always_true, nop)
+
+/* Define AVL compatible and merge rules.  */
+
+DEF_AVL_RULE (avl, avl, avl, avl_equal_p, avl_equal_p, nop)
+DEF_AVL_RULE (avl, non_zero_avl, avl, avl_equal_or_prev_avl_non_zero_p,
+	      avl_equal_or_prev_avl_non_zero_p, nop)
+DEF_AVL_RULE (avl, ignore_avl, avl, always_true, always_true, nop)
+
+DEF_AVL_RULE (non_zero_avl, avl, avl,
+	      avl_equal_or_next_avl_non_zero_and_can_use_next_avl_p,
+	      always_false, use_next_avl_when_not_equal)
+
+DEF_AVL_RULE (non_zero_avl, non_zero_avl, non_zero_avl, always_true,
+	      always_true, nop)
+DEF_AVL_RULE (non_zero_avl, ignore_avl, non_zero_avl, always_true, always_true,
+	      nop)
+
+DEF_AVL_RULE (ignore_avl, avl, avl, can_use_next_avl_p, always_false,
+	      use_next_avl)
+DEF_AVL_RULE (ignore_avl, non_zero_avl, non_zero_avl, can_use_next_avl_p,
+	      always_false, use_next_avl)
+DEF_AVL_RULE (ignore_avl, ignore_avl, ignore_avl, always_true, always_true, nop)
+
+#undef DEF_SEW_LMUL_RULE
+#undef DEF_POLICY_RULE
+#undef DEF_AVL_RULE

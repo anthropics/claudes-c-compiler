@@ -1,0 +1,196 @@
+; Copyright (C) 2005-2026 Free Software Foundation, Inc.
+;
+; This file is part of GCC.
+;
+; GCC is free software; you can redistribute it and/or modify it under
+; the terms of the GNU General Public License as published by the Free
+; Software Foundation; either version 3, or (at your option) any later
+; version.
+;
+; GCC is distributed in the hope that it will be useful, but WITHOUT ANY
+; WARRANTY; without even the implied warranty of MERCHANTABILITY or
+; FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+; for more details.
+;
+; You should have received a copy of the GNU General Public License
+; along with GCC; see the file COPYING3.  If not see
+; <http://www.gnu.org/licenses/>.
+
+HeaderInclude
+config/ia64/ia64-opts.h
+
+; Which cpu are we scheduling for.
+Variable
+enum processor_type ia64_tune = PROCESSOR_ITANIUM2
+
+mbig-endian
+Target RejectNegative Mask(BIG_ENDIAN)
+Generate big endian code.
+
+mlittle-endian
+Target RejectNegative InverseMask(BIG_ENDIAN)
+Generate little endian code.
+
+mgnu-as
+Target Mask(GNU_AS)
+Generate code for GNU as.
+
+mgnu-ld
+Target Mask(GNU_LD)
+Generate code for GNU ld.
+
+mvolatile-asm-stop
+Target Mask(VOL_ASM_STOP)
+Emit stop bits before and after volatile extended asms.
+
+mregister-names
+Target Mask(REG_NAMES)
+Use in/loc/out register names.
+
+mno-sdata
+Target RejectNegative Mask(NO_SDATA)
+
+msdata
+Target RejectNegative InverseMask(NO_SDATA)
+Enable use of sdata/scommon/sbss.
+
+mno-pic
+Target RejectNegative Mask(NO_PIC)
+Generate code without GP reg.
+
+mconstant-gp
+Target RejectNegative Mask(CONST_GP)
+gp is constant (but save/restore gp on indirect calls).
+
+mauto-pic
+Target RejectNegative Mask(AUTO_PIC)
+Generate self-relocatable code.
+
+minline-float-divide-min-latency
+Target RejectNegative Var(TARGET_INLINE_FLOAT_DIV, 1)
+Generate inline floating point division, optimize for latency.
+
+minline-float-divide-max-throughput
+Target RejectNegative Var(TARGET_INLINE_FLOAT_DIV, 2) Init(2)
+Generate inline floating point division, optimize for throughput.
+
+mno-inline-float-divide
+Target RejectNegative Var(TARGET_INLINE_FLOAT_DIV, 0)
+
+minline-int-divide-min-latency
+Target RejectNegative Var(TARGET_INLINE_INT_DIV, 1)
+Generate inline integer division, optimize for latency.
+
+minline-int-divide-max-throughput
+Target RejectNegative Var(TARGET_INLINE_INT_DIV, 2)
+Generate inline integer division, optimize for throughput.
+
+mno-inline-int-divide
+Target RejectNegative Var(TARGET_INLINE_INT_DIV, 0)
+Do not inline integer division.
+
+minline-sqrt-min-latency
+Target RejectNegative Var(TARGET_INLINE_SQRT, 1)
+Generate inline square root, optimize for latency.
+
+minline-sqrt-max-throughput
+Target RejectNegative Var(TARGET_INLINE_SQRT, 2)
+Generate inline square root, optimize for throughput.
+
+mno-inline-sqrt
+Target RejectNegative Var(TARGET_INLINE_SQRT, 0)
+Do not inline square root.
+
+mdwarf2-asm
+Target Mask(DWARF2_ASM)
+Enable DWARF line debug info via GNU as.
+
+mearly-stop-bits
+Target Mask(EARLY_STOP_BITS)
+Enable earlier placing stop bits for better scheduling.
+
+mfixed-range=
+Target RejectNegative Joined Var(ia64_deferred_options) Defer
+Specify range of registers to make fixed.
+
+mtls-size=
+Target RejectNegative Joined UInteger Var(ia64_tls_size) Init(22)
+Specify bit size of immediate TLS offsets.
+
+mtune=
+Target RejectNegative Joined Enum(ia64_tune) Var(ia64_tune)
+Schedule code for given CPU.
+
+Enum
+Name(ia64_tune) Type(enum processor_type)
+Known Itanium CPUs (for use with the -mtune= option):
+
+EnumValue
+Enum(ia64_tune) String(itanium2) Value(PROCESSOR_ITANIUM2)
+
+EnumValue
+Enum(ia64_tune) String(mckinley) Value(PROCESSOR_ITANIUM2)
+
+msched-br-data-spec
+Target Var(mflag_sched_br_data_spec) Init(0)
+Use data speculation before reload.
+
+msched-ar-data-spec
+Target Var(mflag_sched_ar_data_spec) Init(1)
+Use data speculation after reload.
+
+msched-control-spec
+Target Var(mflag_sched_control_spec) Init(2)
+Use control speculation.
+
+msched-br-in-data-spec
+Target Var(mflag_sched_br_in_data_spec) Init(1)
+Use in block data speculation before reload.
+
+msched-ar-in-data-spec
+Target Var(mflag_sched_ar_in_data_spec) Init(1)
+Use in block data speculation after reload.
+
+msched-in-control-spec
+Target Var(mflag_sched_in_control_spec) Init(1)
+Use in block control speculation.
+
+msched-spec-ldc
+Target Var(mflag_sched_spec_ldc) Init(1)
+Use simple data speculation check.
+
+msched-spec-control-ldc
+Target Var(mflag_sched_spec_control_ldc) Init(0)
+Use simple data speculation check for control speculation.
+
+msched-prefer-non-data-spec-insns
+Target WarnRemoved Undocumented
+
+msched-prefer-non-control-spec-insns
+Target WarnRemoved Undocumented
+
+msched-count-spec-in-critical-path
+Target Var(mflag_sched_count_spec_in_critical_path) Init(0)
+Count speculative dependencies while calculating priority of instructions.
+
+msched-stop-bits-after-every-cycle
+Target Var(mflag_sched_stop_bits_after_every_cycle) Init(1)
+Place a stop bit after every cycle when scheduling.
+
+msched-fp-mem-deps-zero-cost
+Target Var(mflag_sched_fp_mem_deps_zero_cost) Init(0)
+Assume that floating-point stores and loads are not likely to cause conflict when placed into one instruction group.
+
+msched-max-memory-insns=
+Target RejectNegative Joined UInteger Var(ia64_max_memory_insns) Init(1)
+Soft limit on number of memory insns per instruction group, giving lower priority to subsequent memory insns attempting to schedule in the same insn group. Frequently useful to prevent cache bank conflicts.  Default value is 1.
+
+msched-max-memory-insns-hard-limit
+Target Var(mflag_sched_mem_insns_hard_limit) Init(0)
+Disallow more than 'msched-max-memory-insns' in instruction group. Otherwise, limit is 'soft' (prefer non-memory operations when limit is reached).
+
+msel-sched-dont-check-control-spec
+Target Var(mflag_sel_sched_dont_check_control_spec) Init(0)
+Don't generate checks for control speculation in selective scheduling.
+
+; This comment is to ensure we retain the blank line above.

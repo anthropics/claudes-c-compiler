@@ -1,0 +1,162 @@
+# Copyright (C) 2006-2026 Free Software Foundation, Inc.
+
+# This file is part of GCC.
+
+# GCC is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3, or (at your option)
+# any later version.
+
+# GCC is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+
+# You should have received a copy of the GNU General Public License
+# along with GCC; see the file COPYING3.  If not see
+# <http://www.gnu.org/licenses/>.
+
+# Targets using soft-fp should define the following variables:
+#
+# softfp_float_modes: a list of soft-float floating-point modes,
+#                     e.g. sf df
+# softfp_int_modes: a list of integer modes for which to define conversions,
+#                   e.g. si di
+# softfp_extensions: a list of extensions between floating-point modes,
+#                    e.g. sfdf
+# softfp_truncations: a list of truncations between floating-point modes,
+#                     e.g. dfsf
+#
+# Extensions and truncations should include those where only one mode
+# is a soft-float mode; for example, sftf where sf is hard-float and
+# tf is soft-float.
+#
+# If some additional functions should be built that are not implied by
+# the above settings, also define softfp_extras as a list of those
+# functions, e.g. unorddf2.
+#
+# If the functions should only be built as compat symbols for shared
+# libgcc, not available for new links, also define:
+#
+# softfp_compat := y
+#
+# If the libgcc2.c functions should not be replaced, also define:
+#
+# softfp_exclude_libgcc2 := y
+#
+# Avoiding replacing the libgcc2.c functions is a temporary measure
+# for targets with both hard-float and soft-float multilibs, since
+# these variables apply for all multilibs.  With toplevel libgcc,
+# soft-fp can be used conditionally on the multilib instead.
+#
+# If the code should not be compiled at all for some multilibs, define:
+#
+# softfp_wrap_start: text to put at the start of wrapper source files,
+#                    output with echo
+#                    e.g. '#ifndef __powerpc64__'
+# softfp_wrap_end: text to put at the end of wrapper source files,
+#                  e.g. '#endif'
+#
+# This is another temporary measure, and cannot be used together with
+# softfp_compat.
+
+softfp_float_funcs = add$(m)3 div$(m)3 eq$(m)2 ge$(m)2 le$(m)2 mul$(m)3 \
+  neg$(m)2 sub$(m)3 unord$(m)2
+softfp_floatint_funcs = fix$(m)$(i) fixuns$(m)$(i) \
+  float$(i)$(m) floatun$(i)$(m)
+softfp_floatbitint_funcs = fix$(m)bitint floatbitint$(m)
+softfp_bid_list := 
+ifeq ($(decimal_float),yes)
+softfp_bid_list += bitintpow10 \
+		   $(foreach m,sd dd td,fix$(m)bitint floatbitint$(m) \
+					fix$(m)ti fixuns$(m)ti \
+					floatti$(m) floatunti$(m))
+endif
+
+softfp_bitint_func_list :=  \
+  $(foreach m,sf df,$(softfp_floatbitint_funcs)) \
+  $(bitint_extras)
+
+softfp_func_list := \
+  $(foreach m,$(softfp_float_modes), \
+              $(softfp_float_funcs) \
+              $(foreach i,$(softfp_int_modes), \
+                          $(softfp_floatint_funcs))) \
+  $(foreach e,$(softfp_extensions),extend$(e)2) \
+  $(foreach t,$(softfp_truncations),trunc$(t)2) \
+  $(softfp_extras)
+
+ifeq ($(softfp_exclude_libgcc2),y)
+# This list is taken from mklibgcc.in and doesn't presently allow for
+# 64-bit targets where si should become di and di should become ti.
+softfp_func_list := $(filter-out floatdidf floatdisf fixunsdfsi fixunssfsi \
+  fixunsdfdi fixdfdi fixunssfdi fixsfdi fixxfdi fixunsxfdi \
+  floatdixf fixunsxfsi fixtfdi fixunstfdi floatditf \
+  floatundidf floatundisf floatundixf floatunditf,$(softfp_func_list))
+endif
+
+ifeq ($(softfp_compat),y)
+softfp_file_list := $(addsuffix .c,$(softfp_func_list)) \
+		    $(addsuffix .c,$(softfp_bitint_func_list))
+
+ifeq ($(enable_shared),yes)
+softfp_map_dep := libgcc.map.in
+else
+softfp_map_dep :=
+endif
+softfp_set_symver = echo "asm (\".symver $(1),$(1)@`$(AWK) -f $(srcdir)/find-symver.awk -v symbol=$(1) libgcc.map.in`\");" >> $@
+$(softfp_file_list): $(softfp_map_dep)
+	echo '#ifdef SHARED' > $@
+	echo '#include "soft-fp/$@"' >> $@
+ifeq ($(enable_shared),yes)
+	$(call softfp_set_symver,__$(*F))
+	if grep strong_alias $(srcdir)/soft-fp/$@ > /dev/null; then \
+	  alias=`grep strong_alias $(srcdir)/soft-fp/$@ | sed -e 's/.*, *//' -e 's/).*//'`; \
+	  $(call softfp_set_symver,$$alias); \
+	fi
+endif
+	echo '#endif' >> $@
+else
+ifneq ($(softfp_wrap_start),)
+softfp_file_list := $(addsuffix .c,$(softfp_func_list))
+
+$(softfp_file_list):
+	echo $(softfp_wrap_start) > $@
+	echo '#include "soft-fp/$@"' >> $@
+	echo $(softfp_wrap_end) >> $@
+else
+softfp_file_list := \
+  $(addsuffix .c,$(addprefix $(srcdir)/soft-fp/,$(softfp_func_list)))
+endif
+softfp_file_list += \
+  $(addsuffix .c,$(addprefix $(srcdir)/soft-fp/,$(softfp_bitint_func_list)))
+endif
+softfp_bid_file_list := \
+  $(addsuffix .c,$(addprefix $(srcdir)/soft-fp/,$(softfp_bid_list)))
+
+# Disable missing prototype and type limit warnings.  The prototypes
+# for the functions in the soft-fp files have not been brought across
+# from glibc.
+
+soft-fp-objects-base = $(basename $(notdir $(softfp_file_list)))
+
+soft-fp-objects = $(addsuffix $(objext), $(soft-fp-objects-base)) \
+  $(addsuffix _s$(objext), $(soft-fp-objects-base))
+
+$(soft-fp-objects) : INTERNAL_CFLAGS += -Wno-missing-prototypes -Wno-type-limits $(softfp_cflags)
+
+LIB2ADD += $(softfp_file_list)
+LIB2ADD_ST += $(softfp_bid_file_list)
+
+ifneq ($(softfp_exclude_libgcc2),y)
+# Functions in libgcc2.c are excluded for each soft-float mode (a
+# target may have both soft-float and hard-float modes), for the fixed
+# list of integer modes (si and di) for which libgcc2.c defines any
+# such functions.  Depending on the target, the si and di symbols may
+# in fact define di and ti functions.
+
+LIB2FUNCS_EXCLUDE += \
+  $(addprefix _,$(foreach m,$(softfp_float_modes), \
+                            $(foreach i,si di, \
+                                        $(softfp_floatint_funcs))))
+endif

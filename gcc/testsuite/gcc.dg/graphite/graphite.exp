@@ -1,0 +1,88 @@
+#   Copyright (C) 2006-2026 Free Software Foundation, Inc.
+
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+# 
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+# 
+# You should have received a copy of the GNU General Public License
+# along with GCC; see the file COPYING3.  If not see
+# <http://www.gnu.org/licenses/>.
+
+# GCC testsuite that uses the `dg.exp' driver.
+
+# Load support procs.
+load_lib gcc-dg.exp
+
+if ![check_effective_target_fgraphite] {
+  return
+}
+
+# Remove VALUE from LIST_VARIABLE.
+proc lremove {list_variable value} {
+    upvar 1 $list_variable var
+    set idx [lsearch -exact $var $value]
+    set var [lreplace $var $idx $idx]
+}
+
+# The default action for a test is 'compile'.  Save current default.
+global dg-do-what-default
+set save-dg-do-what-default ${dg-do-what-default}
+
+# Initialize `dg'.
+dg-init
+
+# Set up a list of effective targets to run vector tests for all supported
+# targets.
+global EFFECTIVE_TARGETS
+set EFFECTIVE_TARGETS ""
+
+set wait_to_run_files [lsort [glob -nocomplain $srcdir/$subdir/*.c ] ]
+set scop_files        [lsort [glob -nocomplain $srcdir/$subdir/scop-*.c ] ]
+set id_files          [lsort [glob -nocomplain $srcdir/$subdir/id-*.c ] ]
+set run_id_files      [lsort [glob -nocomplain $srcdir/$subdir/run-id-*.c ] ]
+set opt_files         [lsort [glob -nocomplain $srcdir/$subdir/interchange-*.c \
+					       $srcdir/$subdir/uns-interchange-*.c \
+					       $srcdir/$subdir/isl-ast-gen-*.c \
+					       $srcdir/$subdir/fuse-*.c \
+					       $srcdir/$subdir/block-*.c \
+					       $srcdir/$subdir/uns-block-*.c ] ]
+set vect_files        [lsort [glob -nocomplain $srcdir/$subdir/vect-*.c ] ]
+
+# Tests to be compiled.
+set dg-do-what-default compile
+dg-runtest $scop_files        "" "-O2 -fgraphite -fdump-tree-graphite-all -fno-finite-loops"
+dg-runtest $id_files          "" "-O2 -fgraphite-identity -ffast-math -fdump-tree-graphite-details"
+
+# Tests to be run.
+set dg-do-what-default run
+dg-runtest $run_id_files      "" "-O2 -fgraphite-identity -fdump-tree-graphite-details"
+dg-runtest $opt_files         "" "-O2 -ffast-math -floop-nest-optimize -fdump-tree-graphite-all"
+
+# Vectorizer tests, to be run or compiled, depending on target capabilities.
+global DEFAULT_VECTCFLAGS
+set DEFAULT_VECTCFLAGS "-O2 -fgraphite-identity -ftree-vectorize -fno-vect-cost-model -fdump-tree-vect-details -ffast-math"
+
+if [check_vect_support_and_set_flags] {
+    et-dg-runtest dg-runtest $vect_files        "" $DEFAULT_VECTCFLAGS
+}
+
+# The default action for the rest of the files is 'compile'.
+set dg-do-what-default compile
+foreach f $scop_files        {lremove wait_to_run_files $f}
+foreach f $id_files          {lremove wait_to_run_files $f}
+foreach f $run_id_files      {lremove wait_to_run_files $f}
+foreach f $opt_files         {lremove wait_to_run_files $f}
+foreach f $vect_files        {lremove wait_to_run_files $f}
+dg-runtest $wait_to_run_files "" "-ansi -pedantic-errors"
+
+# Clean up.
+set dg-do-what-default ${save-dg-do-what-default}
+
+# All done.
+dg-finish

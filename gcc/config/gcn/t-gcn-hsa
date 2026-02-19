@@ -1,0 +1,58 @@
+#  Copyright (C) 2016-2026 Free Software Foundation, Inc.
+#
+#  This file is free software; you can redistribute it and/or modify it under
+#  the terms of the GNU General Public License as published by the Free
+#  Software Foundation; either version 3 of the License, or (at your option)
+#  any later version.
+#
+#  This file is distributed in the hope that it will be useful, but WITHOUT
+#  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+#  FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+#  for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with GCC; see the file COPYING3.  If not see
+#  <http://www.gnu.org/licenses/>.
+
+GTM_H += $(HASH_TABLE_H)
+
+CFLAGS-mkoffload.o += $(DRIVER_DEFINES) \
+	-DGCC_INSTALL_NAME=\"$(GCC_INSTALL_NAME)\"
+mkoffload.o: $(srcdir)/config/gcn/mkoffload.cc
+	$(COMPILE) $<
+	$(POSTCOMPILE)
+ALL_HOST_OBJS += mkoffload.o
+
+mkoffload$(exeext): mkoffload.o collect-utils.o libcommon-target.a \
+		      $(LIBIBERTY) $(LIBDEPS)
+	+$(LINKER) $(ALL_LINKERFLAGS) $(LDFLAGS) -o $@ \
+	  mkoffload.o collect-utils.o libcommon-target.a $(LIBIBERTY) $(LIBS)
+
+CFLAGS-gcn-run.o += -DVERSION_STRING=$(PKGVERSION_s)
+COMPILE-gcn-run.o = $(filter-out -fno-rtti,$(COMPILE))
+gcn-run.o: $(srcdir)/config/gcn/gcn-run.cc
+	$(COMPILE-gcn-run.o) -x c -std=gnu11 -Wno-error=pedantic $<
+	$(POSTCOMPILE)
+ALL_HOST_OBJS += gcn-run.o
+
+gcn-run$(exeext): gcn-run.o
+	+$(LINKER) $(ALL_LINKERFLAGS) $(LDFLAGS) -o $@ $< -ldl
+
+empty :=
+space := $(empty) $(empty)
+comma := ,
+multilib_list := $(subst $(comma),$(space),$(TM_MULTILIB_CONFIG)) 
+MULTILIB_OPTIONS = $(subst $(space),/,$(addprefix march=,$(multilib_list)))
+MULTILIB_DIRNAMES = $(multilib_list)
+
+gcn-tree.o: $(srcdir)/config/gcn/gcn-tree.cc
+	$(COMPILE) $<
+	$(POSTCOMPILE)
+ALL_HOST_OBJS += gcn-tree.o
+
+$(srcdir)/config/gcn/gcn-tables.opt: $(srcdir)/config/gcn/gcn-devices.def $(srcdir)/config/gcn/gen-opt-tables.awk
+	$(AWK) -f $(srcdir)/config/gcn/gen-opt-tables.awk $< > $@
+
+gcn-device-macros.h: $(srcdir)/config/gcn/gcn-devices.def $(srcdir)/config/gcn/gen-gcn-device-macros.awk
+	$(AWK) -f $(srcdir)/config/gcn/gen-gcn-device-macros.awk $< > $@
+generated_files += gcn-device-macros.h

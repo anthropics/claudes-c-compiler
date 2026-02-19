@@ -1,0 +1,40 @@
+Subdirectories:
+
+abi	 Tests for ABI compatibility -- mangling, object layout, etc.
+bprob	 Tests for functionality of profile-directed block ordering.
+charset	 Tests for input character set translation.
+compat	 Tests for binary compatibility (consistency, not ABI conformance).
+conversion Tests for correct type conversions.
+cpp	 Tests for the preprocessor.
+debug	 Tests for debugging options.
+eh	 Tests for exception handling.
+expr     Tests for expressions.
+ext	 Tests for GNU language extensions.
+gcov	 Tests for GCOV (code coverage) support.
+inherit	 Tests for inheritance -- virtual functions, multiple inheritance, etc.
+init	 Tests for initialization semantics, constructors/destructors, etc.
+lookup	 Tests for lookup semantics, namespaces, using, etc.
+lto	 Tests for Link Time Optimization.
+opt	 Tests for fixes of bugs with particular optimizations.
+overload Tests for overload resolution and conversions.
+parse	 Tests for parsing.
+pch	 Tests for precompiled headers.
+plugin   Tests for plugin support.
+rtti	 Tests for run-time type identification (typeid, dynamic_cast, etc.)
+template Tests for templates.
+tc1	 Tests for Technical Corrigendum 1 conformance.
+tls	 Tests for support of thread-local data.
+tree-ssa Tests for Tree SSA optimizations.
+warn	 Tests for compiler warnings.
+
+other	 Tests that don't fit into one of the other categories.
+
+special	 Tests that need custom expect code to run them; see special/ecos.exp
+	 for an example.
+
+
+Copyright (C) 2001-2026 Free Software Foundation, Inc.
+
+Copying and distribution of this file, with or without modification,
+are permitted in any medium without royalty provided the copyright
+notice and this notice are preserved.

@@ -1,0 +1,58 @@
+# -*- shell-script -*-
+#   Copyright (C) 2013-2026 Free Software Foundation, Inc.
+
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not see <http://www.gnu.org/licenses/>.
+
+# This is the target specific configuration file.  This is invoked by the
+# autoconf generated configure script.  Putting it in a separate shell file
+# lets us skip running autoconf when modifying target specific information.
+
+# Filter out unsupported systems.
+VTV_SUPPORTED=no
+case "${target}" in
+  *-*-*android*)
+	;;
+  *-*-solaris2.1[1-9]*)
+        # Vtable verification requires constructor priority support and
+        # dl_iterate_phdr.  The former requires a dynamic check in
+        # configure.ac, the latter is fully present in Solaris 11 only.
+	VTV_SUPPORTED=yes
+	;;
+  x86_64-*-linux* | i?86-*-linux*)
+	VTV_SUPPORTED=yes
+	;;
+  x86_64-*-cygwin* | i?86-*-cygwin*)
+	VTV_SUPPORTED=yes
+	;;
+  x86_64-*-mingw* | i?86-*-mingw*)
+	VTV_SUPPORTED=yes
+	;;
+  powerpc*-*-linux*)
+	;;
+  sparc*-*-linux*)
+	;;
+  arm*-*-linux*)
+	VTV_SUPPORTED=yes
+	;;
+  aarch64*-*-linux*)
+	VTV_SUPPORTED=yes
+	;;
+  x86_64-*-darwin[1]* | i?86-*-darwin[1]*)
+	;;
+  loongarch*-*-linux*)
+	VTV_SUPPORTED=yes
+	;;
+  *)
+	;;
+esac

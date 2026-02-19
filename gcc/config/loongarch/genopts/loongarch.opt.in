@@ -1,0 +1,339 @@
+; Copyright (C) 2021-2026 Free Software Foundation, Inc.
+;
+; This file is part of GCC.
+;
+; GCC is free software; you can redistribute it and/or modify it under
+; the terms of the GNU General Public License as published by the Free
+; Software Foundation; either version 3, or (at your option) any later
+; version.
+;
+; GCC is distributed in the hope that it will be useful, but WITHOUT
+; ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+; or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+; License for more details.
+;
+; You should have received a copy of the GNU General Public License
+; along with GCC; see the file COPYING3.  If not see
+; <http://www.gnu.org/licenses/>.
+;
+
+HeaderInclude
+config/loongarch/loongarch-opts.h
+
+HeaderInclude
+config/loongarch/loongarch-str.h
+
+TargetVariable
+unsigned int recip_mask = 0
+
+; ISA related options
+;; Base ISA
+Enum
+Name(isa_base) Type(int)
+Basic ISAs of LoongArch:
+
+EnumValue
+Enum(isa_base) String(@@STR_ISA_BASE_LA32@@) Value(ISA_BASE_LA32)
+
+EnumValue
+Enum(isa_base) String(@@STR_ISA_BASE_LA32R@@) Value(ISA_BASE_LA32R)
+
+EnumValue
+Enum(isa_base) String(@@STR_ISA_BASE_LA64@@) Value(ISA_BASE_LA64)
+
+;; ISA extensions / adjustments
+Enum
+Name(isa_ext_fpu) Type(int)
+FPU types of LoongArch:
+
+EnumValue
+Enum(isa_ext_fpu) String(@@STR_NONE@@) Value(ISA_EXT_NONE)
+
+EnumValue
+Enum(isa_ext_fpu) String(@@STR_ISA_EXT_FPU32@@) Value(ISA_EXT_FPU32)
+
+EnumValue
+Enum(isa_ext_fpu) String(@@STR_ISA_EXT_FPU64@@) Value(ISA_EXT_FPU64)
+
+m@@OPTSTR_ISA_EXT_FPU@@=
+Target RejectNegative Joined ToLower Enum(isa_ext_fpu) Var(la_opt_fpu) Init(M_OPT_UNSET) Save
+-m@@OPTSTR_ISA_EXT_FPU@@=FPU	Generate code for the given FPU.
+
+m@@OPTSTR_ISA_EXT_FPU@@=@@STR_ISA_EXT_FPU0@@
+Target RejectNegative Alias(m@@OPTSTR_ISA_EXT_FPU@@=,@@STR_NONE@@)
+
+m@@OPTSTR_SOFT_FLOAT@@
+Target Driver Defer Var(la_deferred_options) RejectNegative Negative(m@@OPTSTR_SINGLE_FLOAT@@)
+Prevent the use of all hardware floating-point instructions.
+
+m@@OPTSTR_SINGLE_FLOAT@@
+Target Driver Defer Var(la_deferred_options) RejectNegative Negative(m@@OPTSTR_DOUBLE_FLOAT@@)
+Restrict the use of hardware floating-point instructions to 32-bit operations.
+
+m@@OPTSTR_DOUBLE_FLOAT@@
+Target Driver Defer Var(la_deferred_options) RejectNegative Negative(m@@OPTSTR_SOFT_FLOAT@@)
+Allow hardware floating-point instructions to cover both 32-bit and 64-bit operations.
+
+Enum
+Name(isa_ext_simd) Type(int)
+SIMD extension levels of LoongArch:
+
+EnumValue
+Enum(isa_ext_simd) String(@@STR_NONE@@) Value(ISA_EXT_NONE)
+
+EnumValue
+Enum(isa_ext_simd) String(@@STR_ISA_EXT_LSX@@) Value(ISA_EXT_SIMD_LSX)
+
+EnumValue
+Enum(isa_ext_simd) String(@@STR_ISA_EXT_LASX@@) Value(ISA_EXT_SIMD_LASX)
+
+m@@OPTSTR_ISA_EXT_SIMD@@=
+Target RejectNegative Joined ToLower Enum(isa_ext_simd) Var(la_opt_simd) Init(M_OPT_UNSET) Save
+-m@@OPTSTR_ISA_EXT_SIMD@@=SIMD	Generate code for the given SIMD extension.
+
+m@@STR_ISA_EXT_LSX@@
+Target Driver Defer Var(la_deferred_options)
+Enable LoongArch SIMD Extension (LSX, 128-bit).
+
+m@@STR_ISA_EXT_LASX@@
+Target Driver Defer Var(la_deferred_options)
+Enable LoongArch Advanced SIMD Extension (LASX, 256-bit).
+
+;; Base target models (implies ISA & tune parameters)
+Enum
+Name(arch_type) Type(int)
+LoongArch ARCH presets:
+
+EnumValue
+Enum(arch_type) String(@@STR_CPU_NATIVE@@) Value(ARCH_NATIVE)
+
+EnumValue
+Enum(arch_type) String(@@STR_ARCH_ABI_DEFAULT@@) Value(ARCH_ABI_DEFAULT)
+
+EnumValue
+Enum(arch_type) String(@@STR_CPU_LOONGARCH64@@) Value(ARCH_LOONGARCH64)
+
+EnumValue
+Enum(arch_type) String(@@STR_CPU_LA464@@) Value(ARCH_LA464)
+
+EnumValue
+Enum(arch_type) String(@@STR_CPU_LA664@@) Value(ARCH_LA664)
+
+EnumValue
+Enum(arch_type) String(@@STR_ARCH_LA64V1_0@@) Value(ARCH_LA64V1_0)
+
+EnumValue
+Enum(arch_type) String(@@STR_ARCH_LA64V1_1@@) Value(ARCH_LA64V1_1)
+
+EnumValue
+Enum(arch_type) String(@@STR_ARCH_LA32V1_0@@) Value(ARCH_LA32V1_0)
+
+EnumValue
+Enum(arch_type) String(@@STR_ARCH_LA32RV1_0@@) Value(ARCH_LA32RV1_0)
+
+m@@OPTSTR_ARCH@@=
+Target RejectNegative Joined Enum(arch_type) Var(la_opt_cpu_arch) Init(M_OPT_UNSET) Save
+-m@@OPTSTR_ARCH@@=PROCESSOR	Generate code for the given PROCESSOR ISA.
+
+Enum
+Name(tune_type) Type(int)
+LoongArch TUNE presets:
+
+EnumValue
+Enum(tune_type) String(@@STR_CPU_NATIVE@@) Value(TUNE_NATIVE)
+
+EnumValue
+Enum(tune_type) String(@@STR_TUNE_GENERIC@@) Value(TUNE_GENERIC)
+
+EnumValue
+Enum(tune_type) String(@@STR_CPU_LOONGARCH64@@) Value(TUNE_LOONGARCH64)
+
+EnumValue
+Enum(tune_type) String(@@STR_CPU_LA464@@) Value(TUNE_LA464)
+
+EnumValue
+Enum(tune_type) String(@@STR_CPU_LA664@@) Value(TUNE_LA664)
+
+EnumValue
+Enum(tune_type) String(@@STR_TUNE_LOONGARCH32@@) Value(TUNE_LOONGARCH32)
+
+m@@OPTSTR_TUNE@@=
+Target RejectNegative Joined Enum(tune_type) Var(la_opt_cpu_tune) Init(M_OPT_UNSET) Save
+-m@@OPTSTR_TUNE@@=PROCESSOR	Generate optimized code for PROCESSOR.
+
+
+; ABI related options
+; (ISA constraints on ABI are handled dynamically)
+
+;; Base ABI
+Enum
+Name(abi_base) Type(int)
+Base ABI types for LoongArch:
+
+EnumValue
+Enum(abi_base) String(@@STR_ABI_BASE_ILP32D@@) Value(ABI_BASE_ILP32D)
+
+EnumValue
+Enum(abi_base) String(@@STR_ABI_BASE_ILP32F@@) Value(ABI_BASE_ILP32F)
+
+EnumValue
+Enum(abi_base) String(@@STR_ABI_BASE_ILP32S@@) Value(ABI_BASE_ILP32S)
+
+EnumValue
+Enum(abi_base) String(@@STR_ABI_BASE_LP64D@@) Value(ABI_BASE_LP64D)
+
+EnumValue
+Enum(abi_base) String(@@STR_ABI_BASE_LP64F@@) Value(ABI_BASE_LP64F)
+
+EnumValue
+Enum(abi_base) String(@@STR_ABI_BASE_LP64S@@) Value(ABI_BASE_LP64S)
+
+m@@OPTSTR_ABI_BASE@@=
+Target RejectNegative Joined ToLower Enum(abi_base) Var(la_opt_abi_base) Init(M_OPT_UNSET)
+-m@@OPTSTR_ABI_BASE@@=BASEABI	Generate code that conforms to the given BASEABI.
+
+
+;; ABI Extension
+Variable
+int la_opt_abi_ext = M_OPT_UNSET
+
+mbranch-cost=
+Target RejectNegative Joined UInteger Var(la_branch_cost) Save
+-mbranch-cost=COST	Set the cost of branches to roughly COST instructions.
+
+maddr-reg-reg-cost=
+Target RejectNegative Joined UInteger Var(la_addr_reg_reg_cost) Save
+-maddr-reg-reg-cost=COST  Set the cost of ADDRESS_REG_REG to the value calculated by COST.
+
+mcheck-zero-division
+Target Mask(CHECK_ZERO_DIV) Save
+Trap on integer divide by zero.
+
+mcond-move-int
+Target Mask(COND_MOVE_INT) Save
+Conditional moves for integral are enabled.
+
+mcond-move-float
+Target Mask(COND_MOVE_FLOAT) Save
+Conditional moves for float are enabled.
+
+mmemcpy
+Target Mask(MEMCPY) Save
+Prevent optimizing block moves, which is also the default behavior of -Os.
+
+mstrict-align
+Target Mask(STRICT_ALIGN) Save
+Do not generate unaligned memory accesses.
+
+mmax-inline-memcpy-size=
+Target Joined RejectNegative UInteger Var(la_max_inline_memcpy_size) Init(1024) Save
+-mmax-inline-memcpy-size=SIZE	Set the max size of memcpy to inline, default is 1024.
+
+mbreak-code=
+Target Joined UInteger Var(la_break_code) Init(-1) Save
+-mbreak-code=CODE	Use 'break CODE' for traps supposed to be unrecoverable, or an 'amswap.w' instruction leading to INE if CODE is out of range.
+
+Enum
+Name(explicit_relocs) Type(int)
+The code model option names for -mexplicit-relocs:
+
+EnumValue
+Enum(explicit_relocs) String(auto) Value(EXPLICIT_RELOCS_AUTO)
+
+EnumValue
+Enum(explicit_relocs) String(none) Value(EXPLICIT_RELOCS_NONE)
+
+EnumValue
+Enum(explicit_relocs) String(always) Value(EXPLICIT_RELOCS_ALWAYS)
+
+mexplicit-relocs=
+Target RejectNegative Joined Enum(explicit_relocs) Var(la_opt_explicit_relocs) Init(M_OPT_UNSET)
+Use %reloc() assembly operators.
+
+mexplicit-relocs
+Target Alias(mexplicit-relocs=, always, none)
+Use %reloc() assembly operators (for backward compatibility).
+
+mrecip=
+Target RejectNegative Joined Var(la_recip_name) Save
+Control generation of reciprocal estimates.
+
+mrecip
+Target Alias(mrecip=, all, none)
+Generate approximate reciprocal divide and square root for better throughput.
+
+; The code model option names for -mcmodel.
+Enum
+Name(cmodel) Type(int)
+The code model option names for -mcmodel:
+
+EnumValue
+Enum(cmodel) String(@@STR_CMODEL_NORMAL@@) Value(CMODEL_NORMAL)
+
+EnumValue
+Enum(cmodel) String(@@STR_CMODEL_TINY@@) Value(CMODEL_TINY)
+
+EnumValue
+Enum(cmodel) String(@@STR_CMODEL_TS@@) Value(CMODEL_TINY_STATIC)
+
+EnumValue
+Enum(cmodel) String(@@STR_CMODEL_MEDIUM@@) Value(CMODEL_MEDIUM)
+
+EnumValue
+Enum(cmodel) String(@@STR_CMODEL_LARGE@@) Value(CMODEL_LARGE)
+
+EnumValue
+Enum(cmodel) String(@@STR_CMODEL_EXTREME@@) Value(CMODEL_EXTREME)
+
+mcmodel=
+Target RejectNegative Joined Enum(cmodel) Var(la_opt_cmodel) Init(M_OPT_UNSET) Save
+Specify the code model.
+
+mdirect-extern-access
+Target Mask(DIRECT_EXTERN_ACCESS) Save
+Avoid using the GOT to access external symbols.
+
+mrelax
+Target Mask(LINKER_RELAXATION)
+Take advantage of linker relaxations to reduce the number of instructions
+required to materialize symbol addresses.
+
+mpass-mrelax-to-as
+Driver Var(la_pass_mrelax_to_as) Init(HAVE_AS_MRELAX_OPTION)
+Pass -mrelax or -mno-relax option to the assembler.
+
+Enum
+Name(tls_type) Type(int)
+The possible TLS dialects:
+
+EnumValue
+Enum(tls_type) String(trad) Value(TLS_TRADITIONAL)
+
+EnumValue
+Enum(tls_type) String(desc) Value(TLS_DESCRIPTORS)
+
+mtls-dialect=
+Target RejectNegative Joined Enum(tls_type) Var(la_opt_tls_dialect) Init(M_OPT_UNSET) Save
+Specify TLS dialect.
+
+-param=loongarch-vect-unroll-limit=
+Target Joined UInteger Var(la_vect_unroll_limit) Init(6) IntegerRange(1, 64) Param
+Used to limit unroll factor which indicates how much the autovectorizer may
+unroll a loop.  The default value is 6.
+
+-param=loongarch-vect-issue-info=
+Target Undocumented Joined UInteger Var(la_vect_issue_info) Init(4) IntegerRange(1, 64) Param
+Indicate how many non memory access vector instructions can be issued per
+cycle, it's used in unroll factor determination for autovectorizer.  The
+default value is 4.
+
+; Features added during ISA evolution.  This concept is different from ISA
+; extension, read Section 1.5 of LoongArch v1.10 Volume 1 for the
+; explanation.  These features may be implemented and enumerated with
+; CPUCFG independently, so we use bit flags to specify them.
+TargetVariable
+HOST_WIDE_INT la_isa_evolution = 0
+
+mannotate-tablejump
+Target Mask(ANNOTATE_TABLEJUMP) Save
+Annotate table jump instruction (jr {reg}) to correlate it with the jump table.

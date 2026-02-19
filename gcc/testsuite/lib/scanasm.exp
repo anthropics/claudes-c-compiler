@@ -1,0 +1,1150 @@
+# Copyright (C) 2000-2026 Free Software Foundation, Inc.
+
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+# 
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+# 
+# You should have received a copy of the GNU General Public License
+# along with GCC; see the file COPYING3.  If not see
+# <http://www.gnu.org/licenses/>.
+
+# Various utilities for scanning assembler output, used by gcc-dg.exp and
+# g++-dg.exp.
+
+# Utility for scanning compiler result, invoked via dg-final.
+
+# Transform newline and similar characters into their escaped form.
+proc make_pattern_printable { pattern } {
+    return [string map {\t \\t \n \\n \r \\r \\ \\\\} $pattern]
+}
+
+# Append to ARGS to make it suitable for use by dg-scan to indicate
+# that encoding ENC should be used when reading from the file.
+
+proc append_encoding_arg { args enc } {
+    if { [llength $args] < 2 } {
+	# Add target selector.
+	lappend args { target "*-*-*" }
+    }
+    # Add encoding ENC.
+    lappend args $enc
+    return $args
+}
+
+# Scan the OUTPUT_FILE for a pattern.  If it is present and POSITIVE
+# is non-zero, or it is not present and POSITIVE is zero, the test
+# passes.  The ORIG_ARGS is the list of arguments provided by dg-final
+# to scan-assembler.  The first element in ORIG_ARGS is the regular
+# expression to look for in the file.  The second element, if present,
+# is a DejaGNU target selector.  The third element, if present, is the
+# encoding to use when reading from the file.
+
+proc dg-scan { name positive testcase output_file orig_args } {
+    if { [llength $orig_args] < 1 } {
+	error "$name: too few arguments"
+        return
+    }
+    if { [llength $orig_args] > 3 } {
+	error "$name: too many arguments"
+	return
+    }
+    if { [llength $orig_args] >= 2 } {
+	switch [dg-process-target [lindex $orig_args 1]] {
+	    "S" { }
+	    "N" { return }
+	    "F" { setup_xfail "*-*-*" }
+	    "P" { }
+	}
+    }
+
+    set pattern [lindex $orig_args 0]
+    set printable_pattern [make_pattern_printable $pattern]
+
+    set files [dg_glob_remote $output_file]
+    if { $files == "" } {
+	verbose -log "$testcase: output file does not exist"
+	unresolved "$testcase $name $printable_pattern"
+	return
+    }
+    set fd [open $output_file r]
+    if { [llength $orig_args] >= 3 } {
+	set file_encoding [lindex $orig_args 2]
+	fconfigure $fd -encoding $file_encoding
+    }
+    set text [read $fd]
+    close $fd
+    if { [string compare -length 14 $name scan-assembler] == 0 } {
+      # Remove LTO sections.
+      # ??? Somehow, .*? is still greedy.
+      # regsub -all {(^|\n)[[:space:]]*\.section[[:space:]]*"?\.gnu\.lto_.*?\n(?=[[:space:]]*\.text\n)} $text {\1} text
+      regsub -all {(^|\n)[[:space:]]*\.section[[:space:]]*"?\.gnu\.lto_(?:[^\n]*\n(?![[:space:]]*\.(section|text|data|bss)))*[^\n]*\n} $text {\1} text
+    }
+
+    set match [regexp -- $pattern $text]
+    if { $match == $positive } {
+	pass "$testcase $name $printable_pattern"
+    } else {
+	fail "$testcase $name $printable_pattern"
+    }
+}
+
+proc dg_glob_remote { file_pattern } {
+    if { [is_remote host] } {
+    remote_upload host $file_pattern
+    }
+    return [glob -nocomplain $file_pattern]
+}
+
+# Look for a pattern in the .s file produced by the compiler.  See
+# dg-scan for details.
+
+proc scan-assembler { args } {
+    set testcase [testname-for-summary]
+    # The name might include a list of options; extract the file name.
+    set filename [lindex $testcase 0]
+    set output_file "[file rootname [file tail $filename]].s"
+    dg-scan "scan-assembler" 1 $testcase $output_file $args
+}
+
+set_required_options_for scan-assembler
+
+proc scan-raw-assembler { args } {
+    set testcase [testname-for-summary]
+    # The name might include a list of options; extract the file name.
+    set filename [lindex $testcase 0]
+    set output_file "[file rootname [file tail $filename]].s"
+    dg-scan "scan-raw-assembler" 1 $testcase $output_file $args
+}
+
+set_required_options_for scan-raw-assembler
+
+# Check that a pattern is not present in the .s file produced by the
+# compiler.  See dg-scan for details.
+
+proc scan-assembler-not { args } {
+    set testcase [testname-for-summary]
+    # The name might include a list of options; extract the file name.
+    set filename [lindex $testcase 0]
+    set output_file "[file rootname [file tail $filename]].s"
+
+    dg-scan "scan-assembler-not" 0 $testcase $output_file $args
+}
+
+set_required_options_for scan-assembler-not
+
+# Return the scan for the assembly for hidden visibility. 
+
+proc hidden-scan-for { symbol } {
+
+    set objformat [gcc_target_object_format]
+
+    switch $objformat {
+        coff     { return "$symbol\[,\d\]*hidden" }
+        elf      { return "hidden\[ \t_\]*$symbol" }
+        mach-o   { return "private_extern\[ \t_\]*_?$symbol" }
+        default  { return "" }
+    }
+
+}
+
+
+# Check that a symbol is defined as a hidden symbol in the .s file
+# produced by the compiler.
+
+proc scan-hidden { args } {
+    set testcase [testname-for-summary]
+    # The name might include a list of options; extract the file name.
+    set filename [lindex $testcase 0]
+    set output_file "[file rootname [file tail $filename]].s"
+
+    if { [llength $args] > 0 } {
+	set symbol [lindex $args 0]
+
+	set hidden_scan [hidden-scan-for $symbol]
+
+	set args [lreplace $args 0 0 "$hidden_scan"]
+    }
+
+    dg-scan "scan-hidden" 1 $testcase $output_file $args
+}
+
+# Check that a symbol is not defined as a hidden symbol in the .s file
+# produced by the compiler.
+
+proc scan-not-hidden { args } {
+    set testcase [testname-for-summary]
+    # The name might include a list of options; extract the file name.
+    set filename [lindex $testcase 0]
+    set output_file "[file rootname [file tail $filename]].s"
+
+    if { [llength $args] > 0 } {
+	set symbol [lindex $args 0]
+	set hidden_scan [hidden-scan-for $symbol]
+
+	set args [lreplace $args 0 0 "$hidden_scan"]
+    }
+
+    dg-scan "scan-not-hidden" 0 $testcase $output_file $args
+}
+
+# Check that symbols are emitted in the desired section.
+# Like scan-symbol-section, but using the assembly output generated by
+# the compiler.
+#
+# Example:
+#
+# // All numbered functions (func1, func2, etc.) must be in the .text section or
+# // in a .text sub-section (like .text._func1).
+# { dg-final { scan-assembler-symbol-section {^_func[1-5]$} {^\.text($|\.)} } }
+
+proc scan-assembler-symbol-section { args } {
+    set testcase [testname-for-summary]
+    set filename [lindex $testcase 0]
+    set output_file "[file rootname [file tail $filename]].s"
+    dg-scan-symbol-section \
+	"scan-assembler-symbol-section" $testcase $output_file $args
+}
+
+# Check that symbols are emitted in the desired section.
+#
+# Symbols and sections are interpreted as regexp patterns.
+#
+# If no matching symbol is found, scan-symbol-section reports a FAILure.
+#
+# Usage:
+#
+# { dg-final { scan-symbol-section FILENAME SYMBOL SECTION } }
+#
+# Examples:
+#
+# // The my_var C symbol must be in the .data section (or in a .data._my_var section
+# // if -ffunction-sections is in use).
+# { dg-final { scan-symbol-section "my-test.s" {^_my_var$} {^\.data(\._my_var)?$} } }
+#
+# // All numbered functions (func1, func2, etc.) must be in the .text section
+# // (and not in any other section like .text._func1).
+# { dg-final { scan-symbol-section "my-test.s" {^_func[1-5]$} {^\.text$} } }
+#
+# Caveats:
+#
+# * Only ELF and Mach-O targets are supported. Other
+#   targets, like PE/COFF, might appear to work.
+# * For Mach-O targets, the section name matched by scan-symbol-section has one
+#   of two forms:
+#   * The Mach-O segment name followed by a comma (',') followed by the Mach-O
+#     section name. For example, "__TEXT,__text". (There is no whitespace
+#     between the Mach-O segment name and the Mach-O section name.)
+#   * ".const", ".data", or ".text". For example, the .text assembler directive
+#     causes the section name to be ".text" (not "__TEXT,__text"). (However, a
+#     directive such as .section __TEXT,__text will cause the section name to be
+#     "__TEXT,__text".)
+# * Because scan-symbol-section parses assembly code, scan-symbol-section is
+#   unaware of section rewriting performed by the linker. For example, the
+#   sections .text._f1 and .text._f2 would normally be merged by binutils'
+#   linker into one section called .text, but scan-symbol-section reports the
+#   sections as .text._f1 and .text._f2 (and not .text).
+# * The symbol pattern matches any assembly label, including local labels which
+#   begin with `.L`.
+
+proc scan-symbol-section { args } {
+    set testcase [testname-for-summary]
+    set output_file [lindex $args 0]
+    dg-scan-symbol-section \
+	"scan-symbol-section" $testcase $output_file $args
+}
+
+# Check that symbols are emitted in the desired section.  The ORIG_ARGS is
+# the list of arguments provided by dg-final to scan-symbol-section or
+# scan-assembler-symbol-section.  The first element in ORIG_ARGS is the
+# regular expression to look for in the file.  The second element, if
+# present, is a DejaGNU target selector.
+#
+# Avoid calling this function directly.  In tests, use scan-symbol-section,
+# scan-assembler-symbol-section, or scan-lto-assembler-symbol-section instead.
+
+proc dg-scan-symbol-section { name testcase output_file orig_args } {
+    if { [llength $orig_args] < 2 } {
+	error "$name: too few arguments"
+        return
+    }
+    if { [llength $orig_args] > 4 } {
+	error "$name: too many arguments"
+	return
+    }
+    switch $name {
+	"scan-symbol-section" { set arg_incr 1 }
+	default { set arg_incr 0 }
+    }
+    if { [llength $orig_args] >= 3 } {
+	switch [dg-process-target [lindex $orig_args [expr 2 + $arg_incr]]] {
+	    "S" { }
+	    "N" { return }
+	    "F" { setup_xfail "*-*-*" }
+	    "P" { }
+	}
+    }
+
+    set symbol_pattern [lindex $orig_args [expr 0 + $arg_incr]]
+    set expected_section_pattern [lindex $orig_args [expr 1 + $arg_incr]]
+
+    set printable_symbol_pattern [make_pattern_printable $symbol_pattern]
+    set printable_expected_section_pattern [make_pattern_printable $expected_section_pattern]
+
+    set files [dg_glob_remote $output_file]
+    if { $files == "" } {
+    verbose -log "$testcase: output file does not exist"
+    unresolved "$testcase $name symbol $printable_symbol_pattern has section $printable_expected_section_pattern"
+    return
+    }
+
+    parse_section_of_symbols $output_file section_by_symbol
+
+    set found_symbol 0
+    foreach symbol_name [lsort [array names section_by_symbol]] {
+        if { [regexp -- $symbol_pattern $symbol_name] } {
+            set section $section_by_symbol($symbol_name)
+	    if { [istarget powerpc*-*-*] && $section == ".opd" } {
+		set section $section_by_symbol(.L.$symbol_name)
+	    }
+            set description "$testcase $name symbol $printable_symbol_pattern (found $symbol_name) has section $printable_expected_section_pattern"
+            if { $section == "" } {
+                fail "$description (no section detected)"
+            } else {
+                set description "$description (found $section)"
+                if { [regexp -- $expected_section_pattern $section] } {
+                    pass $description
+                } else {
+                    fail $description
+                }
+            }
+            set found_symbol 1
+        }
+    }
+    if { ! $found_symbol } {
+        fail "$testcase $name symbol $printable_symbol_pattern (symbol not found) has section $printable_expected_section_pattern"
+    }
+}
+
+# Extract a symbol and section names from pre-processed assembly source code.
+#
+# This function adds entries in the RESULT array where the key is the symbol's
+# name (including any leading underscores) and the value is the section's name
+# (including any leading periods).
+#
+# For example, given the following assembly source code in file.s:
+#
+#         .text
+#         .function _my_function
+# _my_function:
+#         nop
+#         .data
+# _my_data:
+#         .long 42
+#
+# Executing 'parse_section_of_symbols "file.s" symbols' would have the same
+# effect as the following code:
+#
+# set $result(_my_function) .text
+# set $result(_my_data) .data
+
+proc parse_section_of_symbols { filename result } {
+    upvar $result up_result
+
+    set section_pattern {^\s*(?:(?:\.section|\.csect)\s+(.*)|(\.const|\.data|\.text)\s*)$}
+    set label_pattern {^(\S+):$}
+    set previous_pattern {^\s*\.previous\s*$}
+
+    set fd [open $filename r]
+    set current_section ""
+    set prev_section ""
+    while { [gets $fd line] >= 0 } {
+        if { [regexp -- $label_pattern $line dummy symbol_name] } {
+            set up_result($symbol_name) $current_section
+        } elseif { [regexp -- $section_pattern $line dummy section_directive_arguments full_section_directive] } {
+	    set prev_section $current_section
+            if { $full_section_directive eq "" } {
+                # Example: .section .text,"ax",progbits
+                # Example: .section ".text",#alloc,#execinstr,#progbits
+                # Example: .section __TEXT,__text
+                set arguments [split $section_directive_arguments ","]
+                set current_section [string trim [lindex $arguments 0]]
+                set current_section [string trim $current_section {"}]
+                set arg_1 [string trim [lindex $arguments 1]]
+                if { [regexp {^_} $arg_1] } {
+                    # The second argument looks like a Mach-O section name.
+                    set current_section "$current_section,$arg_1"
+                }
+            } else {
+                # Example: .text
+                set current_section "$full_section_directive"
+            }
+	} elseif { [regexp -- $previous_pattern $line dummy] } {
+	    set sect $prev_section
+	    set prev_section $current_section
+	    set current_section $sect
+	}
+    }
+    close $fd
+}
+
+# Look for a pattern in OUTPUT_FILE.  See dg-scan for details.
+
+proc scan-file { output_file args } {
+    set testcase [testname-for-summary]
+    dg-scan "scan-file" 1 $testcase $output_file $args
+}
+
+# Check that a pattern is not present in the OUTPUT_FILE.  See dg-scan
+# for details.
+
+proc scan-file-not { output_file args } {
+    set testcase [testname-for-summary]
+    dg-scan "scan-file-not" 0 $testcase $output_file $args
+}
+
+# Look for a pattern in the .su file produced by the compiler.  See
+# dg-scan for details.
+
+proc scan-stack-usage { args } {
+    set testcase [testname-for-summary]
+    # The name might include a list of options; extract the file name.
+    set filename [lindex $testcase 0]
+    set output_file "[file rootname [file tail $filename]].su"
+
+    dg-scan "scan-stack-usage" 1 $testcase $output_file $args
+}
+
+# Check that a pattern is not present in the .su file produced by the
+# compiler.  See dg-scan for details.
+
+proc scan-stack-usage-not { args } {
+    set testcase [testname-for-summary]
+    # The name might include a list of options; extract the file name.
+    set filename [lindex $testcase 0]
+    set output_file "[file rootname [file tail $filename]].su"
+
+    dg-scan "scan-stack-usage-not" 0 $testcase $output_file $args
+}
+
+# Return the filename of the Ada spec corresponding to the argument.
+
+proc get_ada_spec_filename { testcase } {
+    # The name might include a list of options; extract the file name.
+    set filename  [lindex $testcase 0]
+    set tailname  [file tail $filename]
+    set extension [string trimleft [file extension $tailname] {.}]
+    regsub -all {\-} [file rootname $tailname] {_} rootname
+
+    return [string tolower "${rootname}_${extension}.ads"]
+}
+
+# Look for a pattern in the .ads file produced by the compiler.  See
+# dg-scan for details.
+
+proc scan-ada-spec { args } {
+    set testcase  [testname-for-summary]
+    set output_file "[get_ada_spec_filename $testcase]"
+
+    dg-scan "scan-ada-spec" 1 $testcase $output_file $args
+}
+
+# Check that a pattern is not present in the .ads file produced by the
+# compiler.  See dg-scan for details.
+
+proc scan-ada-spec-not { args } {
+    set testcase  [testname-for-summary]
+    set output_file "[get_ada_spec_filename $testcase]"
+
+    dg-scan "scan-ada-spec-not" 0 $testcase $output_file $args
+}
+
+# Call pass if pattern is present given number of times, otherwise fail.
+proc scan-assembler-times { args } {
+    if { [llength $args] < 2 } {
+	error "scan-assembler-times: too few arguments"
+        return
+    }
+    if { [llength $args] > 3 } {
+	error "scan-assembler-times: too many arguments"
+	return
+    }
+    if { [llength $args] >= 3 } {
+	switch [dg-process-target [lindex $args 2]] {
+	    "S" { }
+	    "N" { return }
+	    "F" { setup_xfail "*-*-*" }
+	    "P" { }
+	}
+    }
+
+    set testcase [testname-for-summary]
+    # The name might include a list of options; extract the file name.
+    set filename [lindex $testcase 0]
+    set pattern [lindex $args 0]
+    set times [lindex $args 1]
+    set pp_pattern [make_pattern_printable $pattern]
+
+    # This must match the rule in gcc-dg.exp.
+    set output_file "[file rootname [file tail $filename]].s"
+
+    set files [glob -nocomplain $output_file]
+    if { $files == "" } {
+	verbose -log "$testcase: output file does not exist"
+	unresolved "$testcase scan-assembler-times $pp_pattern $times"
+	return
+    }
+
+    set fd [open $output_file r]
+    set text [read $fd]
+    close $fd
+    regsub -all {(^|\n)[[:space:]]*\.section[[:space:]]*"?\.gnu\.lto_(?:[^\n]*\n(?![[:space:]]*\.(section|text|data|bss)))*[^\n]*\n} $text {\1} text
+
+    set result_count [regexp -all -- $pattern $text]
+    if {$result_count == $times} {
+	pass "$testcase scan-assembler-times $pp_pattern $times"
+    } else {
+	verbose -log "$testcase: $pp_pattern found $result_count times"
+	fail "$testcase scan-assembler-times $pp_pattern $times"
+    }
+}
+
+set_required_options_for scan-assembler-times
+
+# Call pass if pattern is present within a lower or upper bound, 
+# otherwise fail.
+# ex /* { dg-final { scan-assembler-bound {RE} > 3 } }
+proc scan-assembler-bound { args } {
+    if { [llength $args] < 3 } {
+	error "scan-assembler-bound: too few arguments"
+        return
+    }
+    if { [llength $args] > 4 } {
+	error "scan-assembler-bound: too many arguments"
+	return
+    }
+    if { [llength $args] >= 4 } {
+	switch [dg-process-target [lindex $args 3]] {
+	    "S" { }
+	    "N" { return }
+	    "F" { setup_xfail "*-*-*" }
+	    "P" { }
+	}
+    }
+
+    set testcase [testname-for-summary]
+    # The name might include a list of options; extract the file name.
+    set filename [lindex $testcase 0]
+    set pattern [lindex $args 0]
+    set cmp [lindex $args 1]
+    set bound [lindex $args 2]
+    set pp_pattern [make_pattern_printable $pattern]
+
+    # This must match the rule in gcc-dg.exp.
+    set output_file "[file rootname [file tail $filename]].s"
+
+    set files [glob -nocomplain $output_file]
+    if { $files == "" } {
+	verbose -log "$testcase: output file does not exist"
+	unresolved "$testcase scan-assembler-bound $pp_pattern $min $max"
+	return
+    }
+
+    if { [lsearch { < > <= >= } $cmp] == -1 } {
+        error "scan-assembler-bound: illegal argument: $cmp"
+        return
+    }
+    if ![string is integer $bound ] {
+        error "scan-assembler-bound: illegal argument: $bound"
+        return
+    }
+    
+    set fd [open $output_file r]
+    set text [read $fd]
+    close $fd
+    regsub -all {(^|\n)[[:space:]]*\.section[[:space:]]*"?\.gnu\.lto_(?:[^\n]*\n(?![[:space:]]*\.(section|text|data|bss)))*[^\n]*\n} $text {\1} text
+
+    set result_count [regexp -all -- $pattern $text]
+    if [expr $result_count $cmp $bound] {
+	pass "$testcase scan-assembler-bound $pp_pattern $cmp $bound"
+    } else {
+	verbose -log "$testcase: $pp_pattern found $result_count times"
+	fail "$testcase scan-assembler-bound $pp_pattern $cmp $bound"
+    }
+}
+
+set_required_options_for scan-assembler-bound
+
+# Utility for scanning demangled compiler result, invoked via dg-final.
+# Call pass if pattern is present, otherwise fail.
+proc scan-assembler-dem { args } {
+    global cxxfilt
+    global base_dir
+
+    if { [llength $args] < 1 } {
+	error "scan-assembler-dem: too few arguments"
+        return
+    }
+    if { [llength $args] > 2 } {
+	error "scan-assembler-dem: too many arguments"
+	return
+    }
+    if { [llength $args] >= 2 } {
+	switch [dg-process-target [lindex $args 1]] {
+	    "S" { }
+	    "N" { return }
+	    "F" { setup_xfail "*-*-*" }
+	    "P" { }
+	}
+    }
+
+    # Find c++filt like we find g++ in g++.exp.
+    if ![info exists cxxfilt]  {
+	set cxxfilt [findfile $base_dir/../../../binutils/cxxfilt \
+		     $base_dir/../../../binutils/cxxfilt \
+	             [findfile $base_dir/../../c++filt $base_dir/../../c++filt \
+		      [findfile $base_dir/c++filt $base_dir/c++filt \
+		       [transform c++filt]]]]
+	verbose -log "c++filt is $cxxfilt"
+    }
+
+    set testcase [testname-for-summary]
+    # The name might include a list of options; extract the file name.
+    set filename [lindex $testcase 0]
+    set pattern [lindex $args 0]
+    set pp_pattern [make_pattern_printable $pattern]
+    set output_file "[file rootname [file tail $filename]].s"
+
+    set files [glob -nocomplain $output_file]
+    if { $files == "" } {
+	verbose -log "$testcase: output file does not exist"
+	unresolved "$testcase scan-assembler-dem $pp_pattern"
+	return
+    }
+
+    set output [remote_exec host "$cxxfilt" "" "$output_file"]
+    set text [lindex $output 1]
+    regsub -all {(^|\n)[[:space:]]*\.section[[:space:]]*"?\.gnu\.lto_(?:[^\n]*\n(?![[:space:]]*\.(section|text|data|bss)))*[^\n]*\n} $text {\1} text
+
+    if [regexp -- $pattern $text] {
+	pass "$testcase scan-assembler-dem $pp_pattern"
+    } else {
+	fail "$testcase scan-assembler-dem $pp_pattern"
+    }
+}
+
+# Call pass if demangled pattern is not present, otherwise fail.
+proc scan-assembler-dem-not { args } {
+    global cxxfilt
+    global base_dir
+
+    if { [llength $args] < 1 } {
+	error "scan-assembler-dem-not: too few arguments"
+        return
+    }
+    if { [llength $args] > 2 } {
+	error "scan-assembler-dem-not: too many arguments"
+	return
+    }
+    if { [llength $args] >= 2 } {
+	switch [dg-process-target [lindex $args 1]] {
+	    "S" { }
+	    "N" { return }
+	    "F" { setup_xfail "*-*-*" }
+	    "P" { }
+	}
+    }
+
+    # Find c++filt like we find g++ in g++.exp.
+    if ![info exists cxxfilt]  {
+	set cxxfilt [findfile $base_dir/../../../binutils/cxxfilt \
+		     $base_dir/../../../binutils/cxxfilt \
+		     [findfile $base_dir/../../c++filt $base_dir/../../c++filt \
+		      [findfile $base_dir/c++filt $base_dir/c++filt \
+		       [transform c++filt]]]]
+	verbose -log "c++filt is $cxxfilt"
+    }
+
+    set testcase [testname-for-summary]
+    # The name might include a list of options; extract the file name.
+    set filename [lindex $testcase 0]
+    set pattern [lindex $args 0]
+    set pp_pattern [make_pattern_printable $pattern]
+    set output_file "[file rootname [file tail $filename]].s"
+
+    set files [glob -nocomplain $output_file]
+    if { $files == "" } {
+	verbose -log "$testcase: output file does not exist"
+	unresolved "$testcase scan-assembler-dem-not $pp_pattern"
+	return
+    }
+
+    set output [remote_exec host "$cxxfilt" "" "$output_file"]
+    set text [lindex $output 1]
+    regsub -all {(^|\n)[[:space:]]*\.section[[:space:]]*"?\.gnu\.lto_(?:[^\n]*\n(?![[:space:]]*\.(section|text|data|bss)))*[^\n]*\n} $text {\1} text
+
+    if ![regexp -- $pattern $text] {
+	pass "$testcase scan-assembler-dem-not $pp_pattern"
+    } else {
+	fail "$testcase scan-assembler-dem-not $pp_pattern"
+    }
+}
+
+# Call pass if object size is ok, otherwise fail.
+# example: /* { dg-final { object-size text <= 54 } } */
+proc object-size { args } {
+    global size
+    global base_dir
+
+    if { [llength $args] < 3 } {
+	error "object-size: too few arguments"
+        return
+    }
+    if { [llength $args] > 4 } {
+	error "object-size: too many arguments"
+	return
+    }
+    if { [llength $args] >= 4 } {
+	switch [dg-process-target [lindex $args 3]] {
+	    "S" { }
+	    "N" { return }
+	    "F" { setup_xfail "*-*-*" }
+	    "P" { }
+	}
+    }
+
+    # Find size like we find g++ in g++.exp.
+    if ![info exists size]  {
+	set size [findfile $base_dir/../../../binutils/size \
+		  $base_dir/../../../binutils/size \
+		  [findfile $base_dir/../../size $base_dir/../../size \
+		   [findfile $base_dir/size $base_dir/size \
+		    [transform size]]]]
+	verbose -log "size is $size"
+    }
+
+    set testcase [testname-for-summary]
+    # The name might include a list of options; extract the file name.
+    set filename [lindex $testcase 0]
+    set what [lindex $args 0]
+    set where [lsearch { text data bss total } $what]
+    if { $where == -1 } {
+        error "object-size: illegal argument: $what"
+        return
+    }
+    set cmp [lindex $args 1]
+    if { [lsearch { < > <= >= == != } $cmp] == -1 } {
+        error "object-size: illegal argument: $cmp"
+        return
+    }
+    set with [lindex $args 2]
+    if ![string is integer $with ] {
+        error "object-size: illegal argument: $with"
+        return
+    }
+
+    set output_file "[file rootname [file tail $filename]].o"
+    if ![file_on_host exists $output_file] {
+	verbose -log "$testcase: $output_file does not exist"
+	unresolved "$testcase object-size $what $cmp $with"
+	return
+    }
+    set output [remote_exec host "$size" "$output_file"]
+    set status [lindex $output 0]
+    if { $status != 0 } {
+        verbose -log "$testcase object-size: $size failed"
+        unresolved "$testcase object-size $what $cmp $with"
+        return
+    }
+
+    set text [lindex $output 1]
+    set lines [split $text "\n"]
+
+    set l0match {^\s*text\s+data\s+bss\s+dec\s+hex\s+filename\s*$}
+    set l1match {^\s*\d+\s+\d+\s+\d+\s+\d+\s+[\da-fA-F]+\s+}
+
+    if { [istarget *-*-darwin*] } {
+      set l0match {^\s*__TEXT\s+__DATA\s+__OBJC\s+others\s+dec\s+hex\s*$}
+      set l1match {^\s*\d+\s+\d+\s+\d+\s+\d+\s+\d+\s+[\da-fA-F]+\s+}
+    }
+
+    set line0 [lindex $lines 0]
+    if ![regexp $l0match $line0] {
+        verbose -log "$testcase object-size: $size did not produce expected first line: $line0"
+        unresolved "$testcase object-size $what $cmp $with"
+        return
+    }
+
+    set line1 [lindex $lines 1]
+    if ![regexp $l1match $line1] {
+        verbose -log "$testcase object-size: $size did not produce expected second line: $line1"
+        unresolved "$testcase object-size $what $cmp $with"
+        return
+    }
+
+    set actual [lindex $line1 $where]
+    verbose -log "$what size is $actual"
+
+    if [expr $actual $cmp $with] {
+	pass "$testcase object-size $what $cmp $with"
+    } else {
+	fail "$testcase object-size $what $cmp $with"
+    }
+}
+
+# Utility for testing that a function is defined on the current line.
+# Call pass if so, otherwise fail.  Invoked directly; the file must
+# have been compiled with -g -dA.
+#
+# Argument 0 is the current line, passed implicitly by dejagnu
+# Argument 1 is the function to check
+# Argument 2 handles expected failures and the like
+# Argument 3 is "." to match the current line, or an integer to match
+# an explicit line.
+proc dg-function-on-line { args } {
+    # Upvar from dg-final:
+    upvar dg-final-code final-code
+
+    set line [lindex $args 0]
+    set symbol [lindex $args 1]
+    set failures [lindex $args 2]
+
+    if { [llength $args] >= 4 } {
+	switch [lindex $args 3] {
+	    "." { }
+	    "default" { set line [lindex $args 3] }
+	}
+    }
+
+    if { [istarget hppa*-*-linux*] } {
+	set pattern [format {%s:\n\t.PROC\n\t.CALLINFO.*\n\t.ENTRY\n.L.*:\n(\t.file[^\t]*)*\t[^:]+:%d(:[0-9]+)?\n} \
+                     $symbol $line]
+    } elseif { [istarget hppa*-*-*] } {
+	set pattern [format {\t;[^:]+:%d(:[0-9]+)?\n(\t[^\t]+\n)+%s:\n\t.PROC} \
+                     $line $symbol]
+    } elseif { [istarget mips*-*-*] } {
+	set pattern [format {\t\.loc [0-9]+ %d [0-9]+( [^\n]*)?\n(\t.cfi_startproc[^\t]*\n)*\t\.set\t(no)?mips16\n\t(\.set\t(no)?micromips\n\t)?\.ent\t%s\n\t\.type\t%s, @function\n%s:\n} \
+		     $line $symbol $symbol $symbol]
+    } elseif { [istarget microblaze*-*-*] } {
+        set pattern [format {:%d(:[0-9]+)?\n\$.*:\n\t\.ent\t%s\n\t\.type\t%s, @function\n%s:\n} \
+                     $line $symbol $symbol $symbol]
+    } else {
+	set pattern [format {%s:[^\t]*(\t.(fnstart|frame|mask|file)[^\t]*)*\t[^:]+:%d(:[0-9]+)?\n} \
+                     $symbol $line]
+    }
+
+    # The lack of spaces around $pattern is important, since they'd
+    # become part of the regex scan-assembler tries to match.
+    set cmd "scan-assembler {$pattern}"
+    if { [llength $args] >= 3 } {
+        set cmd "$cmd {$failures}"
+    }
+
+    append final-code "$cmd\n"
+}
+
+# Look for a pattern in the .exe.ltrans0.s file produced by the
+# compiler.  See dg-scan for details.
+
+proc scan-lto-assembler { args } {
+    set testcase [testname-for-summary]
+    # The name might include a list of options; extract the file name.
+    set filename [lindex $testcase 0]
+    set output_file "[file rootname [file tail $filename]].ltrans0.ltrans.s"
+    verbose "output_file: $output_file"
+    dg-scan "scan-lto-assembler" 1 $testcase $output_file $args
+}
+
+
+# Set up CONFIG for check-function-bodies.
+
+proc configure_check-function-bodies { config } {
+    upvar $config up_config
+
+    # Regexp for the start of a function definition (name in \1).
+    if { [istarget nvptx*-*-*] } {
+	set up_config(start) {
+	    {^// BEGIN(?: GLOBAL|) FUNCTION DEF: ([a-zA-Z_]\S*)$}
+	}
+    } elseif { [istarget *-*-darwin*] } {
+	set up_config(start) {
+	    {^_([a-zA-Z_]\S*):$}
+	    {^LFB[0-9]+:}
+	}
+    } else {
+	set up_config(start) {{^([a-zA-Z_]\S*):$}}
+    }
+
+    # Regexp for the end of a function definition.
+    if { [istarget nvptx*-*-*] } {
+	set up_config(end) {^\}$}
+    } elseif { [istarget *-*-darwin*] } {
+	set up_config(end) {^LFE[0-9]+}
+    } elseif { [istarget aarch64*-*-mingw32] } {
+	set up_config(end) {seh_endproc}
+    } else {
+	set up_config(end) {^\s*\.size}
+    }
+
+    # Regexp for lines that aren't interesting.
+    if { [istarget nvptx*-*-*] } {
+	# Skip lines beginning with '//' comments ('-fverbose-asm', for
+	# example).
+	set up_config(fluff) {^\s*(?://)}
+    } elseif { [istarget *-*-darwin*] } {
+	set up_config(fluff) {^\s*(?:\.|//|@)|^L[0-9ABCESV]}
+    } elseif { [istarget s390*-*-*] } {
+	# Additionally to the defaults skip lines beginning with a # resulting
+	# from inline asm.
+	set up_config(fluff) {^\s*(?:\.|//|@|$|#)}
+    } else {
+	# Skip lines beginning with labels ('.L[...]:') or other directives
+	# ('.align', '.cfi_startproc', '.quad [...]', '.text', etc.), '//' or
+	# '@' comments ('-fverbose-asm' or ARM-style, for example), or empty
+	# lines.
+	set up_config(fluff) {^\s*(?:\.|//|@|$)}
+    }
+
+    # Regexp for expected output lines prefix.
+    if { [istarget nvptx*-*-*] } {
+	# Certain instructions (such as predicable ones) are emitted with
+	# additional whitespace prefixed.  On the other hand, labels don't get
+	# any whitespace prefixed, and we'd like to be able to match these,
+	# too.  We thereare expect any amount of whitespace here.
+	set up_config(line_prefix) {\t*}
+    } else {
+	set up_config(line_prefix) {\t}
+    }
+}
+
+# Per CONFIG, read assembly file FILENAME and store a mapping from function
+# names to function bodies in array RESULT.  FILENAME has already been uploaded
+# locally where necessary and is known to exist.
+
+proc parse_function_bodies { config filename result } {
+    upvar $config up_config
+    upvar $result up_result
+
+    set fd [open $filename r]
+    set in_function 0
+    while { [gets $fd line] >= 0 } {
+	if { $in_function == 0 } {
+	    if { [regexp [lindex $up_config(start) 0] \
+			 $line dummy function_name] } {
+		set in_function 1
+		set function_body ""
+	    }
+	} elseif { $in_function < [llength $up_config(start)] } {
+	    if { [regexp [lindex $up_config(start) $in_function] $line] } {
+		incr in_function
+	    } else {
+		verbose "parse_function_bodies: skipped $function_name"
+		set in_function 0
+	    }
+	} elseif { $in_function } {
+	    # We allow multiple function start labels, taking the last one seen
+	    # as the function name.
+	    if { [regexp [lindex $up_config(start) 0] \
+			 $line dummy maybe_function_name] } {
+		verbose "parse_function_bodies: overriding $function_name with $maybe_function_name"
+		set function_name $maybe_function_name
+		set in_function 1
+	    } elseif { [regexp $up_config(end) $line] } {
+		verbose "parse_function_bodies: $function_name:\n$function_body"
+		set up_result($function_name) $function_body
+		set in_function 0
+	    } elseif { $up_config(matched) ne "" \
+		       && [regexp $up_config(matched) $line] } {
+		append function_body $line "\n"
+	    } elseif { [regexp $up_config(fluff) $line] } {
+		verbose "parse_function_bodies: $function_name: ignoring fluff line: $line"
+	    } else {
+		append function_body $line "\n"
+	    }
+	}
+    }
+    close $fd
+}
+
+# FUNCTIONS is an array that maps function names to function bodies.
+# Return true if it contains a definition of function NAME and if
+# that definition matches BODY_REGEXP.
+
+proc check_function_body { functions name body_regexp } {
+    upvar $functions up_functions
+
+    if { ![info exists up_functions($name)] } {
+	return 0
+    }
+    set fn_res [regexp "^$body_regexp\$" $up_functions($name)]
+    if { !$fn_res } {
+      verbose -log "expected: $body_regexp"
+      verbose -log "found: $up_functions($name)"
+    }
+    return $fn_res
+}
+
+# Check the implementations of functions against expected output.  Used as:
+#
+# { dg-final { check-function-bodies PREFIX TERMINATOR[ OPTION[ SELECTOR [MATCHED]]] } }
+#
+# See sourcebuild.texi for details.
+
+proc check-function-bodies { args } {
+    if { [llength $args] < 2 } {
+	error "too few arguments to check-function-bodies"
+    }
+    if { [llength $args] > 5 } {
+	error "too many arguments to check-function-bodies"
+    }
+
+    upvar 2 dg-extra-tool-flags extra_tool_flags
+    set flags $extra_tool_flags
+
+    global torture_current_flags
+    if { [info exists torture_current_flags] } {
+	append flags " " $torture_current_flags
+    }
+
+    if { [llength $args] >= 3 } {
+	set required_flags [lindex $args 2]
+
+	foreach required_flag $required_flags {
+	    switch -- $required_flag {
+		target -
+		xfail {
+		    error "misplaced $required_flag in check-function-bodies"
+		}
+	    }
+	}
+	foreach required_flag $required_flags {
+	    if { ![regexp " $required_flag " $flags] } {
+		return
+	    }
+	}
+    }
+
+    set xfail_all 0
+    if { [llength $args] >= 4 } {
+	switch [dg-process-target [lindex $args 3]] {
+	    "S" { }
+	    "N" { return }
+	    "F" { set xfail_all 1 }
+	    "P" { }
+	}
+    }
+
+    set matched ""
+    if { [llength $args] >= 5 } {
+	set matched [lindex $args 4]
+    }
+
+    set testcase [testname-for-summary]
+    # The name might include a list of options; extract the file name.
+    set filename [lindex $testcase 0]
+
+    global srcdir
+    set input_filename "$srcdir/$filename"
+    set output_filename "[file rootname [file tail $filename]]"
+    if { [string match "* -flto *" " ${flags} "]
+	 && ![string match "* -fno-use-linker-plugin *" " ${flags} "]
+	 && ![string match "* -ffat-lto-objects *" " ${flags} "] } {
+	append output_filename ".ltrans0.ltrans.s"
+    } else {
+	append output_filename ".s"
+    }
+
+    set prefix [lindex $args 0]
+    set prefix_len [string length $prefix]
+    set terminator [lindex $args 1]
+    if { [string equal $terminator ""] } {
+	set terminator "*/"
+    }
+    set terminator_len [string length $terminator]
+    # Regexp for the start of a function definition in expected output lines
+    # (name in \1).  This may be different from '$config(start)'.
+    set start_expected {^(\S+):$}
+
+    set config(matched) $matched
+    configure_check-function-bodies config
+    set have_bodies 0
+    if { [is_remote host] } {
+	remote_upload host "$filename"
+    }
+    if { [file exists $output_filename] } {
+	parse_function_bodies config $output_filename functions
+	set have_bodies 1
+    } else {
+	verbose -log "$testcase: output file does not exist"
+    }
+
+    set count 0
+    set function_regexp ""
+
+    set lineno 1
+    set fd [open $input_filename r]
+    set in_function 0
+    while { [gets $fd line] >= 0 } {
+	if { [string equal -length $prefix_len $line $prefix] } {
+	    set line [string trim [string range $line $prefix_len end]]
+	    if { !$in_function } {
+		if { [regexp "^(.*?\\S)\\s+{(.*)}\$" $line dummy \
+			  line selector] } {
+		    set selector [dg-process-target $selector]
+		} else {
+		    set selector "P"
+		}
+		if { ![regexp $start_expected $line dummy function_name] } {
+		    close $fd
+		    error "check-function-bodies: line $lineno does not have a function label"
+		}
+		set in_function 1
+		set function_regexp ""
+	    } elseif { [string equal $line "("] } {
+		append function_regexp "(?:"
+	    } elseif { [string equal $line "|"] } {
+		append function_regexp "|"
+	    } elseif { [string equal $line ")"] } {
+		append function_regexp ")"
+	    } elseif { [string equal $line "..."] } {
+		append function_regexp ".*"
+	    } elseif { [regexp {^\.L} $line] } {
+		append function_regexp $line "\n"
+	    } elseif { [regexp {^[0-9]+:} $line] } {
+		append function_regexp $line "\n"
+	    } else {
+		append function_regexp $config(line_prefix) $line "\n"
+	    }
+	} elseif { [string equal -length $terminator_len $line $terminator] } {
+	    if { ![string equal $selector "N"] } {
+		if { $xfail_all || [string equal $selector "F"] } {
+		    setup_xfail "*-*-*"
+		}
+		set testname "$testcase check-function-bodies $function_name"
+		if { !$have_bodies } {
+		    unresolved $testname
+		} elseif { [check_function_body functions $function_name \
+				$function_regexp] } {
+		    pass $testname
+		} else {
+		    fail $testname
+		}
+	    }
+	    set in_function 0
+	    incr count
+	}
+	incr lineno
+    }
+    close $fd
+    if { $in_function } {
+	error "check-function-bodies: missing \"$terminator\""
+    }
+    if { $count == 0 } {
+	error "check-function-bodies: no matches found"
+    }
+}

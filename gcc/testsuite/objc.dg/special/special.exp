@@ -1,0 +1,56 @@
+# All these testcases compile and link two Objective-C modules..
+
+# Copyright (C) 2025-2026 Free Software Foundation, Inc.
+# 
+# This file is part of GCC.
+#
+# GCC is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3, or (at your option)
+# any later version.
+#
+# GCC is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with GCC; see the file COPYING3.  If not see
+# <http://www.gnu.org/licenses/>.
+
+# Load support procs.
+load_lib objc-dg.exp
+
+# If a testcase doesn't have special options, use these.
+global DEFAULT_CFLAGS
+if ![info exists DEFAULT_CFLAGS] then {
+    set DEFAULT_CFLAGS ""
+}
+
+set extra_flags "$DEFAULT_CFLAGS -Wno-objc-root-class"
+
+# Initialize `dg'.
+dg-init
+
+# Gather a list of all objective-c sources.
+set all_srcs [lsort [glob -nocomplain $srcdir/$subdir/*.m]]
+# Remove the ones ending in a.m
+set tests ""
+set pat "a\.m"
+foreach t $all_srcs {
+  if { [string match *$pat $t] } {
+    continue
+  }
+  lappend tests $t
+}
+
+# Main loop.
+dg-runtest $tests "-fgnu-runtime" $extra_flags
+
+# darwin targets can also run code with the NeXT runtime.
+if [istarget "*-*-darwin*" ] {
+  dg-runtest $tests "-fnext-runtime" $extra_flags
+}
+
+# All done.
+dg-finish

@@ -1,0 +1,145 @@
+; Command line options for the Renesas RX port of GCC.
+; Copyright (C) 2008-2026 Free Software Foundation, Inc.
+; Contributed by Red Hat.
+;
+; This file is part of GCC.
+;
+; GCC is free software; you can redistribute it and/or modify it under
+; the terms of the GNU General Public License as published by the Free
+; Software Foundation; either version 3, or (at your option) any later
+; version.
+;
+; GCC is distributed in the hope that it will be useful, but WITHOUT ANY
+; WARRANTY; without even the implied warranty of MERCHANTABILITY or
+; FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+; for more details.
+;
+; You should have received a copy of the GNU General Public License
+; along with GCC; see the file COPYING3.  If not see
+; <http://www.gnu.org/licenses/>.
+;---------------------------------------------------
+
+HeaderInclude
+config/rx/rx-opts.h
+
+; The default is -fpu -m32bit-doubles.
+
+m64bit-doubles
+Target RejectNegative Mask(64BIT_DOUBLES)
+Store doubles in 64 bits.
+
+m32bit-doubles
+Target RejectNegative InverseMask(64BIT_DOUBLES)
+Stores doubles in 32 bits.  This is the default.
+
+nofpu
+Target RejectNegative Alias(mnofpu)
+Disable the use of RX FPU instructions.
+
+mnofpu
+Target RejectNegative Mask(NO_USE_FPU) Undocumented
+
+fpu
+Target RejectNegative InverseMask(NO_USE_FPU)
+Enable the use of RX FPU instructions.  This is the default.
+
+;---------------------------------------------------
+
+mcpu=
+Target RejectNegative Joined Var(rx_cpu_type) ToLower Enum(rx_cpu_types) Init(RX600)
+Specify the target RX cpu type.
+
+Enum
+Name(rx_cpu_types) Type(enum rx_cpu_types)
+
+EnumValue
+Enum(rx_cpu_types) String(rx610) Value(RX610)
+
+EnumValue
+Enum(rx_cpu_types) String(rx200) Value(RX200)
+
+EnumValue
+Enum(rx_cpu_types) String(rx600) Value(RX600)
+
+EnumValue
+Enum(rx_cpu_types) String(rx100) Value(RX100)
+
+;---------------------------------------------------
+
+mbig-endian-data
+Target RejectNegative Mask(BIG_ENDIAN_DATA)
+Data is stored in big-endian format.
+
+mlittle-endian-data
+Target RejectNegative InverseMask(BIG_ENDIAN_DATA)
+Data is stored in little-endian format.  (Default).
+
+;---------------------------------------------------
+
+msmall-data-limit=
+Target RejectNegative Joined UInteger Var(rx_small_data_limit) Init(0)
+Maximum size of global and static variables which can be placed into the small data area.
+
+;---------------------------------------------------
+
+mrelax
+Target
+Enable linker relaxation.
+
+;---------------------------------------------------
+
+mmax-constant-size=
+Target RejectNegative Joined UInteger Var(rx_max_constant_size) Init(0)
+Maximum size in bytes of constant values allowed as operands.
+
+;---------------------------------------------------
+
+mint-register=
+Target RejectNegative Joined UInteger Var(rx_deferred_options) Defer
+Specifies the number of registers to reserve for interrupt handlers.
+
+;---------------------------------------------------
+
+msave-acc-in-interrupts
+Target Mask(SAVE_ACC_REGISTER)
+Specifies whether interrupt functions should save and restore the accumulator register.
+
+;---------------------------------------------------
+
+mpid
+Target Mask(PID)
+Enables Position-Independent-Data (PID) mode.
+
+;---------------------------------------------------
+
+mwarn-multiple-fast-interrupts
+Target Var(rx_warn_multiple_fast_interrupts) Init(1) Warning
+Warn when multiple, different, fast interrupt handlers are in the compilation unit.
+
+;---------------------------------------------------
+
+mgcc-abi
+Target Undocumented RejectNegative Mask(GCC_ABI)
+Enable the use of the old, broken, ABI where all stacked function arguments are aligned to 32-bits.
+
+mrx-abi
+Target Undocumented RejectNegative InverseMask(GCC_ABI)
+Enable the use the standard RX ABI where all stacked function arguments are naturally aligned.  This is the default.
+
+;---------------------------------------------------
+
+mlra
+Target Mask(ENABLE_LRA)
+Enable the use of the LRA register allocator.
+
+;---------------------------------------------------
+
+mallow-string-insns
+Target Var(rx_allow_string_insns) Init(1)
+Enables or disables the use of the SMOVF, SMOVB, SMOVU, SUNTIL, SWHILE and RMPA instructions.  Enabled by default.
+
+;---------------------------------------------------
+
+mjsr
+Target Mask(JSR)
+Always use JSR, never BSR, for calls.

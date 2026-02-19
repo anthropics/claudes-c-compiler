@@ -1,0 +1,63 @@
+; Copyright (C) 2009-2026 Free Software Foundation, Inc.
+;
+; This file is part of GCC.
+;
+; GCC is free software; you can redistribute it and/or modify it under
+; the terms of the GNU General Public License as published by the Free
+; Software Foundation; either version 3, or (at your option) any later
+; version.
+;
+; GCC is distributed in the hope that it will be useful, but WITHOUT ANY
+; WARRANTY; without even the implied warranty of MERCHANTABILITY or
+; FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+; for more details.
+;
+; You should have received a copy of the GNU General Public License
+; along with GCC; see the file COPYING3.  If not see
+; <http://www.gnu.org/licenses/>.
+
+HeaderInclude
+config/vms/vms-opts.h
+
+map
+Target Undocumented RejectNegative
+
+mmalloc64
+Target Var(flag_vms_malloc64) Init(1)
+Malloc data into P2 space.
+
+mdebug-main=
+Target RejectNegative Joined Var(vms_debug_main)
+Set name of main routine for the debugger.
+
+mvms-return-codes
+Target Var(flag_vms_return_codes)
+Use VMS exit codes instead of posix ones.
+
+mpointer-size=
+Target Joined RejectNegative Enum(vms_pointer_size) Var(flag_vms_pointer_size) Init(VMS_POINTER_SIZE_NONE)
+-mpointer-size=[no,32,short,64,long]	Set the default pointer size.
+
+Enum
+Name(vms_pointer_size) Type(enum vms_pointer_size) UnknownError(unknown pointer size model %qs)
+
+EnumValue
+Enum(vms_pointer_size) String(no) Value(VMS_POINTER_SIZE_NONE)
+
+EnumValue
+Enum(vms_pointer_size) String(32) Value(VMS_POINTER_SIZE_32)
+
+EnumValue
+Enum(vms_pointer_size) String(short) Value(VMS_POINTER_SIZE_32)
+
+EnumValue
+Enum(vms_pointer_size) String(64) Value(VMS_POINTER_SIZE_64)
+
+EnumValue
+Enum(vms_pointer_size) String(long) Value(VMS_POINTER_SIZE_64)
+
+; The float representation format in effect for Ada
+Variable
+char vms_float_format = 'I'
+
+; This comment is to ensure we retain the blank line above.

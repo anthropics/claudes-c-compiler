@@ -1,0 +1,102 @@
+# configure.host
+#
+# This shell script handles all host based configuration for libgfortran.
+# It sets various shell variables based on the host triplet.
+# You can modify this shell script without rerunning autoconf/aclocal/etc.
+# This file is "sourced", not executed.
+#
+#
+# It uses the following shell variables as set by config.guess:
+#   host                The configuration host (full CPU-vendor-OS triplet)
+#   host_cpu            The configuration host CPU
+#   host_os             The configuration host OS
+#
+#
+# It sets the following shell variables:
+#
+#   fpu_host            FPU-specific code file, defaults to fpu-generic.
+#   tmake_file		A list of machine-description-specific
+#			makefile fragments.
+
+
+
+# DEFAULTS
+fpu_host='fpu-generic'
+ieee_support='no'
+
+if test "x${have_fp_enable}" = "xyes" && test "x${have_fp_trap}" = "xyes"; then
+  fpu_host='fpu-aix'
+  ieee_support='yes'
+fi
+
+if test "x${have_fpsetmask}" = "xyes"; then
+  fpu_host='fpu-sysv'
+  ieee_support='yes'
+fi
+
+if test "x${have_feenableexcept}" = "xyes"; then
+  fpu_host='fpu-glibc'
+  ieee_support='yes'
+fi
+
+case "${host_cpu}" in
+
+  # x86 asm should be used instead of glibc, since glibc doesn't support
+  # the x86 denormal exception.
+  i?86 | x86_64)
+    if test "x${have_soft_float}" = "xyes"; then
+      fpu_host='fpu-generic'
+      ieee_support='no'
+    else
+      fpu_host='fpu-387'
+      ieee_support='yes'
+    fi
+    ;;
+
+  # use asm on aarch64-darwin
+  aarch64)
+    case "${host_os}" in
+      darwin*)
+        fpu_host='fpu-aarch64'
+        ieee_support='yes'
+        ;;
+    esac
+    ;;
+
+  powerpc*)
+    case "${host_os}" in
+      darwin*)
+        fpu_host='fpu-macppc'
+        ieee_support='yes'
+        ;;
+    esac
+
+esac
+
+# Some targets require additional compiler options for NaN/Inf.
+ieee_flags=
+case "${host_cpu}" in
+  alpha*)
+    ieee_flags="-mieee" ;;
+  sh*)
+    ieee_flags="-mieee" ;;
+esac
+
+tmake_file=
+# Other system configury
+case "${target}" in
+
+  *-*-aix*)
+	# Create AIX-style "FAT" libraries.
+	tmake_file="t-aix"
+	;;
+
+  nvptx-*-none)
+	tmake_file="$tmake_file t-nvptx"
+	;;
+
+  *)
+	;;
+
+esac
+
