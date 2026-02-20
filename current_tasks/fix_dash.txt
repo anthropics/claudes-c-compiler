@@ -1,3 +1,0 @@
-Fixing dash project for riscv target.
-dash is a POSIX shell. FAIL on riscv, PASS on x86/i686/arm.
-Started: 2026-02-05
