@@ -3,6 +3,8 @@
 //! Handles #pragma once, pack, push_macro/pop_macro, weak,
 //! redefine_extname, and GCC visibility directives.
 
+use std::rc::Rc;
+
 use super::pipeline::Preprocessor;
 
 impl Preprocessor {
@@ -89,7 +91,7 @@ impl Preprocessor {
     /// Handle #pragma push_macro("name") - save the current definition of macro.
     fn handle_pragma_push_macro(&mut self, content: &str) {
         if let Some(name) = Self::extract_pragma_macro_name(content) {
-            let saved = self.macros.get(&name).cloned();
+            let saved = self.macros.get(&*name).cloned();
             self.macro_save_stack
                 .entry(name)
                 .or_default()
@@ -100,7 +102,7 @@ impl Preprocessor {
     /// Handle #pragma pop_macro("name") - restore the previously saved definition.
     fn handle_pragma_pop_macro(&mut self, content: &str) {
         if let Some(name) = Self::extract_pragma_macro_name(content) {
-            if let Some(stack) = self.macro_save_stack.get_mut(&name) {
+            if let Some(stack) = self.macro_save_stack.get_mut(&*name) {
                 if let Some(saved) = stack.pop() {
                     match saved {
                         Some(def) => self.macros.define(def),
@@ -112,7 +114,7 @@ impl Preprocessor {
     }
 
     /// Extract macro name from pragma argument like ("name").
-    fn extract_pragma_macro_name(content: &str) -> Option<String> {
+    fn extract_pragma_macro_name(content: &str) -> Option<Rc<str>> {
         let content = content.trim();
         if !content.starts_with('(') {
             return None;
@@ -123,7 +125,7 @@ impl Preprocessor {
         if name.is_empty() {
             return None;
         }
-        Some(name.to_string())
+        Some(Rc::from(name))
     }
 
     /// Handle #pragma weak directives.
@@ -136,16 +138,16 @@ impl Preprocessor {
             return;
         }
         if let Some(eq_pos) = content.find('=') {
-            let symbol = content[..eq_pos].trim().to_string();
-            let target = content[eq_pos + 1..].trim().to_string();
+            let symbol = content[..eq_pos].trim();
+            let target = content[eq_pos + 1..].trim();
             if !symbol.is_empty() && !target.is_empty() {
-                self.weak_pragmas.push((symbol, Some(target)));
+                self.weak_pragmas.push((Rc::from(symbol), Some(Rc::from(target))));
             }
         } else {
             // Just mark the symbol as weak
-            let symbol = content.split_whitespace().next().unwrap_or("").to_string();
+            let symbol = content.split_whitespace().next().unwrap_or("");
             if !symbol.is_empty() {
-                self.weak_pragmas.push((symbol, None));
+                self.weak_pragmas.push((Rc::from(symbol), None));
             }
         }
     }
@@ -155,10 +157,8 @@ impl Preprocessor {
     fn handle_pragma_redefine_extname(&mut self, content: &str) {
         let parts: Vec<&str> = content.split_whitespace().collect();
         if parts.len() >= 2 {
-            let old_name = parts[0].to_string();
-            let new_name = parts[1].to_string();
             // Redirect external references from old_name to new_name.
-            self.redefine_extname_pragmas.push((old_name, new_name));
+            self.redefine_extname_pragmas.push((Rc::from(parts[0]), Rc::from(parts[1])));
         }
     }
 

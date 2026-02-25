@@ -37,6 +37,7 @@ use crate::ir::reexports::{
     Operand,
 };
 use crate::common::types::IrType;
+use crate::passes::use_def::UseDefInfo;
 
 /// Information about a Cast instruction (widening).
 #[derive(Clone)]
@@ -152,6 +153,80 @@ pub(crate) fn narrow_function(func: &mut IrFunction) -> usize {
 
     changes += narrow_binops_with_cast(func, &binop_map, &use_counts, &widen_map, &mut narrowed_map);
     changes += narrow_binops_without_cast(func, &use_counts, &widen_map, &mut narrowed_map);
+    changes += narrow_cmps(func, &widen_map);
+
+    changes
+}
+
+/// Narrow operations using pre-built UseDefInfo.
+///
+/// Same algorithm as `narrow_function`, but reuses the shared use-count
+/// array instead of building its own.
+pub(crate) fn narrow_function_with_usedef(func: &mut IrFunction, usedef: &UseDefInfo) -> usize {
+    let has_narrowable = func.blocks.iter().any(|block| {
+        block.instructions.iter().any(|inst| match inst {
+            Instruction::BinOp { ty, .. } => {
+                matches!(ty, IrType::I64 | IrType::U64)
+            }
+            Instruction::Cmp { ty, .. } => {
+                matches!(ty, IrType::I64 | IrType::U64)
+            }
+            _ => false,
+        })
+    });
+    if !has_narrowable {
+        return 0;
+    }
+
+    let max_id = func.max_value_id() as usize;
+    let mut changes = 0;
+
+    // Phase 1: Build widen_map (same as narrow_function).
+    let mut widen_map: Vec<Option<CastInfo>> = vec![None; max_id + 1];
+    for block in &func.blocks {
+        for inst in &block.instructions {
+            if let Instruction::Cast { dest, src, from_ty, to_ty } = inst {
+                let is_widen = from_ty.is_integer() && (*to_ty == IrType::I64 || *to_ty == IrType::U64)
+                    && from_ty.size() < to_ty.size();
+                if is_widen {
+                    let id = dest.0 as usize;
+                    if id <= max_id {
+                        widen_map[id] = Some(CastInfo {
+                            src: *src,
+                            from_ty: *from_ty,
+                        });
+                    }
+                }
+            }
+        }
+    }
+
+    // Phase 2: Build binop_map (same as narrow_function).
+    let mut binop_map: Vec<Option<BinOpDef>> = vec![None; max_id + 1];
+    for block in &func.blocks {
+        for inst in &block.instructions {
+            if let Instruction::BinOp { dest, op, lhs, rhs, ty } = inst {
+                if *ty == IrType::I64 || *ty == IrType::U64 {
+                    let id = dest.0 as usize;
+                    if id <= max_id {
+                        binop_map[id] = Some(BinOpDef {
+                            op: *op,
+                            lhs: *lhs,
+                            rhs: *rhs,
+                        });
+                    }
+                }
+            }
+        }
+    }
+
+    // Phase 3: Use shared UseDefInfo use_count instead of building our own.
+    let use_counts = &usedef.use_count;
+
+    let mut narrowed_map: Vec<Option<IrType>> = vec![None; max_id + 1];
+
+    changes += narrow_binops_with_cast(func, &binop_map, use_counts, &widen_map, &mut narrowed_map);
+    changes += narrow_binops_without_cast(func, use_counts, &widen_map, &mut narrowed_map);
     changes += narrow_cmps(func, &widen_map);
 
     changes
@@ -647,7 +722,7 @@ mod tests {
     use crate::ir::reexports::{BasicBlock, BlockId, Terminator, Value};
 
     fn make_func_with_blocks(blocks: Vec<BasicBlock>) -> IrFunction {
-        let mut func = IrFunction::new("test".to_string(), IrType::I32, vec![], false);
+        let mut func = IrFunction::new("test".into(), IrType::I32, vec![], false);
         func.blocks = blocks;
         func.next_value_id = 100;
         func

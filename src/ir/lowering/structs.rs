@@ -131,9 +131,9 @@ impl Lowerer {
         // Find the existing layout key. For tagged types, use the tag-based key.
         // For anonymous types (e.g., typedef union { ... } name), find the key
         // that sema assigned by searching typedefs for a matching CType.
-        let existing_key = if let Some(name) = tag {
+        let existing_key: Option<Rc<str>> = if let Some(name) = tag {
             let prefix = if is_union { "union." } else { "struct." };
-            Some(format!("{}{}", prefix, name))
+            Some(Rc::from(format!("{}{}", prefix, name)))
         } else {
             let layouts = self.types.borrow_struct_layouts();
             let mut found_key = None;
@@ -142,7 +142,7 @@ impl Lowerer {
                     CType::Struct(key) | CType::Union(key) => {
                         if let Some(layout) = layouts.get(&**key) {
                             if layout.is_union == is_union && layout.fields.len() == fields.len() {
-                                found_key = Some(key.to_string());
+                                found_key = Some(key.clone());
                                 break;
                             }
                         }
@@ -164,13 +164,13 @@ impl Lowerer {
                     layout.size = (layout.size + mask) & !mask;
                 }
             }
-            self.types.insert_struct_layout_from_ref(&key, layout);
+            self.types.insert_struct_layout_from_ref(key, layout);
         }
     }
 
     /// Insert a struct layout into the cache, tracking the change in the current
     /// scope frame so it can be undone on scope exit.
-    fn insert_struct_layout_scoped(&mut self, key: String, layout: StructLayout) {
+    fn insert_struct_layout_scoped(&mut self, key: Rc<str>, layout: StructLayout) {
         self.types.insert_struct_layout_scoped(key, layout);
     }
 
@@ -213,28 +213,27 @@ impl Lowerer {
     }
 
     /// Compute a layout key for a struct/union.
-    fn struct_layout_key(&mut self, tag: &Option<String>, is_union: bool) -> String {
+    fn struct_layout_key(&mut self, tag: &Option<Rc<str>>, is_union: bool) -> Rc<str> {
         let prefix = if is_union { "union." } else { "struct." };
         if let Some(name) = tag {
-            format!("{}{}", prefix, name)
+            Rc::from(format!("{}{}", prefix, name))
         } else {
             let id = self.next_anon_struct;
             self.next_anon_struct += 1;
-            format!("{}__anon_{}", prefix, id)
+            Rc::from(format!("{}__anon_{}", prefix, id))
         }
     }
 
     /// Get the StructLayout key for a union TypeSpecifier.
     /// Returns the layout map key if the type is a union (directly or via typedef).
-    pub(super) fn union_layout_key(&self, ts: &TypeSpecifier) -> Option<String> {
+    pub(super) fn union_layout_key(&self, ts: &TypeSpecifier) -> Option<Rc<str>> {
         match ts {
             TypeSpecifier::Union(tag, _, _, _, _) => {
-                let prefix = "union.";
-                tag.as_ref().map(|name| format!("{}{}", prefix, name))
+                tag.as_ref().map(|name| Rc::from(format!("union.{}", name)))
             }
             TypeSpecifier::TypedefName(name) => {
                 if let Some(CType::Union(key)) = self.types.typedefs.get(name) {
-                    return Some(key.to_string());
+                    return Some(key.clone());
                 }
                 None
             }
@@ -253,14 +252,14 @@ impl Lowerer {
             for declarator in &decl.declarators {
                 if !declarator.name.is_empty() {
                     if let Some(CType::Union(key)) = self.types.typedefs.get(&declarator.name) {
-                        found_key = Some(key.to_string());
+                        found_key = Some(key.clone());
                         break;
                     }
                 }
             }
         }
         if let Some(key) = found_key {
-            if let Some(layout) = self.types.borrow_struct_layouts_mut().get_mut(&key) {
+            if let Some(layout) = self.types.borrow_struct_layouts_mut().get_mut(&*key) {
                 Rc::make_mut(layout).is_transparent_union = true;
             }
         }
@@ -291,8 +290,9 @@ impl Lowerer {
             TypeSpecifier::Struct(tag, Some(fields), is_packed, pragma_pack, _) => {
                 if let Some(tag) = tag {
                     let layouts = self.types.borrow_struct_layouts();
-                    if let Some(layout) = layouts.get(&format!("struct.{}", tag))
-                        .or_else(|| layouts.get(tag.as_str()))
+                    let key = format!("struct.{}", tag);
+                    if let Some(layout) = layouts.get(key.as_str())
+                        .or_else(|| layouts.get(&**tag))
                     {
                         return Some(layout.clone());
                     }
@@ -302,18 +302,20 @@ impl Lowerer {
             }
             TypeSpecifier::Struct(Some(tag), None, _, _, _) => {
                 let layouts = self.types.borrow_struct_layouts();
-                layouts.get(&format!("struct.{}", tag)).cloned()
+                let key = format!("struct.{}", tag);
+                layouts.get(key.as_str()).cloned()
                     .or_else(|| {
                         // Anonymous structs from typeof/ctype_to_type_spec use the
                         // raw CType key (e.g., "__anon_struct_N") as the tag.
-                        layouts.get(tag.as_str()).cloned()
+                        layouts.get(&**tag).cloned()
                     })
             }
             TypeSpecifier::Union(tag, Some(fields), is_packed, pragma_pack, _) => {
                 if let Some(tag) = tag {
                     let layouts = self.types.borrow_struct_layouts();
-                    if let Some(layout) = layouts.get(&format!("union.{}", tag))
-                        .or_else(|| layouts.get(tag.as_str()))
+                    let key = format!("union.{}", tag);
+                    if let Some(layout) = layouts.get(key.as_str())
+                        .or_else(|| layouts.get(&**tag))
                     {
                         return Some(layout.clone());
                     }
@@ -323,11 +325,12 @@ impl Lowerer {
             }
             TypeSpecifier::Union(Some(tag), None, _, _, _) => {
                 let layouts = self.types.borrow_struct_layouts();
-                layouts.get(&format!("union.{}", tag)).cloned()
+                let key = format!("union.{}", tag);
+                layouts.get(key.as_str()).cloned()
                     .or_else(|| {
                         // Anonymous unions from typeof/ctype_to_type_spec use the
                         // raw CType key (e.g., "__anon_struct_N") as the tag.
-                        layouts.get(tag.as_str()).cloned()
+                        layouts.get(&**tag).cloned()
                     })
             }
             // For typedef'd array types like `typedef S arr_t[4]`, peel the
@@ -371,7 +374,7 @@ impl Lowerer {
                     self.emit(Instruction::Load { dest: loaded, ptr: info.alloca, ty: IrType::Ptr , seg_override: AddressSpace::Default });
                     return loaded;
                 }
-                if self.globals.contains_key(name) {
+                if self.globals.contains_key(&**name) {
                     let addr = self.fresh_value();
                     self.emit(Instruction::GlobalAddr { dest: addr, name: name.clone() });
                     return addr;
@@ -453,13 +456,13 @@ impl Lowerer {
                 } else if let Expr::Identifier(name, _) = func_expr.as_ref() {
                     // Detect function pointer variables: identifiers that are
                     // local/global variables rather than known function names
-                    let is_fptr_var = (self.func_mut().locals.contains_key(name) && !self.known_functions.contains(name))
-                        || (!self.func_mut().locals.contains_key(name) && self.globals.contains_key(name) && !self.known_functions.contains(name));
+                    let is_fptr_var = (self.func_mut().locals.contains_key(name) && !self.known_functions.contains(&**name))
+                        || (!self.func_mut().locals.contains_key(name) && self.globals.contains_key(&**name) && !self.known_functions.contains(&**name));
                     if is_fptr_var {
                         // Indirect call through variable: use struct size to determine ABI
                         struct_size > 8
                     } else {
-                        self.func_meta.sigs.get(name.as_str()).is_some_and(|s| s.sret_size.is_some() || s.two_reg_ret_size.is_some())
+                        self.func_meta.sigs.get(&**name).is_some_and(|s| s.sret_size.is_some() || s.two_reg_ret_size.is_some())
                     }
                 } else {
                     // Indirect call through expression: determine from return type
@@ -571,7 +574,7 @@ impl Lowerer {
                 }
                 // Small struct (<= 8 bytes): produces packed data unless somehow sret
                 if let Expr::Identifier(name, _) = func_expr.as_ref() {
-                    self.func_meta.sigs.get(name.as_str()).is_none_or(|s| s.sret_size.is_none() && s.two_reg_ret_size.is_none())
+                    self.func_meta.sigs.get(&**name).is_none_or(|s| s.sret_size.is_none() && s.two_reg_ret_size.is_none())
                 } else {
                     true
                 }
@@ -674,7 +677,7 @@ impl Lowerer {
                 // Check static locals first (only in function context)
                 if let Some(ref fs) = self.func_state {
                     if let Some(mangled) = fs.static_local_names.get(name) {
-                        if let Some(ginfo) = self.globals.get(mangled) {
+                        if let Some(ginfo) = self.globals.get(&**mangled) {
                             if ginfo.struct_layout.is_some() {
                                 return ginfo.struct_layout.clone();
                             }
@@ -851,7 +854,7 @@ impl Lowerer {
                 // Use func_state directly to avoid panic when called from global initializer context
                 if let Some(ref fs) = self.func_state {
                     if let Some(mangled) = fs.static_local_names.get(name) {
-                        if let Some(ginfo) = self.globals.get(mangled) {
+                        if let Some(ginfo) = self.globals.get(&**mangled) {
                             return ginfo.struct_layout.clone();
                         }
                     }
@@ -967,7 +970,7 @@ impl Lowerer {
     fn resolve_func_call_struct_layout(&self, func: &Expr, call_expr: &Expr, want_pointer_deref: bool) -> Option<RcLayout> {
         // Try direct function name first
         if let Expr::Identifier(name, _) = func {
-            if let Some(ctype) = self.func_meta.sigs.get(name.as_str()).and_then(|s| s.return_ctype.as_ref()) {
+            if let Some(ctype) = self.func_meta.sigs.get(&**name).and_then(|s| s.return_ctype.as_ref()) {
                 if want_pointer_deref {
                     if let CType::Pointer(pointee, _) = ctype {
                         return self.struct_layout_from_ctype(pointee);

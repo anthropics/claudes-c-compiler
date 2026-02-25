@@ -461,7 +461,7 @@ fn as_f64_const_mapped(op: &Operand, const_map: &[Option<ConstMapEntry>]) -> Opt
 }
 
 /// Create a float constant of the appropriate type from an f64 value.
-fn make_float_const(val: f64, ty: IrType) -> IrConst {
+pub(crate) fn make_float_const(val: f64, ty: IrType) -> IrConst {
     match ty {
         IrType::F32 => IrConst::F32(val as f32),
         IrType::F64 => IrConst::F64(val),
@@ -472,7 +472,7 @@ fn make_float_const(val: f64, ty: IrType) -> IrConst {
 
 /// Evaluate a binary operation on two constant floats.
 /// Uses Rust's native f64 arithmetic which is IEEE 754 compliant.
-fn fold_float_binop(op: IrBinOp, lhs: f64, rhs: f64) -> Option<f64> {
+pub(crate) fn fold_float_binop(op: IrBinOp, lhs: f64, rhs: f64) -> Option<f64> {
     Some(match op {
         IrBinOp::Add => lhs + rhs,
         IrBinOp::Sub => lhs - rhs,
@@ -641,7 +641,7 @@ fn try_fold_float_cast_mapped(dest: Value, src: &Operand, from_ty: IrType, to_ty
 }
 
 /// Fold a cast involving 128-bit types.
-fn fold_cast_i128(src: &IrConst, from_ty: IrType, to_ty: IrType) -> Option<IrConst> {
+pub(crate) fn fold_cast_i128(src: &IrConst, from_ty: IrType, to_ty: IrType) -> Option<IrConst> {
     let val = src.to_i128()?;
 
     if to_ty.is_128bit() {
@@ -681,7 +681,7 @@ fn fold_cast_i128(src: &IrConst, from_ty: IrType, to_ty: IrType) -> Option<IrCon
 /// `ty` is needed for width-sensitive unsigned operations (LShr, UDiv, URem)
 /// where operands stored as sign-extended i64 must be masked to the correct
 /// bit width to get the proper unsigned representation.
-fn fold_binop(op: IrBinOp, lhs: i64, rhs: i64, ty: IrType) -> Option<i64> {
+pub(crate) fn fold_binop(op: IrBinOp, lhs: i64, rhs: i64, ty: IrType) -> Option<i64> {
     let is_32bit = ty == IrType::I32 || ty == IrType::U32
         || ty == IrType::I16 || ty == IrType::U16
         || ty == IrType::I8 || ty == IrType::U8;
@@ -741,7 +741,7 @@ fn fold_binop(op: IrBinOp, lhs: i64, rhs: i64, ty: IrType) -> Option<i64> {
 /// Width-sensitive operations (CLZ, CTZ, Popcount, Bswap) use `ty` to determine
 /// whether to operate on 32 or 64 bits, matching the runtime semantics of
 /// __builtin_clz vs __builtin_clzll, etc.
-fn fold_unaryop(op: IrUnaryOp, src: i64, ty: IrType) -> Option<i64> {
+pub(crate) fn fold_unaryop(op: IrUnaryOp, src: i64, ty: IrType) -> Option<i64> {
     let is_32bit = ty == IrType::I32 || ty == IrType::U32
         || ty == IrType::I16 || ty == IrType::U16
         || ty == IrType::I8 || ty == IrType::U8;
@@ -795,7 +795,7 @@ fn fold_unaryop(op: IrUnaryOp, src: i64, ty: IrType) -> Option<i64> {
 /// For signed source types, we sign-extend to get the correct i64 representation.
 /// For unsigned source types, we zero-extend (mask to type width).
 /// Same logic applies to the target type.
-fn fold_cast(val: i64, from_ty: crate::common::types::IrType, to_ty: crate::common::types::IrType) -> i64 {
+pub(crate) fn fold_cast(val: i64, from_ty: crate::common::types::IrType, to_ty: crate::common::types::IrType) -> i64 {
     // Normalize source to its width/signedness, then convert to target.
     to_ty.truncate_i64(from_ty.truncate_i64(val))
 }

@@ -10,6 +10,7 @@
 // Each module adds methods to the Parser struct via `impl Parser` blocks.
 // Methods are pub(super) so they can be called across modules within the parser.
 
+use std::rc::Rc;
 use crate::common::error::DiagnosticEngine;
 use crate::common::fx_hash::{FxHashMap, FxHashSet};
 use crate::common::source::Span;
@@ -125,7 +126,7 @@ pub(super) struct ParsedDeclAttrs {
     /// `__attribute__((section("...")))` section name.
     pub parsing_section: Option<String>,
     /// `__attribute__((cleanup(func)))` cleanup function name.
-    pub parsing_cleanup_fn: Option<String>,
+    pub parsing_cleanup_fn: Option<Rc<str>>,
     /// `__attribute__((symver("name@@VERSION")))` symbol version string.
     pub parsing_symver: Option<String>,
     /// `__attribute__((vector_size(N)))` total vector size in bytes.
@@ -248,9 +249,9 @@ impl std::fmt::Debug for ParsedDeclAttrs {
 pub struct Parser {
     pub(super) tokens: Vec<Token>,
     pub(super) pos: usize,
-    pub(super) typedefs: FxHashSet<String>,
+    pub(super) typedefs: FxHashSet<Rc<str>>,
     /// Typedef names shadowed by local variable declarations in the current scope.
-    pub(super) shadowed_typedefs: FxHashSet<String>,
+    pub(super) shadowed_typedefs: FxHashSet<Rc<str>>,
     /// Accumulated declaration attributes from the current parse_type_specifier pass.
     /// Reset at the start of each top-level or local declaration.
     pub(super) attrs: ParsedDeclAttrs,
@@ -272,17 +273,17 @@ pub struct Parser {
     /// Map of enum constant names to their integer values.
     /// Populated as enum definitions are parsed, so that later constant expressions
     /// (e.g., in __attribute__((aligned(1 << ENUM_CONST)))) can resolve them.
-    pub(super) enum_constants: FxHashMap<String, i64>,
+    pub(super) enum_constants: FxHashMap<Rc<str>, i64>,
     /// Set of enum constant names whose values couldn't be evaluated at parse time
     /// (e.g., `MY_SIZE = sizeof(some_typedef)`). These are still valid constants,
     /// just not evaluable by our constant-expression evaluator.
-    pub(super) unevaluable_enum_constants: FxHashSet<String>,
+    pub(super) unevaluable_enum_constants: FxHashSet<Rc<str>>,
     /// Map of struct/union tag names to their computed alignments.
     /// Populated when a struct/union with fields is parsed, so that later
     /// __alignof__(struct tag) references can look up the correct alignment
     /// (especially important for packed structs where tag-only refs would
     /// otherwise incorrectly default to ptr_size).
-    pub(super) struct_tag_alignments: FxHashMap<String, usize>,
+    pub(super) struct_tag_alignments: FxHashMap<Rc<str>, usize>,
 }
 
 impl Parser {
@@ -326,7 +327,7 @@ impl Parser {
 
     /// Standard C typedef names commonly provided by system headers.
     /// Since we don't actually include system headers, we pre-seed these.
-    fn builtin_typedefs() -> FxHashSet<String> {
+    fn builtin_typedefs() -> FxHashSet<Rc<str>> {
         [
             // <stddef.h>
             "size_t", "ssize_t", "ptrdiff_t", "wchar_t", "wint_t",
@@ -377,7 +378,7 @@ impl Parser {
             "__SVInt8_t", "__SVInt16_t", "__SVInt32_t", "__SVInt64_t",
             "__SVUint8_t", "__SVUint16_t", "__SVUint32_t", "__SVUint64_t",
             "__SVFloat16_t",
-        ].iter().map(|s| s.to_string()).collect()
+        ].iter().map(|s| Rc::from(*s)).collect()
     }
 
     pub fn parse(&mut self) -> TranslationUnit {
@@ -664,7 +665,7 @@ impl Parser {
                             // Single-paren form
                             while !matches!(self.peek(), TokenKind::RParen | TokenKind::Eof) {
                                 if let TokenKind::Identifier(name) = self.peek() {
-                                    if name == "packed" || name == "__packed__" {
+                                    if &**name == "packed" || &**name == "__packed__" {
                                         is_packed = true;
                                     }
                                 }
@@ -831,7 +832,7 @@ impl Parser {
         self.advance();
         if let TokenKind::Identifier(mode_name) = self.peek() {
             let is_32bit = crate::common::types::target_is_32bit();
-            *mode_kind = match mode_name.as_str() {
+            *mode_kind = match &**mode_name {
                 "QI" | "__QI__" | "byte" | "__byte__" => Some(ModeKind::QI),
                 "HI" | "__HI__" => Some(ModeKind::HI),
                 "SI" | "__SI__" => Some(ModeKind::SI),
@@ -1227,7 +1228,7 @@ impl Parser {
     /// (e.g., `__alignof__(struct packed_tag)` where the definition is elsewhere).
     pub(super) fn alignof_type_spec(
         ts: &TypeSpecifier,
-        tag_aligns: Option<&FxHashMap<String, usize>>,
+        tag_aligns: Option<&FxHashMap<Rc<str>, usize>>,
     ) -> usize {
         use crate::common::types::target_ptr_size;
         let ptr_sz = target_ptr_size();
@@ -1268,7 +1269,7 @@ impl Parser {
                 } else if let Some(tag_name) = name {
                     // Tag-only reference: look up previously stored alignment
                     if let Some(ta) = tag_aligns {
-                        if let Some(&stored) = ta.get(tag_name.as_str()) {
+                        if let Some(&stored) = ta.get(&**tag_name) {
                             return stored;
                         }
                     }
@@ -1288,7 +1289,7 @@ impl Parser {
     /// while _Alignof returns 4 for both (minimum ABI alignment).
     pub(super) fn preferred_alignof_type_spec(
         ts: &TypeSpecifier,
-        tag_aligns: Option<&FxHashMap<String, usize>>,
+        tag_aligns: Option<&FxHashMap<Rc<str>, usize>>,
     ) -> usize {
         use crate::common::types::target_ptr_size;
         let ptr_sz = target_ptr_size();

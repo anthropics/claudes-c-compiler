@@ -114,8 +114,8 @@ impl Lowerer {
     /// bitfield metadata. Returns None if the expression is not a bitfield access.
     pub(super) fn resolve_bitfield_lvalue(&mut self, expr: &Expr) -> Option<(Value, IrType, u32, u32)> {
         let (base_expr, field_name, is_pointer) = match expr {
-            Expr::MemberAccess(base, field, _) => (base.as_ref(), field.as_str(), false),
-            Expr::PointerMemberAccess(base, field, _) => (base.as_ref(), field.as_str(), true),
+            Expr::MemberAccess(base, field, _) => (base.as_ref(), &*field, false),
+            Expr::PointerMemberAccess(base, field, _) => (base.as_ref(), &*field, true),
             _ => return None,
         };
 
@@ -737,7 +737,7 @@ impl Lowerer {
                         // Indirect call: small vectors returned in register
                         return true;
                     }
-                    if let Some(sig) = self.func_meta.sigs.get(name.as_str()) {
+                    if let Some(sig) = self.func_meta.sigs.get(&*name) {
                         // Direct call: check if sret/two_reg are None (small struct/vector return)
                         return sig.sret_size.is_none() && sig.two_reg_ret_size.is_none();
                     }

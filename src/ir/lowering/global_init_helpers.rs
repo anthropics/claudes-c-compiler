@@ -5,6 +5,7 @@
 //! These include designator inspection, field resolution, anonymous member
 //! drilling, and init item classification utilities.
 
+use std::rc::Rc;
 use crate::frontend::parser::ast::{
     Designator,
     Expr,
@@ -18,7 +19,7 @@ use crate::common::fx_hash::FxHashMap;
 /// Returns `None` if the item has no designators or the first is not a Field.
 pub(super) fn first_field_designator(item: &InitializerItem) -> Option<&str> {
     match item.designators.first() {
-        Some(Designator::Field(ref name)) => Some(name.as_str()),
+        Some(Designator::Field(ref name)) => Some(&**name),
         _ => None,
     }
 }
@@ -87,7 +88,7 @@ pub(super) fn init_contains_string_literal(item: &InitializerItem) -> bool {
 pub(super) fn init_contains_addr_expr(
     item: &InitializerItem,
     is_multidim_char_array: bool,
-    enum_constants: &FxHashMap<String, i64>,
+    enum_constants: &FxHashMap<Rc<str>, i64>,
 ) -> bool {
     match &item.init {
         Initializer::Expr(expr) => {
@@ -108,7 +109,7 @@ pub(super) fn init_contains_addr_expr(
 /// Conservative: false positives are safe (just use the slower Compound path).
 /// `enum_constants` is used to exclude known enum constant identifiers, which are
 /// compile-time integer values and not addresses.
-fn expr_might_be_addr(expr: &Expr, enum_constants: &FxHashMap<String, i64>) -> bool {
+fn expr_might_be_addr(expr: &Expr, enum_constants: &FxHashMap<Rc<str>, i64>) -> bool {
     match expr {
         Expr::AddressOf(_, _) => true,
         Expr::LabelAddr(_, _) => true,
@@ -245,7 +246,7 @@ pub(super) fn resolve_anonymous_member(
     inner_name: &str,
     init: &Initializer,
     extra_designators: &[Designator],
-    layouts: &crate::common::fx_hash::FxHashMap<String, RcLayout>,
+    layouts: &crate::common::fx_hash::FxHashMap<Rc<str>, RcLayout>,
 ) -> Option<AnonMemberResolution> {
     let anon_field = &layout.fields[anon_field_idx];
     let anon_offset = anon_field.offset;
@@ -254,7 +255,7 @@ pub(super) fn resolve_anonymous_member(
         _ => return None,
     };
     let sub_layout = layouts.get(key.as_ref())?.clone(); // Rc::clone, not deep clone
-    let mut synth_desigs = vec![Designator::Field(inner_name.to_string())];
+    let mut synth_desigs = vec![Designator::Field(Rc::from(inner_name))];
     synth_desigs.extend(extra_designators.iter().cloned());
     let sub_item = InitializerItem {
         designators: synth_desigs,

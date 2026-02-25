@@ -140,6 +140,167 @@ pub(super) fn eliminate_dead_reg_moves(store: &LineStore, infos: &mut [LineInfo]
     changed
 }
 
+// ── Extended dead register move elimination ──────────────────────────────────
+//
+// Like eliminate_dead_reg_moves but uses extended liveness analysis (depth=5)
+// to prove dead moves across conditional jumps and labels. Uses the call-safe
+// variant that treats function calls as barriers, preventing incorrect
+// elimination of argument-setup moves.
+
+pub(super) fn eliminate_dead_reg_moves_ext(store: &LineStore, infos: &mut [LineInfo]) -> bool {
+    let mut changed = false;
+    let len = store.len();
+    let targets = collect_jump_targets(store, infos, len);
+
+    let mut i = 0;
+    while i < len {
+        if infos[i].is_nop() || infos[i].is_barrier() {
+            i += 1;
+            continue;
+        }
+
+        let dst_reg = match infos[i].kind {
+            LineKind::Other { dest_reg } => {
+                let trimmed = infos[i].trimmed(store.get(i));
+                if parse_reg_to_reg_movq(&infos[i], trimmed).is_some() {
+                    dest_reg
+                } else {
+                    i += 1;
+                    continue;
+                }
+            }
+            _ => {
+                i += 1;
+                continue;
+            }
+        };
+
+        if dst_reg == REG_NONE || dst_reg > REG_GP_MAX || dst_reg == 4 || dst_reg == 5 {
+            i += 1;
+            continue;
+        }
+
+        if super::local_patterns::is_reg_unused_after_ext(infos, store, i + 1, len, dst_reg, &targets) {
+            mark_nop(&mut infos[i]);
+            changed = true;
+        }
+
+        i += 1;
+    }
+
+    changed
+}
+
+// ── Dead argument register move elimination ──────────────────────────────────
+//
+// Eliminates moves to argument registers (%rdi, %rsi, %rdx, %rcx, %r8, %r9)
+// that precede a call to a known zero-argument function. In System V AMD64 ABI,
+// these registers are used to pass the first 6 integer/pointer arguments. When
+// the call target takes zero arguments, any setup moves to these registers are
+// dead code.
+//
+// Example eliminated (strprocess hot loop):
+//   movq %rax, %rsi       ; dead — __ctype_b_loc takes 0 args
+//   movq %rax, %rdi       ; dead — __ctype_b_loc takes 0 args
+//   movq %rax, %r14
+//   xorl %eax, %eax
+//   call __ctype_b_loc
+
+/// Known zero-argument C library functions.
+fn is_zero_arg_call(trimmed: &str) -> bool {
+    if let Some(target) = trimmed.strip_prefix("call ") {
+        let target = target.trim();
+        matches!(target,
+            "__ctype_b_loc" | "__ctype_toupper_loc" | "__ctype_tolower_loc"
+            | "clock" | "getpid" | "getppid" | "getuid" | "geteuid"
+            | "getgid" | "getegid" | "fork" | "__errno_location"
+        )
+    } else {
+        false
+    }
+}
+
+/// Argument register family IDs for System V AMD64 ABI.
+const ARG_REGS: [u8; 6] = [7, 6, 2, 1, 8, 9]; // %rdi, %rsi, %rdx, %rcx, %r8, %r9
+
+pub(super) fn eliminate_dead_arg_moves(store: &LineStore, infos: &mut [LineInfo]) -> bool {
+    let mut changed = false;
+    let len = store.len();
+
+    let mut i = 0;
+    while i < len {
+        if infos[i].is_nop() || infos[i].is_barrier() {
+            i += 1;
+            continue;
+        }
+
+        // Check if this is a move to an argument register.
+        let dst_reg = match infos[i].kind {
+            LineKind::Other { dest_reg } => dest_reg,
+            _ => {
+                i += 1;
+                continue;
+            }
+        };
+
+        if !ARG_REGS.contains(&dst_reg) {
+            i += 1;
+            continue;
+        }
+
+        // Scan forward for a call within a short window.
+        let dst_mask = 1u16 << dst_reg;
+        let mut j = i + 1;
+        let scan_end = (i + 12).min(len);
+        let mut found_dead = false;
+
+        while j < scan_end {
+            if infos[j].is_nop() {
+                j += 1;
+                continue;
+            }
+
+            match infos[j].kind {
+                LineKind::Call => {
+                    // Check if the call is a known 0-arg function.
+                    let trimmed_j = infos[j].trimmed(store.get(j));
+                    if is_zero_arg_call(trimmed_j) {
+                        found_dead = true;
+                    }
+                    break;
+                }
+                // Stop at other control flow.
+                LineKind::Label | LineKind::Jmp | LineKind::JmpIndirect
+                | LineKind::CondJmp | LineKind::Ret => break,
+                _ => {}
+            }
+
+            // If any intervening instruction reads our register, it's not dead.
+            if infos[j].reg_refs & dst_mask != 0 {
+                let dest_j = get_dest_reg(&infos[j]);
+                if dest_j == dst_reg {
+                    // Overwritten — our move is dead (but not because of the call).
+                    // Leave this to the regular dead-move pass.
+                    break;
+                }
+                // Register is read by an intervening instruction — not dead.
+                break;
+            }
+
+            j += 1;
+        }
+
+        if found_dead {
+            mark_nop(&mut infos[i]);
+            changed = true;
+        }
+
+        i += 1;
+    }
+
+    changed
+}
+
 // ── Dead store elimination (local, windowed) ─────────────────────────────────
 
 pub(super) fn eliminate_dead_stores(store: &LineStore, infos: &mut [LineInfo]) -> bool {

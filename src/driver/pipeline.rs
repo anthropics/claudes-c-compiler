@@ -243,7 +243,7 @@ impl Driver {
             output_path: "a.out".to_string(),
             output_path_set: false,
             input_files: Vec::new(),
-            opt_level: 2, // All levels run the same optimizations; default to max
+            opt_level: 2, // Default to full optimization
             optimize: false, // Only set to true when user explicitly passes -O1 or higher
             optimize_size: false,
             verbose: false,
@@ -1030,10 +1030,10 @@ impl Driver {
         for (symbol, target) in &preprocessor.weak_pragmas {
             if let Some(ref alias_target) = target {
                 // #pragma weak symbol = alias -> create weak alias
-                module.aliases.push((symbol.clone(), alias_target.clone(), true));
+                module.aliases.push((std::rc::Rc::clone(symbol), std::rc::Rc::clone(alias_target), true));
             } else {
                 // #pragma weak symbol -> mark as weak
-                module.symbol_attrs.push((symbol.clone(), true, None));
+                module.symbol_attrs.push((std::rc::Rc::clone(symbol), true, None));
             }
         }
 
@@ -1042,7 +1042,7 @@ impl Driver {
         // locally, but a proper implementation would rename symbol references
         // during lowering/codegen for the case where new_name is external.
         for (old_name, new_name) in &preprocessor.redefine_extname_pragmas {
-            module.aliases.push((old_name.clone(), new_name.clone(), false));
+            module.aliases.push((std::rc::Rc::clone(old_name), std::rc::Rc::clone(new_name), false));
         }
 
         // Apply -fcommon: mark tentative definitions as COMMON symbols.

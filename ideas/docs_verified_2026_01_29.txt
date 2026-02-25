@@ -1,10 +1,26 @@
 Documentation Verification Changelog
 =====================================
 
-Last audited: 2026-02-04
+Last audited: 2026-02-23
 
 All README.md files have been systematically verified against the actual
 source code. This file tracks what was checked and what was fixed.
+
+Phase 3.2: String Interning — Rc<str> for IR Names + Preprocessor (2026-02-23):
+  Methodology: Convert String → Rc<str> in two phases:
+    Part 1: Preprocessor macro names (MacroDef.name, expanding sets,
+            expanded_macros) — isolated to 5 preprocessor files + source.rs/error.rs
+    Part 2: IR names (IrFunction.name, IrGlobal.name, Call.func, GlobalAddr.name,
+            GlobalInit symbol variants, IrModule collection fields) — touches
+            IR core (module.rs, instruction.rs), ~15 lowering files, 4 optimization
+            passes (inline, ipcp, resolve_asm, dead_statics), and 3 backend files
+            (state.rs, generation.rs, liveness.rs)
+  Key pattern: Rc<str> auto-derefs to &str so most read sites need zero changes.
+    Construction sites: String → Rc::from(s) or Rc::from(s.as_str())
+    HashSet/HashMap: Rc<str> implements Borrow<str> so .contains(&str) still works.
+    Comparisons: &*rc_str == &str_ref for cross-type equality.
+  ~200 lines changed across ~30 files. All 509 tests pass. Benchmarks verified.
+  Updated: ideas/high_compile_speed_improvements.txt (items 2, 3, 4)
 
 README/DESIGN_DOC Split + MY_ASM/MY_LD Correction (2026-02-04):
   - Split top-level README.md into focused README (building, usage, status)

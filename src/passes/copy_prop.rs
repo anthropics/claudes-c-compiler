@@ -382,7 +382,7 @@ mod tests {
         // Should become:
         // %1 = Copy %0 (dead, will be removed by DCE)
         // %2 = Add %0, const(1)
-        let mut func = IrFunction::new("test".to_string(), IrType::I32, vec![], false);
+        let mut func = IrFunction::new("test".into(), IrType::I32, vec![], false);
         func.blocks.push(BasicBlock {
             label: BlockId(0),
             instructions: vec![
@@ -420,7 +420,7 @@ mod tests {
         // %2 = Copy %1
         // %3 = Add %2, const(1)
         // Should resolve %2 -> %0
-        let mut func = IrFunction::new("test".to_string(), IrType::I32, vec![], false);
+        let mut func = IrFunction::new("test".into(), IrType::I32, vec![], false);
         func.blocks.push(BasicBlock {
             label: BlockId(0),
             instructions: vec![
@@ -461,7 +461,7 @@ mod tests {
         // %0 = Copy const(42)
         // %1 = Add %0, const(1)
         // Should propagate const(42) into the Add
-        let mut func = IrFunction::new("test".to_string(), IrType::I32, vec![], false);
+        let mut func = IrFunction::new("test".into(), IrType::I32, vec![], false);
         func.blocks.push(BasicBlock {
             label: BlockId(0),
             instructions: vec![
@@ -496,7 +496,7 @@ mod tests {
         // %1 = Copy %0
         // return %1
         // Should become return %0
-        let mut func = IrFunction::new("test".to_string(), IrType::I32, vec![], false);
+        let mut func = IrFunction::new("test".into(), IrType::I32, vec![], false);
         func.blocks.push(BasicBlock {
             label: BlockId(0),
             instructions: vec![
@@ -522,7 +522,7 @@ mod tests {
 
     #[test]
     fn test_no_propagation_when_no_copies() {
-        let mut func = IrFunction::new("test".to_string(), IrType::I32, vec![], false);
+        let mut func = IrFunction::new("test".into(), IrType::I32, vec![], false);
         func.blocks.push(BasicBlock {
             label: BlockId(0),
             instructions: vec![

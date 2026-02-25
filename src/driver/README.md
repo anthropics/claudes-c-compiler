@@ -80,15 +80,14 @@ populated exclusively by `parse_cli_args()`. The struct is created with
 
 | Field | Type | Default | Description |
 |-------|------|---------|-------------|
-| `opt_level` | `u32` | `2` | Internal optimization level (always 2; all levels run the same passes) |
+| `opt_level` | `u32` | `2` | Internal optimization level: 0=minimal, 1=basic, 2=full, 3=aggressive |
 | `optimize` | `bool` | `false` | Whether user passed `-O1` or higher (defines `__OPTIMIZE__`) |
 | `optimize_size` | `bool` | `false` | Whether `-Os`/`-Oz` (defines `__OPTIMIZE_SIZE__`) |
 
-The internal `opt_level` is always 2 regardless of the CLI flag. The `optimize`
-and `optimize_size` booleans only control predefined macros (`__OPTIMIZE__`,
-`__OPTIMIZE_SIZE__`), which build systems like the Linux kernel rely on (e.g.,
-`BUILD_BUG()` uses `__OPTIMIZE__` to select between a noreturn function call
-and a no-op).
+Optimization levels: `-O0` (no passes), `-O1` (single-iteration basics), `-O2` (full pipeline, 3 iterations),
+`-O3` (aggressive: 5 iterations, 2% diminishing-returns threshold). `-Os`/`-Oz` map to `-O2`.
+The `optimize` and `optimize_size` booleans also control predefined macros (`__OPTIMIZE__`,
+`__OPTIMIZE_SIZE__`), which build systems like the Linux kernel rely on.
 
 **Preprocessor:**
 

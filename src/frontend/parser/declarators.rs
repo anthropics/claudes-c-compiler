@@ -6,6 +6,7 @@
 // pointer to a function returning int, read from the name outward. This module
 // handles the recursive parsing needed for this grammar.
 
+use std::rc::Rc;
 use crate::common::types::AddressSpace;
 use crate::frontend::lexer::token::TokenKind;
 use super::ast::*;
@@ -33,14 +34,14 @@ pub(super) enum ParenAbstractDecl {
 }
 
 impl Parser {
-    pub(super) fn parse_declarator(&mut self) -> (Option<String>, Vec<DerivedDeclarator>) {
+    pub(super) fn parse_declarator(&mut self) -> (Option<Rc<str>>, Vec<DerivedDeclarator>) {
         let (name, derived, _, _, _, _) = self.parse_declarator_with_attrs();
         (name, derived)
     }
 
     /// Parse a declarator, also returning attribute info:
     /// (name, derived, mode_kind, has_common, aligned_value, is_packed)
-    pub(super) fn parse_declarator_with_attrs(&mut self) -> (Option<String>, Vec<DerivedDeclarator>, Option<ModeKind>, bool, Option<usize>, bool) {
+    pub(super) fn parse_declarator_with_attrs(&mut self) -> (Option<Rc<str>>, Vec<DerivedDeclarator>, Option<ModeKind>, bool, Option<usize>, bool) {
         let mut derived = Vec::new();
 
         let mut pre_aligned: Option<usize> = None;
@@ -436,7 +437,7 @@ impl Parser {
 
     /// Parse a parameter declarator with full type information.
     /// Returns (name, pointer_depth, array_dims, is_func_ptr, ptr_to_array_dims, fptr_params, fptr_inner_ptr_depth).
-    pub(super) fn parse_param_declarator_full(&mut self) -> (Option<String>, u32, Vec<Option<Box<Expr>>>, bool, Vec<Option<Box<Expr>>>, Option<Vec<ParamDecl>>, u32) {
+    pub(super) fn parse_param_declarator_full(&mut self) -> (Option<Rc<str>>, u32, Vec<Option<Box<Expr>>>, bool, Vec<Option<Box<Expr>>>, Option<Vec<ParamDecl>>, u32) {
         let mut pointer_depth: u32 = 0;
         while self.consume_if(&TokenKind::Star) {
             pointer_depth += 1;
@@ -505,7 +506,7 @@ impl Parser {
         ptr_to_array_dims: &mut Vec<Option<Box<Expr>>>,
         fptr_params: &mut Option<Vec<ParamDecl>>,
         fptr_inner_ptr_depth: &mut u32,
-    ) -> Option<String> {
+    ) -> Option<Rc<str>> {
         let save = self.pos;
         self.advance(); // consume '('
 
@@ -684,7 +685,7 @@ impl Parser {
     }
 
     /// Extract a name from nested parentheses: (name), ((name)), (*(name)), etc.
-    pub(super) fn extract_paren_name(&mut self) -> Option<String> {
+    pub(super) fn extract_paren_name(&mut self) -> Option<Rc<str>> {
         if !matches!(self.peek(), TokenKind::LParen) {
             if let TokenKind::Identifier(ref n) = self.peek() {
                 let n = n.clone();

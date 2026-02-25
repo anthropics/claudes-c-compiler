@@ -1,3 +1,4 @@
+use std::rc::Rc;
 use crate::common::source::Span;
 
 /// All token kinds recognized by the C lexer.
@@ -29,7 +30,7 @@ pub enum TokenKind {
     CharLiteral(char),
 
     // Identifiers and keywords
-    Identifier(String),
+    Identifier(Rc<str>),
 
     // Keywords
     Auto,

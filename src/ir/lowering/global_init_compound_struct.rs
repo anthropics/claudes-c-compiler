@@ -14,6 +14,7 @@ use crate::frontend::parser::ast::{
     Initializer,
     InitializerItem,
 };
+use std::rc::Rc;
 use crate::ir::reexports::{GlobalInit, IrConst};
 use crate::common::types::{IrType, StructLayout, CType, InitFieldResolution};
 use super::lower::Lowerer;
@@ -521,7 +522,7 @@ impl Lowerer {
                         // String literal initializing a pointer field:
                         // create a .rodata string entry and emit GlobalAddr
                         let label = self.intern_string_literal(s);
-                        elements.push(GlobalInit::GlobalAddr(label));
+                        elements.push(GlobalInit::GlobalAddr(Rc::from(label.as_str())));
                     } else {
                         // String literal initializing a char array field
                         push_string_as_elements(elements, s, field_size);

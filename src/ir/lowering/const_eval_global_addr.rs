@@ -12,6 +12,7 @@
 //! - `&((type*)0)->member` patterns (resolved via offsetof in const_eval.rs)
 //! - Pointer arithmetic on global addresses (`&x + n`, `arr - n`)
 
+use std::rc::Rc;
 use crate::frontend::parser::ast::{
     BinOp,
     Expr,
@@ -42,14 +43,14 @@ impl Lowerer {
     }
 
     /// Resolve a variable name to its global name, checking static local names first.
-    fn resolve_to_global_name(&self, name: &str) -> Option<String> {
+    fn resolve_to_global_name(&self, name: &str) -> Option<Rc<str>> {
         if let Some(ref fs) = self.func_state {
             if let Some(mangled) = fs.static_local_names.get(name) {
                 return Some(mangled.clone());
             }
         }
         if self.globals.contains_key(name) {
-            Some(name.to_string())
+            Some(Rc::from(name))
         } else {
             None
         }
@@ -80,7 +81,7 @@ impl Lowerer {
                         // Address of a global variable or function
                         if self.globals.contains_key(name) || self.known_functions.contains(name) {
                             // Apply __asm__("label") redirect (e.g. stat -> stat64)
-                            let resolved = self.asm_label_map.get(name.as_str())
+                            let resolved = self.asm_label_map.get(&**name)
                                 .cloned()
                                 .unwrap_or_else(|| name.clone());
                             return Some(GlobalInit::GlobalAddr(resolved));
@@ -104,7 +105,7 @@ impl Lowerer {
                     Expr::CompoundLiteral(_, _, _) => {
                         let key = inner.as_ref() as *const Expr as usize;
                         self.materialized_compound_literals.get(&key)
-                            .map(|label| GlobalInit::GlobalAddr(label.clone()))
+                            .map(|label| GlobalInit::GlobalAddr(Rc::from(label.as_str())))
                     }
                     _ => None,
                 }
@@ -117,7 +118,7 @@ impl Lowerer {
                     // Without this, glibc's __REDIRECT mechanism (used for LFS stat/fstat
                     // when _FILE_OFFSET_BITS=64) would store the non-redirected symbol
                     // in global initializers like sqlite's aSyscall[] table.
-                    let resolved = self.asm_label_map.get(name.as_str())
+                    let resolved = self.asm_label_map.get(&**name)
                         .cloned()
                         .unwrap_or_else(|| name.clone());
                     return Some(GlobalInit::GlobalAddr(resolved));
@@ -173,7 +174,7 @@ impl Lowerer {
                 // Check if this compound literal was pre-materialized as an anonymous global
                 let key = expr as *const Expr as usize;
                 if let Some(label) = self.materialized_compound_literals.get(&key) {
-                    return Some(GlobalInit::GlobalAddr(label.clone()));
+                    return Some(GlobalInit::GlobalAddr(Rc::from(label.as_str())));
                 }
                 self.eval_global_addr_from_initializer(init)
             }
@@ -403,7 +404,7 @@ impl Lowerer {
         subscripts: &[&Expr],
     ) -> Option<GlobalInit> {
         // Walk the member access chain to collect field names and find the base identifier
-        let mut fields: Vec<String> = Vec::new();
+        let mut fields: Vec<Rc<str>> = Vec::new();
         let mut cur = member_expr;
         loop {
             match cur {
@@ -477,9 +478,9 @@ impl Lowerer {
                     }
 
                     return if total_offset == 0 {
-                        Some(GlobalInit::GlobalAddr(global_name))
+                        Some(GlobalInit::GlobalAddr(Rc::from(global_name)))
                     } else {
-                        Some(GlobalInit::GlobalAddrOffset(global_name, total_offset))
+                        Some(GlobalInit::GlobalAddrOffset(Rc::from(global_name), total_offset))
                     };
                 }
                 _ => return None,
@@ -512,7 +513,7 @@ impl Lowerer {
         // This handles MemberAccess on globals (e.g., boot_cpu_data.x86_capability),
         // AddressOf patterns, identifiers, etc.
         let base_init = self.resolve_inner_as_global_addr(inner_expr)?;
-        let (global_name, base_offset) = match &base_init {
+        let (global_name_rc, base_offset) = match &base_init {
             GlobalInit::GlobalAddr(name) => (name.clone(), 0i64),
             GlobalInit::GlobalAddrOffset(name, off) => (name.clone(), *off),
             _ => return None,
@@ -529,9 +530,9 @@ impl Lowerer {
         }
 
         if total_offset == 0 {
-            Some(GlobalInit::GlobalAddr(global_name))
+            Some(GlobalInit::GlobalAddr(global_name_rc))
         } else {
-            Some(GlobalInit::GlobalAddrOffset(global_name, total_offset))
+            Some(GlobalInit::GlobalAddrOffset(global_name_rc, total_offset))
         }
     }
 
@@ -543,26 +544,26 @@ impl Lowerer {
             // Direct global identifier - treat as address of the global
             Expr::Identifier(name, _) => {
                 let global_name = self.resolve_to_global_name(name)?;
-                Some(GlobalInit::GlobalAddr(global_name))
+                Some(GlobalInit::GlobalAddr(Rc::from(global_name)))
             }
             // struct_var.field -> global + field_offset
             Expr::MemberAccess(base, field, _) => {
                 // Resolve the base to a global address
                 let base_init = self.resolve_inner_as_global_addr(base)?;
-                let (global_name, base_off) = match &base_init {
+                let (global_name_rc, base_off) = match &base_init {
                     GlobalInit::GlobalAddr(name) => (name.clone(), 0i64),
                     GlobalInit::GlobalAddrOffset(name, off) => (name.clone(), *off),
                     _ => return None,
                 };
                 // Look up the struct layout to get the field offset
-                let ginfo = self.globals.get(&global_name)?;
+                let ginfo = self.globals.get(&*global_name_rc)?;
                 let layout = ginfo.struct_layout.clone()?;
                 let (field_offset, _field_ty) = layout.field_offset(field, &*self.types.borrow_struct_layouts())?;
                 let total = base_off + field_offset as i64;
                 if total == 0 {
-                    Some(GlobalInit::GlobalAddr(global_name))
+                    Some(GlobalInit::GlobalAddr(global_name_rc))
                 } else {
-                    Some(GlobalInit::GlobalAddrOffset(global_name, total))
+                    Some(GlobalInit::GlobalAddrOffset(global_name_rc, total))
                 }
             }
             // AddressOf(&x) -> address of x
@@ -737,7 +738,7 @@ impl Lowerer {
                         // then apply subscript offsets within the array field.
                         Expr::MemberAccess(_, _, _) => {
                             // Walk the member access chain below the subscripts (global.member[i][j].field)
-                            let mut member_fields: Vec<String> = Vec::new();
+                            let mut member_fields: Vec<Rc<str>> = Vec::new();
                             let mut mcur = sub_cur;
                             loop {
                                 match mcur {
@@ -862,7 +863,7 @@ impl Lowerer {
         global_name: &str,
         base_offset: i64,
         start_layout: &std::rc::Rc<StructLayout>,
-        fields: &[String],
+        fields: &[Rc<str>],
     ) -> Option<GlobalInit> {
         let mut total_offset = base_offset;
         let mut current_layout = start_layout.clone();
@@ -886,9 +887,9 @@ impl Lowerer {
             }
         }
         if total_offset == 0 {
-            Some(GlobalInit::GlobalAddr(global_name.to_string()))
+            Some(GlobalInit::GlobalAddr(Rc::from(global_name)))
         } else {
-            Some(GlobalInit::GlobalAddrOffset(global_name.to_string(), total_offset))
+            Some(GlobalInit::GlobalAddrOffset(Rc::from(global_name), total_offset))
         }
     }
 
@@ -899,21 +900,21 @@ impl Lowerer {
         // The base expression should be a pointer to a global (array element).
         // Try to evaluate it as a global address expression.
         let base_init = self.eval_global_addr_expr(base)?;
-        let (global_name, base_offset) = match &base_init {
+        let (global_name_rc, base_offset) = match &base_init {
             GlobalInit::GlobalAddr(name) => (name.clone(), 0i64),
             GlobalInit::GlobalAddrOffset(name, off) => (name.clone(), *off),
             _ => return None,
         };
         // Get the struct layout for the element type.
         // The global should be an array of structs.
-        let ginfo = self.globals.get(&global_name)?;
+        let ginfo = self.globals.get(&*global_name_rc)?;
         let layout = ginfo.struct_layout.clone()?;
         let (field_offset, _field_ty) = layout.field_offset(field, &*self.types.borrow_struct_layouts())?;
         let total_offset = base_offset + field_offset as i64;
         if total_offset == 0 {
-            Some(GlobalInit::GlobalAddr(global_name))
+            Some(GlobalInit::GlobalAddr(global_name_rc))
         } else {
-            Some(GlobalInit::GlobalAddrOffset(global_name, total_offset))
+            Some(GlobalInit::GlobalAddrOffset(global_name_rc, total_offset))
         }
     }
 

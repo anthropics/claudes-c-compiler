@@ -14,6 +14,7 @@
 
 use std::cell::RefCell;
 use std::mem::Discriminant;
+use std::rc::Rc;
 use crate::common::fx_hash::{FxHashMap, FxHashSet};
 use crate::common::error::DiagnosticEngine;
 use crate::common::source::Span;
@@ -52,6 +53,10 @@ pub struct Lowerer {
     pub(super) target: Target,
     pub(super) next_label: u32,
     pub(super) next_string: u32,
+    /// Deduplication map for string literals: maps string content to its label.
+    /// When the same string literal appears multiple times, they share the same
+    /// .rodata entry (matching GCC's -fmerge-constants default behavior).
+    pub(super) string_dedup: FxHashMap<String, String>,
     pub(super) next_anon_struct: u32,
     /// Counter for unique static local variable names
     pub(super) next_static_local: u32,
@@ -59,39 +64,39 @@ pub struct Lowerer {
     /// Per-function build state. None between functions, Some during lowering.
     pub(super) func_state: Option<FunctionBuildState>,
     // Global variable tracking
-    pub(super) globals: FxHashMap<String, GlobalInfo>,
+    pub(super) globals: FxHashMap<Rc<str>, GlobalInfo>,
     // Set of known function names
-    pub(super) known_functions: FxHashSet<String>,
+    pub(super) known_functions: FxHashSet<Rc<str>>,
     // Set of already-defined function bodies
-    pub(super) defined_functions: FxHashSet<String>,
+    pub(super) defined_functions: FxHashSet<Rc<str>>,
     // Set of function names declared with static linkage
-    pub(super) static_functions: FxHashSet<String>,
+    pub(super) static_functions: FxHashSet<Rc<str>>,
     /// Set of function names declared with __attribute__((error("..."))) or __attribute__((warning("..."))).
     /// Calls to these functions should be treated as unreachable (they are compile-time assertion traps).
-    pub(super) error_functions: FxHashSet<String>,
+    pub(super) error_functions: FxHashSet<Rc<str>>,
     /// Set of function names declared with __attribute__((noreturn)) or _Noreturn.
     /// After calls to these functions, emit Unreachable to avoid generating dead epilogue code.
-    pub(super) noreturn_functions: FxHashSet<String>,
+    pub(super) noreturn_functions: FxHashSet<Rc<str>>,
     /// Set of function names declared with __attribute__((fastcall)).
     /// On i386, these use ecx/edx for the first two integer/pointer args.
-    pub(super) fastcall_functions: FxHashSet<String>,
+    pub(super) fastcall_functions: FxHashSet<Rc<str>>,
     /// Set of function names that have at least one file-scope declaration
     /// without the `inline` specifier OR with `extern`. Per C99 6.7.4p7,
     /// an inline definition is only an "inline definition" (no external def)
     /// if ALL file-scope declarations include `inline` WITHOUT `extern`.
     /// If any declaration lacks `inline` or has `extern`, the definition
     /// provides an external definition.
-    pub(super) has_non_inline_decl: FxHashSet<String>,
+    pub(super) has_non_inline_decl: FxHashSet<Rc<str>>,
     /// Type-system state (struct layouts, typedefs, enum constants, type caches)
     pub(super) types: TypeContext,
     /// Metadata about known functions (consolidated FuncSig)
     pub(super) func_meta: FunctionMeta,
     /// Set of emitted global variable names (O(1) dedup)
-    pub(super) emitted_global_names: FxHashSet<String>,
+    pub(super) emitted_global_names: FxHashSet<Rc<str>>,
     /// Function signatures from semantic analysis.
     /// Used as authoritative source for function return types and parameter types,
     /// reducing the lowerer's need to re-derive type information from the raw AST.
-    pub(super) sema_functions: FxHashMap<String, FunctionInfo>,
+    pub(super) sema_functions: FxHashMap<Rc<str>, FunctionInfo>,
     /// Expression type annotations from semantic analysis.
     /// Maps `ExprId` keys to their sema-inferred CTypes.
     /// Consulted as a fast O(1) fallback in get_expr_ctype() before the lowerer
@@ -107,13 +112,13 @@ pub struct Lowerer {
     /// Each entry maps a label name to its scope-qualified name.
     /// When resolving a label, the stack is searched top-down so that
     /// inner __label__ declarations shadow outer ones.
-    pub(super) local_label_scopes: Vec<FxHashMap<String, String>>,
+    pub(super) local_label_scopes: Vec<FxHashMap<Rc<str>, Rc<str>>>,
     /// Counter for generating unique local label scope IDs.
     pub(super) next_local_label_scope: u32,
     /// Maps C function/variable names to linker symbol overrides from __asm__("label").
     /// E.g., `extern int strerror_r(...) __asm__("__xpg_strerror_r")` maps
     /// "strerror_r" -> "__xpg_strerror_r". Used to redirect calls/references at IR emission.
-    pub(super) asm_label_map: FxHashMap<String, String>,
+    pub(super) asm_label_map: FxHashMap<Rc<str>, Rc<str>>,
     /// Memoization cache for get_expr_ctype().
     /// Maps `ExprId` keys to their resolved CType plus the Expr discriminant at
     /// insertion time. The discriminant is checked on cache hit to detect address
@@ -172,7 +177,7 @@ impl Lowerer {
     pub fn with_type_context(
         target: Target,
         type_context: TypeContext,
-        sema_functions: FxHashMap<String, FunctionInfo>,
+        sema_functions: FxHashMap<Rc<str>, FunctionInfo>,
         sema_expr_types: ExprTypeMap,
         sema_const_values: ConstMap,
         diagnostics: DiagnosticEngine,
@@ -190,6 +195,7 @@ impl Lowerer {
             target,
             next_label: 0,
             next_string: 0,
+            string_dedup: FxHashMap::default(),
             next_anon_struct: 0,
             next_static_local: 0,
             module: IrModule::new(),
@@ -375,7 +381,7 @@ impl Lowerer {
 
     /// Emit cleanup function calls for variables with __attribute__((cleanup(func))).
     /// Calls func(&var) for each cleanup variable, in reverse declaration order.
-    pub(super) fn emit_cleanup_calls(&mut self, cleanup_vars: &[(String, Value)]) {
+    pub(super) fn emit_cleanup_calls(&mut self, cleanup_vars: &[(Rc<str>, Value)]) {
         for (func_name, alloca_val) in cleanup_vars.iter().rev() {
             let dest = Some(self.fresh_value());
             self.emit(Instruction::Call {
@@ -402,14 +408,14 @@ impl Lowerer {
     /// Collect all cleanup variables from all active scopes (for return statements).
     /// Returns cleanup vars from innermost scope to outermost scope, each scope's
     /// vars in reverse declaration order.
-    pub(super) fn collect_all_scope_cleanup_vars(&self) -> Vec<(String, Value)> {
+    pub(super) fn collect_all_scope_cleanup_vars(&self) -> Vec<(Rc<str>, Value)> {
         self.collect_scope_cleanup_vars_above_depth(0)
     }
 
     /// Collect cleanup variables from scopes above `target_depth` (for break/continue).
     /// This collects from the innermost scope down to (but not including) the scope at
     /// target_depth, with each scope's vars in reverse declaration order.
-    pub(super) fn collect_scope_cleanup_vars_above_depth(&self, target_depth: usize) -> Vec<(String, Value)> {
+    pub(super) fn collect_scope_cleanup_vars_above_depth(&self, target_depth: usize) -> Vec<(Rc<str>, Value)> {
         let func = self.func();
         let mut all_cleanups = Vec::new();
         // Walk scopes from innermost to outermost, stopping at target_depth
@@ -432,22 +438,22 @@ impl Lowerer {
     }
 
     /// Insert a local variable, tracking the change in the current scope frame.
-    pub(super) fn insert_local_scoped(&mut self, name: String, info: LocalInfo) {
+    pub(super) fn insert_local_scoped(&mut self, name: Rc<str>, info: LocalInfo) {
         self.func_mut().insert_local_scoped(name, info);
     }
 
     /// Insert an enum constant, tracking the change in the current scope frame.
-    pub(super) fn insert_enum_scoped(&mut self, name: String, value: i64) {
+    pub(super) fn insert_enum_scoped(&mut self, name: Rc<str>, value: i64) {
         self.types.insert_enum_scoped(name, value);
     }
 
     /// Insert a static local name, tracking the change in the current scope frame.
-    pub(super) fn insert_static_local_scoped(&mut self, name: String, mangled: String) {
+    pub(super) fn insert_static_local_scoped(&mut self, name: Rc<str>, mangled: Rc<str>) {
         self.func_mut().insert_static_local_scoped(name, mangled);
     }
 
     /// Insert a const local value, tracking the change in the current scope frame.
-    pub(super) fn insert_const_local_scoped(&mut self, name: String, value: i64) {
+    pub(super) fn insert_const_local_scoped(&mut self, name: Rc<str>, value: i64) {
         self.func_mut().insert_const_local_scoped(name, value);
     }
 
@@ -551,7 +557,7 @@ impl Lowerer {
                         if is_function_decl {
                             self.asm_label_map.insert(
                                 declarator.name.clone(),
-                                asm_label.clone(),
+                                Rc::from(asm_label.as_str()),
                             );
                         }
                     }
@@ -606,10 +612,10 @@ impl Lowerer {
         for decl in &tu.decls {
             match decl {
                 ExternalDecl::FunctionDef(func) => {
-                    if func.attrs.is_constructor() && !self.module.constructors.contains(&func.name) {
+                    if func.attrs.is_constructor() && !self.module.constructors.iter().any(|c| **c == *func.name) {
                         self.module.constructors.push(func.name.clone());
                     }
-                    if func.attrs.is_destructor() && !self.module.destructors.contains(&func.name) {
+                    if func.attrs.is_destructor() && !self.module.destructors.iter().any(|c| **c == *func.name) {
                         self.module.destructors.push(func.name.clone());
                     }
                     if func.attrs.is_fastcall() {
@@ -619,12 +625,12 @@ impl Lowerer {
                 ExternalDecl::Declaration(decl) => {
                     for declarator in &decl.declarators {
                         if declarator.attrs.is_constructor() && !declarator.name.is_empty()
-                            && !self.module.constructors.contains(&declarator.name)
+                            && !self.module.constructors.iter().any(|c| **c == *declarator.name)
                         {
                             self.module.constructors.push(declarator.name.clone());
                         }
                         if declarator.attrs.is_destructor() && !declarator.name.is_empty()
-                            && !self.module.destructors.contains(&declarator.name)
+                            && !self.module.destructors.iter().any(|c| **c == *declarator.name)
                         {
                             self.module.destructors.push(declarator.name.clone());
                         }
@@ -633,7 +639,7 @@ impl Lowerer {
                             if !declarator.name.is_empty() {
                                 self.module.aliases.push((
                                     declarator.name.clone(),
-                                    target.clone(),
+                                    Rc::from(target.as_str()),  // alias_target is String
                                     declarator.attrs.is_weak(),
                                 ));
                             }
@@ -643,7 +649,7 @@ impl Lowerer {
                             if !declarator.name.is_empty() {
                                 self.module.symver_directives.push((
                                     declarator.name.clone(),
-                                    sv.clone(),
+                                    Rc::from(sv.as_str()),  // symver is String
                                 ));
                             }
                         }
@@ -731,8 +737,8 @@ impl Lowerer {
                         false
                     };
                     if can_skip && !func.attrs.is_used()
-                        && !func.attrs.is_constructor() && !self.module.constructors.contains(&func.name)
-                        && !func.attrs.is_destructor() && !self.module.destructors.contains(&func.name)
+                        && !func.attrs.is_constructor() && !self.module.constructors.iter().any(|c| **c == *func.name)
+                        && !func.attrs.is_destructor() && !self.module.destructors.iter().any(|c| **c == *func.name)
                         && !referenced_statics.contains(&func.name) {
                         continue;
                     }
@@ -760,7 +766,7 @@ impl Lowerer {
     /// sema as the authority on function type information.
     fn register_function_meta(
         &mut self,
-        name: &str,
+        name: &Rc<str>,
         ret_type_spec: &TypeSpecifier,
         ptr_count: usize,
         params: &[ParamDecl],
@@ -768,9 +774,9 @@ impl Lowerer {
         is_static: bool,
         is_kr: bool,
     ) {
-        self.known_functions.insert(name.to_string());
+        self.known_functions.insert(name.clone());
         if is_static {
-            self.static_functions.insert(name.to_string());
+            self.static_functions.insert(name.clone());
         }
 
         // Compute the return CType once. Prefer sema's authoritative CType if available,
@@ -852,7 +858,7 @@ impl Lowerer {
 
         // Record complex return types for expr_ctype resolution
         if ptr_count == 0 && full_ret_ctype.is_complex() {
-            self.types.func_return_ctypes.insert(name.to_string(), full_ret_ctype.clone());
+            self.types.func_return_ctypes.insert(name.clone(), full_ret_ctype.clone());
         }
 
         // Detect struct/complex/vector returns that need special ABI handling.
@@ -1036,7 +1042,7 @@ impl Lowerer {
                 param_riscv_float_classes: Vec::new(),
             }
         };
-        self.func_meta.sigs.insert(name.to_string(), sig);
+        self.func_meta.sigs.insert(name.clone(), sig);
     }
 
     // --- IR emission helpers ---
@@ -1054,10 +1060,15 @@ impl Lowerer {
     }
 
     /// Intern a string literal: add it to the module's .rodata string table and
-    /// return its unique label.
+    /// return its unique label. Deduplicates identical strings so they share
+    /// the same .rodata entry (matching GCC's -fmerge-constants behavior).
     pub(super) fn intern_string_literal(&mut self, s: &str) -> String {
+        if let Some(existing_label) = self.string_dedup.get(s) {
+            return existing_label.clone();
+        }
         let label = format!(".Lstr{}", self.next_string);
         self.next_string += 1;
+        self.string_dedup.insert(s.to_string(), label.clone());
         self.module.string_literals.push((label.clone(), s.to_string()));
         label
     }
@@ -1258,7 +1269,7 @@ impl Lowerer {
     pub(super) fn user_label_exists(&self, name: &str) -> bool {
         let resolved_name = self.resolve_local_label(name);
         let func_name = &self.func().name;
-        let key = format!("{}::{}", func_name, resolved_name);
+        let key: Rc<str> = Rc::from(format!("{}::{}", func_name, resolved_name));
         self.func().defined_user_labels.contains(&key)
     }
 
@@ -1270,7 +1281,7 @@ impl Lowerer {
         // Check local label scopes from innermost to outermost
         let resolved_name = self.resolve_local_label(name);
         let func_name = self.func_mut().name.clone();
-        let key = format!("{}::{}", func_name, resolved_name);
+        let key: Rc<str> = Rc::from(format!("{}::{}", func_name, resolved_name));
         if let Some(&label) = self.func_mut().user_labels.get(&key) {
             label
         } else {
@@ -1283,14 +1294,14 @@ impl Lowerer {
     /// Resolve a label name through the local label scope stack.
     /// Returns a scope-qualified name if the label is declared via __label__,
     /// or the original name if not.
-    pub(super) fn resolve_local_label(&self, name: &str) -> String {
+    pub(super) fn resolve_local_label(&self, name: &str) -> Rc<str> {
         // Search scopes from innermost to outermost
         for scope in self.local_label_scopes.iter().rev() {
             if let Some(qualified) = scope.get(name) {
                 return qualified.clone();
             }
         }
-        name.to_string()
+        Rc::from(name)
     }
 
     // --- String and array init helpers ---

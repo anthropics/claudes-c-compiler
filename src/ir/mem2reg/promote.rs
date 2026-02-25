@@ -829,7 +829,7 @@ mod tests {
     /// Helper to build a simple function with one local variable.
     /// int f() { int x = 42; return x; }
     fn make_simple_function() -> IrFunction {
-        let mut func = IrFunction::new("f".to_string(), IrType::I32, vec![], false);
+        let mut func = IrFunction::new("f".into(), IrType::I32, vec![], false);
         func.blocks.push(BasicBlock {
             label: BlockId(0),
             instructions: vec![
@@ -872,7 +872,7 @@ mod tests {
         //   return x;
         // }
         let mut func = IrFunction::new(
-            "f".to_string(),
+            "f".into(),
             IrType::I32,
             vec![IrParam { ty: IrType::I32, struct_size: None, struct_align: None, struct_eightbyte_classes: Vec::new(), riscv_float_class: None }],
             false,
@@ -955,7 +955,7 @@ mod tests {
     #[test]
     fn test_non_promotable_address_taken() {
         // An alloca whose address is passed to a function should not be promoted
-        let mut func = IrFunction::new("f".to_string(), IrType::I32, vec![], false);
+        let mut func = IrFunction::new("f".into(), IrType::I32, vec![], false);
         func.blocks.push(BasicBlock {
             label: BlockId(0),
             instructions: vec![
@@ -964,7 +964,7 @@ mod tests {
                 seg_override: AddressSpace::Default },
                 // Pass address to a function (address-taken)
                 Instruction::Call {
-                    func: "use_ptr".to_string(),
+                    func: "use_ptr".into(),
                     info: CallInfo {
                         dest: None,
                         args: vec![Operand::Value(Value(0))],
@@ -1002,7 +1002,7 @@ mod tests {
     #[test]
     fn test_loop_phi() {
         // int f() { int sum = 0; for (int i = 0; i < 10; i++) sum += i; return sum; }
-        let mut func = IrFunction::new("f".to_string(), IrType::I32, vec![], false);
+        let mut func = IrFunction::new("f".into(), IrType::I32, vec![], false);
 
         // entry: allocas, init, branch to loop header
         func.blocks.push(BasicBlock {
@@ -1089,7 +1089,7 @@ mod tests {
     fn test_volatile_alloca_not_promoted() {
         // A volatile alloca should never be promoted to SSA, even though
         // it is scalar and only used by loads/stores.
-        let mut func = IrFunction::new("f".to_string(), IrType::I32, vec![], false);
+        let mut func = IrFunction::new("f".into(), IrType::I32, vec![], false);
         func.blocks.push(BasicBlock {
             label: BlockId(0),
             instructions: vec![
@@ -1180,7 +1180,7 @@ mod tests {
         //   inline_asm outputs=[("=r", %fresh)] inputs=[...]
         //   %1 = copy Value(%fresh)
         //   ret %1
-        let mut func = IrFunction::new("test_asm_promote".to_string(), IrType::I64, vec![], false);
+        let mut func = IrFunction::new("test_asm_promote".into(), IrType::I64, vec![], false);
         func.blocks.push(BasicBlock {
             label: BlockId(0),
             instructions: vec![
@@ -1254,7 +1254,7 @@ mod tests {
         // Pattern: asm("csrrw %0, satp, %1" : "+m"(*ptr) : ...)
         //
         // The alloca's address is taken (used as input Value), so it must stay.
-        let mut func = IrFunction::new("test_asm_no_promote".to_string(), IrType::I64, vec![], false);
+        let mut func = IrFunction::new("test_asm_no_promote".into(), IrType::I64, vec![], false);
         func.blocks.push(BasicBlock {
             label: BlockId(0),
             instructions: vec![
@@ -1308,7 +1308,7 @@ mod tests {
         // the backend to lose the stack address, resulting in writes to garbage.
         //
         // Pattern: asm("mov %1, %0" : "=m"(result) : "r"(value))
-        let mut func = IrFunction::new("test_asm_mem_output_only".to_string(), IrType::I32, vec![], false);
+        let mut func = IrFunction::new("test_asm_mem_output_only".into(), IrType::I32, vec![], false);
         func.blocks.push(BasicBlock {
             label: BlockId(0),
             instructions: vec![

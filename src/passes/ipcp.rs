@@ -27,6 +27,7 @@
 
 use crate::common::fx_hash::{FxHashMap, FxHashSet};
 use crate::ir::reexports::{IrConst, IrModule, Instruction, Operand, Terminator};
+use std::rc::Rc;
 
 /// Run interprocedural constant propagation on the module.
 ///
@@ -50,7 +51,7 @@ pub fn run(module: &mut IrModule) -> usize {
                     let replace = match &block.instructions[i] {
                         Instruction::Call { func: callee, info } => {
                             if let Some(dest) = info.dest {
-                                const_returns.get(callee.as_str()).map(|const_val| (dest, *const_val))
+                                const_returns.get(&**callee).map(|const_val| (dest, *const_val))
                             } else {
                                 None
                             }
@@ -86,7 +87,7 @@ pub fn run(module: &mut IrModule) -> usize {
                 for (idx, inst) in block.instructions.drain(..).enumerate() {
                     let is_dead = match &inst {
                         Instruction::Call { func, .. } => {
-                            dead_calls.contains(func.as_str())
+                            dead_calls.contains(&**func)
                         }
                         _ => false,
                     };
@@ -120,7 +121,7 @@ pub fn run(module: &mut IrModule) -> usize {
 /// Analyze all static (internal-linkage) functions in the module and return
 /// a map from function name to constant value for those that always return
 /// the same constant on every path.
-fn find_constant_return_functions(module: &IrModule) -> FxHashMap<String, IrConst> {
+fn find_constant_return_functions(module: &IrModule) -> FxHashMap<Rc<str>, IrConst> {
     let mut result = FxHashMap::default();
 
     for func in &module.functions {
@@ -285,7 +286,7 @@ fn const_equal(a: &IrConst, b: &IrConst) -> bool {
 /// Calls to such functions are dead: they do nothing observable and produce
 /// no value. Eliminating them removes references to their arguments, which
 /// may include undefined external symbols.
-fn find_dead_call_functions(module: &IrModule) -> FxHashSet<String> {
+fn find_dead_call_functions(module: &IrModule) -> FxHashSet<Rc<str>> {
     let mut result = FxHashSet::default();
 
     for func in &module.functions {
@@ -340,7 +341,7 @@ fn propagate_constant_arguments(module: &mut IrModule) -> usize {
     // ParamState::Unknown = no call sites seen yet
     // ParamState::Const(c) = all call sites pass constant c
     // ParamState::Varying = call sites pass different values
-    let mut func_param_consts: FxHashMap<String, Vec<ParamState>> = FxHashMap::default();
+    let mut func_param_consts: FxHashMap<Rc<str>, Vec<ParamState>> = FxHashMap::default();
 
     // First, identify candidate functions (static, defined, non-weak, non-variadic,
     // has ParamRef instructions). Only static functions are eligible because
@@ -384,7 +385,7 @@ fn propagate_constant_arguments(module: &mut IrModule) -> usize {
         for block in &func.blocks {
             for inst in &block.instructions {
                 if let Instruction::Call { func: callee, info } = inst {
-                    if let Some(param_states) = func_param_consts.get_mut(callee.as_str()) {
+                    if let Some(param_states) = func_param_consts.get_mut(&**callee) {
                         for (i, arg) in info.args.iter().enumerate() {
                             if i >= param_states.len() {
                                 break;
@@ -427,7 +428,7 @@ fn propagate_constant_arguments(module: &mut IrModule) -> usize {
         for block in &func.blocks {
             for inst in &block.instructions {
                 if let Instruction::GlobalAddr { name, .. } = inst {
-                    if let Some(param_states) = func_param_consts.get_mut(name.as_str()) {
+                    if let Some(param_states) = func_param_consts.get_mut(&**name) {
                         for state in param_states.iter_mut() {
                             *state = ParamState::Varying;
                         }
@@ -449,7 +450,7 @@ fn propagate_constant_arguments(module: &mut IrModule) -> usize {
 
     // Step 3: Build a map of function_name -> vec of (param_idx, constant) for
     // parameters that have a uniform constant across all call sites.
-    let mut specializations: FxHashMap<String, Vec<(usize, IrConst)>> = FxHashMap::default();
+    let mut specializations: FxHashMap<Rc<str>, Vec<(usize, IrConst)>> = FxHashMap::default();
     for (name, param_states) in &func_param_consts {
         let mut specs = Vec::new();
         for (i, state) in param_states.iter().enumerate() {
@@ -472,7 +473,7 @@ fn propagate_constant_arguments(module: &mut IrModule) -> usize {
         if func.is_declaration {
             continue;
         }
-        if let Some(specs) = specializations.get(&func.name) {
+        if let Some(specs) = specializations.get(&*func.name) {
             for block in &mut func.blocks {
                 for inst in &mut block.instructions {
                     if let Instruction::ParamRef { dest, param_idx, .. } = inst {

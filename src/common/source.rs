@@ -63,7 +63,7 @@ pub struct MacroExpansionInfo {
     pub pp_line: u32,
     /// Names of macros that were expanded (outermost first).
     /// Only the first (outermost) macro is typically shown in diagnostics.
-    pub macro_names: Vec<String>,
+    pub macro_names: Vec<std::rc::Rc<str>>,
 }
 
 /// Manages source files and provides span-to-location resolution.
@@ -507,7 +507,7 @@ impl SourceManager {
     /// Look up macro expansion info for a given span.
     /// Returns the list of macro names if the span falls on a line that had
     /// macro expansion, or None if the span is not in a macro expansion region.
-    pub fn get_macro_expansion_at(&self, span: Span) -> Option<&[String]> {
+    pub fn get_macro_expansion_at(&self, span: Span) -> Option<&[std::rc::Rc<str>]> {
         if self.macro_expansions.is_empty() || self.files.is_empty() {
             return None;
         }

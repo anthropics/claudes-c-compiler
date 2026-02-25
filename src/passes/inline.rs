@@ -16,6 +16,7 @@ use crate::ir::reexports::{
 use crate::common::asm_constraints::constraint_is_immediate_only;
 use crate::common::types::{IrType, AddressSpace};
 use std::collections::HashMap;
+use std::rc::Rc;
 
 /// Maximum number of IR instructions (across all blocks) in a callee for it
 /// to be eligible for inlining. This handles constant-returning helpers
@@ -203,7 +204,7 @@ const MAX_TRACE_RECURSION_DEPTH: u32 = 10;
 /// Returns `(site, callee_inst_count, use_relaxed)` or `None` if no eligible site.
 fn select_inline_site(
     call_sites: &[InlineCallSite],
-    callee_map: &HashMap<String, CalleeData>,
+    callee_map: &HashMap<Rc<str>, CalleeData>,
     caller_too_large: bool,
     caller_at_hard_cap: bool,
     caller_at_absolute_cap: bool,
@@ -694,7 +695,7 @@ fn trace_value_to_global(
                     } else if accumulated_offset < 0 {
                         return Some(format!("{}{}", name, accumulated_offset));
                     }
-                    return Some(name.clone());
+                    return Some((*name).to_string());
                 }
                 Instruction::Copy { src: Operand::Value(v), .. } => {
                     current = v.0;
@@ -935,7 +936,7 @@ struct InlineCallSite {
     /// Index of the instruction within the block
     inst_idx: usize,
     /// Name of the callee function
-    callee_name: String,
+    callee_name: Rc<str>,
     /// The destination value of the call (None for void)
     dest: Option<Value>,
     /// Arguments passed to the call
@@ -971,7 +972,7 @@ fn func_has_static_locals_with_label_refs(module: &IrModule, func_name: &str) ->
 }
 
 /// Build a map of function name -> callee data for functions eligible for inlining.
-fn build_callee_map(module: &IrModule) -> HashMap<String, CalleeData> {
+fn build_callee_map(module: &IrModule) -> HashMap<Rc<str>, CalleeData> {
     let mut map = HashMap::new();
 
     let debug_callee = std::env::var("CCC_INLINE_DEBUG").is_ok();
@@ -1145,7 +1146,7 @@ fn build_callee_map(module: &IrModule) -> HashMap<String, CalleeData> {
 /// (e.g., .head.text, .noinstr.text) can cause boot/runtime failures.
 fn find_inline_call_sites(
     func: &IrFunction,
-    callee_map: &HashMap<String, CalleeData>,
+    callee_map: &HashMap<Rc<str>, CalleeData>,
     skip_list: &[String],
     caller_has_section: bool,
 ) -> Vec<InlineCallSite> {
@@ -1154,11 +1155,11 @@ fn find_inline_call_sites(
     for (block_idx, block) in func.blocks.iter().enumerate() {
         for (inst_idx, inst) in block.instructions.iter().enumerate() {
             if let Instruction::Call { func: callee_name, info } = inst {
-                if let Some(callee_data) = callee_map.get(callee_name) {
+                if let Some(callee_data) = callee_map.get(&**callee_name) {
                     // Don't inline recursive calls
-                    if callee_name != &func.name {
+                    if **callee_name != *func.name {
                         // Skip functions listed in CCC_INLINE_SKIP
-                        if skip_list.iter().any(|s| s == callee_name) {
+                        if skip_list.iter().any(|s| s.as_str() == &**callee_name) {
                             continue;
                         }
                         // Skip callees that exceed normal limits unless caller has a section

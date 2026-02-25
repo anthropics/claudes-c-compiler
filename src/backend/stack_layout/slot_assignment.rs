@@ -402,6 +402,8 @@ fn classify_value(
     );
     let slot_size: i64 = if is_i128 || is_f128 {
         16
+    } else if is_small {
+        4
     } else {
         8
     };

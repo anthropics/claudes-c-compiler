@@ -9,6 +9,7 @@
 //! - Address space detection for segment-override operands
 //! - Goto label resolution
 
+use std::rc::Rc;
 use crate::frontend::parser::ast::{AsmOperand, Expr};
 use crate::ir::reexports::{
     BlockId,
@@ -28,7 +29,7 @@ impl Lowerer {
         outputs: &[AsmOperand],
         inputs: &[AsmOperand],
         clobbers: &[String],
-        goto_labels: &[String],
+        goto_labels: &[Rc<str>],
     ) {
         let mut ir_outputs = Vec::new();
         let mut ir_inputs = Vec::new();
@@ -212,7 +213,7 @@ impl Lowerer {
                     let label = self.intern_string_literal(&s);
                     sym_name = Some(label.clone());
                     let dest = self.fresh_value();
-                    self.emit(Instruction::GlobalAddr { dest, name: label });
+                    self.emit(Instruction::GlobalAddr { dest, name: Rc::from(label) });
                     Operand::Value(dest)
                 } else if let Some(const_op) = self.try_recover_local_const(&inp.expr, &constraint) {
                     // For immediate-alternative constraints like "rK", try to recover the
@@ -282,7 +283,7 @@ impl Lowerer {
         // Resolve goto labels
         let ir_goto_labels: Vec<(String, BlockId)> = goto_labels.iter().map(|name| {
             let block = self.get_or_create_user_label(name);
-            (name.clone(), block)
+            (name.to_string(), block)
         }).collect();
 
         self.emit(Instruction::InlineAsm {
@@ -419,7 +420,7 @@ impl Lowerer {
                 // Only return the name if it is a global symbol or known function,
                 // NOT a local variable or function parameter.
                 if self.is_global_or_function(name) {
-                    Some(name.clone())
+                    Some(name.to_string())
                 } else {
                     None
                 }
@@ -427,7 +428,7 @@ impl Lowerer {
             Expr::AddressOf(inner, _) => {
                 if let Expr::Identifier(name, _) = inner.as_ref() {
                     if self.is_global_or_function(name) {
-                        Some(name.clone())
+                        Some(name.to_string())
                     } else {
                         None
                     }
@@ -473,7 +474,7 @@ impl Lowerer {
             // Direct identifier: if it's a global, return its name
             Expr::Identifier(name, _) => {
                 if self.is_global_or_function(name) {
-                    Some(name.clone())
+                    Some(name.to_string())
                 } else {
                     None
                 }
@@ -497,7 +498,7 @@ impl Lowerer {
         use crate::ir::reexports::GlobalInit;
         let init = self.eval_global_addr_expr(expr)?;
         match init {
-            GlobalInit::GlobalAddr(name) => Some(name),
+            GlobalInit::GlobalAddr(name) => Some(name.to_string()),
             GlobalInit::GlobalAddrOffset(name, offset) => {
                 if offset >= 0 {
                     Some(format!("{}+{}", name, offset))
@@ -595,7 +596,7 @@ impl Lowerer {
     /// Look up the asm register name for a variable declared with
     /// `register <type> <name> __asm__("regname")`.
     /// Checks local variables first, then global register variables.
-    pub(super) fn get_asm_register(&self, name: &str) -> Option<String> {
+    pub(super) fn get_asm_register(&self, name: &str) -> Option<Rc<str>> {
         // Check locals first
         if let Some(reg) = self.func_state.as_ref()
             .and_then(|fs| fs.locals.get(name))

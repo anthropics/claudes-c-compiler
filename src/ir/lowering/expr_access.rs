@@ -25,6 +25,7 @@ use crate::ir::reexports::{
     Terminator,
     Value,
 };
+use std::rc::Rc;
 use crate::common::types::{AddressSpace, IrType, CType};
 use super::lower::Lowerer;
 
@@ -703,10 +704,10 @@ impl Lowerer {
         if let Expr::Identifier(name, _) = inner {
             let dest = self.fresh_value();
             // Apply __asm__("label") redirect (e.g. stat -> stat64)
-            let resolved = self.asm_label_map.get(name.as_str())
+            let resolved = self.asm_label_map.get(&*name)
                 .cloned()
                 .unwrap_or_else(|| name.clone());
-            self.emit(Instruction::GlobalAddr { dest, name: resolved });
+            self.emit(Instruction::GlobalAddr { dest, name: Rc::from(resolved) });
             return Operand::Value(dest);
         }
 
@@ -751,7 +752,7 @@ impl Lowerer {
                 // with the same name. Local variables shadow function names, so if a local
                 // variable called "link" exists, *link should dereference the variable,
                 // not be treated as a no-op function pointer dereference.
-                if self.known_functions.contains(name.as_str()) && self.lookup_var_info(name).is_none() {
+                if self.known_functions.contains(&*name) && self.lookup_var_info(name).is_none() {
                     return true;
                 }
                 // Check if this variable is a function pointer (deref is no-op).
@@ -768,7 +769,7 @@ impl Lowerer {
                         // When c_type IS available, the check above is authoritative —
                         // ptr_sigs may contain entries for pointer-to-function-pointers
                         // which are NOT no-op derefs.
-                        if self.func_meta.ptr_sigs.contains_key(name.as_str()) {
+                        if self.func_meta.ptr_sigs.contains_key(&*name) {
                             return true;
                         }
                     }
@@ -800,7 +801,7 @@ impl Lowerer {
                         }
                     }
                     // Also check known function signatures
-                    if let Some(sig) = self.func_meta.sigs.get(name.as_str()) {
+                    if let Some(sig) = self.func_meta.sigs.get(&*name) {
                         if let Some(ref ret_ct) = sig.return_ctype {
                             if ret_ct.is_function_pointer() {
                                 return true;
@@ -982,7 +983,7 @@ impl Lowerer {
             self.next_local_label_scope += 1;
             let mut scope = crate::common::fx_hash::FxHashMap::default();
             for name in &compound.local_labels {
-                scope.insert(name.clone(), format!("{}$ll{}", name, scope_id));
+                scope.insert(name.clone(), Rc::from(format!("{}$ll{}", name, scope_id)));
             }
             self.local_label_scopes.push(scope);
         }
@@ -1011,7 +1012,7 @@ impl Lowerer {
                     let mut inner = stmt;
                     let mut labels = Vec::new();
                     while let Stmt::Label(name, sub_stmt, _span) = inner {
-                        labels.push(name.as_str());
+                        labels.push(&*name);
                         inner = sub_stmt;
                     }
                     if !labels.is_empty() {

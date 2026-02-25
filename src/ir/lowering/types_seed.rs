@@ -4,6 +4,7 @@
 //! sys/types.h, etc.) and registers known libc math function signatures
 //! for correct calling convention.
 
+use std::rc::Rc;
 use crate::common::types::{AddressSpace, IrType, CType};
 use super::lower::Lowerer;
 use super::definitions::FuncSig;
@@ -121,7 +122,7 @@ impl Lowerer {
             ("DIR", CType::Pointer(Box::new(CType::Void), AddressSpace::Default)),
         ];
         for (name, ct) in builtins {
-            self.types.typedefs.insert(name.to_string(), ct.clone());
+            self.types.typedefs.insert(Rc::from(*name), ct.clone());
         }
         // Target-dependent va_list definition.
         use crate::backend::Target;
@@ -143,9 +144,9 @@ impl Lowerer {
                 CType::Pointer(Box::new(CType::Char), AddressSpace::Default)
             }
         };
-        self.types.typedefs.insert("va_list".to_string(), va_list_type.clone());
-        self.types.typedefs.insert("__builtin_va_list".to_string(), va_list_type.clone());
-        self.types.typedefs.insert("__gnuc_va_list".to_string(), va_list_type);
+        self.types.typedefs.insert(Rc::from("va_list"), va_list_type.clone());
+        self.types.typedefs.insert(Rc::from("__builtin_va_list"), va_list_type.clone());
+        self.types.typedefs.insert(Rc::from("__gnuc_va_list"), va_list_type);
         // POSIX internal names
         let posix_extras: &[(&str, CType)] = &[
             ("__u_char", CType::UChar),
@@ -160,13 +161,13 @@ impl Lowerer {
             ("__uint32_t", CType::UInt),
         ];
         for (name, ct) in posix_extras {
-            self.types.typedefs.insert(name.to_string(), ct.clone());
+            self.types.typedefs.insert(Rc::from(*name), ct.clone());
         }
         // __int64_t/__uint64_t: must be LongLong on ILP32, Long on LP64
         let int64_ct = if is_32bit { CType::LongLong } else { CType::Long };
         let uint64_ct = if is_32bit { CType::ULongLong } else { CType::ULong };
-        self.types.typedefs.insert("__int64_t".to_string(), int64_ct);
-        self.types.typedefs.insert("__uint64_t".to_string(), uint64_ct);
+        self.types.typedefs.insert(Rc::from("__int64_t"), int64_ct);
+        self.types.typedefs.insert(Rc::from("__uint64_t"), uint64_ct);
 
         // GCC builtin NEON and SVE vector types for AArch64.
         // These appear in bits/math-vector.h (included transitively from <math.h>)
@@ -177,36 +178,36 @@ impl Lowerer {
         // functions are never called from compiled code, fixed sizes suffice.
         if matches!(self.target, crate::backend::Target::Aarch64) {
             // NEON types (128-bit fixed-width SIMD)
-            self.types.typedefs.insert("__Float32x4_t".to_string(),
+            self.types.typedefs.insert(Rc::from("__Float32x4_t"),
                 CType::Vector(Box::new(CType::Float), 16));
-            self.types.typedefs.insert("__Float64x2_t".to_string(),
+            self.types.typedefs.insert(Rc::from("__Float64x2_t"),
                 CType::Vector(Box::new(CType::Double), 16));
             // SVE float vector types (model as 128-bit vectors)
-            self.types.typedefs.insert("__SVFloat32_t".to_string(),
+            self.types.typedefs.insert(Rc::from("__SVFloat32_t"),
                 CType::Vector(Box::new(CType::Float), 16));
-            self.types.typedefs.insert("__SVFloat64_t".to_string(),
+            self.types.typedefs.insert(Rc::from("__SVFloat64_t"),
                 CType::Vector(Box::new(CType::Double), 16));
-            self.types.typedefs.insert("__SVFloat16_t".to_string(),
+            self.types.typedefs.insert(Rc::from("__SVFloat16_t"),
                 CType::Vector(Box::new(CType::Short), 16));
             // SVE integer vector types
-            self.types.typedefs.insert("__SVInt8_t".to_string(),
+            self.types.typedefs.insert(Rc::from("__SVInt8_t"),
                 CType::Vector(Box::new(CType::Char), 16));
-            self.types.typedefs.insert("__SVInt16_t".to_string(),
+            self.types.typedefs.insert(Rc::from("__SVInt16_t"),
                 CType::Vector(Box::new(CType::Short), 16));
-            self.types.typedefs.insert("__SVInt32_t".to_string(),
+            self.types.typedefs.insert(Rc::from("__SVInt32_t"),
                 CType::Vector(Box::new(CType::Int), 16));
-            self.types.typedefs.insert("__SVInt64_t".to_string(),
+            self.types.typedefs.insert(Rc::from("__SVInt64_t"),
                 CType::Vector(Box::new(CType::Long), 16));
-            self.types.typedefs.insert("__SVUint8_t".to_string(),
+            self.types.typedefs.insert(Rc::from("__SVUint8_t"),
                 CType::Vector(Box::new(CType::UChar), 16));
-            self.types.typedefs.insert("__SVUint16_t".to_string(),
+            self.types.typedefs.insert(Rc::from("__SVUint16_t"),
                 CType::Vector(Box::new(CType::UShort), 16));
-            self.types.typedefs.insert("__SVUint32_t".to_string(),
+            self.types.typedefs.insert(Rc::from("__SVUint32_t"),
                 CType::Vector(Box::new(CType::UInt), 16));
-            self.types.typedefs.insert("__SVUint64_t".to_string(),
+            self.types.typedefs.insert(Rc::from("__SVUint64_t"),
                 CType::Vector(Box::new(CType::ULong), 16));
             // SVE predicate type (model as 16-byte unsigned char vector)
-            self.types.typedefs.insert("__SVBool_t".to_string(),
+            self.types.typedefs.insert(Rc::from("__SVBool_t"),
                 CType::Vector(Box::new(CType::UChar), 16));
         }
     }
@@ -217,7 +218,7 @@ impl Lowerer {
     fn insert_builtin_sig(&mut self, name: &str, return_type: IrType, param_types: Vec<IrType>, param_ctypes: Vec<CType>) {
         let mut sig = FuncSig::for_ptr(return_type, param_types);
         sig.param_ctypes = param_ctypes;
-        self.func_meta.sigs.insert(name.to_string(), sig);
+        self.func_meta.sigs.insert(Rc::from(name), sig);
     }
 
     pub(super) fn seed_libc_math_functions(&mut self) {
@@ -281,7 +282,7 @@ impl Lowerer {
         ];
         for name in cd_cd {
             self.insert_builtin_sig(name, F64, Vec::new(), vec![CType::ComplexDouble]);
-            self.types.func_return_ctypes.insert(name.to_string(), CType::ComplexDouble);
+            self.types.func_return_ctypes.insert(Rc::from(*name), CType::ComplexDouble);
         }
 
         // Functions returning _Complex float (packed two F32 in I64):
@@ -292,13 +293,13 @@ impl Lowerer {
         ];
         for name in cf_cf {
             self.insert_builtin_sig(name, F64, Vec::new(), vec![CType::ComplexFloat]);
-            self.types.func_return_ctypes.insert(name.to_string(), CType::ComplexFloat);
+            self.types.func_return_ctypes.insert(Rc::from(*name), CType::ComplexFloat);
         }
 
         // cpow/cpowf take two complex args
         self.insert_builtin_sig("cpow", F64, Vec::new(), vec![CType::ComplexDouble, CType::ComplexDouble]);
-        self.types.func_return_ctypes.insert("cpow".to_string(), CType::ComplexDouble);
+        self.types.func_return_ctypes.insert(Rc::from("cpow"), CType::ComplexDouble);
         self.insert_builtin_sig("cpowf", F64, Vec::new(), vec![CType::ComplexFloat, CType::ComplexFloat]);
-        self.types.func_return_ctypes.insert("cpowf".to_string(), CType::ComplexFloat);
+        self.types.func_return_ctypes.insert(Rc::from("cpowf"), CType::ComplexFloat);
     }
 }

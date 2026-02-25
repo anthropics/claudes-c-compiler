@@ -4,6 +4,8 @@
 /// string literals, and linker directives. `IrFunction` represents a single
 /// function with its parameter list, basic blocks, and ABI metadata.
 /// `IrGlobal` defines a global variable with its initializer and linkage.
+use std::rc::Rc;
+
 use crate::common::types::IrType;
 use super::constants::IrConst;
 use super::instruction::{BasicBlock, Value};
@@ -18,25 +20,25 @@ pub struct IrModule {
     pub wide_string_literals: Vec<(String, Vec<u32>)>,
     /// char16_t string literals (u"..."): (label, chars as u16 values including null terminator)
     pub char16_string_literals: Vec<(String, Vec<u16>)>,
-    pub constructors: Vec<String>, // functions with __attribute__((constructor))
-    pub destructors: Vec<String>,  // functions with __attribute__((destructor))
+    pub constructors: Vec<Rc<str>>, // functions with __attribute__((constructor))
+    pub destructors: Vec<Rc<str>>,  // functions with __attribute__((destructor))
     /// Symbol aliases: (alias_name, target_name, is_weak)
     /// From __attribute__((alias("target"))) and __attribute__((weak))
-    pub aliases: Vec<(String, String, bool)>,
+    pub aliases: Vec<(Rc<str>, Rc<str>, bool)>,
     /// Top-level asm("...") directives - emitted verbatim in assembly output
     pub toplevel_asm: Vec<String>,
     /// Symbol attribute directives for extern declarations:
     /// (name, is_weak, visibility) - emitted as .weak/.hidden/.protected directives
-    pub symbol_attrs: Vec<(String, bool, Option<String>)>,
+    pub symbol_attrs: Vec<(Rc<str>, bool, Option<String>)>,
     /// Symbol version directives: (function_name, symver_string)
     /// From __attribute__((symver("name@@VERSION"))) - emitted as .symver directives
-    pub symver_directives: Vec<(String, String)>,
+    pub symver_directives: Vec<(Rc<str>, Rc<str>)>,
 }
 
 /// A global variable.
 #[derive(Debug, Clone)]
 pub struct IrGlobal {
-    pub name: String,
+    pub name: Rc<str>,
     pub ty: IrType,
     /// Size of the global in bytes (for arrays, this is elem_size * count).
     pub size: usize,
@@ -86,16 +88,16 @@ pub enum GlobalInit {
     /// The backend emits each value as .short and adds a null terminator.
     Char16String(Vec<u16>),
     /// Address of another global (for pointer globals like `const char *s = "hello"`).
-    GlobalAddr(String),
+    GlobalAddr(Rc<str>),
     /// Address of a global plus a byte offset (for `&arr[3]`, `&s.field`, etc.).
-    GlobalAddrOffset(String, i64),
+    GlobalAddrOffset(Rc<str>, i64),
     /// Compound initializer: a sequence of initializer elements (for arrays/structs
     /// containing address expressions, e.g., `int *ptrs[] = {&a, &b, 0}`).
     Compound(Vec<GlobalInit>),
     /// Difference of two labels (&&lab1 - &&lab2) for computed goto dispatch tables.
     /// Fields: (label1, label2, byte_size) where byte_size is the width of the
     /// resulting integer (4 for int, 8 for long).
-    GlobalLabelDiff(String, String, usize),
+    GlobalLabelDiff(Rc<str>, Rc<str>, usize),
 }
 
 impl GlobalInit {
@@ -163,7 +165,7 @@ impl GlobalInit {
 /// An IR function.
 #[derive(Debug)]
 pub struct IrFunction {
-    pub name: String,
+    pub name: Rc<str>,
     pub return_type: IrType,
     pub params: Vec<IrParam>,
     pub blocks: Vec<BasicBlock>,
@@ -286,7 +288,7 @@ impl Default for IrModule {
 
 impl IrFunction {
     #[cfg(test)]
-    pub fn new(name: String, return_type: IrType, params: Vec<IrParam>, is_variadic: bool) -> Self {
+    pub fn new(name: Rc<str>, return_type: IrType, params: Vec<IrParam>, is_variadic: bool) -> Self {
         Self {
             name,
             return_type,

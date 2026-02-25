@@ -237,7 +237,7 @@ impl Lowerer {
             Expr::FunctionCall(func, args, _) => {
                 if let Expr::Identifier(name, _) = func.as_ref() {
                     shared_const_eval::eval_builtin_call(
-                        name.as_str(), args, &|e| self.eval_const_expr(e),
+                        &*name, args, &|e| self.eval_const_expr(e),
                     )
                 } else {
                     None
@@ -578,13 +578,13 @@ impl Lowerer {
 
         // Extract (symbol_name, byte_offset) from each side
         let (lhs_name, lhs_offset) = match &lhs_addr {
-            GlobalInit::GlobalAddr(name) => (name.as_str(), 0i64),
-            GlobalInit::GlobalAddrOffset(name, off) => (name.as_str(), *off),
+            GlobalInit::GlobalAddr(name) => (&**name, 0i64),
+            GlobalInit::GlobalAddrOffset(name, off) => (&**name, *off),
             _ => return None,
         };
         let (rhs_name, rhs_offset) = match &rhs_addr {
-            GlobalInit::GlobalAddr(name) => (name.as_str(), 0i64),
-            GlobalInit::GlobalAddrOffset(name, off) => (name.as_str(), *off),
+            GlobalInit::GlobalAddr(name) => (&**name, 0i64),
+            GlobalInit::GlobalAddrOffset(name, off) => (&**name, *off),
             _ => return None,
         };
 

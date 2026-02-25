@@ -5,10 +5,13 @@ pipeline. The pipeline transforms the compiler's intermediate representation (IR
 to produce better machine code by eliminating redundant computation, simplifying
 control flow, and replacing expensive operations with cheaper equivalents.
 
-All optimization levels (`-O0` through `-O3`, `-Os`, `-Oz`) run the same full set
-of passes. While the compiler is still maturing, having separate tiers creates
-hard-to-find bugs where code works at one level but breaks at another. We always
-run all passes to maximize test coverage of the optimizer and catch issues early.
+Optimization levels control which passes run and how aggressively:
+
+- **`-O0`**: Minimal — only mem2reg, resolve_asm, and dead_statics (for correctness).
+- **`-O1`**: Basic — cfg_simplify, copy_prop, narrow, simplify, constant_fold, dce. Single iteration.
+- **`-O2`**: Full pipeline — all passes, up to 3 iterations with dirty-tracking and diminishing-returns early exit.
+- **`-O3`**: Aggressive — same passes as -O2 but with 5 iterations and a tighter 2% diminishing-returns threshold (vs 5%).
+- **`-Os`/`-Oz`**: Same as -O2.
 
 ## Table of Contents
 
@@ -710,6 +713,22 @@ cfg_simplify). F128 and I128 phi types are rejected. The pass iterates to a
 fixpoint within each invocation, since converting one diamond may expose
 another. Overlapping diamonds within a single iteration are detected and skipped
 to avoid conflicts.
+
+**Cost model.** The pass applies a cost model to avoid converting diamonds
+where branchless code is slower than well-predicted branches:
+
+| Limit | Value | Rationale |
+|---|---|---|
+| MAX_SELECTS | 1 | Each Select becomes a cmov chain (~6 x86 instructions). 2+ selects produce 12+ instructions, worse than a branch diamond of ~4-6 instructions with good prediction. |
+| MAX_TOTAL_COST | 12 | Hoisted arm instructions + selects×5. Limits total speculated work even when select count is within bounds. |
+
+These limits directly target the pathological case of nested if/else-if chains
+(e.g., `if (isspace(*s)) {...} else if (!in_word) {...}` in tight loops), where
+the fixpoint loop previously converted multiple diamonds iteratively, producing
+4+ cmov chains in a single block. With the cost model, such patterns keep their
+branches, allowing the CPU's branch predictor to skip untaken paths entirely.
+Simple ternary expressions (1 select) are still converted, while multi-select
+diamonds keep their branches for the branch predictor.
 
 ### ipcp -- Interprocedural Constant Propagation
 

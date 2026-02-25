@@ -50,7 +50,7 @@ impl Lowerer {
             let item = &items[item_idx];
 
             let desig_name = match item.designators.first() {
-                Some(Designator::Field(ref name)) => Some(name.as_str()),
+                Some(Designator::Field(ref name)) => Some(&**name),
                 _ => None,
             };
             // Check for array index designator (e.g., .field[idx] or bare [idx])

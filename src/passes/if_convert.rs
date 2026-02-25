@@ -2,28 +2,32 @@
 //!
 //! This pass identifies diamond-shaped CFG patterns:
 //!
-//!     pred_block:
-//!         ...
-//!         condbranch %cond, true_block, false_block
+//! ```text
+//! pred_block:
+//!     ...
+//!     condbranch %cond, true_block, false_block
 //!
-//!     true_block:
-//!         (0-1 simple instructions)
-//!         branch merge_block
+//! true_block:
+//!     (0-1 simple instructions)
+//!     branch merge_block
 //!
-//!     false_block:
-//!         (0-1 simple instructions)
-//!         branch merge_block
+//! false_block:
+//!     (0-1 simple instructions)
+//!     branch merge_block
 //!
-//!     merge_block:
-//!         %result = phi [true_val, true_block], [false_val, false_block]
-//!         ...
+//! merge_block:
+//!     %result = phi [true_val, true_block], [false_val, false_block]
+//!     ...
+//! ```
 //!
 //! And converts them to:
 //!
-//!     pred_block:
-//!         ...
-//!         %result = select %cond, true_val, false_val
-//!         branch merge_block
+//! ```text
+//! pred_block:
+//!     ...
+//!     %result = select %cond, true_val, false_val
+//!     branch merge_block
+//! ```
 //!
 //! This eliminates branches in favor of conditional moves (cmov/csel),
 //! which is critical for performance in tight loops with simple conditionals
@@ -373,6 +377,26 @@ fn detect_diamond(
         return None; // No convertible phis
     }
 
+    // Limit the number of Select instructions per diamond.
+    // Each Select becomes a cmov chain (~6 x86 instructions: load false_val, load true_val,
+    // load cond, test, cmov, store). Even 2 selects = 12+ instructions vs a branch diamond
+    // of ~4-6 instructions with good prediction, so only convert 1-select cases.
+    const MAX_SELECTS: usize = 1;
+    if phi_selects.len() > MAX_SELECTS {
+        return None;
+    }
+
+    // Total speculated cost: hoisted instructions + select chains.
+    // Each select costs ~5 x86 instructions. If total exceeds ~12 instructions,
+    // branches are likely cheaper (branch diamond: 2 jumps + arm instructions).
+    const MAX_TOTAL_COST: usize = 12;
+    let total_cost = true_block.instructions.len()
+        + false_block.instructions.len()
+        + phi_selects.len() * 5;
+    if total_cost > MAX_TOTAL_COST {
+        return None;
+    }
+
     // The merge block should only be reached from the two arms (and not from pred directly).
     // If the merge block has other predecessors, we need to preserve the Phi nodes for those.
     let merge_preds_from_diamond = preds.row(merge_idx).iter()
@@ -401,9 +425,11 @@ fn detect_diamond(
 
 /// Detect a triangle pattern: pred branches to arm and merge directly.
 ///
-///     pred: CondBranch(cond, arm, merge)   -- or (cond, merge, arm)
-///     arm:  side-effect-free instructions + Branch(merge)
-///     merge: phi [arm_val, arm], [pred_val, pred]
+/// ```text
+/// pred: CondBranch(cond, arm, merge)   -- or (cond, merge, arm)
+/// arm:  side-effect-free instructions + Branch(merge)
+/// merge: phi [arm_val, arm], [pred_val, pred]
+/// ```
 ///
 /// This handles ternaries like `a >= t ? a - t : 0` where the false arm
 /// is a constant and doesn't need its own block.
@@ -543,6 +569,19 @@ fn detect_triangle(
         return None;
     }
 
+    // Limit the number of Select instructions per triangle (same as diamond).
+    const MAX_SELECTS: usize = 1;
+    if phi_selects.len() > MAX_SELECTS {
+        return None;
+    }
+
+    // Total speculated cost: hoisted instructions + select chains.
+    const MAX_TOTAL_COST: usize = 12;
+    let total_cost = arm_block.instructions.len() + phi_selects.len() * 5;
+    if total_cost > MAX_TOTAL_COST {
+        return None;
+    }
+
     // For a triangle, we set the missing arm to merge_idx with empty instructions.
     // apply_diamond will hoist the arm instructions and the empty side is a no-op.
     let (true_idx_out, false_idx_out, true_insts, false_insts) = if arm_is_true {
@@ -668,7 +707,7 @@ mod tests {
         //   block1: branch block3
         //   block2: branch block3
         //   block3: %3 = phi [const(1), block1], [const(0), block2]; return %3
-        let mut func = IrFunction::new("test".to_string(), IrType::I32, vec![], false);
+        let mut func = IrFunction::new("test".into(), IrType::I32, vec![], false);
 
         // Block 0: condbranch
         func.blocks.push(BasicBlock {
@@ -747,7 +786,7 @@ mod tests {
         //   block1: %1 = sub %0, const(5); branch block3
         //   block2: branch block3
         //   block3: %2 = phi [%1, block1], [const(0), block2]; return %2
-        let mut func = IrFunction::new("test".to_string(), IrType::I32, vec![], false);
+        let mut func = IrFunction::new("test".into(), IrType::I32, vec![], false);
 
         func.blocks.push(BasicBlock {
             label: BlockId(0),
@@ -812,7 +851,7 @@ mod tests {
     #[test]
     fn test_no_conversion_with_side_effects() {
         // Diamond where the true arm has a store (side effect) - should NOT convert
-        let mut func = IrFunction::new("test".to_string(), IrType::I32, vec![], false);
+        let mut func = IrFunction::new("test".into(), IrType::I32, vec![], false);
 
         func.blocks.push(BasicBlock {
             label: BlockId(0),

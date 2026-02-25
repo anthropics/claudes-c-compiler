@@ -13,6 +13,7 @@
 //! literals are copied verbatim without interpretation.
 
 use std::cell::Cell;
+use std::rc::Rc;
 
 use crate::common::fx_hash::{FxHashMap, FxHashSet};
 
@@ -57,11 +58,11 @@ fn would_paste_tokens(last: u8, first: u8) -> bool {
 #[derive(Debug, Clone)]
 pub struct MacroDef {
     /// Name of the macro
-    pub name: String,
+    pub name: Rc<str>,
     /// Whether this is a function-like macro
     pub is_function_like: bool,
     /// Parameters for function-like macros
-    pub params: Vec<String>,
+    pub params: Vec<Rc<str>>,
     /// Whether the macro is variadic (last param is ...)
     pub is_variadic: bool,
     /// Whether the variadic is a named parameter (e.g., `args...` vs `...`).
@@ -69,7 +70,7 @@ pub struct MacroDef {
     /// When false, variadic args are accessed via `__VA_ARGS__`.
     pub has_named_variadic: bool,
     /// The replacement body (as raw text)
-    pub body: String,
+    pub body: Rc<str>,
 }
 
 /// Marker byte used to "blue paint" tokens that were suppressed due to
@@ -105,7 +106,7 @@ fn strip_blue_paint(s: &str) -> std::borrow::Cow<'_, str> {
 /// Stores all macro definitions and handles expansion.
 #[derive(Debug, Clone)]
 pub struct MacroTable {
-    macros: FxHashMap<String, MacroDef>,
+    macros: FxHashMap<Rc<str>, MacroDef>,
     /// Counter for the __COUNTER__ built-in macro. Increments on each expansion.
     counter: Cell<usize>,
     /// Cached __LINE__ value. Updated by set_line(), expanded specially in expand_text.
@@ -114,7 +115,7 @@ pub struct MacroTable {
     /// Used by the preprocessor to build macro expansion metadata for diagnostics
     /// ("in expansion of macro 'X'" notes). Wrapped in RefCell because expansion
     /// methods take &self.
-    expanded_macros: std::cell::RefCell<Vec<String>>,
+    expanded_macros: std::cell::RefCell<Vec<Rc<str>>>,
     /// Whether to track macro expansions (disabled by default for performance;
     /// enabled by the preprocessor for the main expansion pass).
     track_expansions: Cell<bool>,
@@ -140,7 +141,7 @@ impl MacroTable {
 
     /// Define a new macro.
     pub fn define(&mut self, def: MacroDef) {
-        self.macros.insert(def.name.clone(), def);
+        self.macros.insert(Rc::clone(&def.name), def);
     }
 
     /// Undefine a macro.
@@ -184,11 +185,12 @@ impl MacroTable {
     /// Otherwise, a new entry is created.
     /// This avoids 2 full MacroDef allocations per #include directive.
     pub fn set_file(&mut self, body: String) {
+        let body: Rc<str> = Rc::from(body);
         if let Some(existing) = self.macros.get_mut("__FILE__") {
             existing.body = body;
         } else {
-            self.macros.insert("__FILE__".to_string(), MacroDef {
-                name: "__FILE__".to_string(),
+            self.macros.insert(Rc::from("__FILE__"), MacroDef {
+                name: Rc::from("__FILE__"),
                 is_function_like: false,
                 params: Vec::new(),
                 is_variadic: false,
@@ -201,7 +203,7 @@ impl MacroTable {
     /// Get the current __FILE__ macro body.
     /// Returns None if __FILE__ is not defined.
     pub fn get_file_body(&self) -> Option<&str> {
-        self.macros.get("__FILE__").map(|m| m.body.as_str())
+        self.macros.get("__FILE__").map(|m| &*m.body)
     }
 
     /// Enable or disable macro expansion tracking.
@@ -213,14 +215,14 @@ impl MacroTable {
 
     /// Take the list of macro names expanded during the last expand_line_reuse() call.
     /// Returns an empty Vec if tracking is disabled or no macros were expanded.
-    pub fn take_expanded_macros(&self) -> Vec<String> {
+    pub fn take_expanded_macros(&self) -> Vec<Rc<str>> {
         std::mem::take(&mut *self.expanded_macros.borrow_mut())
     }
 
     /// Expand macros in a line of text.
     /// Returns the expanded text.
     pub fn expand_line(&self, line: &str) -> String {
-        let mut expanding = FxHashSet::default();
+        let mut expanding: FxHashSet<Rc<str>> = FxHashSet::default();
         self.expand_line_reuse(line, &mut expanding)
     }
 
@@ -228,7 +230,7 @@ impl MacroTable {
     /// The set is cleared before use. This avoids allocating a new FxHashSet
     /// for every line (the previous per-line allocation was a measurable
     /// overhead when preprocessing kernel headers with thousands of lines).
-    pub fn expand_line_reuse(&self, line: &str, expanding: &mut FxHashSet<String>) -> String {
+    pub fn expand_line_reuse(&self, line: &str, expanding: &mut FxHashSet<Rc<str>>) -> String {
         expanding.clear();
         if self.track_expansions.get() {
             self.expanded_macros.borrow_mut().clear();
@@ -282,7 +284,7 @@ impl MacroTable {
         mut expanded: String,
         bytes: &[u8],
         mut i: usize,
-        expanding: &mut FxHashSet<String>,
+        expanding: &mut FxHashSet<Rc<str>>,
     ) -> (String, usize) {
         let len = bytes.len();
         loop {
@@ -324,7 +326,7 @@ impl MacroTable {
         expanded: &str,
         bytes: &[u8],
         i: usize,
-        expanding: &mut FxHashSet<String>,
+        expanding: &mut FxHashSet<Rc<str>>,
     ) -> Option<(String, usize)> {
         let len = bytes.len();
         let expanded_trimmed = expanded.trim();
@@ -359,7 +361,7 @@ impl MacroTable {
     /// currently being expanded to prevent infinite recursion.
     ///
     /// Operates on bytes for performance: avoids allocating Vec<char>.
-    fn expand_text(&self, text: &str, expanding: &mut FxHashSet<String>) -> String {
+    fn expand_text(&self, text: &str, expanding: &mut FxHashSet<Rc<str>>) -> String {
         let mut result = String::with_capacity(text.len());
         let bytes = text.as_bytes();
         let len = bytes.len();
@@ -427,7 +429,7 @@ impl MacroTable {
 
     /// Process an identifier: expand macros, handle builtins, or copy verbatim.
     fn expand_identifier(&self, text: &str, bytes: &[u8], start: usize,
-                         result: &mut String, expanding: &mut FxHashSet<String>) -> usize {
+                         result: &mut String, expanding: &mut FxHashSet<Rc<str>>) -> usize {
         let len = bytes.len();
         let mut i = start + 1;
         while i < len && is_ident_cont_byte(bytes[i]) {
@@ -534,10 +536,10 @@ impl MacroTable {
     /// Expand a macro invocation (function-like or object-like).
     fn expand_macro_invocation(&self, _text: &str, bytes: &[u8], i: usize, ident: &str,
                                mac: &MacroDef, result: &mut String,
-                               expanding: &mut FxHashSet<String>) -> usize {
+                               expanding: &mut FxHashSet<Rc<str>>) -> usize {
         // Record this macro expansion for diagnostic tracing
         if self.track_expansions.get() {
-            self.expanded_macros.borrow_mut().push(ident.to_string());
+            self.expanded_macros.borrow_mut().push(Rc::clone(&mac.name));
         }
         let len = bytes.len();
         if mac.is_function_like {
@@ -569,7 +571,7 @@ impl MacroTable {
         }
 
         // Object-like macro
-        expanding.insert(ident.to_string());
+        expanding.insert(Rc::clone(&mac.name));
         let expanded = self.expand_text(&mac.body, expanding);
         expanding.remove(ident);
 
@@ -728,7 +730,7 @@ impl MacroTable {
         &self,
         mac: &MacroDef,
         args: &[String],
-        expanding: &mut FxHashSet<String>,
+        expanding: &mut FxHashSet<Rc<str>>,
     ) -> (String, bool) {
         // Step 1-2: Prescan - expand ALL arguments (C11 §6.10.3.1).
         // Per the standard, arguments adjacent to # or ## use the RAW (unexpanded)
@@ -823,7 +825,7 @@ impl MacroTable {
     fn handle_stringify_and_paste<'a>(
         &self,
         body: &'a str,
-        params: &[String],
+        params: &[Rc<str>],
         args: &[String],
         is_variadic: bool,
         has_named_variadic: bool,
@@ -867,7 +869,7 @@ impl MacroTable {
                             result.push_str(&va_args);
                             result.push(PASTE_PROTECT_END as char);
                         }
-                    } else if let Some(idx) = params.iter().position(|p| p == left_ident.as_str()) {
+                    } else if let Some(idx) = params.iter().position(|p| &**p == left_ident.as_str()) {
                         let trim_len = result.len() - left_ident.len();
                         result.truncate(trim_len);
                         let arg = args.get(idx).map(|s| s.as_str()).unwrap_or("");
@@ -910,7 +912,7 @@ impl MacroTable {
                             result.push_str(&va_args);
                             result.push(PASTE_PROTECT_END as char);
                         }
-                    } else if let Some(idx) = params.iter().position(|p| p == right_ident) {
+                    } else if let Some(idx) = params.iter().position(|p| &**p == right_ident) {
                         let is_named_variadic_param = is_variadic && has_named_variadic && idx == params.len() - 1;
                         if is_named_variadic_param {
                             let va_args_raw = self.get_named_va_args(idx, args);
@@ -978,7 +980,7 @@ impl MacroTable {
                         result.push('"');
                         result.push_str(&stringify_arg(&va_args));
                         result.push('"');
-                    } else if let Some(idx) = params.iter().position(|p| p == param_name) {
+                    } else if let Some(idx) = params.iter().position(|p| &**p == param_name) {
                         let arg_str = if is_variadic && has_named_variadic && idx == params.len() - 1 {
                             self.get_named_va_args(idx, args)
                         } else {
@@ -1019,7 +1021,7 @@ impl MacroTable {
     fn substitute_params(
         &self,
         body: &str,
-        params: &[String],
+        params: &[Rc<str>],
         args: &[String],
         is_variadic: bool,
         has_named_variadic: bool,
@@ -1074,7 +1076,7 @@ impl MacroTable {
                     let va_args = self.get_va_args(params, args);
                     let next = if i < len { Some(bytes[i]) } else { None };
                     Self::append_with_paste_guard(&mut result, &va_args, next);
-                } else if let Some(idx) = params.iter().position(|p| p == ident) {
+                } else if let Some(idx) = params.iter().position(|p| &**p == ident) {
                     if is_variadic && has_named_variadic && idx == params.len() - 1 {
                         let va_args = self.get_named_va_args(idx, args);
                         let next = if i < len { Some(bytes[i]) } else { None };
@@ -1118,7 +1120,7 @@ impl MacroTable {
     }
 
     /// Get variadic arguments (__VA_ARGS__) as a comma-separated string.
-    fn get_va_args(&self, params: &[String], args: &[String]) -> String {
+    fn get_va_args(&self, params: &[Rc<str>], args: &[String]) -> String {
         let named_count = params.len();
         if args.len() > named_count {
             args[named_count..].join(", ")
@@ -1346,7 +1348,7 @@ pub fn parse_define(line: &str) -> Option<MacroDef> {
     while i < len && is_ident_cont_byte(bytes[i]) {
         i += 1;
     }
-    let name = bytes_to_str(bytes, 0, i).to_string();
+    let name: Rc<str> = Rc::from(bytes_to_str(bytes, 0, i));
 
     // Check if function-like (opening paren immediately after name, no space)
     if i < len && bytes[i] == b'(' {
@@ -1387,7 +1389,7 @@ pub fn parse_define(line: &str) -> Option<MacroDef> {
                 while i < len && is_ident_cont_byte(bytes[i]) {
                     i += 1;
                 }
-                let param = bytes_to_str(bytes, start, i).to_string();
+                let param: Rc<str> = Rc::from(bytes_to_str(bytes, start, i));
 
                 if i + 2 < len && bytes[i] == b'.' && bytes[i + 1] == b'.' && bytes[i + 2] == b'.' {
                     is_variadic = true;
@@ -1416,10 +1418,10 @@ pub fn parse_define(line: &str) -> Option<MacroDef> {
         }
 
         // Rest is the body
-        let body = if i < len {
-            line[i..].trim().to_string()
+        let body: Rc<str> = if i < len {
+            Rc::from(line[i..].trim())
         } else {
-            String::new()
+            Rc::from("")
         };
 
         Some(MacroDef {
@@ -1432,10 +1434,10 @@ pub fn parse_define(line: &str) -> Option<MacroDef> {
         })
     } else {
         // Object-like macro
-        let body = if i < len {
-            line[i..].trim().to_string()
+        let body: Rc<str> = if i < len {
+            Rc::from(line[i..].trim())
         } else {
-            String::new()
+            Rc::from("")
         };
 
         Some(MacroDef {

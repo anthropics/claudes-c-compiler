@@ -3,11 +3,15 @@
 //! This module contains various optimization passes that transform the IR
 //! to produce better code.
 //!
-//! All optimization levels (-O0 through -O3, -Os, -Oz) run the same full set
-//! of passes. While the compiler is still maturing, having separate tiers
-//! creates hard-to-find bugs where code works at one level but breaks at
-//! another. We always run all passes to maximize test coverage of the
-//! optimizer and catch issues early.
+//! Optimization levels:
+//! - `-O0`: Minimal — only mem2reg, resolve_asm, and dead_statics (for correctness).
+//!   Produces fast compiles and debuggable output.
+//! - `-O1`: Basic — cfg_simplify, copy_prop, constant_fold, simplify, narrow, dce.
+//!   Single iteration, no expensive analyses (GVN, LICM, IVSR, inlining).
+//! - `-O2`/`-Os`/`-Oz`: Full pipeline — all passes, up to 3 iterations,
+//!   including inlining, GVN, LICM, IVSR, if-conversion, and IPCP.
+//! - `-O3`: Aggressive — same passes as -O2 but with more iterations (5),
+//!   a tighter diminishing-returns threshold, and more aggressive inlining.
 
 pub(crate) mod cfg_simplify;
 pub(crate) mod constant_fold;
@@ -24,10 +28,13 @@ pub(crate) mod licm;
 pub(crate) mod loop_analysis;
 pub(crate) mod narrow;
 mod resolve_asm;
+pub(crate) mod sccp;
 pub(crate) mod simplify;
+pub(crate) mod use_def;
 
 use crate::ir::analysis::CfgAnalysis;
 use crate::ir::reexports::{IrFunction, IrModule};
+use crate::passes::use_def::UseDefInfo;
 
 /// Run a per-function pass only on functions in the visit set.
 ///
@@ -56,6 +63,49 @@ where
             if i < changed.len() {
                 changed[i] = true;
             }
+            total += n;
+        }
+    }
+    total
+}
+
+/// Run a per-function pass that receives pre-built use-def information.
+///
+/// UseDefInfo is built lazily per function and cached. When a pass reports
+/// changes (n > 0), the cache entry for that function is invalidated so the
+/// next consumer rebuilds it with fresh data.
+fn run_on_visited_with_usedef<F>(
+    module: &mut IrModule,
+    visit: &[bool],
+    changed: &mut [bool],
+    usedef_cache: &mut Vec<Option<UseDefInfo>>,
+    mut f: F,
+) -> usize
+where
+    F: FnMut(&mut IrFunction, &UseDefInfo) -> usize,
+{
+    let mut total = 0;
+    for (i, func) in module.functions.iter_mut().enumerate() {
+        if func.is_declaration {
+            continue;
+        }
+        if i < visit.len() && !visit[i] {
+            continue;
+        }
+
+        // Build or reuse cached UseDefInfo for this function.
+        if usedef_cache[i].is_none() {
+            usedef_cache[i] = Some(UseDefInfo::build(func));
+        }
+        let usedef = usedef_cache[i].as_ref().unwrap();
+
+        let n = f(func, usedef);
+        if n > 0 {
+            if i < changed.len() {
+                changed[i] = true;
+            }
+            // Invalidate cache — IR was mutated.
+            usedef_cache[i] = None;
             total += n;
         }
     }
@@ -186,6 +236,7 @@ struct DisabledPasses {
     narrow: bool,
     simplify: bool,
     constfold: bool,
+    sccp: bool,
     gvn: bool,
     licm: bool,
     ifconv: bool,
@@ -201,6 +252,7 @@ impl DisabledPasses {
             narrow: disabled.contains("narrow"),
             simplify: disabled.contains("simplify"),
             constfold: disabled.contains("constfold"),
+            sccp: disabled.contains("sccp"),
             gvn: disabled.contains("gvn"),
             licm: disabled.contains("licm"),
             ifconv: disabled.contains("ifconv"),
@@ -239,43 +291,85 @@ fn run_inline_phase(module: &mut IrModule, disabled: &str) {
     resolve_asm::resolve_inline_asm_symbols(module);
 }
 
-/// All optimization levels run the same pipeline with the same number of
-/// iterations. The `opt_level` parameter is accepted for API compatibility
-/// but currently ignored -- all levels behave identically.
+/// Run optimization passes on the module at the given optimization level.
 ///
-/// **Why single-level optimization matters for this project:**
+/// - `opt_level == 0`: Skip nearly all passes. Only resolve inline asm symbols
+///   and eliminate dead statics (both required for correctness). This produces
+///   the fastest compile times and most debuggable output.
 ///
-/// Having multiple optimization tiers (e.g., -O0 doing minimal work, -O1 doing
-/// partial work, -O2 doing full work) is exponentially harder to test. Each tier
-/// is a separate code path through the optimizer, and bugs that only appear at
-/// one level are extremely difficult to reproduce and diagnose. For a compiler
-/// that is still maturing and being validated against hundreds of real-world
-/// projects (Linux kernel, PostgreSQL, Redis, etc.), a single optimization level
-/// ensures that:
+/// - `opt_level == 1`: Run basic, cheap passes in a single iteration:
+///   cfg_simplify, copy_prop, narrow, simplify, constant_fold, dce.
+///   Skips expensive analyses (GVN, LICM, IVSR) and interprocedural
+///   optimizations (inlining, IPCP). Good balance of compile speed and
+///   code quality.
 ///
-/// 1. Every test run exercises every optimization pass. A bug in GVN or LICM
-///    will be caught even when testing with `-O0`, rather than hiding until a
-///    user happens to compile with `-O2`.
-/// 2. The number of configurations to validate stays linear (N architectures)
-///    rather than quadratic (N architectures × M optimization levels).
-/// 3. Build system interactions are predictable — the same code is always
-///    generated regardless of which `-O` flag a project's Makefile passes.
+/// - `opt_level == 2`: Full pipeline with all passes, up to 3 iterations,
+///   dirty-tracking, diminishing-returns early exit, and interprocedural
+///   constant propagation. Maximum optimization.
+///
+/// - `opt_level >= 3`: Aggressive. Same passes as -O2 but with 5 iterations,
+///   a tighter diminishing-returns threshold (2% vs 5%), and more aggressive
+///   inlining budgets. Trades compile time for code quality.
 ///
 /// The `optimize` and `optimize_size` booleans on the Driver still control the
 /// `__OPTIMIZE__` and `__OPTIMIZE_SIZE__` predefined macros, which build systems
-/// like the Linux kernel depend on (e.g., `BUILD_BUG()` uses `__OPTIMIZE__` to
-/// select between a noreturn function call and a no-op). The actual pass pipeline
-/// is unaffected by these flags.
-pub(crate) fn run_passes(module: &mut IrModule, _opt_level: u32, target: crate::backend::Target) {
+/// like the Linux kernel depend on.
+pub(crate) fn run_passes(module: &mut IrModule, opt_level: u32, target: crate::backend::Target) {
     let disabled = std::env::var("CCC_DISABLE_PASSES").unwrap_or_default();
     if disabled.contains("all") {
+        return;
+    }
+
+    // -O0: minimal work — just resolve asm symbols and remove dead statics.
+    if opt_level == 0 {
+        resolve_asm::resolve_inline_asm_symbols(module);
+        constant_fold::resolve_remaining_is_constant(module);
+        dead_statics::eliminate_dead_static_functions(module);
         return;
     }
 
     run_inline_phase(module, &disabled);
     constant_fold::resolve_remaining_is_constant(module);
 
-    let iterations = 3;
+    // -O1: basic single-iteration pipeline without expensive analyses.
+    if opt_level == 1 {
+        let num_funcs = module.functions.len();
+        let visit = vec![true; num_funcs];
+        let mut changed = vec![false; num_funcs];
+        let dis = DisabledPasses::from_env(&disabled);
+
+        if !dis.cfg {
+            run_on_visited(module, &visit, &mut changed, cfg_simplify::run_function);
+        }
+        if !dis.copyprop {
+            run_on_visited(module, &visit, &mut changed, copy_prop::propagate_copies);
+        }
+        if !dis.narrow {
+            run_on_visited(module, &visit, &mut changed, narrow::narrow_function);
+        }
+        if !dis.simplify {
+            run_on_visited(module, &visit, &mut changed, simplify::simplify_function);
+        }
+        if !dis.constfold {
+            run_on_visited(module, &visit, &mut changed, constant_fold::fold_function);
+        }
+        if !dis.copyprop {
+            run_on_visited(module, &visit, &mut changed, copy_prop::propagate_copies);
+        }
+        if !dis.dce {
+            run_on_visited(module, &visit, &mut changed, dce::eliminate_dead_code);
+        }
+        if !dis.cfg {
+            run_on_visited(module, &visit, &mut changed, cfg_simplify::run_function);
+        }
+        dead_statics::eliminate_dead_static_functions(module);
+        return;
+    }
+
+    // -O2 and above: full pipeline.
+    // -O3 gets more iterations and a tighter diminishing-returns threshold.
+
+    let iterations = if opt_level >= 3 { 5 } else { 3 };
     let num_funcs = module.functions.len();
     let mut dirty = vec![true; num_funcs];
     let dis = DisabledPasses::from_env(&disabled);
@@ -298,6 +392,10 @@ pub(crate) fn run_passes(module: &mut IrModule, _opt_level: u32, target: crate::
         let mut total_changes = 0usize;
         let mut total_changes_excl_dce = 0usize; // Exclude DCE for diminishing-returns check
         let mut cur_pass_changes = [0usize; NUM_PASSES];
+
+        // Shared use-def info cache for this iteration. Built lazily per
+        // function and invalidated when a pass modifies that function.
+        let mut usedef_cache: Vec<Option<UseDefInfo>> = (0..num_funcs).map(|_| None).collect();
 
         // Clear the changed accumulator for this iteration
         changed.iter_mut().for_each(|c| *c = false);
@@ -374,7 +472,7 @@ pub(crate) fn run_passes(module: &mut IrModule, _opt_level: u32, target: crate::
         // Phase 2b: Integer narrowing
         // Upstream: copy_prop (propagated values expose narrowing)
         if !dis.narrow && should_run!(2, 1) {
-            let n = timed_pass!("narrow", run_on_visited(module, &dirty, &mut changed, narrow::narrow_function));
+            let n = timed_pass!("narrow", run_on_visited_with_usedef(module, &dirty, &mut changed, &mut usedef_cache, narrow::narrow_function_with_usedef));
             cur_pass_changes[2] = n;
             total_changes += n;
             total_changes_excl_dce += n;
@@ -396,6 +494,21 @@ pub(crate) fn run_passes(module: &mut IrModule, _opt_level: u32, target: crate::
         if !dis.constfold && should_run!(4, 1, 2, 3, 7, 8) {
             let n = timed_pass!("constfold", run_on_visited(module, &dirty, &mut changed, constant_fold::fold_function));
             cur_pass_changes[4] = n;
+            total_changes += n;
+            total_changes_excl_dce += n;
+        }
+
+        // Phase 4b: Sparse Conditional Constant Propagation (SCCP).
+        // Propagates constants across blocks through phi nodes, eliminates dead
+        // branches, and removes unreachable code. Strictly more powerful than
+        // intra-block constfold. Piggybacks on constfold's slot 4 to avoid
+        // renumbering all pass indices.
+        // Upstream: same as constfold (cfg_simplify, copy_prop, narrow, simplify, constfold)
+        if !dis.sccp && should_run!(4, 0, 1, 2, 3, 4) {
+            let n = timed_pass!("sccp", run_on_visited_with_usedef(
+                module, &dirty, &mut changed, &mut usedef_cache,
+                sccp::run_sccp_with_usedef));
+            cur_pass_changes[4] += n;
             total_changes += n;
             total_changes_excl_dce += n;
         }
@@ -449,6 +562,12 @@ pub(crate) fn run_passes(module: &mut IrModule, _opt_level: u32, target: crate::
             total_changes_excl_dce += n;
         }
 
+        // Invalidate the usedef_cache before DCE. Passes between the last
+        // usedef-consuming pass (narrow/SCCP) and DCE (GVN, LICM, IVSR,
+        // if_convert, copy_prop2) may have modified the IR without updating
+        // the cache, leaving stale entries that would cause incorrect DCE.
+        usedef_cache.iter_mut().for_each(|c| *c = None);
+
         // Phase 9: Dead code elimination
         // Upstream: gvn, licm, if_convert, copy_prop2 (produced dead instructions)
         // Note: DCE changes are excluded from the diminishing-returns comparison
@@ -461,7 +580,7 @@ pub(crate) fn run_passes(module: &mut IrModule, _opt_level: u32, target: crate::
         // (e.g., kernel's cpucap_is_possible switch folding through inlined
         // system_supports_sme -> alternative_has_cap_unlikely -> cpucap_is_possible).
         if !dis.dce && should_run!(9, 5, 6, 7, 8) {
-            let n = timed_pass!("dce", run_on_visited(module, &dirty, &mut changed, dce::eliminate_dead_code));
+            let n = timed_pass!("dce", run_on_visited_with_usedef(module, &dirty, &mut changed, &mut usedef_cache, dce::eliminate_dead_code_with_usedef));
             cur_pass_changes[9] = n;
             total_changes += n;
             // Intentionally NOT added to total_changes_excl_dce
@@ -524,9 +643,10 @@ pub(crate) fn run_passes(module: &mut IrModule, _opt_level: u32, target: crate::
         // inlined cpucap_is_possible -> alternative_has_cap_unlikely) need at
         // least 2 iterations to complete: iter0 for initial folding, iter1 for
         // propagating results through the control flow.
-        const DIMINISHING_RETURNS_FACTOR: usize = 20; // 1/20 = 5% threshold
+        // -O3 uses a tighter threshold (2%) to squeeze out more optimization.
+        let diminishing_returns_factor: usize = if opt_level >= 3 { 50 } else { 20 };
         if iter > 1 && ipcp_changes == 0 && iter0_total_changes > 0
-            && total_changes_excl_dce * DIMINISHING_RETURNS_FACTOR < iter0_total_changes
+            && total_changes_excl_dce * diminishing_returns_factor < iter0_total_changes
         {
             break;
         }

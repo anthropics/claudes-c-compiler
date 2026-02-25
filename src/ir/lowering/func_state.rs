@@ -9,6 +9,7 @@
 //! cloning entire HashMaps at scope boundaries. On scope exit, only the changes
 //! made within that scope are undone, giving O(changes) cost instead of O(total).
 
+use std::rc::Rc;
 use crate::common::fx_hash::{FxHashMap, FxHashSet};
 use crate::common::source::Span;
 use crate::ir::reexports::{
@@ -28,25 +29,25 @@ use super::definitions::{LocalInfo, SwitchFrame};
 #[derive(Debug)]
 pub(super) struct FuncScopeFrame {
     /// Keys that were newly inserted into `locals` (not present before scope entry).
-    pub locals_added: Vec<String>,
+    pub locals_added: Vec<Rc<str>>,
     /// Keys that were overwritten in `locals`: (key, previous_value).
-    pub locals_shadowed: Vec<(String, LocalInfo)>,
+    pub locals_shadowed: Vec<(Rc<str>, LocalInfo)>,
     /// Keys newly inserted into `static_local_names`.
-    pub statics_added: Vec<String>,
+    pub statics_added: Vec<Rc<str>>,
     /// Keys that were overwritten in `static_local_names`: (key, previous_value).
-    pub statics_shadowed: Vec<(String, String)>,
+    pub statics_shadowed: Vec<(Rc<str>, Rc<str>)>,
     /// Keys newly inserted into `const_local_values`.
-    pub consts_added: Vec<String>,
+    pub consts_added: Vec<Rc<str>>,
     /// Keys that were overwritten in `const_local_values`: (key, previous_value).
-    pub consts_shadowed: Vec<(String, i64)>,
+    pub consts_shadowed: Vec<(Rc<str>, i64)>,
     /// Keys newly inserted into `var_ctypes`.
-    pub var_ctypes_added: Vec<String>,
+    pub var_ctypes_added: Vec<Rc<str>>,
     /// Keys that were overwritten in `var_ctypes`: (key, previous_value).
-    pub var_ctypes_shadowed: Vec<(String, CType)>,
+    pub var_ctypes_shadowed: Vec<(Rc<str>, CType)>,
     /// Keys newly inserted into `vla_typedef_sizes`.
-    pub vla_typedef_sizes_added: Vec<String>,
+    pub vla_typedef_sizes_added: Vec<Rc<str>>,
     /// Keys that were overwritten in `vla_typedef_sizes`: (key, previous_value).
-    pub vla_typedef_sizes_shadowed: Vec<(String, Value)>,
+    pub vla_typedef_sizes_shadowed: Vec<(Rc<str>, Value)>,
     /// Saved stack pointer before the first VLA in this scope.
     /// When set, StackRestore is emitted at scope exit to reclaim VLA stack space.
     pub scope_stack_save: Option<Value>,
@@ -54,7 +55,7 @@ pub(super) struct FuncScopeFrame {
     /// Stored in declaration order; cleanup calls are emitted in reverse order at scope exit.
     /// Each entry is (cleanup_function_name, alloca_value) where alloca_value is the
     /// address of the variable to pass as &var to the cleanup function.
-    pub cleanup_vars: Vec<(String, Value)>,
+    pub cleanup_vars: Vec<(Rc<str>, Value)>,
 }
 
 impl FuncScopeFrame {
@@ -88,7 +89,7 @@ pub(super) struct FunctionBuildState {
     /// Label of the current basic block
     pub current_label: BlockId,
     /// Name of the function currently being lowered
-    pub name: String,
+    pub name: Rc<str>,
     /// Return type of the function currently being lowered
     pub return_type: IrType,
     /// Whether the current function returns _Bool
@@ -96,7 +97,7 @@ pub(super) struct FunctionBuildState {
     /// sret pointer alloca for current function (struct returns > 16 bytes)
     pub sret_ptr: Option<Value>,
     /// Variable -> alloca mapping with metadata
-    pub locals: FxHashMap<String, LocalInfo>,
+    pub locals: FxHashMap<Rc<str>, LocalInfo>,
     /// Loop context: (label, scope_depth) to jump to on `break`.
     /// scope_depth records the scope_stack length when the loop was entered,
     /// so break can emit cleanup calls for scopes being exited.
@@ -108,26 +109,26 @@ pub(super) struct FunctionBuildState {
     /// Stack of switch statement contexts
     pub switch_stack: Vec<SwitchFrame>,
     /// User-defined goto labels -> unique IR labels
-    pub user_labels: FxHashMap<String, BlockId>,
+    pub user_labels: FxHashMap<Rc<str>, BlockId>,
     /// Set of user-defined goto labels that have been defined (label statement lowered).
     /// Used to distinguish forward gotos (label not yet defined) from backward gotos
     /// (label already defined) for VLA stack restore decisions.
-    pub defined_user_labels: FxHashSet<String>,
+    pub defined_user_labels: FxHashSet<Rc<str>>,
     /// User-defined goto labels -> scope depth at label definition site.
     /// Populated by a prescan of the function body before lowering, so that
     /// `goto` cleanup emission can determine which scopes are actually exited.
-    pub user_label_depths: FxHashMap<String, usize>,
+    pub user_label_depths: FxHashMap<Rc<str>, usize>,
     /// Scope stack for function-local variable undo tracking
     pub scope_stack: Vec<FuncScopeFrame>,
     /// Static local variable name -> mangled global name
-    pub static_local_names: FxHashMap<String, String>,
+    pub static_local_names: FxHashMap<Rc<str>, Rc<str>>,
     /// Const-qualified local variable values
-    pub const_local_values: FxHashMap<String, i64>,
+    pub const_local_values: FxHashMap<Rc<str>, i64>,
     /// CType for each local variable
-    pub var_ctypes: FxHashMap<String, CType>,
+    pub var_ctypes: FxHashMap<Rc<str>, CType>,
     /// Runtime sizeof Values for VLA typedef types (e.g., `typedef char buf[n][m]`).
     /// Keyed by typedef name, value is the IR Value holding the runtime byte size.
-    pub vla_typedef_sizes: FxHashMap<String, Value>,
+    pub vla_typedef_sizes: FxHashMap<Rc<str>, Value>,
     /// Per-function value counter (reset for each function)
     pub next_value: u32,
     /// Saved stack pointer Value for VLA deallocation.
@@ -165,7 +166,7 @@ pub(super) struct FunctionBuildState {
 
 impl FunctionBuildState {
     /// Create a new function build state for the given function.
-    pub fn new(name: String, return_type: IrType, return_is_bool: bool) -> Self {
+    pub fn new(name: Rc<str>, return_type: IrType, return_is_bool: bool) -> Self {
         Self {
             blocks: Vec::new(),
             instrs: Vec::new(),
@@ -206,7 +207,7 @@ impl FunctionBuildState {
     /// Pop the top function-local scope frame and undo changes to locals,
     /// static_local_names, const_local_values, and var_ctypes.
     /// Returns (scope_stack_save, cleanup_vars) - the VLA save value and cleanup variables.
-    pub fn pop_scope(&mut self) -> (Option<Value>, Vec<(String, Value)>) {
+    pub fn pop_scope(&mut self) -> (Option<Value>, Vec<(Rc<str>, Value)>) {
         if let Some(frame) = self.scope_stack.pop() {
             let scope_stack_save = frame.scope_stack_save;
             let cleanup_vars = frame.cleanup_vars;
@@ -247,7 +248,7 @@ impl FunctionBuildState {
     }
 
     /// Insert a VLA typedef runtime size, tracking for scope management.
-    pub fn insert_vla_typedef_size_scoped(&mut self, name: String, size: Value) {
+    pub fn insert_vla_typedef_size_scoped(&mut self, name: Rc<str>, size: Value) {
         if let Some(frame) = self.scope_stack.last_mut() {
             if let Some(prev) = self.vla_typedef_sizes.remove(&name) {
                 frame.vla_typedef_sizes_shadowed.push((name.clone(), prev));
@@ -259,7 +260,7 @@ impl FunctionBuildState {
     }
 
     /// Insert a local variable, tracking the change in the current scope frame.
-    pub fn insert_local_scoped(&mut self, name: String, info: LocalInfo) {
+    pub fn insert_local_scoped(&mut self, name: Rc<str>, info: LocalInfo) {
         if let Some(frame) = self.scope_stack.last_mut() {
             if let Some(prev) = self.locals.remove(&name) {
                 frame.locals_shadowed.push((name.clone(), prev));
@@ -271,7 +272,7 @@ impl FunctionBuildState {
     }
 
     /// Insert a static local name, tracking the change in the current scope frame.
-    pub fn insert_static_local_scoped(&mut self, name: String, mangled: String) {
+    pub fn insert_static_local_scoped(&mut self, name: Rc<str>, mangled: Rc<str>) {
         if let Some(frame) = self.scope_stack.last_mut() {
             if let Some(prev) = self.static_local_names.remove(&name) {
                 frame.statics_shadowed.push((name.clone(), prev));
@@ -283,7 +284,7 @@ impl FunctionBuildState {
     }
 
     /// Insert a const local value, tracking the change in the current scope frame.
-    pub fn insert_const_local_scoped(&mut self, name: String, value: i64) {
+    pub fn insert_const_local_scoped(&mut self, name: Rc<str>, value: i64) {
         if let Some(frame) = self.scope_stack.last_mut() {
             if let Some(prev) = self.const_local_values.remove(&name) {
                 frame.consts_shadowed.push((name.clone(), prev));
@@ -299,7 +300,7 @@ impl FunctionBuildState {
     pub fn shadow_local_for_scope(&mut self, name: &str) {
         if let Some(prev_local) = self.locals.remove(name) {
             if let Some(frame) = self.scope_stack.last_mut() {
-                frame.locals_shadowed.push((name.to_string(), prev_local));
+                frame.locals_shadowed.push((Rc::from(name), prev_local));
             }
         }
     }
@@ -308,7 +309,7 @@ impl FunctionBuildState {
     pub fn shadow_static_for_scope(&mut self, name: &str) {
         if let Some(prev_static) = self.static_local_names.remove(name) {
             if let Some(frame) = self.scope_stack.last_mut() {
-                frame.statics_shadowed.push((name.to_string(), prev_static));
+                frame.statics_shadowed.push((Rc::from(name), prev_static));
             }
         }
     }

@@ -8,6 +8,7 @@
 use crate::common::fx_hash::{FxHashMap, FxHashSet};
 use std::fmt::Write;
 use std::path::PathBuf;
+use std::rc::Rc;
 
 use super::macro_defs::{MacroDef, MacroTable, parse_define};
 use super::conditionals::{ConditionalStack, evaluate_condition};
@@ -17,7 +18,7 @@ use super::text_processing::{strip_line_comment, split_first_word};
 
 /// Deduplicate a list of macro names, preserving order (first occurrence wins).
 /// Used to remove duplicate names from nested macro expansions.
-fn dedup_macro_names(names: Vec<String>) -> Vec<String> {
+fn dedup_macro_names(names: Vec<Rc<str>>) -> Vec<Rc<str>> {
     let mut unique = Vec::new();
     for name in names {
         if !unique.contains(&name) {
@@ -79,16 +80,16 @@ pub struct Preprocessor {
     pub(super) pending_injections: Vec<String>,
     /// Stack for #pragma push_macro / pop_macro.
     /// Maps macro name -> stack of saved definitions (None = was undefined).
-    pub(super) macro_save_stack: FxHashMap<String, Vec<Option<MacroDef>>>,
+    pub(super) macro_save_stack: FxHashMap<Rc<str>, Vec<Option<MacroDef>>>,
     /// Line offset set by #line directive: effective_line = line_offset + (source_line - line_offset_base)
     /// When None, no #line has been issued and __LINE__ uses the source line directly.
     line_override: Option<(usize, usize)>, // (target_line, source_line_at_directive)
     /// #pragma weak directives: (symbol, optional_alias_target)
     /// - (symbol, None) means "mark symbol as weak"
     /// - (symbol, Some(target)) means "symbol is a weak alias for target"
-    pub weak_pragmas: Vec<(String, Option<String>)>,
+    pub weak_pragmas: Vec<(Rc<str>, Option<Rc<str>>)>,
     /// #pragma redefine_extname directives: (old_name, new_name)
-    pub redefine_extname_pragmas: Vec<(String, String)>,
+    pub redefine_extname_pragmas: Vec<(Rc<str>, Rc<str>)>,
     /// Accumulated output from force-included files (-include).
     /// Prepended to the main source's preprocessed output so that pragma
     /// synthetic tokens (e.g., visibility push/pop) take effect.
@@ -111,10 +112,10 @@ pub struct Preprocessor {
     ///
     /// On subsequent #include of the same file, if the guard macro is still defined,
     /// we skip re-processing entirely (same optimization as GCC/Clang).
-    pub(super) include_guard_macros: FxHashMap<PathBuf, String>,
+    pub(super) include_guard_macros: FxHashMap<PathBuf, Rc<str>>,
     /// Reusable FxHashSet for directive-level macro expansion (handle_if, handle_elif,
     /// handle_line_directive, #error). Avoids allocating a new FxHashSet per directive.
-    directive_expanding: FxHashSet<String>,
+    directive_expanding: FxHashSet<Rc<str>>,
     /// Macro expansion metadata: maps preprocessed output line numbers to
     /// the macros expanded on that line. Populated during preprocessing and
     /// passed to the SourceManager for diagnostic rendering.
@@ -228,7 +229,7 @@ impl Preprocessor {
         // This set tracks which macros are currently being expanded (to prevent
         // infinite recursion per C11 §6.10.3.4). It's cleared before each use
         // by expand_line_reuse().
-        let mut expanding = crate::common::fx_hash::FxHashSet::default();
+        let mut expanding: crate::common::fx_hash::FxHashSet<Rc<str>> = crate::common::fx_hash::FxHashSet::default();
 
         // Enable macro expansion tracking for diagnostic "in expansion of macro" notes.
         // Only track at top level (not within included files) to avoid duplicate entries.
@@ -488,7 +489,7 @@ impl Preprocessor {
         pending_line: &mut String,
         pending_newlines: &mut usize,
         output: &mut String,
-        expanding: &mut crate::common::fx_hash::FxHashSet<String>,
+        expanding: &mut crate::common::fx_hash::FxHashSet<Rc<str>>,
     ) {
         if pending_line.is_empty() {
             if Self::has_unbalanced_parens(line) {
@@ -617,12 +618,12 @@ impl Preprocessor {
         // __BASE_FILE__ always expands to the main input file name,
         // unlike __FILE__ which changes during #include processing.
         self.macros.define(MacroDef {
-            name: "__BASE_FILE__".to_string(),
+            name: Rc::from("__BASE_FILE__"),
             is_function_like: false,
             params: Vec::new(),
             is_variadic: false,
             has_named_variadic: false,
-            body: format!("\"{}\"", filename),
+            body: Rc::from(format!("\"{}\"", filename).as_str()),
         });
         // Push the file path onto the include stack for relative includes.
         // Use make_absolute (not canonicalize) to preserve symlinks, matching GCC
@@ -688,12 +689,12 @@ impl Preprocessor {
     /// Takes a name and value (e.g., name="FOO", value="1").
     pub fn define_macro(&mut self, name: &str, value: &str) {
         self.macros.define(MacroDef {
-            name: name.to_string(),
+            name: Rc::from(name),
             is_function_like: false,
             params: Vec::new(),
             is_variadic: false,
             has_named_variadic: false,
-            body: value.to_string(),
+            body: Rc::from(value),
         });
     }
 

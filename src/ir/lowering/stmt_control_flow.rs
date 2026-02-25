@@ -1,6 +1,7 @@
 //! Control flow statement lowering: if/else, loops (while/for/do-while),
 //! break/continue, goto (direct and computed), and labels.
 
+use std::rc::Rc;
 use crate::frontend::parser::ast::{
     Expr,
     ForInit,
@@ -281,7 +282,7 @@ impl Lowerer {
         // This distinguishes it from labels merely referenced by a forward goto.
         let resolved_name = self.resolve_local_label(name);
         let func_name = self.func().name.clone();
-        let key = format!("{}::{}", func_name, resolved_name);
+        let key: Rc<str> = Rc::from(format!("{}::{}", func_name, resolved_name));
         self.func_mut().defined_user_labels.insert(key);
         self.terminate(Terminator::Branch(label));
         self.start_block(label);

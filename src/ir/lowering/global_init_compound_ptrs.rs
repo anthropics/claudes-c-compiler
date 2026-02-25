@@ -460,7 +460,7 @@ impl Lowerer {
 
             let mut field_desig: Option<&str> = None;
             if let Some(Designator::Field(ref name)) = item.designators.get(remaining_desigs_start) {
-                field_desig = Some(name.as_str());
+                field_desig = Some(&*name);
                 remaining_desigs_start += 1;
             }
 

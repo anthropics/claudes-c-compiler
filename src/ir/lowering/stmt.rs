@@ -21,6 +21,7 @@ use crate::ir::reexports::{
     Terminator,
     Value,
 };
+use std::rc::Rc;
 use crate::common::types::{AddressSpace, IrType, CType, StructLayout, target_int_ir_type};
 use super::lower::Lowerer;
 use super::definitions::{LocalInfo, GlobalInfo, DeclAnalysis, FuncSig};
@@ -36,7 +37,7 @@ impl Lowerer {
             self.next_local_label_scope += 1;
             let mut scope = crate::common::fx_hash::FxHashMap::default();
             for name in &compound.local_labels {
-                scope.insert(name.clone(), format!("{}$ll{}", name, scope_id));
+                scope.insert(name.clone(), Rc::from(format!("{}$ll{}", name, scope_id)));
             }
             self.local_label_scopes.push(scope);
         }
@@ -218,7 +219,7 @@ impl Lowerer {
                         _ => unreachable!(),
                     };
                     let layout_copy = self.types.borrow_struct_layouts()
-                        .get(&new_key)
+                        .get(new_key.as_str())
                         .map(|l| l.as_ref().clone());
                     if let Some(layout) = layout_copy {
                         self.types.insert_struct_layout_scoped_from_ref(&old_key, layout);
@@ -320,7 +321,7 @@ impl Lowerer {
                 local_info.vla_strides = strides;
             }
         }
-        local_info.asm_register = declarator.attrs.asm_register.clone();
+        local_info.asm_register = declarator.attrs.asm_register.as_ref().map(|s| Rc::from(s.as_str()));
         local_info.asm_register_has_init = declarator.attrs.asm_register.is_some() && declarator.init.is_some();
         local_info.cleanup_fn = declarator.attrs.cleanup_fn.clone();
         if let Some(ref cleanup_fn_name) = declarator.attrs.cleanup_fn {
@@ -386,7 +387,7 @@ impl Lowerer {
     /// not at every function call.
     fn lower_local_static_decl(&mut self, decl: &Declaration, declarator: &InitDeclarator, da: &DeclAnalysis, type_spec: &TypeSpecifier) {
         let static_id = self.next_static_local;
-        let static_name = format!("{}.{}.{}", self.func_mut().name, declarator.name, static_id);
+        let static_name: Rc<str> = Rc::from(format!("{}.{}.{}", self.func_mut().name, declarator.name, static_id));
 
         // Register the bare name -> mangled name mapping before processing the initializer
         // so that &x in another static's initializer can resolve to the mangled name.

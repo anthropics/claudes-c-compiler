@@ -85,8 +85,11 @@ impl X86Codegen {
         );
 
         let mut space = calculate_stack_space_common(&mut self.state, func, 0, |space, alloc_size, align| {
-            let effective_align = if align > 0 { align.max(8) } else { 8 };
-            let alloc = (alloc_size + 7) & !7;
+            // Allow 4-byte slots for small values (I8-I32, U8-U32, F32).
+            // 8-byte and larger values still get 8-byte alignment.
+            let min_align = if alloc_size <= 4 { 4 } else { 8 };
+            let effective_align = if align > 0 { align.max(min_align) } else { min_align };
+            let alloc = (alloc_size + min_align - 1) & !(min_align - 1);
             let new_space = ((space + alloc + effective_align - 1) / effective_align) * effective_align;
             (-new_space, new_space)
         }, &reg_assigned, &X86_CALLEE_SAVED, cached_liveness, false);

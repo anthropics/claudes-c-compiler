@@ -2,6 +2,7 @@
 //! and synthetic header declaration injection.
 
 use std::path::{Path, PathBuf};
+use std::rc::Rc;
 
 use super::macro_defs::{MacroDef, parse_define};
 use super::pipeline::Preprocessor;
@@ -411,7 +412,7 @@ impl Preprocessor {
                     // We do this after preprocessing so that the guard macro is
                     // now defined (the #define inside the file was processed).
                     if let Some(guard) = detected_guard {
-                        self.include_guard_macros.insert(resolved_path, guard);
+                        self.include_guard_macros.insert(resolved_path, Rc::from(guard));
                     }
 
                     Some(result)
@@ -534,7 +535,7 @@ impl Preprocessor {
                     self.include_stack.pop();
 
                     if let Some(guard) = detected_guard {
-                        self.include_guard_macros.insert(resolved_path, guard);
+                        self.include_guard_macros.insert(resolved_path, Rc::from(guard));
                     }
 
                     Some(result)
@@ -748,39 +749,39 @@ impl Preprocessor {
                 // from within a nested header, since the injected text gets emitted at
                 // the include boundary -- potentially in the middle of an initializer.
                 self.macros.define(MacroDef {
-                    name: "va_start".to_string(),
+                    name: Rc::from("va_start"),
                     is_function_like: true,
-                    params: vec!["ap".to_string(), "last".to_string()],
+                    params: vec![Rc::from("ap"), Rc::from("last")],
                     is_variadic: false,
                     has_named_variadic: false,
-                    body: "__builtin_va_start(ap,last)".to_string(),
+                    body: Rc::from("__builtin_va_start(ap,last)"),
                 });
                 self.macros.define(MacroDef {
-                    name: "va_end".to_string(),
+                    name: Rc::from("va_end"),
                     is_function_like: true,
-                    params: vec!["ap".to_string()],
+                    params: vec![Rc::from("ap")],
                     is_variadic: false,
                     has_named_variadic: false,
-                    body: "__builtin_va_end(ap)".to_string(),
+                    body: Rc::from("__builtin_va_end(ap)"),
                 });
                 self.macros.define(MacroDef {
-                    name: "va_copy".to_string(),
+                    name: Rc::from("va_copy"),
                     is_function_like: true,
-                    params: vec!["dest".to_string(), "src".to_string()],
+                    params: vec![Rc::from("dest"), Rc::from("src")],
                     is_variadic: false,
                     has_named_variadic: false,
-                    body: "__builtin_va_copy(dest,src)".to_string(),
+                    body: Rc::from("__builtin_va_copy(dest,src)"),
                 });
                 // va_arg is special syntax: __builtin_va_arg(ap, type)
                 // It's handled by the parser as a special built-in, so we define
                 // the macro to expand to __builtin_va_arg which the lexer recognizes.
                 self.macros.define(MacroDef {
-                    name: "va_arg".to_string(),
+                    name: Rc::from("va_arg"),
                     is_function_like: true,
-                    params: vec!["ap".to_string(), "type".to_string()],
+                    params: vec![Rc::from("ap"), Rc::from("type")],
                     is_variadic: false,
                     has_named_variadic: false,
-                    body: "__builtin_va_arg(ap,type)".to_string(),
+                    body: Rc::from("__builtin_va_arg(ap,type)"),
                 });
                 // __gnuc_va_list is also handled natively by the parser/sema/lowerer
                 // (see comment above about not injecting typedef text).

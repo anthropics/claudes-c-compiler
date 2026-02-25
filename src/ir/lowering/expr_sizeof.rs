@@ -41,7 +41,7 @@ impl Lowerer {
             // CType may still be Array(_, None) returning pointer size).
             if ginfo.is_array {
                 for g in &self.module.globals {
-                    if g.name == *name {
+                    if &*g.name == name {
                         return g.size;
                     }
                 }
@@ -56,7 +56,7 @@ impl Lowerer {
             }
             if ginfo.is_struct {
                 for g in &self.module.globals {
-                    if g.name == *name {
+                    if &*g.name == name {
                         return g.size;
                     }
                 }

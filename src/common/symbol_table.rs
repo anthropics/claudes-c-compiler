@@ -1,10 +1,11 @@
+use std::rc::Rc;
 use crate::common::types::CType;
 use crate::common::fx_hash::FxHashMap;
 
 /// Information about a declared symbol.
 #[derive(Debug, Clone)]
 pub struct Symbol {
-    pub name: String,
+    pub name: Rc<str>,
     pub ty: CType,
     /// Explicit alignment from _Alignas or __attribute__((aligned(N))).
     /// Used by _Alignof(var) to return the correct alignment per C11 6.2.8p3.
@@ -14,7 +15,7 @@ pub struct Symbol {
 /// A scope in the symbol table.
 #[derive(Debug)]
 struct Scope {
-    symbols: FxHashMap<String, Symbol>,
+    symbols: FxHashMap<Rc<str>, Symbol>,
 }
 
 impl Scope {

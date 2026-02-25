@@ -4,6 +4,7 @@
 // break, continue, goto (including computed goto), labels, compound
 // statements, and inline assembly (GCC syntax).
 
+use std::rc::Rc;
 use crate::frontend::lexer::token::TokenKind;
 use super::ast::*;
 use super::parse::Parser;
@@ -220,7 +221,7 @@ impl Parser {
                         self.advance();
                         name
                     } else {
-                        String::new()
+                        Rc::from("")
                     };
                     self.expect_after(&TokenKind::Semicolon, "after goto statement");
                     Stmt::Goto(label, span)
@@ -409,7 +410,7 @@ impl Parser {
         let expr = self.parse_expr();
         self.expect_closing(&TokenKind::RParen, open);
 
-        AsmOperand { name, constraint, expr }
+        AsmOperand { name: name.map(|n| n.to_string()), constraint, expr }
     }
 
     fn parse_asm_clobbers(&mut self) -> Vec<String> {
@@ -429,7 +430,7 @@ impl Parser {
 
     /// Parse the goto labels section (fourth colon) of an asm goto statement.
     /// Labels are comma-separated identifiers: `asm goto("..." : : : : label1, label2)`
-    fn parse_asm_goto_labels(&mut self) -> Vec<String> {
+    fn parse_asm_goto_labels(&mut self) -> Vec<Rc<str>> {
         let mut labels = Vec::new();
         if matches!(self.peek(), TokenKind::RParen) {
             return labels;

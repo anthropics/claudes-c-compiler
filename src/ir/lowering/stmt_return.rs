@@ -83,7 +83,7 @@ impl Lowerer {
             if let Some(ctype) = self.get_expr_ctype(e) {
                 if ctype.is_struct_or_union() || ctype.is_vector() {
                     let fname = self.func().name.clone();
-                    if let Some(size) = self.func_meta.sigs.get(fname.as_str())
+                    if let Some(size) = self.func_meta.sigs.get(&*fname)
                         .and_then(|s| s.sret_size) {
                         struct_size = size;
                     }
@@ -161,7 +161,7 @@ impl Lowerer {
             if let Some(ctype) = self.get_expr_ctype(e) {
                 if ctype.is_struct_or_union() || ctype.is_vector() {
                     let fname = self.func().name.clone();
-                    if let Some(size) = self.func_meta.sigs.get(fname.as_str())
+                    if let Some(size) = self.func_meta.sigs.get(&*fname)
                         .and_then(|s| s.two_reg_ret_size) {
                         struct_size = size;
                     }

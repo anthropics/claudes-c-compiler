@@ -452,7 +452,7 @@ impl Lowerer {
             Expr::FunctionCall(callee, args, _) => {
                 if let Expr::Identifier(name, _) = callee.as_ref() {
                     // __builtin_complex returns complex type based on argument types
-                    if name == "__builtin_complex" {
+                    if &**name == "__builtin_complex" {
                         if let Some(first_arg) = args.first() {
                             let arg_ct = self.expr_ctype(first_arg);
                             return match arg_ct {
@@ -465,7 +465,7 @@ impl Lowerer {
                     }
                     // conj/conjf/conjl preserve the argument's complex type, but
                     // the registered function signature always says ComplexDouble.
-                    if matches!(name.as_str(), "conj" | "conjf" | "conjl"
+                    if matches!(&**name, "conj" | "conjf" | "conjl"
                         | "__builtin_conj" | "__builtin_conjf" | "__builtin_conjl") {
                         if let Some(first_arg) = args.first() {
                             let arg_ct = self.expr_ctype(first_arg);
@@ -606,12 +606,12 @@ impl Lowerer {
                 // Check static locals
                 if let Some(mangled) = self.func_state.as_ref().and_then(|fs| fs.static_local_names.get(name).cloned()) {
                     let addr = self.fresh_value();
-                    self.emit(Instruction::GlobalAddr { dest: addr, name: mangled });
+                    self.emit(Instruction::GlobalAddr { dest: addr, name: mangled.clone() });
                     return addr;
                 }
                 // Global
                 let addr = self.fresh_value();
-                self.emit(Instruction::GlobalAddr { dest: addr, name: name.to_string() });
+                self.emit(Instruction::GlobalAddr { dest: addr, name: name.clone() });
                 addr
             }
             Expr::Deref(inner, _) => {

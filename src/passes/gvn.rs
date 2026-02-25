@@ -712,7 +712,7 @@ mod tests {
         };
 
         let func = IrFunction {
-            name: "test".to_string(),
+            name: "test".into(),
             params: vec![],
             return_type: IrType::I32,
             blocks: vec![block],
@@ -768,7 +768,7 @@ mod tests {
     fn test_non_commutative_not_cse() {
         // Test that a - b and b - a are NOT treated as the same
         let func = IrFunction {
-            name: "test".to_string(),
+            name: "test".into(),
             params: vec![],
             return_type: IrType::I32,
             blocks: vec![BasicBlock {
@@ -835,7 +835,7 @@ mod tests {
     fn test_constant_cse() {
         // Two identical constant expressions should be CSE'd
         let func = IrFunction {
-            name: "test".to_string(),
+            name: "test".into(),
             params: vec![],
             return_type: IrType::I32,
             blocks: vec![BasicBlock {
@@ -910,7 +910,7 @@ mod tests {
     fn test_cast_cse() {
         // Two identical casts should be CSE'd
         let func = IrFunction {
-            name: "test".to_string(),
+            name: "test".into(),
             params: vec![],
             return_type: IrType::I64,
             blocks: vec![BasicBlock {
@@ -983,7 +983,7 @@ mod tests {
     fn test_gep_cse() {
         // Two identical GEPs should be CSE'd
         let func = IrFunction {
-            name: "test".to_string(),
+            name: "test".into(),
             params: vec![],
             return_type: IrType::Ptr,
             blocks: vec![BasicBlock {
@@ -1049,7 +1049,7 @@ mod tests {
         // Test that expressions in dominating blocks are visible to dominated blocks
         // CFG: block0 -> block1 (block0 dominates block1)
         let func = IrFunction {
-            name: "test".to_string(),
+            name: "test".into(),
             params: vec![],
             return_type: IrType::I32,
             blocks: vec![
@@ -1137,7 +1137,7 @@ mod tests {
         // Expressions in block1 and block2 should NOT be CSE'd with each other,
         // since neither dominates the other.
         let func = IrFunction {
-            name: "test".to_string(),
+            name: "test".into(),
             params: vec![],
             return_type: IrType::I32,
             blocks: vec![
@@ -1243,7 +1243,7 @@ mod tests {
     /// Helper to create a minimal IrFunction with given blocks.
     fn make_func(blocks: Vec<BasicBlock>, next_value_id: u32) -> IrFunction {
         IrFunction {
-            name: "test".to_string(),
+            name: "test".into(),
             params: vec![],
             return_type: IrType::I32,
             blocks,
@@ -1371,7 +1371,7 @@ mod tests {
                     seg_override: AddressSpace::Default,
                 },
                 Instruction::Call {
-                    func: "side_effect".to_string(),
+                    func: "side_effect".into(),
                     info: CallInfo {
                         dest: Some(Value(2)),
                         args: vec![],
@@ -1608,7 +1608,7 @@ mod tests {
                     seg_override: AddressSpace::Default,
                 },
                 Instruction::Call {
-                    func: "foo".to_string(),
+                    func: "foo".into(),
                     info: CallInfo {
                         dest: Some(Value(1)),
                         args: vec![],

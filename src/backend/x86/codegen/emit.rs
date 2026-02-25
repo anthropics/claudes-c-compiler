@@ -384,6 +384,9 @@ impl X86Codegen {
                         } else {
                             self.state.out.emit_instr_rbp_reg("    leaq", slot.0, target_name);
                         }
+                    } else if self.state.small_slot_values.contains(&v.0) {
+                        let target_32 = phys_reg_name_32(target);
+                        self.state.out.emit_instr_rbp_reg("    movl", slot.0, target_32);
                     } else {
                         self.state.out.emit_instr_rbp_reg("    movq", slot.0, target_name);
                     }
@@ -491,10 +494,71 @@ impl X86Codegen {
             self.state.out.emit_instr_reg_reg("    movq", "rax", reg_name);
         } else if let Some(slot) = self.state.get_slot(dest.0) {
             // No register: store to stack slot.
-            self.state.out.emit_instr_reg_rbp("    movq", "rax", slot.0);
+            // Use movl for 4-byte small slots (I8-I32, U8-U32, F32).
+            if self.state.small_slot_values.contains(&dest.0) {
+                self.state.out.emit_instr_reg_rbp("    movl", "eax", slot.0);
+            } else {
+                self.state.out.emit_instr_reg_rbp("    movq", "rax", slot.0);
+            }
         }
         // After storing to dest, %rax still holds dest's value
         self.state.reg_cache.set_acc(dest.0, false);
+    }
+
+    /// Load an operand into an arbitrary named register (e.g. "rdi", "rsi", "r8").
+    /// For register-allocated values, emits a direct reg-to-reg move (or nothing
+    /// if the value is already in the target). For constants, emits an immediate
+    /// load. For stack values, emits a movq/leaq from the stack slot.
+    /// This avoids the accumulator-routing pattern of operand_to_rax + movq rax, target.
+    pub(super) fn operand_to_named_reg(&mut self, op: &Operand, target: &str) {
+        match op {
+            Operand::Const(c) => {
+                let target_32 = reg_name_to_32(target);
+                match c {
+                    IrConst::I8(v) if *v == 0 => self.state.emit_fmt(format_args!("    xorl %{0}, %{0}", target_32)),
+                    IrConst::I16(v) if *v == 0 => self.state.emit_fmt(format_args!("    xorl %{0}, %{0}", target_32)),
+                    IrConst::I32(v) if *v == 0 => self.state.emit_fmt(format_args!("    xorl %{0}, %{0}", target_32)),
+                    IrConst::I64(0) => self.state.emit_fmt(format_args!("    xorl %{0}, %{0}", target_32)),
+                    IrConst::I8(v) => self.state.out.emit_instr_imm_reg("    movq", *v as i64, target),
+                    IrConst::I16(v) => self.state.out.emit_instr_imm_reg("    movq", *v as i64, target),
+                    IrConst::I32(v) => self.state.out.emit_instr_imm_reg("    movq", *v as i64, target),
+                    IrConst::I64(v) => {
+                        if *v >= i32::MIN as i64 && *v <= i32::MAX as i64 {
+                            self.state.out.emit_instr_imm_reg("    movq", *v, target);
+                        } else {
+                            self.state.out.emit_instr_imm_reg("    movabsq", *v, target);
+                        }
+                    }
+                    IrConst::Zero => self.state.emit_fmt(format_args!("    xorl %{0}, %{0}", target_32)),
+                    _ => {
+                        // For float/i128 constants, fall back to loading to rax and moving
+                        self.operand_to_rax(op);
+                        if target != "rax" {
+                            self.state.out.emit_instr_reg_reg("    movq", "rax", target);
+                        }
+                    }
+                }
+            }
+            Operand::Value(v) => {
+                // Check register allocation: direct reg-to-reg
+                if let Some(&reg) = self.reg_assignments.get(&v.0) {
+                    let reg_name = phys_reg_name(reg);
+                    if reg_name != target {
+                        self.state.out.emit_instr_reg_reg("    movq", reg_name, target);
+                    }
+                    // If already in target register, nothing to do
+                } else if self.state.get_slot(v.0).is_some() {
+                    self.value_to_reg(v, target);
+                } else if self.state.reg_cache.acc_has(v.0, false) || self.state.reg_cache.acc_has(v.0, true) {
+                    if target != "rax" {
+                        self.state.out.emit_instr_reg_reg("    movq", "rax", target);
+                    }
+                } else {
+                    let target_32 = reg_name_to_32(target);
+                    self.state.out.emit_instr_reg_reg("    xorl", target_32, target_32);
+                }
+            }
+        }
     }
 
     /// Load an operand directly into %rcx, avoiding the push/pop pattern.
@@ -622,6 +686,10 @@ impl X86Codegen {
                 } else {
                     self.state.out.emit_instr_rbp_reg("    leaq", slot.0, reg);
                 }
+            } else if self.state.small_slot_values.contains(&val.0) {
+                // 4-byte slot: use movl which zero-extends to 64 bits.
+                let reg32 = reg_name_to_32(reg);
+                self.state.out.emit_instr_rbp_reg("    movl", slot.0, reg32);
             } else {
                 self.state.out.emit_instr_rbp_reg("    movq", slot.0, reg);
             }

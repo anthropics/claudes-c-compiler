@@ -350,8 +350,16 @@ impl X86Codegen {
     }
 
     pub(super) fn emit_memcpy_impl_impl(&mut self, size: usize) {
-        self.state.out.emit_instr_imm_reg("    movq", size as i64, "rcx");
-        self.state.emit("    rep movsb");
+        let qwords = size / 8;
+        let remainder = size % 8;
+        if qwords > 0 {
+            self.state.out.emit_instr_imm_reg("    movq", qwords as i64, "rcx");
+            self.state.emit("    rep movsq");
+        }
+        if remainder > 0 {
+            self.state.out.emit_instr_imm_reg("    movq", remainder as i64, "rcx");
+            self.state.emit("    rep movsb");
+        }
     }
 
     // ---- Segment-prefixed memory ops ----

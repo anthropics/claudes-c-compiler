@@ -9,6 +9,7 @@
 //! enabling backends to skip redundant stack loads. This is the foundation for
 //! eventually replacing the pure stack-slot model with a register allocator.
 
+use std::rc::Rc;
 use crate::common::fx_hash::{FxHashMap, FxHashSet};
 use crate::common::types::IrType;
 use super::common::AsmOutput;
@@ -99,10 +100,10 @@ pub struct CodegenState {
     pub pic_mode: bool,
     /// Set of symbol names that are locally defined (not extern) and have internal
     /// linkage (static) — these can use direct addressing even in PIC mode.
-    pub local_symbols: FxHashSet<String>,
+    pub local_symbols: FxHashSet<Rc<str>>,
     /// Set of symbol names that are thread-local (_Thread_local / __thread).
     /// These require TLS-specific access patterns (e.g., %fs:x@TPOFF on x86-64).
-    pub tls_symbols: FxHashSet<String>,
+    pub tls_symbols: FxHashSet<Rc<str>>,
     /// Whether the current function contains DynAlloca instructions.
     /// When true, the epilogue must restore SP from the frame pointer instead of
     /// adding back the compile-time frame size.
@@ -155,7 +156,7 @@ pub struct CodegenState {
     /// Set of symbol names declared as weak extern (e.g., `extern __weak`).
     /// On AArch64, these need GOT-indirect addressing because the linker
     /// rejects R_AARCH64_ADR_PREL_PG_HI21 against symbols that may bind externally.
-    pub weak_extern_symbols: FxHashSet<String>,
+    pub weak_extern_symbols: FxHashSet<Rc<str>>,
     /// SSA values that use 4-byte (32-bit) stack slots instead of the default 8-byte.
     /// On 64-bit targets, I32/U32/F32 and smaller types can use 4-byte slots,
     /// reducing stack frame sizes by ~40%. Store/load paths check this set to

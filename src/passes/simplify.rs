@@ -1691,7 +1691,7 @@ mod tests {
 
     fn make_call(func_name: &str, args: Vec<Operand>, return_type: IrType) -> Instruction {
         Instruction::Call {
-            func: func_name.to_string(),
+            func: func_name.into(),
             info: CallInfo {
                 dest: Some(Value(10)),
                 args,

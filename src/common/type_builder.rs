@@ -9,6 +9,7 @@
 //! (typedef names, struct/union, enum, typeof), so implementors provide just those
 //! via required trait methods. This ensures primitive type mapping can never diverge.
 
+use std::rc::Rc;
 use crate::common::types::{AddressSpace, CType, FunctionType};
 use crate::frontend::parser::ast::{
     DerivedDeclarator, EnumVariant, Expr, ParamDecl, StructFieldDecl, TypeSpecifier,
@@ -30,7 +31,7 @@ pub trait TypeConvertContext {
     /// Both phases compute layout, but lowering has caching and forward-declaration logic.
     fn resolve_struct_or_union(
         &self,
-        name: &Option<String>,
+        name: &Option<Rc<str>>,
         fields: &Option<Vec<StructFieldDecl>>,
         is_union: bool,
         is_packed: bool,
@@ -41,7 +42,7 @@ pub trait TypeConvertContext {
     /// Resolve an enum type to its CType.
     /// Sema: returns CType::Enum with name info.
     /// Lowering: returns CType::Int (enums are ints at IR level).
-    fn resolve_enum(&self, name: &Option<String>, variants: &Option<Vec<EnumVariant>>, is_packed: bool) -> CType;
+    fn resolve_enum(&self, name: &Option<Rc<str>>, variants: &Option<Vec<EnumVariant>>, is_packed: bool) -> CType;
 
     /// Resolve typeof(expr) to a CType.
     /// Sema: returns CType::Int (doesn't have full expr type resolution yet).
@@ -92,7 +93,7 @@ pub trait TypeConvertContext {
             }
             TypeSpecifier::FunctionPointer(return_type, params, variadic) => {
                 let ret_ctype = self.resolve_type_spec_to_ctype(return_type);
-                let param_ctypes: Vec<(CType, Option<String>)> = params.iter().map(|p| {
+                let param_ctypes: Vec<(CType, Option<Rc<str>>)> = params.iter().map(|p| {
                     let ty = self.resolve_type_spec_to_ctype(&p.type_spec);
                     (ty, p.name.clone())
                 }).collect();
@@ -106,7 +107,7 @@ pub trait TypeConvertContext {
                 // Bare function type (no pointer wrapper) — produced by typeof on
                 // function names. Resolves to CType::Function, NOT Pointer(Function).
                 let ret_ctype = self.resolve_type_spec_to_ctype(return_type);
-                let param_ctypes: Vec<(CType, Option<String>)> = params.iter().map(|p| {
+                let param_ctypes: Vec<(CType, Option<Rc<str>>)> = params.iter().map(|p| {
                     let ty = self.resolve_type_spec_to_ctype(&p.type_spec);
                     (ty, p.name.clone())
                 }).collect();
@@ -173,7 +174,7 @@ fn find_function_pointer_core(derived: &[DerivedDeclarator]) -> Option<usize> {
 fn convert_param_decls_to_ctypes(
     ctx: &dyn TypeConvertContext,
     params: &[ParamDecl],
-) -> Vec<(CType, Option<String>)> {
+) -> Vec<(CType, Option<Rc<str>>)> {
     params
         .iter()
         .map(|p| {

@@ -10,6 +10,7 @@
 //! - Pointer field resolution
 //! - Struct layout lookup
 
+use std::rc::Rc;
 use crate::frontend::parser::ast::{
     Designator,
     Expr,
@@ -324,10 +325,10 @@ impl Lowerer {
             if let Some(ref mut fs) = self.func_state {
                 fs.global_init_label_blocks.push(scoped_label);
             }
-            elements.push(GlobalInit::GlobalAddr(scoped_label.as_label()));
+            elements.push(GlobalInit::GlobalAddr(Rc::from(scoped_label.as_label())));
         } else if let Expr::StringLiteral(s, _) = expr {
             let label = self.intern_string_literal(s);
-            elements.push(GlobalInit::GlobalAddr(label));
+            elements.push(GlobalInit::GlobalAddr(Rc::from(label)));
         } else if let Some(addr_init) = self.eval_string_literal_addr_expr(expr) {
             elements.push(addr_init);
         } else if let Some(addr_init) = self.eval_global_addr_expr(expr) {
@@ -355,12 +356,12 @@ impl Lowerer {
             if let Some(ref mut fs) = self.func_state {
                 fs.global_init_label_blocks.push(scoped_label);
             }
-            return Some(GlobalInit::GlobalAddr(scoped_label.as_label()));
+            return Some(GlobalInit::GlobalAddr(Rc::from(scoped_label.as_label())));
         }
         // String literal: create a .rodata entry and reference it
         if let Expr::StringLiteral(s, _) = expr {
             let label = self.intern_string_literal(s);
-            return Some(GlobalInit::GlobalAddr(label));
+            return Some(GlobalInit::GlobalAddr(Rc::from(label)));
         }
         // String literal +/- offset: "str" + N
         if let Some(addr) = self.eval_string_literal_addr_expr(expr) {

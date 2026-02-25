@@ -109,11 +109,8 @@ impl<'a> Iterator for SmallVecIter<'a> {
     }
 }
 
-/// Jump target analysis result for global store forwarding.
-struct JumpTargets {
-    is_jump_target: Vec<bool>,
-    has_non_numeric_jump_targets: bool,
-}
+// JumpTargets struct is now in helpers.rs
+use super::helpers::JumpTargets;
 
 // ── State management helpers ─────────────────────────────────────────────────
 
@@ -169,51 +166,8 @@ fn invalidate_reg_flat(
     reg_offsets[reg_id as usize].clear();
 }
 
-// ── Jump target collection ───────────────────────────────────────────────────
-
-fn collect_jump_targets(store: &LineStore, infos: &[LineInfo], len: usize) -> JumpTargets {
-    let mut max_label_num: u32 = 0;
-    for i in 0..len {
-        if infos[i].kind == LineKind::Label {
-            let trimmed = infos[i].trimmed(store.get(i));
-            if let Some(n) = parse_label_number(trimmed) {
-                if n > max_label_num {
-                    max_label_num = n;
-                }
-            }
-        }
-    }
-    let mut is_jump_target = vec![false; (max_label_num + 1) as usize];
-    let mut has_non_numeric_jump_targets = false;
-    let mut has_indirect_jump = false;
-    for i in 0..len {
-        match infos[i].kind {
-            LineKind::Jmp | LineKind::CondJmp => {
-                let trimmed = infos[i].trimmed(store.get(i));
-                if let Some(target) = extract_jump_target(trimmed) {
-                    if let Some(n) = parse_dotl_number(target) {
-                        if (n as usize) < is_jump_target.len() {
-                            is_jump_target[n as usize] = true;
-                        }
-                    } else {
-                        has_non_numeric_jump_targets = true;
-                    }
-                }
-            }
-            LineKind::JmpIndirect => {
-                has_indirect_jump = true;
-            }
-            _ => {}
-        }
-    }
-    if has_indirect_jump {
-        for v in is_jump_target.iter_mut() {
-            *v = true;
-        }
-        has_non_numeric_jump_targets = true;
-    }
-    JumpTargets { is_jump_target, has_non_numeric_jump_targets }
-}
+// collect_jump_targets is now in helpers.rs
+use super::helpers::collect_jump_targets;
 
 // ── Per-instruction handlers ─────────────────────────────────────────────────
 

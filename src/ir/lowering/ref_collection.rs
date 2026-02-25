@@ -8,6 +8,7 @@
 //! or inline functions.
 
 use std::collections::VecDeque;
+use std::rc::Rc;
 use crate::common::fx_hash::{FxHashMap, FxHashSet};
 use crate::frontend::parser::ast::{
     BlockItem,
@@ -50,10 +51,10 @@ impl Lowerer {
     /// 2. Build a per-function reference map for skippable functions
     /// 3. Worklist-based transitive closure: when a skippable function becomes
     ///    reachable, add its references to the worklist
-    pub(super) fn collect_referenced_static_functions(&self, tu: &TranslationUnit) -> FxHashSet<String> {
+    pub(super) fn collect_referenced_static_functions(&self, tu: &TranslationUnit) -> FxHashSet<Rc<str>> {
         let mut referenced = FxHashSet::default();
         // Map from skippable function name -> set of functions it references
-        let mut skippable_refs: FxHashMap<String, FxHashSet<String>> = FxHashMap::default();
+        let mut skippable_refs: FxHashMap<Rc<str>, FxHashSet<Rc<str>>> = FxHashMap::default();
 
         for decl in &tu.decls {
             match decl {
@@ -77,7 +78,7 @@ impl Lowerer {
                         }
                         // Alias targets reference the aliased function
                         if let Some(ref target) = declarator.attrs.alias_target {
-                            referenced.insert(target.clone());
+                            referenced.insert(Rc::from(target.as_str()));
                         }
                     }
                 }
@@ -101,7 +102,7 @@ impl Lowerer {
         // Transitive closure: use a worklist to propagate reachability through
         // skippable functions. When a skippable function is found to be referenced,
         // add all of its own references to the worklist.
-        let mut worklist: VecDeque<String> = referenced.iter().cloned().collect();
+        let mut worklist: VecDeque<Rc<str>> = referenced.iter().cloned().collect();
         while let Some(name) = worklist.pop_front() {
             if let Some(func_refs) = skippable_refs.get(&name) {
                 for r in func_refs {
@@ -116,7 +117,7 @@ impl Lowerer {
     }
 
     /// Collect function name references from a compound statement.
-    pub(super) fn collect_refs_from_compound(&self, compound: &CompoundStmt, refs: &mut FxHashSet<String>) {
+    pub(super) fn collect_refs_from_compound(&self, compound: &CompoundStmt, refs: &mut FxHashSet<Rc<str>>) {
         for item in &compound.items {
             match item {
                 BlockItem::Declaration(decl) => {
@@ -126,8 +127,8 @@ impl Lowerer {
                         }
                         // __attribute__((cleanup(func))) references func
                         if let Some(ref cleanup_fn) = declarator.attrs.cleanup_fn {
-                            if self.known_functions.contains(cleanup_fn) {
-                                refs.insert(cleanup_fn.clone());
+                            if self.known_functions.contains(&**cleanup_fn) {
+                                refs.insert(Rc::from(&**cleanup_fn));
                             }
                         }
                     }
@@ -140,7 +141,7 @@ impl Lowerer {
     }
 
     /// Collect function name references from a statement.
-    pub(super) fn collect_refs_from_stmt(&self, stmt: &Stmt, refs: &mut FxHashSet<String>) {
+    pub(super) fn collect_refs_from_stmt(&self, stmt: &Stmt, refs: &mut FxHashSet<Rc<str>>) {
         match stmt {
             Stmt::Expr(Some(expr)) => {
                 self.collect_refs_from_expr(expr, refs);
@@ -177,8 +178,8 @@ impl Lowerer {
                                 }
                                 // __attribute__((cleanup(func))) references func
                                 if let Some(ref cleanup_fn) = declarator.attrs.cleanup_fn {
-                                    if self.known_functions.contains(cleanup_fn) {
-                                        refs.insert(cleanup_fn.clone());
+                                    if self.known_functions.contains(&**cleanup_fn) {
+                                        refs.insert(Rc::from(&**cleanup_fn));
                                     }
                                 }
                             }
@@ -211,8 +212,8 @@ impl Lowerer {
                         self.collect_refs_from_initializer(init, refs);
                     }
                     if let Some(ref cleanup_fn) = declarator.attrs.cleanup_fn {
-                        if self.known_functions.contains(cleanup_fn) {
-                            refs.insert(cleanup_fn.clone());
+                        if self.known_functions.contains(&**cleanup_fn) {
+                            refs.insert(Rc::from(&**cleanup_fn));
                         }
                     }
                 }
@@ -230,7 +231,7 @@ impl Lowerer {
     }
 
     /// Collect function name references from an expression.
-    pub(super) fn collect_refs_from_expr(&self, expr: &Expr, refs: &mut FxHashSet<String>) {
+    pub(super) fn collect_refs_from_expr(&self, expr: &Expr, refs: &mut FxHashSet<Rc<str>>) {
         match expr {
             Expr::Identifier(name, _) => {
                 if self.known_functions.contains(name) {
@@ -290,7 +291,7 @@ impl Lowerer {
     }
 
     /// Collect function name references from an initializer.
-    pub(super) fn collect_refs_from_initializer(&self, init: &Initializer, refs: &mut FxHashSet<String>) {
+    pub(super) fn collect_refs_from_initializer(&self, init: &Initializer, refs: &mut FxHashSet<Rc<str>>) {
         match init {
             Initializer::Expr(e) => self.collect_refs_from_expr(e, refs),
             Initializer::List(items) => {

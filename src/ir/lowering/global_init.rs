@@ -12,6 +12,7 @@
 //! The top-level entry point `lower_global_init` dispatches to focused helpers
 //! for each initializer category, keeping each function short and readable.
 
+use std::rc::Rc;
 use crate::frontend::parser::ast::{
     BinOp,
     Designator,
@@ -198,7 +199,7 @@ impl Lowerer {
                     let init_result = self.create_compound_literal_global(type_spec, init);
                     // Extract the global name from the result
                     if let GlobalInit::GlobalAddr(label) = init_result {
-                        self.materialized_compound_literals.insert(key, label);
+                        self.materialized_compound_literals.insert(key, label.to_string());
                     }
                 }
             }
@@ -336,7 +337,7 @@ impl Lowerer {
             StringLitKind::Wide => self.intern_wide_string_literal(s),
             StringLitKind::Char16 => self.intern_char16_string_literal(s),
         };
-        GlobalInit::GlobalAddr(label)
+        GlobalInit::GlobalAddr(Rc::from(label))
     }
 
     /// Lower a compound literal used directly as an initializer value.
@@ -1086,13 +1087,13 @@ impl Lowerer {
             }
             Expr::Cast(_, inner, _) => self.eval_string_literal_addr_expr(inner),
             Expr::StringLiteral(s, _) => {
-                Some(GlobalInit::GlobalAddr(self.intern_string_literal(s)))
+                Some(GlobalInit::GlobalAddr(Rc::from(self.intern_string_literal(s))))
             }
             Expr::WideStringLiteral(s, _) => {
-                Some(GlobalInit::GlobalAddr(self.intern_wide_string_literal(s)))
+                Some(GlobalInit::GlobalAddr(Rc::from(self.intern_wide_string_literal(s))))
             }
             Expr::Char16StringLiteral(s, _) => {
-                Some(GlobalInit::GlobalAddr(self.intern_char16_string_literal(s)))
+                Some(GlobalInit::GlobalAddr(Rc::from(self.intern_char16_string_literal(s))))
             }
             _ => None,
         }
@@ -1109,10 +1110,13 @@ impl Lowerer {
         let offset_val = self.eval_const_expr(offset_expr)?;
         let offset = self.const_to_i64(&offset_val)?;
         let byte_offset = if negate { -offset } else { offset };
-        let label = match kind {
-            StringLitKind::Narrow => self.intern_string_literal(&s),
-            StringLitKind::Wide => self.intern_wide_string_literal(&s),
-            StringLitKind::Char16 => self.intern_char16_string_literal(&s),
+        let label: Rc<str> = {
+            let s = match kind {
+                StringLitKind::Narrow => self.intern_string_literal(&s),
+                StringLitKind::Wide => self.intern_wide_string_literal(&s),
+                StringLitKind::Char16 => self.intern_char16_string_literal(&s),
+            };
+            Rc::from(s)
         };
         if byte_offset == 0 {
             Some(GlobalInit::GlobalAddr(label))
@@ -1144,8 +1148,9 @@ impl Lowerer {
         type_spec: &TypeSpecifier,
         init: &Initializer,
     ) -> GlobalInit {
-        let label = format!(".Lcompound_lit_{}", self.next_anon_struct);
+        let label_str = format!(".Lcompound_lit_{}", self.next_anon_struct);
         self.next_anon_struct += 1;
+        let label: Rc<str> = Rc::from(label_str);
 
         let is_array = matches!(type_spec, TypeSpecifier::Array(_, _));
         let (elem_size, base_ty, computed_alloc_size) = if let TypeSpecifier::Array(ref elem_ts, _) = type_spec {
@@ -1809,13 +1814,13 @@ impl Lowerer {
                 };
                 if let Expr::StringLiteral(s, _) = expr {
                     let label = self.intern_string_literal(s);
-                    elements.push(GlobalInit::GlobalAddr(label));
+                    elements.push(GlobalInit::GlobalAddr(Rc::from(label)));
                 } else if let Expr::LabelAddr(label_name, _) = Self::strip_casts(expr) {
                     let scoped_label = self.get_or_create_user_label(label_name);
                     if let Some(ref mut fs) = self.func_state {
                         fs.global_init_label_blocks.push(scoped_label);
                     }
-                    elements.push(GlobalInit::GlobalAddr(scoped_label.as_label()));
+                    elements.push(GlobalInit::GlobalAddr(Rc::from(scoped_label.as_label())));
                 // &(compound_literal) or cast-wrapped variant -> materialize and take address
                 } else if let Some(addr) = self.try_address_of_compound_literal(expr) {
                     elements.push(addr);
@@ -1868,8 +1873,8 @@ impl Lowerer {
                     fs.global_init_label_blocks.push(scoped2);
                 }
                 return Some(GlobalInit::GlobalLabelDiff(
-                    scoped1.as_label(),
-                    scoped2.as_label(),
+                    Rc::from(scoped1.as_label()),
+                    Rc::from(scoped2.as_label()),
                     byte_size,
                 ));
             }

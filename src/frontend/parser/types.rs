@@ -5,6 +5,7 @@
 // (e.g., "long unsigned int" == "unsigned long int"), so we collect flags
 // and resolve them at the end.
 
+use std::rc::Rc;
 use crate::common::types::AddressSpace;
 use crate::frontend::lexer::token::TokenKind;
 use super::ast::*;
@@ -33,7 +34,7 @@ struct TypeSpecFlags {
     has_enum: bool,
     has_typeof: bool,
     long_count: u32,
-    typedef_name: Option<String>,
+    typedef_name: Option<Rc<str>>,
 }
 
 impl Parser {
@@ -255,7 +256,7 @@ impl Parser {
                 }
                 TokenKind::Builtin => {
                     if !any_base_specifier {
-                        flags.typedef_name = Some("__builtin_va_list".to_string());
+                        flags.typedef_name = Some(Rc::from("__builtin_va_list"));
                         self.advance();
                         any_base_specifier = true;
                         break;

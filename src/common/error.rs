@@ -795,7 +795,7 @@ impl DiagnosticEngine {
         // that are likely relevant to the error.
         let interesting: Vec<&str> = macro_names.iter()
             .filter(|name| !is_uninteresting_macro(name))
-            .map(|s| s.as_str())
+            .map(|s| &**s)
             .collect();
 
         if interesting.is_empty() {

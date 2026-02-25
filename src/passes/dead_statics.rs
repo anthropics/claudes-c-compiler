@@ -58,7 +58,7 @@ fn build_symbol_index(module: &IrModule) -> (
 
     let mut func_id: Vec<u32> = Vec::with_capacity(module.functions.len());
     for (i, func) in module.functions.iter().enumerate() {
-        let id = *name_to_id.entry(func.name.as_str()).or_insert_with(|| {
+        let id = *name_to_id.entry(&*func.name).or_insert_with(|| {
             let id = next_id;
             next_id += 1;
             id_func_idx.push(None);
@@ -71,7 +71,7 @@ fn build_symbol_index(module: &IrModule) -> (
 
     let mut global_id: Vec<u32> = Vec::with_capacity(module.globals.len());
     for (i, global) in module.globals.iter().enumerate() {
-        let id = *name_to_id.entry(global.name.as_str()).or_insert_with(|| {
+        let id = *name_to_id.entry(&*global.name).or_insert_with(|| {
             let id = next_id;
             next_id += 1;
             id_func_idx.push(None);
@@ -216,7 +216,7 @@ fn compute_reachability<'a>(
         for (i, func) in module.functions.iter().enumerate() {
             if func.is_static && !func.is_declaration {
                 let fid = func_id[i] as usize;
-                if !reachable[fid] && module.toplevel_asm.iter().any(|s| s.contains(func.name.as_str())) {
+                if !reachable[fid] && module.toplevel_asm.iter().any(|s| s.contains(&*func.name)) {
                     reachable[fid] = true;
                     worklist.push(fid as u32);
                 }
@@ -225,7 +225,7 @@ fn compute_reachability<'a>(
         for (i, global) in module.globals.iter().enumerate() {
             if global.is_static && !global.is_extern {
                 let gid = global_id[i] as usize;
-                if !reachable[gid] && module.toplevel_asm.iter().any(|s| s.contains(global.name.as_str())) {
+                if !reachable[gid] && module.toplevel_asm.iter().any(|s| s.contains(&*global.name)) {
                     reachable[gid] = true;
                     worklist.push(gid as u32);
                 }
@@ -277,7 +277,7 @@ fn build_address_taken<'a>(module: &'a IrModule, name_to_id: &FxHashMap<&'a str,
             for inst in &block.instructions {
                 match inst {
                     Instruction::GlobalAddr { name, .. } => {
-                        if let Some(&id) = name_to_id.get(name.as_str()) {
+                        if let Some(&id) = name_to_id.get(&**name) {
                             if (id as usize) < address_taken.len() {
                                 address_taken[id as usize] = true;
                             }
@@ -350,10 +350,10 @@ fn filter_symbol_attrs(module: &mut IrModule) {
             for inst in &block.instructions {
                 match inst {
                     Instruction::Call { func: callee, .. } => {
-                        referenced_symbols.insert(callee.as_str());
+                        referenced_symbols.insert(&**callee);
                     }
                     Instruction::GlobalAddr { name, .. } => {
-                        referenced_symbols.insert(name.as_str());
+                        referenced_symbols.insert(&**name);
                     }
                     Instruction::InlineAsm { input_symbols, .. } => {
                         for s in input_symbols.iter().flatten() {
@@ -370,17 +370,17 @@ fn filter_symbol_attrs(module: &mut IrModule) {
         collect_global_init_refs_set(&global.init, &mut referenced_symbols);
     }
     for func in &module.functions {
-        referenced_symbols.insert(func.name.as_str());
+        referenced_symbols.insert(&*func.name);
     }
     for global in &module.globals {
-        referenced_symbols.insert(global.name.as_str());
+        referenced_symbols.insert(&*global.name);
     }
 
     module.symbol_attrs.retain(|(name, is_weak, visibility)| {
         if *is_weak && visibility.is_none() {
             return true;
         }
-        referenced_symbols.contains(name.as_str())
+        referenced_symbols.contains(&**name)
     });
 }
 
@@ -419,11 +419,11 @@ fn collect_instruction_symbol_refs<'a>(
 fn collect_global_init_refs_set<'a>(init: &'a GlobalInit, refs: &mut FxHashSet<&'a str>) {
     match init {
         GlobalInit::GlobalAddr(name) | GlobalInit::GlobalAddrOffset(name, _) => {
-            refs.insert(name.as_str());
+            refs.insert(&**name);
         }
         GlobalInit::GlobalLabelDiff(label1, label2, _) => {
-            refs.insert(label1.as_str());
-            refs.insert(label2.as_str());
+            refs.insert(&**label1);
+            refs.insert(&**label2);
         }
         GlobalInit::Compound(fields) => {
             for field in fields {

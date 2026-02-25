@@ -99,7 +99,7 @@ pub trait StructLayoutProvider {
 }
 
 /// A HashMap-based provider for struct layouts (used by TypeContext and sema).
-impl StructLayoutProvider for FxHashMap<String, RcLayout> {
+impl StructLayoutProvider for FxHashMap<Rc<str>, RcLayout> {
     fn get_struct_layout(&self, key: &str) -> Option<&StructLayout> {
         self.get(key).map(|rc| rc.as_ref())
     }
@@ -221,7 +221,7 @@ pub enum CType {
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct FunctionType {
     pub return_type: CType,
-    pub params: Vec<(CType, Option<String>)>,
+    pub params: Vec<(CType, Option<Rc<str>>)>,
     pub variadic: bool,
 }
 
@@ -230,7 +230,7 @@ pub struct FunctionType {
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct StructField {
-    pub name: String,
+    pub name: Rc<str>,
     pub ty: CType,
     pub bit_width: Option<u32>,
     /// Per-field alignment override from _Alignas(N) or __attribute__((aligned(N))).
@@ -242,8 +242,8 @@ pub struct StructField {
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct EnumType {
-    pub name: Option<String>,
-    pub variants: Vec<(String, i64)>,
+    pub name: Option<Rc<str>>,
+    pub variants: Vec<(Rc<str>, i64)>,
     /// When true (__attribute__((packed))), the enum uses the smallest
     /// integer type that can represent all variant values.
     pub is_packed: bool,
@@ -554,13 +554,13 @@ pub enum InitFieldResolution {
     /// Found inside an anonymous struct/union member at the given index.
     /// The String is the original designator name to use when drilling into
     /// the anonymous member.
-    AnonymousMember { anon_field_idx: usize, inner_name: String },
+    AnonymousMember { anon_field_idx: usize, inner_name: Rc<str> },
 }
 
 /// Layout info for a single field.
 #[derive(Debug, Clone)]
 pub struct StructFieldLayout {
-    pub name: String,
+    pub name: Rc<str>,
     pub offset: usize,
     pub ty: CType,
     /// For bitfields: bit offset within the storage unit at `offset`.
@@ -1029,7 +1029,7 @@ impl StructLayout {
     pub fn resolve_init_field(&self, designator_name: Option<&str>, current_idx: usize, ctx: &dyn StructLayoutProvider) -> Option<InitFieldResolution> {
         if let Some(name) = designator_name {
             // First try direct field lookup
-            if let Some(idx) = self.fields.iter().position(|f| f.name == name) {
+            if let Some(idx) = self.fields.iter().position(|f| &*&*f.name == name) {
                 return Some(InitFieldResolution::Direct(idx));
             }
             // Search inside anonymous struct/union members
@@ -1043,7 +1043,7 @@ impl StructLayout {
                         if Self::anon_member_contains_field_ctx(key, name, ctx) {
                             return Some(InitFieldResolution::AnonymousMember {
                                 anon_field_idx: idx,
-                                inner_name: name.to_string(),
+                                inner_name: Rc::from(name),
                             });
                         }
                     }
@@ -1073,7 +1073,7 @@ impl StructLayout {
     fn anon_member_contains_field_ctx(key: &str, name: &str, ctx: &dyn StructLayoutProvider) -> bool {
         if let Some(layout) = ctx.get_struct_layout(key) {
             for f in &layout.fields {
-                if f.name == name {
+                if &*f.name == name {
                     return true;
                 }
                 // Recurse into nested anonymous members
@@ -1096,7 +1096,7 @@ impl StructLayout {
     /// Recursively searches anonymous struct/union members.
     pub fn field_offset(&self, name: &str, ctx: &dyn StructLayoutProvider) -> Option<(usize, CType)> {
         // First, try direct field lookup
-        if let Some(f) = self.fields.iter().find(|f| f.name == name) {
+        if let Some(f) = self.fields.iter().find(|f| &*f.name == name) {
             return Some((f.offset, f.ty.clone()));
         }
         // Then, search anonymous (unnamed) struct/union members recursively
@@ -1113,7 +1113,7 @@ impl StructLayout {
                 None => continue,
             };
             // Check if the target field is directly in this anonymous member
-            if let Some(inner_field) = anon_layout.fields.iter().find(|sf| sf.name == name) {
+            if let Some(inner_field) = anon_layout.fields.iter().find(|sf| &*sf.name == name) {
                 // Compute offset within the anonymous struct/union
                 let inner_offset = match &f.ty {
                     CType::Struct(_) => {
@@ -1134,7 +1134,7 @@ impl StructLayout {
 
     /// Look up a field by name, returning full layout info including bitfield details.
     pub fn field_layout(&self, name: &str) -> Option<&StructFieldLayout> {
-        self.fields.iter().find(|f| f.name == name)
+        self.fields.iter().find(|f| &*f.name == name)
     }
 
     /// Look up a field by name, returning its offset, type, and optional bitfield info.
@@ -1147,7 +1147,7 @@ impl StructLayout {
         ctx: &dyn StructLayoutProvider,
     ) -> Option<(usize, CType, Option<u32>, Option<u32>)> {
         // First, try direct field lookup
-        if let Some(f) = self.fields.iter().find(|f| f.name == name) {
+        if let Some(f) = self.fields.iter().find(|f| &*f.name == name) {
             return Some((f.offset, f.ty.clone(), f.bit_offset, f.bit_width));
         }
         // Then, search anonymous (unnamed) struct/union members recursively
@@ -1389,7 +1389,7 @@ impl CType {
             CType::Struct(_) | CType::Union(_) => 0,
             _ => {
                 // For non-struct/union types, we can use an empty provider
-                let empty: FxHashMap<String, RcLayout> = FxHashMap::default();
+                let empty: FxHashMap<Rc<str>, RcLayout> = FxHashMap::default();
                 self.size_ctx(&empty)
             }
         }

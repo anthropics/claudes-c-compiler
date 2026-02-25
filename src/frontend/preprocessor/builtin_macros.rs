@@ -4,17 +4,19 @@
 //! we define essential macros from <limits.h>, <stdint.h>, <stddef.h>,
 //! <stdbool.h>, <stdatomic.h>, etc. as built-in macros.
 
+use std::rc::Rc;
+
 use super::macro_defs::{MacroDef, MacroTable};
 
 /// Helper to define a simple object-like macro.
 fn def(macros: &mut MacroTable, name: &str, body: &str) {
     macros.define(MacroDef {
-        name: name.to_string(),
+        name: Rc::from(name),
         is_function_like: false,
         params: Vec::new(),
         is_variadic: false,
         has_named_variadic: false,
-        body: body.to_string(),
+        body: Rc::from(body),
     });
 }
 
@@ -110,84 +112,84 @@ fn define_stdint_macros(macros: &mut MacroTable) {
 
     // Constant macros for fixed-width types
     macros.define(MacroDef {
-        name: "INT8_C".to_string(),
+        name: Rc::from("INT8_C"),
         is_function_like: true,
-        params: vec!["x".to_string()],
+        params: vec![Rc::from("x")],
         is_variadic: false,
         has_named_variadic: false,
-        body: "x".to_string(),
+        body: Rc::from("x"),
     });
     macros.define(MacroDef {
-        name: "INT16_C".to_string(),
+        name: Rc::from("INT16_C"),
         is_function_like: true,
-        params: vec!["x".to_string()],
+        params: vec![Rc::from("x")],
         is_variadic: false,
         has_named_variadic: false,
-        body: "x".to_string(),
+        body: Rc::from("x"),
     });
     macros.define(MacroDef {
-        name: "INT32_C".to_string(),
+        name: Rc::from("INT32_C"),
         is_function_like: true,
-        params: vec!["x".to_string()],
+        params: vec![Rc::from("x")],
         is_variadic: false,
         has_named_variadic: false,
-        body: "x".to_string(),
+        body: Rc::from("x"),
     });
     macros.define(MacroDef {
-        name: "INT64_C".to_string(),
+        name: Rc::from("INT64_C"),
         is_function_like: true,
-        params: vec!["x".to_string()],
+        params: vec![Rc::from("x")],
         is_variadic: false,
         has_named_variadic: false,
-        body: "x ## LL".to_string(),
+        body: Rc::from("x ## LL"),
     });
     macros.define(MacroDef {
-        name: "UINT8_C".to_string(),
+        name: Rc::from("UINT8_C"),
         is_function_like: true,
-        params: vec!["x".to_string()],
+        params: vec![Rc::from("x")],
         is_variadic: false,
         has_named_variadic: false,
-        body: "x".to_string(),
+        body: Rc::from("x"),
     });
     macros.define(MacroDef {
-        name: "UINT16_C".to_string(),
+        name: Rc::from("UINT16_C"),
         is_function_like: true,
-        params: vec!["x".to_string()],
+        params: vec![Rc::from("x")],
         is_variadic: false,
         has_named_variadic: false,
-        body: "x".to_string(),
+        body: Rc::from("x"),
     });
     macros.define(MacroDef {
-        name: "UINT32_C".to_string(),
+        name: Rc::from("UINT32_C"),
         is_function_like: true,
-        params: vec!["x".to_string()],
+        params: vec![Rc::from("x")],
         is_variadic: false,
         has_named_variadic: false,
-        body: "x ## U".to_string(),
+        body: Rc::from("x ## U"),
     });
     macros.define(MacroDef {
-        name: "UINT64_C".to_string(),
+        name: Rc::from("UINT64_C"),
         is_function_like: true,
-        params: vec!["x".to_string()],
+        params: vec![Rc::from("x")],
         is_variadic: false,
         has_named_variadic: false,
-        body: "x ## ULL".to_string(),
+        body: Rc::from("x ## ULL"),
     });
     macros.define(MacroDef {
-        name: "INTMAX_C".to_string(),
+        name: Rc::from("INTMAX_C"),
         is_function_like: true,
-        params: vec!["x".to_string()],
+        params: vec![Rc::from("x")],
         is_variadic: false,
         has_named_variadic: false,
-        body: "x ## LL".to_string(),
+        body: Rc::from("x ## LL"),
     });
     macros.define(MacroDef {
-        name: "UINTMAX_C".to_string(),
+        name: Rc::from("UINTMAX_C"),
         is_function_like: true,
-        params: vec!["x".to_string()],
+        params: vec![Rc::from("x")],
         is_variadic: false,
         has_named_variadic: false,
-        body: "x ## ULL".to_string(),
+        body: Rc::from("x ## ULL"),
     });
 }
 
@@ -198,12 +200,12 @@ fn define_stddef_macros(macros: &mut MacroTable) {
 
     // offsetof macro
     macros.define(MacroDef {
-        name: "offsetof".to_string(),
+        name: Rc::from("offsetof"),
         is_function_like: true,
-        params: vec!["type".to_string(), "member".to_string()],
+        params: vec![Rc::from("type"), Rc::from("member")],
         is_variadic: false,
         has_named_variadic: false,
-        body: "__builtin_offsetof(type, member)".to_string(),
+        body: Rc::from("__builtin_offsetof(type, member)"),
     });
 }
 

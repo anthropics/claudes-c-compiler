@@ -13,6 +13,7 @@
 //   -> parse_primary_expr
 
 use crate::frontend::lexer::token::TokenKind;
+use std::rc::Rc;
 use super::ast::*;
 use super::parse::Parser;
 
@@ -414,7 +415,7 @@ impl Parser {
                         self.advance();
                         name
                     } else {
-                        String::new()
+                        Rc::from("")
                     };
                     expr = Expr::MemberAccess(Box::new(expr), field, span);
                 }
@@ -426,7 +427,7 @@ impl Parser {
                         self.advance();
                         name
                     } else {
-                        String::new()
+                        Rc::from("")
                     };
                     expr = Expr::PointerMemberAccess(Box::new(expr), field, span);
                 }
@@ -671,7 +672,7 @@ impl Parser {
             TokenKind::Builtin => {
                 let span = self.peek_span();
                 self.advance();
-                Expr::Identifier("__builtin_va_list".to_string(), span)
+                Expr::Identifier(Rc::from("__builtin_va_list"), span)
             }
             TokenKind::Extension => {
                 self.advance();

@@ -111,21 +111,60 @@ pub(super) fn propagate_register_copies(store: &mut LineStore, infos: &mut [Line
     let mut changed = false;
     let len = store.len();
 
+    // Collect jump targets to distinguish fallthrough labels from branch targets.
+    let targets = collect_jump_targets(store, infos, len);
+
     // copy_src[dst] = src means "dst currently holds the same value as src"
     let mut copy_src: [RegId; 16] = [REG_NONE; 16];
 
     let mut i = 0;
     while i < len {
-        // At basic block boundaries, clear all copies
-        if infos[i].is_barrier() {
-            copy_src = [REG_NONE; 16];
+        if infos[i].is_nop() {
             i += 1;
             continue;
         }
 
-        if infos[i].is_nop() {
-            i += 1;
-            continue;
+        // Smart barrier handling: distinguish label types, calls, and jumps.
+        match infos[i].kind {
+            LineKind::Label => {
+                // Only clear copies at labels that are actual jump targets.
+                // Fallthrough-only labels don't break linear flow — copies remain valid.
+                let label_name = infos[i].trimmed(store.get(i));
+                let is_target = if let Some(n) = parse_label_number(label_name) {
+                    (n as usize) < targets.is_jump_target.len()
+                        && targets.is_jump_target[n as usize]
+                } else {
+                    targets.has_non_numeric_jump_targets
+                };
+                if is_target {
+                    copy_src = [REG_NONE; 16];
+                }
+                i += 1;
+                continue;
+            }
+            LineKind::Call => {
+                // Preserve callee-saved register copies across calls.
+                // Callee-saved: %rbx=3, %r12=12, %r13=13, %r14=14, %r15=15
+                // Only invalidate copies involving caller-saved registers.
+                for reg in 0..16u8 {
+                    if copy_src[reg as usize] == REG_NONE {
+                        continue;
+                    }
+                    if !is_callee_saved_reg(reg) || !is_callee_saved_reg(copy_src[reg as usize]) {
+                        // Either dest or source is caller-saved — invalidate
+                        copy_src[reg as usize] = REG_NONE;
+                    }
+                }
+                i += 1;
+                continue;
+            }
+            LineKind::Jmp | LineKind::JmpIndirect | LineKind::CondJmp
+            | LineKind::Ret | LineKind::Directive => {
+                copy_src = [REG_NONE; 16];
+                i += 1;
+                continue;
+            }
+            _ => {}
         }
 
         // Lines with indirect memory access (including semicolon-separated
@@ -176,8 +215,7 @@ pub(super) fn propagate_register_copies(store: &mut LineStore, infos: &mut [Line
         }
 
         // Not a copy instruction. Try to propagate active copies into this instruction.
-        let dest_reg = get_dest_reg(&infos[i]);
-
+        // Allow multiple propagations per instruction (e.g., both operands are copies).
         let mut did_propagate = false;
         for reg in 0..16u8 {
             let src = copy_src[reg as usize];
@@ -195,15 +233,12 @@ pub(super) fn propagate_register_copies(store: &mut LineStore, infos: &mut [Line
             if try_propagate_into(store, infos, i, src, reg) {
                 changed = true;
                 did_propagate = true;
-                break;
+                // Don't break — continue to propagate more copies into this instruction
             }
         }
 
-        // If we propagated, don't increment i - re-process.
-        // But we still need to do invalidation below.
-        let _ = did_propagate;
-
         // Invalidate copies affected by this instruction's writes.
+        let dest_reg = get_dest_reg(&infos[i]);
         if dest_reg != REG_NONE && dest_reg <= REG_GP_MAX {
             copy_src[dest_reg as usize] = REG_NONE;
             for k in 0..16u8 {
@@ -221,7 +256,11 @@ pub(super) fn propagate_register_copies(store: &mut LineStore, infos: &mut [Line
             }
         }
 
-        i += 1;
+        // If we propagated, re-process the instruction (the replacement may have
+        // enabled further propagation or changed the dest_reg).
+        if !did_propagate {
+            i += 1;
+        }
     }
     changed
 }

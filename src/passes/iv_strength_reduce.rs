@@ -448,6 +448,21 @@ fn find_basic_ivs(
                         }
                     }
                 }
+            } else if let Some(Instruction::GetElementPtr { base, offset, .. }) = loop_defs.get(&add_val) {
+                // GEP-based IV increment: phi(init, GEP(phi, const_stride))
+                let base_root = look_through_casts(base.0, &loop_defs);
+                if base_root == dest.0 {
+                    if let Operand::Const(c) = offset {
+                        if let Some(step) = c.to_i64() {
+                            ivs.push(BasicIV {
+                                phi_dest: *dest,
+                                ty: *ty,
+                                init: init_op,
+                                step,
+                            });
+                        }
+                    }
+                }
             }
         }
     }
@@ -519,6 +534,25 @@ fn find_derived_exprs(
         iv_values.get(&val_id).or_else(|| iv_derived.get(&val_id)).copied()
     };
 
+    // Build a set of values used as pointers (in Load/Store) for identifying
+    // BinOp::Add-based pointer arithmetic patterns.
+    let ptr_uses: FxHashSet<u32> = {
+        let mut s = FxHashSet::default();
+        for &bi in loop_body {
+            if bi >= func.blocks.len() {
+                continue;
+            }
+            for inst in &func.blocks[bi].instructions {
+                match inst {
+                    Instruction::Load { ptr, .. } => { s.insert(ptr.0); }
+                    Instruction::Store { ptr, .. } => { s.insert(ptr.0); }
+                    _ => {}
+                }
+            }
+        }
+        s
+    };
+
     // Find multiplications/shifts of IV values by constants
     for &bi in loop_body {
         if bi >= func.blocks.len() {
@@ -587,12 +621,88 @@ fn find_derived_exprs(
                 }
             }
 
+            // Also find BinOp::Add(ptr, mul_result) where result is used as a pointer.
+            // This covers C pointer arithmetic like *(arr + i*sizeof(T)) which lowers
+            // to BinOp::Add instead of GetElementPtr.
+            for &gbi in loop_body {
+                if gbi >= func.blocks.len() {
+                    continue;
+                }
+                for (gii, ginst) in func.blocks[gbi].instructions.iter().enumerate() {
+                    if let Instruction::BinOp {
+                        dest: adest, op: IrBinOp::Add, lhs, rhs, ..
+                    } = ginst
+                    {
+                        let ptr_op = match (lhs, rhs) {
+                            (Operand::Value(v), other) if v.0 == mul_dest_id => Some(other),
+                            (other, Operand::Value(v)) if v.0 == mul_dest_id => Some(other),
+                            _ => None,
+                        };
+                        if let Some(Operand::Value(ptr_v)) = ptr_op {
+                            if is_loop_invariant(ptr_v.0, loop_body, func)
+                                && ptr_uses.contains(&adest.0)
+                            {
+                                gep_uses.push((gbi, gii, *adest, *ptr_v));
+                            }
+                        }
+                    }
+                }
+            }
+
             if !gep_uses.is_empty() {
                 derived.push(DerivedExpr {
                     stride,
                     iv_index: iv_idx,
                     gep_uses,
                 });
+            }
+        }
+    }
+
+    // Also find IV-derived values used directly as GEP offsets (stride = 1).
+    // This handles byte-array patterns like `sieve[j] = 0` where the IV (after
+    // cast to I64) is the GEP offset with no multiplication or shift.
+    // Collect IV-derived value IDs that are already handled by a Mul/Shl above,
+    // so we don't create duplicate reductions.
+    let mut already_reduced: FxHashSet<u32> = FxHashSet::default();
+    for d in &derived {
+        for &(_, _, _, _) in &d.gep_uses {
+            // The Mul/Shl dest values are tracked implicitly; what matters is
+            // the GEP offset values. We need to avoid reducing a GEP whose
+            // offset is already a mul/shl result that we've handled.
+        }
+    }
+    // Actually track which GEPs (by dest) are already reduced
+    for d in &derived {
+        for &(_, _, gdest, _) in &d.gep_uses {
+            already_reduced.insert(gdest.0);
+        }
+    }
+
+    for &bi in loop_body {
+        if bi >= func.blocks.len() {
+            continue;
+        }
+        for (gii, ginst) in func.blocks[bi].instructions.iter().enumerate() {
+            if let Instruction::GetElementPtr {
+                dest: gdest,
+                base,
+                offset: Operand::Value(ov),
+                ..
+            } = ginst
+            {
+                // Skip if this GEP is already reduced by a Mul/Shl pattern
+                if already_reduced.contains(&gdest.0) {
+                    continue;
+                }
+                // Check if the offset value derives from an IV (through Cast/Copy)
+                if let Some(iv_idx) = find_iv(ov.0) {
+                    derived.push(DerivedExpr {
+                        stride: 1,
+                        iv_index: iv_idx,
+                        gep_uses: vec![(bi, gii, *gdest, *base)],
+                    });
+                }
             }
         }
     }
@@ -665,7 +775,7 @@ mod tests {
     /// Test basic IV detection on a simple counting loop.
     #[test]
     fn test_find_basic_iv() {
-        let mut func = IrFunction::new("test".to_string(), IrType::I32, vec![], false);
+        let mut func = IrFunction::new("test".into(), IrType::I32, vec![], false);
 
         // Block 0 (preheader): init = 0
         func.blocks.push(BasicBlock {
@@ -739,7 +849,7 @@ mod tests {
     /// Test full IVSR transformation on a sum-array loop.
     #[test]
     fn test_ivsr_sum_array() {
-        let mut func = IrFunction::new("sum_array".to_string(), IrType::I64, vec![], false);
+        let mut func = IrFunction::new("sum_array".into(), IrType::I64, vec![], false);
 
         // Block 0 (preheader): base = param, n = param, init = 0
         func.blocks.push(BasicBlock {
@@ -869,5 +979,580 @@ mod tests {
             .filter(|i| matches!(i, Instruction::Copy { dest: Value(7), .. }))
             .collect();
         assert_eq!(body_copies.len(), 1, "Expected GEP to be replaced with Copy");
+    }
+
+    /// Test GEP-based IV increment detection (Change 1).
+    /// Pattern: ptr = phi(init, GEP(ptr, 8))
+    #[test]
+    fn test_ivsr_gep_increment() {
+        let mut func = IrFunction::new("test_gep_inc".into(), IrType::I32, vec![], false);
+
+        // Block 0 (preheader): ptr_init = some base pointer
+        func.blocks.push(BasicBlock {
+            label: BlockId(0),
+            instructions: vec![Instruction::Copy {
+                dest: Value(0),
+                src: Operand::Const(IrConst::I64(0x1000)),
+            }],
+            terminator: Terminator::Branch(BlockId(1)),
+            source_spans: Vec::new(),
+        });
+
+        // Block 1 (header): ptr = phi(ptr_init from B0, ptr_next from B2)
+        func.blocks.push(BasicBlock {
+            label: BlockId(1),
+            instructions: vec![
+                Instruction::Phi {
+                    dest: Value(1),
+                    ty: IrType::Ptr,
+                    incoming: vec![
+                        (Operand::Value(Value(0)), BlockId(0)),
+                        (Operand::Value(Value(3)), BlockId(2)),
+                    ],
+                },
+                Instruction::Cmp {
+                    dest: Value(2),
+                    op: IrCmpOp::Ult,
+                    lhs: Operand::Value(Value(1)),
+                    rhs: Operand::Const(IrConst::I64(0x2000)),
+                    ty: IrType::I64,
+                },
+            ],
+            terminator: Terminator::CondBranch {
+                cond: Operand::Value(Value(2)),
+                true_label: BlockId(2),
+                false_label: BlockId(3),
+            },
+            source_spans: Vec::new(),
+        });
+
+        // Block 2 (body): ptr_next = GEP(ptr, 8)
+        func.blocks.push(BasicBlock {
+            label: BlockId(2),
+            instructions: vec![Instruction::GetElementPtr {
+                dest: Value(3),
+                base: Value(1),
+                offset: Operand::Const(IrConst::I64(8)),
+                ty: IrType::I8,
+            }],
+            terminator: Terminator::Branch(BlockId(1)),
+            source_spans: Vec::new(),
+        });
+
+        // Block 3 (exit)
+        func.blocks.push(BasicBlock {
+            label: BlockId(3),
+            instructions: vec![],
+            terminator: Terminator::Return(Some(Operand::Const(IrConst::I32(0)))),
+            source_spans: Vec::new(),
+        });
+
+        func.next_value_id = 4;
+
+        let ivs = find_basic_ivs(&func, 1, &[1, 2].iter().copied().collect(), 0, &[2]);
+        assert_eq!(ivs.len(), 1, "Should detect GEP-incremented pointer IV");
+        assert_eq!(ivs[0].phi_dest, Value(1));
+        assert_eq!(ivs[0].step, 8);
+        assert_eq!(ivs[0].ty, IrType::Ptr);
+    }
+
+    /// Test BinOp::Add-based pointer arithmetic detection (Change 2).
+    /// Pattern: Mul(iv, 4) -> BinOp::Add(arr_base, mul) -> Load
+    #[test]
+    fn test_ivsr_add_based_ptr_arith() {
+        let mut func = IrFunction::new("test_add_ptr".into(), IrType::I32, vec![], false);
+
+        // Block 0 (preheader): arr_base, n, init=0
+        func.blocks.push(BasicBlock {
+            label: BlockId(0),
+            instructions: vec![
+                Instruction::Copy {
+                    dest: Value(0),
+                    src: Operand::Const(IrConst::I64(0x1000)),
+                },
+                Instruction::Copy {
+                    dest: Value(1),
+                    src: Operand::Const(IrConst::I32(100)),
+                },
+                Instruction::Copy {
+                    dest: Value(2),
+                    src: Operand::Const(IrConst::I32(0)),
+                },
+            ],
+            terminator: Terminator::Branch(BlockId(1)),
+            source_spans: Vec::new(),
+        });
+
+        // Block 1 (header): i = phi(0, i_next)
+        func.blocks.push(BasicBlock {
+            label: BlockId(1),
+            instructions: vec![
+                Instruction::Phi {
+                    dest: Value(3),
+                    ty: IrType::I32,
+                    incoming: vec![
+                        (Operand::Value(Value(2)), BlockId(0)),
+                        (Operand::Value(Value(9)), BlockId(2)),
+                    ],
+                },
+                Instruction::Cmp {
+                    dest: Value(4),
+                    op: IrCmpOp::Slt,
+                    lhs: Operand::Value(Value(3)),
+                    rhs: Operand::Value(Value(1)),
+                    ty: IrType::I32,
+                },
+            ],
+            terminator: Terminator::CondBranch {
+                cond: Operand::Value(Value(4)),
+                true_label: BlockId(2),
+                false_label: BlockId(3),
+            },
+            source_spans: Vec::new(),
+        });
+
+        // Block 2 (body): cast, mul, add(ptr,offset), load, i++
+        func.blocks.push(BasicBlock {
+            label: BlockId(2),
+            instructions: vec![
+                Instruction::Cast {
+                    dest: Value(5),
+                    src: Operand::Value(Value(3)),
+                    from_ty: IrType::I32,
+                    to_ty: IrType::I64,
+                },
+                Instruction::BinOp {
+                    dest: Value(6),
+                    op: IrBinOp::Mul,
+                    lhs: Operand::Value(Value(5)),
+                    rhs: Operand::Const(IrConst::I64(4)),
+                    ty: IrType::I64,
+                },
+                Instruction::BinOp {
+                    dest: Value(7),
+                    op: IrBinOp::Add,
+                    lhs: Operand::Value(Value(0)),  // arr_base (loop-invariant)
+                    rhs: Operand::Value(Value(6)),  // mul result
+                    ty: IrType::I64,
+                },
+                Instruction::Load {
+                    dest: Value(8),
+                    ptr: Value(7),  // load from add result
+                    ty: IrType::I32,
+                    seg_override: AddressSpace::Default,
+                },
+                Instruction::BinOp {
+                    dest: Value(9),
+                    op: IrBinOp::Add,
+                    lhs: Operand::Value(Value(3)),
+                    rhs: Operand::Const(IrConst::I32(1)),
+                    ty: IrType::I32,
+                },
+            ],
+            terminator: Terminator::Branch(BlockId(1)),
+            source_spans: Vec::new(),
+        });
+
+        // Block 3 (exit)
+        func.blocks.push(BasicBlock {
+            label: BlockId(3),
+            instructions: vec![],
+            terminator: Terminator::Return(Some(Operand::Const(IrConst::I32(0)))),
+            source_spans: Vec::new(),
+        });
+
+        func.next_value_id = 10;
+
+        let changes = ivsr_function(&mut func);
+        assert!(changes > 0, "Expected IVSR to reduce BinOp::Add-based ptr arith");
+
+        // The BinOp::Add (v7) should be replaced with a Copy from a pointer IV
+        let body_copies: Vec<_> = func.blocks[2]
+            .instructions
+            .iter()
+            .filter(|i| matches!(i, Instruction::Copy { dest: Value(7), .. }))
+            .collect();
+        assert_eq!(body_copies.len(), 1, "Expected Add to be replaced with Copy");
+
+        // Header should have a new phi for the pointer IV
+        let header_phis: Vec<_> = func.blocks[1]
+            .instructions
+            .iter()
+            .filter(|i| matches!(i, Instruction::Phi { .. }))
+            .collect();
+        assert!(header_phis.len() >= 2, "Expected ptr IV phi in header");
+    }
+
+    /// Test IVSR with two arrays using the same IV in the same loop.
+    #[test]
+    fn test_ivsr_multi_array() {
+        let mut func = IrFunction::new("test_multi".into(), IrType::I32, vec![], false);
+
+        // Block 0 (preheader): base1, base2, init=0
+        func.blocks.push(BasicBlock {
+            label: BlockId(0),
+            instructions: vec![
+                Instruction::Copy {
+                    dest: Value(0),
+                    src: Operand::Const(IrConst::I64(0x1000)), // base1
+                },
+                Instruction::Copy {
+                    dest: Value(1),
+                    src: Operand::Const(IrConst::I64(0x2000)), // base2
+                },
+                Instruction::Copy {
+                    dest: Value(2),
+                    src: Operand::Const(IrConst::I32(0)), // init
+                },
+            ],
+            terminator: Terminator::Branch(BlockId(1)),
+            source_spans: Vec::new(),
+        });
+
+        // Block 1 (header): i = phi(0, i_next)
+        func.blocks.push(BasicBlock {
+            label: BlockId(1),
+            instructions: vec![
+                Instruction::Phi {
+                    dest: Value(3),
+                    ty: IrType::I32,
+                    incoming: vec![
+                        (Operand::Value(Value(2)), BlockId(0)),
+                        (Operand::Value(Value(12)), BlockId(2)),
+                    ],
+                },
+                Instruction::Cmp {
+                    dest: Value(4),
+                    op: IrCmpOp::Slt,
+                    lhs: Operand::Value(Value(3)),
+                    rhs: Operand::Const(IrConst::I32(100)),
+                    ty: IrType::I32,
+                },
+            ],
+            terminator: Terminator::CondBranch {
+                cond: Operand::Value(Value(4)),
+                true_label: BlockId(2),
+                false_label: BlockId(3),
+            },
+            source_spans: Vec::new(),
+        });
+
+        // Block 2 (body): cast, mul, GEP1, load1, GEP2, load2, add, i++
+        func.blocks.push(BasicBlock {
+            label: BlockId(2),
+            instructions: vec![
+                Instruction::Cast {
+                    dest: Value(5),
+                    src: Operand::Value(Value(3)),
+                    from_ty: IrType::I32,
+                    to_ty: IrType::I64,
+                },
+                Instruction::BinOp {
+                    dest: Value(6),
+                    op: IrBinOp::Mul,
+                    lhs: Operand::Value(Value(5)),
+                    rhs: Operand::Const(IrConst::I64(4)),
+                    ty: IrType::I64,
+                },
+                Instruction::GetElementPtr {
+                    dest: Value(7),
+                    base: Value(0), // base1
+                    offset: Operand::Value(Value(6)),
+                    ty: IrType::I32,
+                },
+                Instruction::Load {
+                    dest: Value(8),
+                    ptr: Value(7),
+                    ty: IrType::I32,
+                    seg_override: AddressSpace::Default,
+                },
+                Instruction::GetElementPtr {
+                    dest: Value(9),
+                    base: Value(1), // base2
+                    offset: Operand::Value(Value(6)),
+                    ty: IrType::I32,
+                },
+                Instruction::Load {
+                    dest: Value(10),
+                    ptr: Value(9),
+                    ty: IrType::I32,
+                    seg_override: AddressSpace::Default,
+                },
+                Instruction::BinOp {
+                    dest: Value(11),
+                    op: IrBinOp::Add,
+                    lhs: Operand::Value(Value(8)),
+                    rhs: Operand::Value(Value(10)),
+                    ty: IrType::I32,
+                },
+                Instruction::BinOp {
+                    dest: Value(12),
+                    op: IrBinOp::Add,
+                    lhs: Operand::Value(Value(3)),
+                    rhs: Operand::Const(IrConst::I32(1)),
+                    ty: IrType::I32,
+                },
+            ],
+            terminator: Terminator::Branch(BlockId(1)),
+            source_spans: Vec::new(),
+        });
+
+        // Block 3 (exit)
+        func.blocks.push(BasicBlock {
+            label: BlockId(3),
+            instructions: vec![],
+            terminator: Terminator::Return(Some(Operand::Const(IrConst::I32(0)))),
+            source_spans: Vec::new(),
+        });
+
+        func.next_value_id = 13;
+
+        let changes = ivsr_function(&mut func);
+        assert!(changes >= 2, "Expected at least 2 reductions (one per array)");
+
+        // Both GEPs should be replaced with Copies
+        let body_copies: Vec<_> = func.blocks[2]
+            .instructions
+            .iter()
+            .filter(|i| matches!(i, Instruction::Copy { .. }))
+            .collect();
+        assert!(body_copies.len() >= 2, "Expected both GEPs replaced with Copies");
+
+        // Header should have 3 phis (original i + 2 pointer IVs)
+        let header_phis: Vec<_> = func.blocks[1]
+            .instructions
+            .iter()
+            .filter(|i| matches!(i, Instruction::Phi { .. }))
+            .collect();
+        assert_eq!(header_phis.len(), 3, "Expected 3 phis in header (i + 2 ptr IVs)");
+    }
+
+    /// Test IVSR for byte array with stride=1 (no multiply).
+    #[test]
+    fn test_ivsr_stride1_byte_array() {
+        let mut func = IrFunction::new("test_byte".into(), IrType::I32, vec![], false);
+
+        // Block 0 (preheader): base, init=0
+        func.blocks.push(BasicBlock {
+            label: BlockId(0),
+            instructions: vec![
+                Instruction::Copy {
+                    dest: Value(0),
+                    src: Operand::Const(IrConst::I64(0x1000)), // base
+                },
+                Instruction::Copy {
+                    dest: Value(1),
+                    src: Operand::Const(IrConst::I32(0)), // init
+                },
+            ],
+            terminator: Terminator::Branch(BlockId(1)),
+            source_spans: Vec::new(),
+        });
+
+        // Block 1 (header): i = phi(0, i_next)
+        func.blocks.push(BasicBlock {
+            label: BlockId(1),
+            instructions: vec![
+                Instruction::Phi {
+                    dest: Value(2),
+                    ty: IrType::I32,
+                    incoming: vec![
+                        (Operand::Value(Value(1)), BlockId(0)),
+                        (Operand::Value(Value(7)), BlockId(2)),
+                    ],
+                },
+                Instruction::Cmp {
+                    dest: Value(3),
+                    op: IrCmpOp::Slt,
+                    lhs: Operand::Value(Value(2)),
+                    rhs: Operand::Const(IrConst::I32(100)),
+                    ty: IrType::I32,
+                },
+            ],
+            terminator: Terminator::CondBranch {
+                cond: Operand::Value(Value(3)),
+                true_label: BlockId(2),
+                false_label: BlockId(3),
+            },
+            source_spans: Vec::new(),
+        });
+
+        // Block 2 (body): cast, GEP(base, cast), store, i++
+        func.blocks.push(BasicBlock {
+            label: BlockId(2),
+            instructions: vec![
+                Instruction::Cast {
+                    dest: Value(4),
+                    src: Operand::Value(Value(2)),
+                    from_ty: IrType::I32,
+                    to_ty: IrType::I64,
+                },
+                Instruction::GetElementPtr {
+                    dest: Value(5),
+                    base: Value(0),
+                    offset: Operand::Value(Value(4)), // stride 1, no multiply
+                    ty: IrType::I8,
+                },
+                Instruction::Store {
+                    val: Operand::Const(IrConst::I8(0)),
+                    ptr: Value(5),
+                    ty: IrType::I8,
+                    seg_override: AddressSpace::Default,
+                },
+                Instruction::BinOp {
+                    dest: Value(7),
+                    op: IrBinOp::Add,
+                    lhs: Operand::Value(Value(2)),
+                    rhs: Operand::Const(IrConst::I32(1)),
+                    ty: IrType::I32,
+                },
+            ],
+            terminator: Terminator::Branch(BlockId(1)),
+            source_spans: Vec::new(),
+        });
+
+        // Block 3 (exit)
+        func.blocks.push(BasicBlock {
+            label: BlockId(3),
+            instructions: vec![],
+            terminator: Terminator::Return(Some(Operand::Const(IrConst::I32(0)))),
+            source_spans: Vec::new(),
+        });
+
+        func.next_value_id = 8;
+
+        let changes = ivsr_function(&mut func);
+        assert!(changes > 0, "Expected IVSR to reduce stride-1 byte array");
+
+        // GEP should be replaced with Copy
+        let body_copies: Vec<_> = func.blocks[2]
+            .instructions
+            .iter()
+            .filter(|i| matches!(i, Instruction::Copy { dest: Value(5), .. }))
+            .collect();
+        assert_eq!(body_copies.len(), 1, "Expected GEP replaced with Copy");
+    }
+
+    /// Test IVSR with negative step (decrementing loop).
+    #[test]
+    fn test_ivsr_negative_step() {
+        let mut func = IrFunction::new("test_neg".into(), IrType::I32, vec![], false);
+
+        // Block 0 (preheader): base, init=99
+        func.blocks.push(BasicBlock {
+            label: BlockId(0),
+            instructions: vec![
+                Instruction::Copy {
+                    dest: Value(0),
+                    src: Operand::Const(IrConst::I64(0x1000)), // base
+                },
+                Instruction::Copy {
+                    dest: Value(1),
+                    src: Operand::Const(IrConst::I32(99)), // init = 99
+                },
+            ],
+            terminator: Terminator::Branch(BlockId(1)),
+            source_spans: Vec::new(),
+        });
+
+        // Block 1 (header): i = phi(99, i_next)
+        func.blocks.push(BasicBlock {
+            label: BlockId(1),
+            instructions: vec![
+                Instruction::Phi {
+                    dest: Value(2),
+                    ty: IrType::I32,
+                    incoming: vec![
+                        (Operand::Value(Value(1)), BlockId(0)),
+                        (Operand::Value(Value(8)), BlockId(2)),
+                    ],
+                },
+                Instruction::Cmp {
+                    dest: Value(3),
+                    op: IrCmpOp::Sge,
+                    lhs: Operand::Value(Value(2)),
+                    rhs: Operand::Const(IrConst::I32(0)),
+                    ty: IrType::I32,
+                },
+            ],
+            terminator: Terminator::CondBranch {
+                cond: Operand::Value(Value(3)),
+                true_label: BlockId(2),
+                false_label: BlockId(3),
+            },
+            source_spans: Vec::new(),
+        });
+
+        // Block 2 (body): cast, mul(i,4), GEP, load, i--
+        func.blocks.push(BasicBlock {
+            label: BlockId(2),
+            instructions: vec![
+                Instruction::Cast {
+                    dest: Value(4),
+                    src: Operand::Value(Value(2)),
+                    from_ty: IrType::I32,
+                    to_ty: IrType::I64,
+                },
+                Instruction::BinOp {
+                    dest: Value(5),
+                    op: IrBinOp::Mul,
+                    lhs: Operand::Value(Value(4)),
+                    rhs: Operand::Const(IrConst::I64(4)),
+                    ty: IrType::I64,
+                },
+                Instruction::GetElementPtr {
+                    dest: Value(6),
+                    base: Value(0),
+                    offset: Operand::Value(Value(5)),
+                    ty: IrType::I32,
+                },
+                Instruction::Load {
+                    dest: Value(7),
+                    ptr: Value(6),
+                    ty: IrType::I32,
+                    seg_override: AddressSpace::Default,
+                },
+                Instruction::BinOp {
+                    dest: Value(8),
+                    op: IrBinOp::Add,
+                    lhs: Operand::Value(Value(2)),
+                    rhs: Operand::Const(IrConst::I32(-1)), // i--
+                    ty: IrType::I32,
+                },
+            ],
+            terminator: Terminator::Branch(BlockId(1)),
+            source_spans: Vec::new(),
+        });
+
+        // Block 3 (exit)
+        func.blocks.push(BasicBlock {
+            label: BlockId(3),
+            instructions: vec![],
+            terminator: Terminator::Return(Some(Operand::Const(IrConst::I32(0)))),
+            source_spans: Vec::new(),
+        });
+
+        func.next_value_id = 9;
+
+        let changes = ivsr_function(&mut func);
+        assert!(changes > 0, "Expected IVSR to reduce negative-step loop");
+
+        // GEP should be replaced with Copy
+        let body_copies: Vec<_> = func.blocks[2]
+            .instructions
+            .iter()
+            .filter(|i| matches!(i, Instruction::Copy { dest: Value(6), .. }))
+            .collect();
+        assert_eq!(body_copies.len(), 1, "Expected GEP replaced with Copy");
+
+        // The back-edge GEP increment should have negative offset (-4)
+        let back_geps: Vec<_> = func.blocks[2]
+            .instructions
+            .iter()
+            .filter(|i| matches!(i, Instruction::GetElementPtr {
+                offset: Operand::Const(IrConst::I64(-4)), ..
+            }))
+            .collect();
+        assert_eq!(back_geps.len(), 1, "Expected ptr increment with -4 stride");
     }
 }

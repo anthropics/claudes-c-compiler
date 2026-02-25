@@ -7,6 +7,7 @@
 // K&R-style function parameters are also handled here, where parameter types
 // are declared separately after the parameter name list.
 
+use std::rc::Rc;
 use crate::common::fx_hash::{FxHashMap, FxHashSet};
 use crate::common::source::Span;
 use crate::common::types::AddressSpace;
@@ -214,7 +215,7 @@ impl Parser {
     fn parse_function_def(
         &mut self,
         type_spec: TypeSpecifier,
-        name: Option<String>,
+        name: Option<Rc<str>>,
         derived: Vec<DerivedDeclarator>,
         start: crate::common::source::Span,
         decl_attrs: DeclAttributes,
@@ -262,7 +263,7 @@ impl Parser {
 
         Some(ExternalDecl::FunctionDef(FunctionDef {
             return_type,
-            name: name.unwrap_or_default(),
+            name: name.unwrap_or_else(|| Rc::from("")),
             params: final_params,
             variadic,
             body,
@@ -379,7 +380,7 @@ impl Parser {
                             0
                         };
                         for param in kr_params.iter_mut() {
-                            if param.name.as_deref() == Some(name.as_str()) {
+                            if param.name.as_deref() == Some(&**name) {
                                 param.type_spec = full_type.clone();
                                 param.fptr_params = fptr_params.clone();
                                 param.fptr_inner_ptr_depth = inner_depth;
@@ -478,7 +479,7 @@ impl Parser {
     fn parse_declaration_rest(
         &mut self,
         type_spec: TypeSpecifier,
-        name: Option<String>,
+        name: Option<Rc<str>>,
         derived: Vec<DerivedDeclarator>,
         start: crate::common::source::Span,
         mut ctx: DeclContext,
@@ -491,7 +492,7 @@ impl Parser {
         };
         let section = ctx.attrs.section.clone();
         declarators.push(InitDeclarator {
-            name: name.unwrap_or_default(),
+            name: name.unwrap_or_else(|| Rc::from("")),
             derived,
             init,
             attrs: ctx.attrs,
@@ -586,7 +587,7 @@ impl Parser {
             };
             let d_fastcall = self.attrs.parsing_fastcall();
             declarators.push(InitDeclarator {
-                name: dname.unwrap_or_default(),
+                name: dname.unwrap_or_else(|| Rc::from("")),
                 derived: dderived,
                 init: dinit,
                 attrs: {
@@ -707,7 +708,7 @@ impl Parser {
                 None
             };
             declarators.push(InitDeclarator {
-                name: name.unwrap_or_default(),
+                name: name.unwrap_or_else(|| Rc::from("")),
                 derived,
                 init,
                 attrs: {
@@ -869,7 +870,7 @@ impl Parser {
     /// sees `Designator::Index`.
     fn expand_range_designators(
         items: Vec<InitializerItem>,
-        enum_consts: Option<&FxHashMap<String, i64>>,
+        enum_consts: Option<&FxHashMap<Rc<str>, i64>>,
     ) -> Vec<InitializerItem> {
         let mut result = Vec::with_capacity(items.len());
         for item in items {
@@ -914,8 +915,8 @@ impl Parser {
     /// and struct/union tag alignments for resolving tag-only __alignof__ references.
     pub(super) fn eval_const_int_expr_with_enums(
         expr: &Expr,
-        enum_consts: Option<&FxHashMap<String, i64>>,
-        tag_aligns: Option<&FxHashMap<String, usize>>,
+        enum_consts: Option<&FxHashMap<Rc<str>, i64>>,
+        tag_aligns: Option<&FxHashMap<Rc<str>, usize>>,
     ) -> Option<i64> {
         match expr {
             Expr::IntLiteral(val, _) => Some(*val),
@@ -927,7 +928,7 @@ impl Parser {
             Expr::CharLiteral(val, _) => Some(*val as i64),
             // Identifiers: look up enum constants if available
             Expr::Identifier(name, _) => {
-                enum_consts.and_then(|m| m.get(name.as_str()).copied())
+                enum_consts.and_then(|m| m.get(&**name).copied())
             }
             Expr::BinaryOp(op, lhs, rhs, _) => {
                 let l = Self::eval_const_int_expr_with_enums(lhs, enum_consts, tag_aligns)?;
@@ -1164,15 +1165,15 @@ impl Parser {
     /// valid integer constant expression (C11 6.6).
     fn expr_has_non_const_identifier(
         expr: &Expr,
-        enum_consts: Option<&FxHashMap<String, i64>>,
-        unevaluable_consts: Option<&FxHashSet<String>>,
+        enum_consts: Option<&FxHashMap<Rc<str>, i64>>,
+        unevaluable_consts: Option<&FxHashSet<Rc<str>>>,
     ) -> bool {
         match expr {
             Expr::Identifier(name, _) => {
                 // It's a variable/parameter reference if not in enum constants
                 // (either evaluated or unevaluable)
-                let in_evaluated = enum_consts.is_some_and(|m| m.contains_key(name.as_str()));
-                let in_unevaluable = unevaluable_consts.is_some_and(|m| m.contains(name.as_str()));
+                let in_evaluated = enum_consts.is_some_and(|m| m.contains_key(&**name));
+                let in_unevaluable = unevaluable_consts.is_some_and(|m| m.contains(&**name));
                 !(in_evaluated || in_unevaluable)
             }
             Expr::BinaryOp(_, lhs, rhs, _) => {

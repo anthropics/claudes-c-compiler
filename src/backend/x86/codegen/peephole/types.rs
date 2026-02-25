@@ -123,6 +123,9 @@ pub(super) enum ExtKind {
     /// Producer: movq %REG, %rax (64-bit register-to-rax copy, REG != rax).
     /// Used for fusion: `movq %REG, %rax; movl %eax, %eax` -> `movl %REGd, %eax`.
     ProducerMovqRegToRax,
+    /// Producer: movq N(%rbp), %rax (stack load to rax).
+    /// Used for fusion: `movq N(%rbp), %rax; cltq` -> `movslq N(%rbp), %rax`.
+    ProducerMovqMemToRax,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -248,6 +251,7 @@ pub(super) fn classify_line(raw: &str) -> LineInfo {
                     match size {
                         MoveSize::SLQ => ExtKind::ProducerMovslqToRax,
                         MoveSize::L => ExtKind::ProducerMovlToEax,
+                        MoveSize::Q => ExtKind::ProducerMovqMemToRax,
                         _ => ExtKind::None,
                     }
                 } else {
@@ -447,6 +451,13 @@ pub(super) fn classify_mov_ext(s: &str, sb: &[u8]) -> ExtKind {
             if src.starts_with('%') && src != "%rax" && !src.contains('(') {
                 return ExtKind::ProducerMovqRegToRax;
             }
+        }
+
+    // Producers: movq N(%rbp), %rax (stack load to rax)
+    // Used for fusion: `movq N(%rbp), %rax; cltq` -> `movslq N(%rbp), %rax`
+    if len >= 6 && sb[3] == b'q' && sb[4] == b' '
+        && s.ends_with(", %rax") && s.contains("(%rbp)") {
+            return ExtKind::ProducerMovqMemToRax;
         }
 
     // Producers: movzbq ... %rax

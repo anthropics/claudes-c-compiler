@@ -12,6 +12,8 @@
 /// - `CallInfo`: shared metadata for direct and indirect calls
 /// - `Terminator`: block terminators (return, branch, switch)
 /// - `BasicBlock`: a labeled sequence of instructions ending in a terminator
+use std::rc::Rc;
+
 use crate::common::source::Span;
 use crate::common::types::{AddressSpace, EightbyteClass, IrType};
 use super::constants::IrConst;
@@ -133,7 +135,7 @@ pub enum Instruction {
     Cmp { dest: Value, op: IrCmpOp, lhs: Operand, rhs: Operand, ty: IrType },
 
     /// Direct function call: %dest = call func(args...)
-    Call { func: String, info: CallInfo },
+    Call { func: Rc<str>, info: CallInfo },
 
     /// Indirect function call through a pointer: %dest = call_indirect ptr(args...)
     CallIndirect { func_ptr: Operand, info: CallInfo },
@@ -148,7 +150,7 @@ pub enum Instruction {
     Copy { dest: Value, src: Operand },
 
     /// Get address of a global
-    GlobalAddr { dest: Value, name: String },
+    GlobalAddr { dest: Value, name: Rc<str> },
 
     /// Memory copy: memcpy(dest, src, size)
     Memcpy { dest: Value, src: Value, size: usize },

@@ -939,7 +939,7 @@ fn terminator_targets(term: &Terminator) -> Vec<u32> {
 /// Values live at the call point must have their intervals extended to prevent stack slot reuse.
 fn is_returns_twice_call(inst: &Instruction) -> bool {
     if let Instruction::Call { func, .. } = inst {
-        matches!(func.as_str(), "setjmp" | "_setjmp" | "sigsetjmp" | "__sigsetjmp")
+        matches!(&**func, "setjmp" | "_setjmp" | "sigsetjmp" | "__sigsetjmp")
     } else {
         false
     }
@@ -1138,7 +1138,7 @@ mod tests {
     /// clobber caller-saved registers (r8-r11 on x86).
     #[test]
     fn test_inline_asm_with_operands_is_call_point() {
-        let mut func = IrFunction::new("test".to_string(), IrType::I32, vec![], false);
+        let mut func = IrFunction::new("test".into(), IrType::I32, vec![], false);
         func.blocks.push(BasicBlock {
             label: BlockId(0),
             instructions: vec![
@@ -1176,7 +1176,7 @@ mod tests {
     /// and should not force values into callee-saved registers.
     #[test]
     fn test_empty_inline_asm_barrier_not_call_point() {
-        let mut func = IrFunction::new("test".to_string(), IrType::I32, vec![], false);
+        let mut func = IrFunction::new("test".into(), IrType::I32, vec![], false);
         func.blocks.push(BasicBlock {
             label: BlockId(0),
             instructions: vec![

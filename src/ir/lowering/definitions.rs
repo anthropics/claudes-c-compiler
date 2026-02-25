@@ -5,6 +5,7 @@
 //! (DeclAnalysis), lvalue representation, switch context, function signature
 //! metadata, and typedef helpers.
 
+use std::rc::Rc;
 use crate::common::fx_hash::FxHashMap;
 use crate::ir::reexports::{
     BlockId,
@@ -73,7 +74,7 @@ pub(super) struct LocalInfo {
     /// For static local variables: the mangled global name. When set, accesses should
     /// emit a fresh GlobalAddr instruction instead of using `alloca`, because the
     /// declaration may be in an unreachable basic block (skipped by goto/switch).
-    pub static_global_name: Option<String>,
+    pub static_global_name: Option<Rc<str>>,
     /// For VLA function parameters: runtime stride Values per dimension level.
     /// Parallel to `array_dim_strides`. When `Some(value)`, use the runtime Value
     /// instead of the compile-time stride. This supports parameters like
@@ -84,7 +85,7 @@ pub(super) struct LocalInfo {
     pub vla_size: Option<Value>,
     /// For register variables with __asm__("regname"): the specific register name.
     /// Used to rewrite inline asm "r" constraints to specific register constraints.
-    pub asm_register: Option<String>,
+    pub asm_register: Option<Rc<str>>,
     /// Whether this register variable has been "initialized" -- either by a declaration
     /// initializer (e.g., `register long x8 __asm__("x8") = n;`) or by being used as an
     /// inline asm output operand. When true, reads come from the alloca; when false,
@@ -92,7 +93,7 @@ pub(super) struct LocalInfo {
     pub asm_register_has_init: bool,
     /// __attribute__((cleanup(func))): cleanup function to call with &var when scope exits.
     /// The function is called as func(&var) with a pointer to the variable.
-    pub cleanup_fn: Option<String>,
+    pub cleanup_fn: Option<Rc<str>>,
     /// Whether this variable was declared with `const` qualifier.
     /// Used by _Generic matching to distinguish e.g. `const int *` from `int *`,
     /// since CType does not track const/volatile qualifiers.
@@ -116,7 +117,7 @@ pub(super) struct GlobalInfo {
     pub var: VarInfo,
     /// For global register variables declared with `register <type> <name> __asm__("reg")`.
     /// When set, no storage is emitted; reads/writes map directly to the named register.
-    pub asm_register: Option<String>,
+    pub asm_register: Option<Rc<str>>,
 }
 
 impl std::ops::Deref for GlobalInfo {
@@ -200,7 +201,7 @@ pub(super) struct VlaDimInfo {
     /// Whether this dimension is a VLA (runtime variable).
     pub is_vla: bool,
     /// The name of the variable providing the dimension (e.g., "cols").
-    pub dim_expr_name: String,
+    pub dim_expr_name: Rc<str>,
     /// If not VLA, the constant size value.
     pub const_size: Option<i64>,
     /// The sizeof the element type at this level (for computing strides).
@@ -358,9 +359,9 @@ impl DeclAnalysis {
 #[derive(Debug, Default)]
 pub(super) struct FunctionMeta {
     /// Function name -> consolidated signature.
-    pub sigs: FxHashMap<String, FuncSig>,
+    pub sigs: FxHashMap<Rc<str>, FuncSig>,
     /// Function pointer variable name -> signature (return type + param types).
-    pub ptr_sigs: FxHashMap<String, FuncSig>,
+    pub ptr_sigs: FxHashMap<Rc<str>, FuncSig>,
 }
 
 /// Tracks how each original C parameter maps to IR parameters after ABI decomposition.
@@ -439,7 +440,7 @@ impl LocalInfo {
     }
 
     /// Construct a LocalInfo for a static local variable from DeclAnalysis.
-    pub(super) fn for_static(da: &DeclAnalysis, static_name: String, is_const: bool) -> Self {
+    pub(super) fn for_static(da: &DeclAnalysis, static_name: Rc<str>, is_const: bool) -> Self {
         LocalInfo {
             var: VarInfo::from_analysis(da),
             alloca: Value(0), // placeholder; not used for static locals

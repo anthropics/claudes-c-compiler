@@ -1118,7 +1118,7 @@ mod tests {
 
     #[test]
     fn test_redundant_cond_branch() {
-        let mut func = IrFunction::new("test".to_string(), IrType::Void, vec![], false);
+        let mut func = IrFunction::new("test".into(), IrType::Void, vec![], false);
         func.blocks.push(make_block(
             BlockId(0),
             vec![Instruction::Copy { dest: Value(0), src: Operand::Const(IrConst::I32(1)) }],
@@ -1140,7 +1140,7 @@ mod tests {
 
     #[test]
     fn test_jump_chain_threading() {
-        let mut func = IrFunction::new("test".to_string(), IrType::Void, vec![], false);
+        let mut func = IrFunction::new("test".into(), IrType::Void, vec![], false);
         func.blocks.push(make_block(BlockId(0), vec![], Terminator::Branch(BlockId(1))));
         func.blocks.push(make_block(BlockId(1), vec![], Terminator::Branch(BlockId(2))));
         func.blocks.push(make_block(BlockId(2), vec![], Terminator::Return(None)));
@@ -1155,7 +1155,7 @@ mod tests {
 
     #[test]
     fn test_dead_block_elimination() {
-        let mut func = IrFunction::new("test".to_string(), IrType::Void, vec![], false);
+        let mut func = IrFunction::new("test".into(), IrType::Void, vec![], false);
         func.blocks.push(make_block(BlockId(0), vec![], Terminator::Return(None)));
         func.blocks.push(make_block(
             BlockId(1),
@@ -1173,7 +1173,7 @@ mod tests {
     fn test_combined_simplifications() {
         // CondBranch(1,1) -> Branch(1) -> thread to 2 -> dead block removal -> merge.
         // After all simplifications, Block 0 absorbs everything reachable.
-        let mut func = IrFunction::new("test".to_string(), IrType::Void, vec![], false);
+        let mut func = IrFunction::new("test".into(), IrType::Void, vec![], false);
         func.blocks.push(make_block(
             BlockId(0),
             vec![Instruction::Copy { dest: Value(0), src: Operand::Const(IrConst::I32(1)) }],
@@ -1199,7 +1199,7 @@ mod tests {
         // Block 0 -> Block 1 (empty) -> Block 2 (phi referencing Block 1).
         // Threading skips Block 1, then trivial phi simplifies to Copy,
         // then Block 2 merges into Block 0.
-        let mut func = IrFunction::new("test".to_string(), IrType::I32, vec![], false);
+        let mut func = IrFunction::new("test".into(), IrType::I32, vec![], false);
         func.blocks.push(make_block(
             BlockId(0),
             vec![Instruction::Copy { dest: Value(0), src: Operand::Const(IrConst::I32(42)) }],
@@ -1233,7 +1233,7 @@ mod tests {
         // Block 1 has instructions, so it should NOT be threaded.
         // However, merge_single_pred_blocks will merge Block 1 into Block 0
         // (single pred), and then Block 2 into the merged block.
-        let mut func = IrFunction::new("test".to_string(), IrType::I32, vec![], false);
+        let mut func = IrFunction::new("test".into(), IrType::I32, vec![], false);
         func.blocks.push(make_block(BlockId(0), vec![], Terminator::Branch(BlockId(1))));
         func.blocks.push(make_block(
             BlockId(1),
@@ -1257,7 +1257,7 @@ mod tests {
         // Block 0 cond-branches to Block 1 and Block 2, both forward to Block 3.
         // Threading makes both targets Block 3, redundant cond branch -> Branch(3),
         // dead blocks removed, then Block 3 merged into Block 0.
-        let mut func = IrFunction::new("test".to_string(), IrType::Void, vec![], false);
+        let mut func = IrFunction::new("test".into(), IrType::Void, vec![], false);
         func.blocks.push(make_block(
             BlockId(0),
             vec![Instruction::Copy { dest: Value(0), src: Operand::Const(IrConst::I32(1)) }],
@@ -1280,7 +1280,7 @@ mod tests {
 
     #[test]
     fn test_no_thread_when_phi_conflict() {
-        let mut func = IrFunction::new("test".to_string(), IrType::I64, vec![], false);
+        let mut func = IrFunction::new("test".into(), IrType::I64, vec![], false);
         func.blocks.push(make_block(
             BlockId(0),
             vec![Instruction::Cmp {
@@ -1343,7 +1343,7 @@ mod tests {
         // Block 0 has constant-false cond branch, so Block 1 becomes dead.
         // The phi in Block 2 loses one incoming edge -> trivial phi -> Copy.
         // Then blocks merge into Block 0.
-        let mut func = IrFunction::new("test".to_string(), IrType::I32, vec![], false);
+        let mut func = IrFunction::new("test".into(), IrType::I32, vec![], false);
         func.blocks.push(make_block(
             BlockId(0),
             vec![],
@@ -1409,7 +1409,7 @@ mod tests {
 
     #[test]
     fn test_fold_constant_switch() {
-        let mut func = IrFunction::new("test".to_string(), IrType::I32, vec![], false);
+        let mut func = IrFunction::new("test".into(), IrType::I32, vec![], false);
         func.blocks.push(make_block(
             BlockId(0),
             vec![],
@@ -1435,7 +1435,7 @@ mod tests {
 
     #[test]
     fn test_fold_constant_switch_matching_case() {
-        let mut func = IrFunction::new("test".to_string(), IrType::I32, vec![], false);
+        let mut func = IrFunction::new("test".into(), IrType::I32, vec![], false);
         func.blocks.push(make_block(
             BlockId(0),
             vec![],
@@ -1471,7 +1471,7 @@ mod tests {
         // - Block 1's Switch resolves (val=10) -> Branch(2), removes phi entry from Block 3
         // - Block 3 becomes dead (only Block 0 went to it, but that's folded to Block 1)
         // - Result: Block 0 -> Block 1 -> Block 2, all merge.
-        let mut func = IrFunction::new("test".to_string(), IrType::I32, vec![], false);
+        let mut func = IrFunction::new("test".into(), IrType::I32, vec![], false);
         func.blocks.push(make_block(
             BlockId(0),
             vec![Instruction::Copy { dest: Value(1), src: Operand::Const(IrConst::I32(1)) }],

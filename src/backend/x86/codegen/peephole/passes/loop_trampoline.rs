@@ -515,3 +515,418 @@ fn rewrite_instruction_register(inst: &str, old_fam: RegId, new_fam: RegId) -> O
         Some(result)
     }
 }
+
+/// Inline join blocks: blocks that consist only of register moves followed by
+/// a jmp (or fallthrough into another join block). For each predecessor that
+/// jumps to a join block, substitute the moves using the predecessor's register
+/// state and redirect directly to the final target.
+///
+/// This handles multi-level SSA phi-resolution chains like:
+///   .LBB45: movq %rbx, %r11; movq %r12, %r10; jmp .LBB9
+///   .LBB9:  movq %r11, %r8;  movq %r10, %r9   (fallthrough)
+///   .LBB6:  addq $1, %r15;   movq %r8, %rbx;  movq %r9, %r12; jmp .LBB1
+///
+/// After inlining into LBB45: the net effect is identity (rbx→rbx, r12→r12),
+/// so LBB45 becomes: addq $1, %r15; jmp .LBB1
+pub(super) fn inline_join_blocks(store: &mut LineStore, infos: &mut [LineInfo]) -> bool {
+    let len = store.len();
+    if len < 4 { return false; }
+
+    // Build label_num -> line_index map
+    let mut max_label: u32 = 0;
+    for i in 0..len {
+        if infos[i].is_nop() { continue; }
+        if infos[i].kind == LineKind::Label {
+            let trimmed = infos[i].trimmed(store.get(i));
+            if let Some(n) = parse_label_number(trimmed) {
+                if n > max_label { max_label = n; }
+            }
+        }
+    }
+    let table_size = (max_label + 1) as usize;
+    let mut label_line: Vec<usize> = vec![usize::MAX; table_size];
+    for i in 0..len {
+        if infos[i].is_nop() { continue; }
+        if infos[i].kind == LineKind::Label {
+            let trimmed = infos[i].trimmed(store.get(i));
+            if let Some(n) = parse_label_number(trimmed) {
+                label_line[n as usize] = i;
+            }
+        }
+    }
+
+    // Parse join block contents for each label.
+    // A join block = sequence of simple movq/xorl/movl instructions + jmp (or fallthrough).
+    // Returns: (moves as instruction strings, final jmp target label_num or fallthrough label_num)
+    struct JoinBlock {
+        /// Instructions to inline (the actual text lines, with indentation)
+        insts: Vec<String>,
+        /// Target label number (from jmp or fallthrough)
+        target: u32,
+    }
+
+    let mut join_blocks: Vec<(u32, JoinBlock)> = Vec::new();
+
+    for label_num in 0..table_size {
+        let label_idx = label_line[label_num];
+        if label_idx == usize::MAX { continue; }
+
+        let mut insts = Vec::new();
+        let mut target: Option<u32> = None;
+        let mut valid = true;
+        let mut inst_count = 0;
+
+        let mut j = label_idx + 1;
+        while j < len {
+            if infos[j].is_nop() || infos[j].kind == LineKind::Empty {
+                j += 1;
+                continue;
+            }
+            let trimmed = infos[j].trimmed(store.get(j));
+
+            // jmp = end of block
+            if infos[j].kind == LineKind::Jmp {
+                if let Some(tgt) = extract_jump_target(trimmed) {
+                    if let Some(n) = parse_dotl_number(tgt) {
+                        target = Some(n);
+                    }
+                }
+                break;
+            }
+
+            // Label = fallthrough to next block
+            if infos[j].kind == LineKind::Label {
+                if let Some(n) = parse_label_number(trimmed) {
+                    target = Some(n);
+                }
+                break;
+            }
+
+            // Barrier = not a join block
+            if matches!(infos[j].kind, LineKind::CondJmp | LineKind::Call
+                | LineKind::JmpIndirect | LineKind::Ret) {
+                valid = false;
+                break;
+            }
+
+            // Only allow simple register moves and small ALU ops (up to 6 insts)
+            inst_count += 1;
+            if inst_count > 6 {
+                valid = false;
+                break;
+            }
+
+            // Must be a simple instruction (movq reg,reg / xorl / movl / addq imm,reg)
+            let is_simple = trimmed.starts_with("movq %")
+                || trimmed.starts_with("xorl %")
+                || trimmed.starts_with("movl $")
+                || trimmed.starts_with("movl %")
+                || (trimmed.starts_with("addq $") && !trimmed.contains("("))
+                || (trimmed.starts_with("movq $") && !trimmed.contains("("));
+            if !is_simple {
+                valid = false;
+                break;
+            }
+
+            insts.push(store.get(j).to_string());
+            j += 1;
+        }
+
+        if !valid || target.is_none() || insts.is_empty() {
+            continue;
+        }
+
+        join_blocks.push((label_num as u32, JoinBlock {
+            insts,
+            target: target.unwrap(),
+        }));
+    }
+
+    if join_blocks.is_empty() { return false; }
+
+    // Build a lookup from label_num to join_block index
+    let mut join_lookup: Vec<usize> = vec![usize::MAX; table_size];
+    for (idx, &(num, _)) in join_blocks.iter().enumerate() {
+        join_lookup[num as usize] = idx;
+    }
+
+    let mut changed = false;
+
+    // For each jmp instruction, check if it targets a join block chain.
+    // If so, resolve the full chain and inline the combined instructions.
+    for i in 0..len {
+        if infos[i].is_nop() { continue; }
+        if infos[i].kind != LineKind::Jmp { continue; }
+
+        let trimmed = infos[i].trimmed(store.get(i));
+        let target_label = match extract_jump_target(trimmed) {
+            Some(t) => t,
+            None => continue,
+        };
+        let first_target = match parse_dotl_number(target_label) {
+            Some(n) if (n as usize) < table_size => n,
+            _ => continue,
+        };
+
+        // Check the predecessor block before this jmp — it must have simple
+        // moves only (similar to the join block itself). We'll compose them.
+        // Actually, for the inline approach, we just need to collect the chain
+        // of join blocks and substitute.
+
+        if join_lookup[first_target as usize] == usize::MAX {
+            continue;
+        }
+
+        // Resolve the chain of join blocks, tracking which registers the
+        // last block in the chain writes (the "output" registers).
+        let mut chain_insts: Vec<String> = Vec::new();
+        let mut final_target: u32 = first_target;
+        let mut visited: Vec<u32> = Vec::new();
+        let mut last_block_dsts: u16 = 0; // bitmask of output registers
+        let mut cur = first_target;
+        loop {
+            let jb_idx = join_lookup[cur as usize];
+            if jb_idx == usize::MAX { break; }
+            let (_, ref jb) = join_blocks[jb_idx];
+            if visited.contains(&cur) { break; } // cycle
+            visited.push(cur);
+            // Track destinations in this block
+            last_block_dsts = 0;
+            for inst in &jb.insts {
+                let t = inst.trim();
+                // Extract destination register from movq/xorl/addq etc.
+                if let Some(rest) = t.strip_prefix("movq %").or_else(|| t.strip_prefix("movq $")) {
+                    if let Some((_, dst_s)) = rest.split_once(", %") {
+                        let dst = register_family_no_prefix(dst_s.trim());
+                        if dst != REG_NONE { last_block_dsts |= 1 << dst; }
+                    }
+                } else if let Some(rest) = t.strip_prefix("xorl %") {
+                    if let Some((_, b)) = rest.split_once(", %") {
+                        let rb = register_family_no_prefix(b.trim());
+                        if rb != REG_NONE { last_block_dsts |= 1 << rb; }
+                    }
+                } else if let Some(rest) = t.strip_prefix("addq $") {
+                    if let Some((_, dst_s)) = rest.split_once(", %") {
+                        let dst = register_family_no_prefix(dst_s.trim());
+                        if dst != REG_NONE { last_block_dsts |= 1 << dst; }
+                    }
+                }
+            }
+            chain_insts.extend(jb.insts.iter().cloned());
+            final_target = jb.target;
+            cur = jb.target;
+        }
+
+        if chain_insts.is_empty() || final_target == first_target {
+            continue;
+        }
+
+        // Now compose: collect the predecessor's moves (between previous label
+        // and this jmp) + the chain's moves, and apply substitutions.
+        // Strategy: build a register mapping from the combined moves, then
+        // emit only the net-effect moves.
+
+        // Collect predecessor instructions (moves before this jmp)
+        let mut pred_start = i;
+        while pred_start > 0 {
+            pred_start -= 1;
+            if infos[pred_start].is_nop() || infos[pred_start].kind == LineKind::Empty {
+                continue;
+            }
+            if infos[pred_start].kind == LineKind::Label {
+                pred_start += 1;
+                break;
+            }
+            if matches!(infos[pred_start].kind, LineKind::Call | LineKind::Jmp
+                | LineKind::JmpIndirect | LineKind::CondJmp | LineKind::Ret) {
+                pred_start += 1;
+                break;
+            }
+        }
+
+        // Collect all predecessor instructions as text
+        let mut pred_insts: Vec<(usize, String)> = Vec::new();
+        let mut pred_all_simple = true;
+        for k in pred_start..i {
+            if infos[k].is_nop() || infos[k].kind == LineKind::Empty { continue; }
+            let t = infos[k].trimmed(store.get(k));
+            let is_simple = t.starts_with("movq %")
+                || t.starts_with("xorl %")
+                || t.starts_with("movl $")
+                || t.starts_with("movl %")
+                || (t.starts_with("addq $") && !t.contains("("))
+                || (t.starts_with("movq $") && !t.contains("("));
+            if !is_simple {
+                pred_all_simple = false;
+                break;
+            }
+            pred_insts.push((k, store.get(k).to_string()));
+        }
+
+        if !pred_all_simple || pred_insts.is_empty() { continue; }
+
+        // Build register substitution map from predecessor + chain.
+        // For each movq %A, %B: map[B] = A.
+        // For movq $imm, %B or xorl %B, %B: map[B] = literal.
+        // Then compose: for chain moves, substitute sources using the map.
+        // Finally emit only net-effect instructions.
+
+        #[derive(Clone)]
+        enum RegVal {
+            Reg(RegId),
+            Literal(String), // e.g. "$0", "$1"
+        }
+
+        let mut reg_map: [Option<RegVal>; 16] = Default::default();
+
+        // Parse predecessor moves into reg_map
+        for (_, ref line) in &pred_insts {
+            let t = line.trim();
+            if let Some(rest) = t.strip_prefix("movq %") {
+                if let Some((src_s, dst_s)) = rest.split_once(", %") {
+                    let src = register_family_no_prefix(src_s);
+                    let dst = register_family_no_prefix(dst_s.trim());
+                    if src != REG_NONE && dst != REG_NONE {
+                        // Resolve: if src has a mapping, use that
+                        let val = match &reg_map[src as usize] {
+                            Some(v) => v.clone(),
+                            None => RegVal::Reg(src),
+                        };
+                        reg_map[dst as usize] = Some(val);
+                    }
+                }
+            } else if let Some(rest) = t.strip_prefix("movq $") {
+                if let Some((imm, dst_s)) = rest.split_once(", %") {
+                    let dst = register_family_no_prefix(dst_s.trim());
+                    if dst != REG_NONE {
+                        reg_map[dst as usize] = Some(RegVal::Literal(format!("${}", imm)));
+                    }
+                }
+            } else if let Some(rest) = t.strip_prefix("xorl %") {
+                if let Some((a, b)) = rest.split_once(", %") {
+                    let ra = register_family_no_prefix(a);
+                    let rb = register_family_no_prefix(b.trim());
+                    if ra == rb && ra != REG_NONE {
+                        reg_map[ra as usize] = Some(RegVal::Literal("$0".to_string()));
+                    }
+                }
+            }
+        }
+
+        // Apply chain moves to the register map
+        for line in &chain_insts {
+            let t = line.trim();
+            if let Some(rest) = t.strip_prefix("movq %") {
+                if let Some((src_s, dst_s)) = rest.split_once(", %") {
+                    let src = register_family_no_prefix(src_s);
+                    let dst = register_family_no_prefix(dst_s.trim());
+                    if src != REG_NONE && dst != REG_NONE {
+                        let val = match &reg_map[src as usize] {
+                            Some(v) => v.clone(),
+                            None => RegVal::Reg(src),
+                        };
+                        reg_map[dst as usize] = Some(val);
+                    }
+                }
+            } else if let Some(rest) = t.strip_prefix("movq $") {
+                if let Some((imm, dst_s)) = rest.split_once(", %") {
+                    let dst = register_family_no_prefix(dst_s.trim());
+                    if dst != REG_NONE {
+                        reg_map[dst as usize] = Some(RegVal::Literal(format!("${}", imm)));
+                    }
+                }
+            } else if let Some(rest) = t.strip_prefix("xorl %") {
+                if let Some((a, b)) = rest.split_once(", %") {
+                    let ra = register_family_no_prefix(a);
+                    let rb = register_family_no_prefix(b.trim());
+                    if ra == rb && ra != REG_NONE {
+                        reg_map[ra as usize] = Some(RegVal::Literal("$0".to_string()));
+                    }
+                }
+            } else if let Some(rest) = t.strip_prefix("addq $") {
+                if let Some((_imm, dst_s)) = rest.split_once(", %") {
+                    let dst = register_family_no_prefix(dst_s.trim());
+                    if dst != REG_NONE {
+                        // addq breaks the simple mapping — emit as-is
+                        reg_map[dst as usize] = None;
+                    }
+                }
+            }
+        }
+
+        // Now emit the net-effect: for each register that has a non-trivial mapping,
+        // emit the appropriate instruction. Also include non-move chain instructions
+        // (like addq) that aren't captured in the map.
+
+        // Collect non-move chain instructions (addq, etc.)
+        let mut extra_insts: Vec<String> = Vec::new();
+        for line in &chain_insts {
+            let t = line.trim();
+            if t.starts_with("addq $") || t.starts_with("subq $") {
+                // Substitute source reg if mapped
+                extra_insts.push(line.clone());
+            }
+        }
+
+        // Build net-effect moves (only for output registers of the last chain block)
+        let mut net_insts: Vec<String> = Vec::new();
+        for reg in 0..16u8 {
+            if last_block_dsts & (1 << reg) == 0 { continue; } // skip intermediates
+            if let Some(ref val) = reg_map[reg as usize] {
+                let dst_64 = REG_NAMES[0][reg as usize];
+                match val {
+                    RegVal::Reg(src) => {
+                        if *src != reg { // Skip identity
+                            let src_64 = REG_NAMES[0][*src as usize];
+                            net_insts.push(format!("    movq {}, {}", src_64, dst_64));
+                        }
+                    }
+                    RegVal::Literal(lit) => {
+                        if lit == "$0" {
+                            let dst_32 = REG_NAMES[1][reg as usize];
+                            net_insts.push(format!("    xorl {}, {}", dst_32, dst_32));
+                        } else {
+                            net_insts.push(format!("    movq {}, {}", lit, dst_64));
+                        }
+                    }
+                }
+            }
+        }
+
+        // Safety check: don't produce more instructions than we're replacing
+        let orig_count = pred_insts.len() + 1; // +1 for jmp
+        let new_count = extra_insts.len() + net_insts.len() + 1; // +1 for jmp
+        if new_count > orig_count { continue; }
+
+        // Apply: NOP predecessor instructions, write new instructions, redirect jmp
+        for (k, _) in &pred_insts {
+            mark_nop(&mut infos[*k]);
+        }
+
+        // Write extra insts (addq etc) + net moves into the NOP'd slots
+        let mut write_slots: Vec<usize> = pred_insts.iter().map(|(k, _)| *k).collect();
+        write_slots.push(i); // the jmp line itself
+
+        let mut all_new: Vec<String> = Vec::new();
+        all_new.extend(extra_insts);
+        all_new.extend(net_insts);
+        all_new.push(format!("    jmp .LBB{}", final_target));
+
+        // Pad with NOPs if we have fewer new insts
+        while all_new.len() < write_slots.len() {
+            all_new.push(String::new()); // will be NOP'd
+        }
+
+        for (slot_idx, slot) in write_slots.iter().enumerate() {
+            if slot_idx < all_new.len() && !all_new[slot_idx].is_empty() {
+                replace_line(store, &mut infos[*slot], *slot, all_new[slot_idx].clone());
+            } else {
+                mark_nop(&mut infos[*slot]);
+            }
+        }
+
+        changed = true;
+    }
+
+    changed
+}

@@ -1,3 +1,4 @@
+use std::rc::Rc;
 use crate::common::source::Span;
 use crate::common::types::AddressSpace;
 
@@ -137,7 +138,7 @@ impl std::fmt::Debug for FunctionAttributes {
 #[derive(Debug)]
 pub struct FunctionDef {
     pub return_type: TypeSpecifier,
-    pub name: String,
+    pub name: Rc<str>,
     pub params: Vec<ParamDecl>,
     pub variadic: bool,
     pub body: CompoundStmt,
@@ -151,7 +152,7 @@ pub struct FunctionDef {
 #[derive(Debug, Clone)]
 pub struct ParamDecl {
     pub type_spec: TypeSpecifier,
-    pub name: Option<String>,
+    pub name: Option<Rc<str>>,
     /// For function pointer parameters, the parameter types of the pointed-to function.
     /// E.g., for `float (*func)(float, float)`, this holds the two float param decls.
     pub fptr_params: Option<Vec<ParamDecl>>,
@@ -360,7 +361,7 @@ pub struct DeclAttributes {
     pub asm_register: Option<String>,
     /// __attribute__((cleanup(func))) - call func(&var) when var goes out of scope.
     /// Used for RAII-style cleanup (e.g., Linux kernel guard()/scoped_guard() for mutex_unlock).
-    pub cleanup_fn: Option<String>,
+    pub cleanup_fn: Option<Rc<str>>,
     /// __attribute__((symver("name@@VERSION"))) - symbol version alias
     pub symver: Option<String>,
 }
@@ -435,7 +436,7 @@ impl std::fmt::Debug for DeclAttributes {
 /// A declarator with optional initializer.
 #[derive(Debug, Clone)]
 pub struct InitDeclarator {
-    pub name: String,
+    pub name: Rc<str>,
     pub derived: Vec<DerivedDeclarator>,
     pub init: Option<Initializer>,
     /// Declarator attributes (GCC __attribute__, asm register, etc.).
@@ -473,7 +474,7 @@ pub enum Designator {
     Index(Expr),
     /// GCC range designator: [lo ... hi]
     Range(Expr, Expr),
-    Field(String),
+    Field(Rc<str>),
 }
 
 /// Type specifiers.
@@ -504,12 +505,12 @@ pub enum TypeSpecifier {
     ComplexDouble,
     ComplexLongDouble,
     /// Struct: (name, fields, is_packed, max_field_align from #pragma pack, struct-level aligned attribute)
-    Struct(Option<String>, Option<Vec<StructFieldDecl>>, bool, Option<usize>, Option<usize>),
+    Struct(Option<Rc<str>>, Option<Vec<StructFieldDecl>>, bool, Option<usize>, Option<usize>),
     /// Union: (name, fields, is_packed, max_field_align from #pragma pack, struct-level aligned attribute)
-    Union(Option<String>, Option<Vec<StructFieldDecl>>, bool, Option<usize>, Option<usize>),
+    Union(Option<Rc<str>>, Option<Vec<StructFieldDecl>>, bool, Option<usize>, Option<usize>),
     /// Enum: (name, variants, is_packed)
-    Enum(Option<String>, Option<Vec<EnumVariant>>, bool),
-    TypedefName(String),
+    Enum(Option<Rc<str>>, Option<Vec<EnumVariant>>, bool),
+    TypedefName(Rc<str>),
     Pointer(Box<TypeSpecifier>, AddressSpace),
     Array(Box<TypeSpecifier>, Option<Box<Expr>>),
     /// Function pointer type from cast/sizeof: return_type, params, variadic
@@ -536,7 +537,7 @@ pub enum TypeSpecifier {
 #[derive(Debug, Clone)]
 pub struct StructFieldDecl {
     pub type_spec: TypeSpecifier,
-    pub name: Option<String>,
+    pub name: Option<Rc<str>>,
     pub bit_width: Option<Box<Expr>>,
     /// Derived declarator parts (pointers, arrays, function pointers) from the declarator.
     /// For simple fields like `int x` or `int *p`, this is empty (the pointer is in type_spec).
@@ -552,7 +553,7 @@ pub struct StructFieldDecl {
 /// An enum variant.
 #[derive(Debug, Clone)]
 pub struct EnumVariant {
-    pub name: String,
+    pub name: Rc<str>,
     pub value: Option<Box<Expr>>,
 }
 
@@ -563,7 +564,7 @@ pub struct CompoundStmt {
     /// GNU __label__ declarations: local label names scoped to this block.
     /// When non-empty, label definitions and gotos within this block use
     /// scope-qualified names to avoid collisions (e.g., in statement expressions).
-    pub local_labels: Vec<String>,
+    pub local_labels: Vec<Rc<str>>,
 }
 
 /// Items within a block.
@@ -590,10 +591,10 @@ pub enum Stmt {
     /// GNU case range: `case low ... high:` (GCC extension)
     CaseRange(Expr, Expr, Box<Stmt>, Span),
     Default(Box<Stmt>, Span),
-    Goto(String, Span),
+    Goto(Rc<str>, Span),
     /// Computed goto: goto *expr (GCC extension, labels-as-values)
     GotoIndirect(Box<Expr>, Span),
-    Label(String, Box<Stmt>, Span),
+    Label(Rc<str>, Box<Stmt>, Span),
     /// A declaration in statement position (C23: declarations allowed after labels,
     /// and in other statement contexts like `case`/`default`).
     Declaration(Declaration),
@@ -603,7 +604,7 @@ pub enum Stmt {
         inputs: Vec<AsmOperand>,
         clobbers: Vec<String>,
         /// Goto labels for asm goto (e.g., `asm goto("..." : : : : label1, label2)`)
-        goto_labels: Vec<String>,
+        goto_labels: Vec<Rc<str>>,
     },
 }
 
@@ -691,7 +692,7 @@ pub enum Expr {
     /// char16_t string literal (u"...") - each char is a char16_t (16-bit unsigned)
     Char16StringLiteral(String, Span),
     CharLiteral(char, Span),
-    Identifier(String, Span),
+    Identifier(Rc<str>, Span),
     BinaryOp(BinOp, Box<Expr>, Box<Expr>, Span),
     UnaryOp(UnaryOp, Box<Expr>, Span),
     PostfixOp(PostfixOp, Box<Expr>, Span),
@@ -703,8 +704,8 @@ pub enum Expr {
     GnuConditional(Box<Expr>, Box<Expr>, Span),
     FunctionCall(Box<Expr>, Vec<Expr>, Span),
     ArraySubscript(Box<Expr>, Box<Expr>, Span),
-    MemberAccess(Box<Expr>, String, Span),
-    PointerMemberAccess(Box<Expr>, String, Span),
+    MemberAccess(Box<Expr>, Rc<str>, Span),
+    PointerMemberAccess(Box<Expr>, Rc<str>, Span),
     Cast(TypeSpecifier, Box<Expr>, Span),
     CompoundLiteral(TypeSpecifier, Box<Initializer>, Span),
     StmtExpr(CompoundStmt, Span),
@@ -726,7 +727,7 @@ pub enum Expr {
     /// _Generic(controlling_expr, type1: expr1, type2: expr2, ..., default: exprN)
     GenericSelection(Box<Expr>, Vec<GenericAssociation>, Span),
     /// GCC extension: &&label (address of label, for computed goto)
-    LabelAddr(String, Span),
+    LabelAddr(Rc<str>, Span),
     /// GCC extension: __builtin_types_compatible_p(type1, type2)
     /// Compile-time constant: 1 if the two types are compatible, 0 otherwise.
     BuiltinTypesCompatibleP(TypeSpecifier, TypeSpecifier, Span),

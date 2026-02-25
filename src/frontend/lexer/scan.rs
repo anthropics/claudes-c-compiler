@@ -1,3 +1,4 @@
+use std::rc::Rc;
 use crate::common::encoding::decode_pua_byte;
 use crate::common::source::Span;
 use super::token::{Token, TokenKind};
@@ -943,7 +944,7 @@ impl Lexer {
         if let Some(kw) = TokenKind::from_keyword(text, self.gnu_extensions) {
             Token::new(kw, span)
         } else {
-            Token::new(TokenKind::Identifier(text.to_string()), span)
+            Token::new(TokenKind::Identifier(Rc::from(text)), span)
         }
     }
 

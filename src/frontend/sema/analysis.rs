@@ -45,6 +45,7 @@ use super::type_context::{TypeContext, FunctionTypedefInfo};
 use super::const_eval::{SemaConstEval, ConstMap};
 
 use std::cell::RefCell;
+use std::rc::Rc;
 use crate::common::fx_hash::{FxHashMap, FxHashSet};
 
 /// Outcome of a case segment in a switch statement for -Wreturn-type analysis.
@@ -75,7 +76,7 @@ pub type ExprTypeMap = FxHashMap<ExprId, CType>;
 #[derive(Debug, Clone)]
 pub struct FunctionInfo {
     pub return_type: CType,
-    pub params: Vec<(CType, Option<String>)>,
+    pub params: Vec<(CType, Option<Rc<str>>)>,
     pub variadic: bool,
     pub is_defined: bool,
     /// Whether the function is declared with __attribute__((noreturn)) or _Noreturn
@@ -86,7 +87,7 @@ pub struct FunctionInfo {
 #[derive(Debug)]
 pub struct SemaResult {
     /// Function signatures discovered during analysis.
-    pub functions: FxHashMap<String, FunctionInfo>,
+    pub functions: FxHashMap<Rc<str>, FunctionInfo>,
     /// Type context populated by sema: typedefs, enum constants, struct layouts,
     /// function typedefs, function pointer typedefs.
     pub type_context: TypeContext,
@@ -136,7 +137,7 @@ pub struct SemanticAnalyzer {
     /// `struct X;` (forward declaration, incomplete) for the incomplete type
     /// check. Uses RefCell for interior mutability since resolve_struct_or_union
     /// takes &self.
-    defined_structs: RefCell<FxHashSet<String>>,
+    defined_structs: RefCell<FxHashSet<Rc<str>>>,
 }
 
 impl SemanticAnalyzer {
@@ -205,7 +206,7 @@ impl SemanticAnalyzer {
         // Must happen at file scope before pushing the function body scope.
         self.collect_enum_constants_from_type_spec(&func.return_type);
 
-        let params: Vec<(CType, Option<String>)> = func.params.iter().map(|p| {
+        let params: Vec<(CType, Option<Rc<str>>)> = func.params.iter().map(|p| {
             let ty = self.type_spec_to_ctype(&p.type_spec);
             (ty, p.name.clone())
         }).collect();
@@ -266,7 +267,7 @@ impl SemanticAnalyzer {
         if !matches!(return_type, CType::Void)
             && !func.attrs.is_noreturn()
             && !func.attrs.is_naked()
-            && func.name != "main"
+            && &*func.name != "main"
             && self.compound_can_fall_through(&func.body)
         {
             self.diagnostics.borrow_mut().warning_with_kind(
@@ -1249,7 +1250,7 @@ impl SemanticAnalyzer {
                 if let Expr::Identifier(name, _) = callee.as_ref() {
                     // Check built-in noreturn functions
                     if matches!(
-                        name.as_str(),
+                        &**name,
                         "__builtin_unreachable"
                             | "__builtin_trap"
                             | "__builtin_abort"
@@ -1329,8 +1330,8 @@ impl SemanticAnalyzer {
                     && !self.result.type_context.enum_constants.contains_key(name)
                     && !builtins::is_builtin(name)
                     && !self.result.functions.contains_key(name)
-                    && name != "__func__" && name != "__FUNCTION__"
-                    && name != "__PRETTY_FUNCTION__"
+                    && &**name != "__func__" && &**name != "__FUNCTION__"
+                    && &**name != "__PRETTY_FUNCTION__"
                 {
                     self.diagnostics.borrow_mut().error(
                         format!("'{}' undeclared", name),
@@ -1883,7 +1884,7 @@ impl SemanticAnalyzer {
                 is_defined: false,
                 is_noreturn,
             };
-            self.result.functions.insert(name.to_string(), func_info);
+            self.result.functions.insert(Rc::from(*name), func_info);
         }
     }
 }
@@ -1907,7 +1908,7 @@ impl type_builder::TypeConvertContext for SemanticAnalyzer {
 
     fn resolve_struct_or_union(
         &self,
-        name: &Option<String>,
+        name: &Option<Rc<str>>,
         fields: &Option<Vec<StructFieldDecl>>,
         is_union: bool,
         is_packed: bool,
@@ -1928,7 +1929,7 @@ impl type_builder::TypeConvertContext for SemanticAnalyzer {
         // forward-declared (`struct X;`). This distinction is needed for the
         // incomplete type check in analyze_declaration.
         if fields.is_some() {
-            self.defined_structs.borrow_mut().insert(key.clone());
+            self.defined_structs.borrow_mut().insert(Rc::from(key.as_str()));
         }
         if !struct_fields.is_empty() {
             let mut layout = if is_union {
@@ -1946,7 +1947,7 @@ impl type_builder::TypeConvertContext for SemanticAnalyzer {
                 }
             }
             self.result.type_context.insert_struct_layout_scoped_from_ref(&key, layout);
-        } else if self.result.type_context.borrow_struct_layouts().get(&key).is_none() {
+        } else if self.result.type_context.borrow_struct_layouts().get(key.as_str()).is_none() {
             let align = struct_aligned.unwrap_or(1);
             let layout = StructLayout {
                 fields: Vec::new(),
@@ -1960,10 +1961,10 @@ impl type_builder::TypeConvertContext for SemanticAnalyzer {
         if is_union { CType::Union(key.into()) } else { CType::Struct(key.into()) }
     }
 
-    fn resolve_enum(&self, name: &Option<String>, variants: &Option<Vec<EnumVariant>>, is_packed: bool) -> CType {
+    fn resolve_enum(&self, name: &Option<Rc<str>>, variants: &Option<Vec<EnumVariant>>, is_packed: bool) -> CType {
         // Check if this is a forward reference to a previously-defined packed enum
         let effective_packed = is_packed || name.as_ref()
-            .and_then(|n| self.result.type_context.packed_enum_types.get(n))
+            .and_then(|n| self.result.type_context.packed_enum_types.get(&**n))
             .is_some();
         // Sema preserves enum identity for diagnostics. Variant processing is
         // done separately via process_enum_variants (requires &mut self).

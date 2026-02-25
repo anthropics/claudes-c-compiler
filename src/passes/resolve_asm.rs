@@ -16,6 +16,7 @@
 
 use crate::common::fx_hash::FxHashMap;
 use crate::ir::reexports::{IrFunction, IrModule, Instruction, Operand, Value};
+use std::rc::Rc;
 
 /// Resolve InlineAsm input symbols across all functions in the module.
 pub(crate) fn resolve_inline_asm_symbols(module: &mut IrModule) {
@@ -29,7 +30,7 @@ pub(crate) fn resolve_inline_asm_symbols(module: &mut IrModule) {
 
 /// Information about a value's defining instruction, used for symbol resolution.
 enum DefInfo {
-    GlobalAddr(String),
+    GlobalAddr(Rc<str>),
     Gep(Value, Operand),
     Add(Operand, Operand),
     Cast(Operand),
@@ -103,7 +104,7 @@ fn try_resolve_global_symbol(val: &Value, defs: &FxHashMap<u32, DefInfo>) -> Opt
 fn try_resolve_global_with_offset(val: &Value, defs: &FxHashMap<u32, DefInfo>, accum_offset: i64) -> Option<(String, i64)> {
     let def = defs.get(&val.0)?;
     match def {
-        DefInfo::GlobalAddr(name) => Some((name.clone(), accum_offset)),
+        DefInfo::GlobalAddr(name) => Some(((*name).to_string(), accum_offset)),
         DefInfo::Gep(base, offset) => {
             let off = match offset {
                 Operand::Const(c) => c.to_i64()?,

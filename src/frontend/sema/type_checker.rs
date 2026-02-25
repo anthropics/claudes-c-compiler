@@ -14,6 +14,7 @@
 //! The `ExprTypeChecker` operates on immutable references and does not modify
 //! any state. It is designed to be called from `SemanticAnalyzer::analyze_expr`.
 
+use std::rc::Rc;
 use crate::common::types::{AddressSpace, CType, FunctionType};
 use crate::common::symbol_table::SymbolTable;
 use crate::common::fx_hash::FxHashMap;
@@ -65,7 +66,7 @@ pub struct ExprTypeChecker<'a> {
     /// Type context for typedef, enum, and struct layout resolution.
     pub types: &'a TypeContext,
     /// Function signatures for return type resolution.
-    pub functions: &'a FxHashMap<String, FunctionInfo>,
+    pub functions: &'a FxHashMap<Rc<str>, FunctionInfo>,
     /// Pre-computed expression types from bottom-up sema walk (memoization cache).
     /// When set, `infer_expr_ctype` checks this map before recursing.
     pub expr_types: Option<&'a FxHashMap<ExprId, CType>>,
@@ -148,7 +149,7 @@ impl<'a> ExprTypeChecker<'a> {
 
             // Identifiers: look up in symbol table or enum constants
             Expr::Identifier(name, _) => {
-                if name == "__func__" || name == "__FUNCTION__" || name == "__PRETTY_FUNCTION__" {
+                if &**name == "__func__" || &**name == "__FUNCTION__" || &**name == "__PRETTY_FUNCTION__" {
                     return Some(CType::Pointer(Box::new(CType::Char), AddressSpace::Default));
                 }
                 if let Some(&val) = self.types.enum_constants.get(name) {
@@ -294,7 +295,7 @@ impl<'a> ExprTypeChecker<'a> {
                 // __builtin_choose_expr(const_expr, expr1, expr2) has the type
                 // of the selected branch, not a fixed return type.
                 if let Expr::Identifier(name, _) = func.as_ref() {
-                    if name == "__builtin_choose_expr" && args.len() >= 3 {
+                    if &**name == "__builtin_choose_expr" && args.len() >= 3 {
                         let cond = self.eval_const_expr(&args[0]).unwrap_or(1);
                         return if cond != 0 {
                             self.infer_expr_ctype(&args[1])
@@ -437,7 +438,7 @@ impl<'a> ExprTypeChecker<'a> {
 
         if let Expr::Identifier(name, _) = stripped {
             // Check function signatures first
-            if let Some(func_info) = self.functions.get(name.as_str()) {
+            if let Some(func_info) = self.functions.get(&**name) {
                 return Some(func_info.return_type.clone());
             }
             // Check builtin return types
@@ -670,7 +671,7 @@ impl<'a> ExprTypeChecker<'a> {
             }
             TypeSpecifier::FunctionPointer(ret, params, variadic) => {
                 let ret_ct = self.resolve_type_spec(ret);
-                let param_cts: Vec<(CType, Option<String>)> = params.iter().map(|p| {
+                let param_cts: Vec<(CType, Option<Rc<str>>)> = params.iter().map(|p| {
                     (self.resolve_type_spec(&p.type_spec), p.name.clone())
                 }).collect();
                 CType::Pointer(Box::new(CType::Function(Box::new(FunctionType {
@@ -865,7 +866,7 @@ impl<'a> ExprTypeChecker<'a> {
     /// patterns like: `({ typeof(&s->field) p = ...; __typeof__(*p) ret = ...; ret; })`
     /// where `__typeof__(*p)` must resolve `p` from the same compound statement.
     fn resolve_var_from_compound(&self, compound: &CompoundStmt, target_name: &str) -> Option<CType> {
-        let mut local_scope: FxHashMap<String, CType> = FxHashMap::default();
+        let mut local_scope: FxHashMap<Rc<str>, CType> = FxHashMap::default();
 
         for item in &compound.items {
             if let BlockItem::Declaration(decl) = item {
@@ -891,7 +892,7 @@ impl<'a> ExprTypeChecker<'a> {
                             _ => {} // Function/FunctionPointer not expected here
                         }
                     }
-                    if declarator.name == target_name {
+                    if &*declarator.name == target_name {
                         return Some(ctype);
                     }
                     local_scope.insert(declarator.name.clone(), ctype);
@@ -903,7 +904,7 @@ impl<'a> ExprTypeChecker<'a> {
 
     /// Resolve a TypeSpecifier to a CType, using a supplementary local scope
     /// for typeof expressions that reference variables not in the symbol table.
-    fn resolve_type_spec_with_scope(&self, ts: &TypeSpecifier, scope: &FxHashMap<String, CType>) -> CType {
+    fn resolve_type_spec_with_scope(&self, ts: &TypeSpecifier, scope: &FxHashMap<Rc<str>, CType>) -> CType {
         match ts {
             TypeSpecifier::Typeof(expr) => {
                 // Try normal resolution first
@@ -928,10 +929,10 @@ impl<'a> ExprTypeChecker<'a> {
     /// for identifiers not found in the symbol table.
     /// Handles common typeof patterns (identifier, deref, address-of).
     /// More complex expressions (member access, subscript, etc.) are not supported.
-    fn infer_expr_ctype_with_scope(&self, expr: &Expr, scope: &FxHashMap<String, CType>) -> Option<CType> {
+    fn infer_expr_ctype_with_scope(&self, expr: &Expr, scope: &FxHashMap<Rc<str>, CType>) -> Option<CType> {
         match expr {
             Expr::Identifier(name, _) => {
-                scope.get(name.as_str()).cloned()
+                scope.get(&**name).cloned()
             }
             Expr::Deref(inner, _) => {
                 let inner_ct = self.infer_expr_ctype(inner)

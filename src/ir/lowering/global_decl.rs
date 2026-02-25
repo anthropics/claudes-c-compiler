@@ -6,6 +6,7 @@
 //!   computing type properties, array/pointer info, struct layout, etc.
 //! - `fixup_unsized_array`: resolves unsized array declarations from initializer size.
 
+use std::rc::Rc;
 use crate::frontend::parser::ast::{
     Declaration,
     DerivedDeclarator,
@@ -107,11 +108,11 @@ impl Lowerer {
                     // Copy the layout registered under the new key to the old key,
                     // then use the old CType so all references are consistent.
                     let new_key = match &resolved_ctype {
-                        CType::Struct(k) | CType::Union(k) => k.to_string(),
+                        CType::Struct(k) | CType::Union(k) => k.clone(),
                         _ => unreachable!(),
                     };
                     let old_key = match existing {
-                        CType::Struct(k) | CType::Union(k) => k.to_string(),
+                        CType::Struct(k) | CType::Union(k) => k.clone(),
                         _ => unreachable!(),
                     };
                     let layout_copy = self.types.borrow_struct_layouts()
@@ -181,7 +182,7 @@ impl Lowerer {
             da.apply_vector_size(vs);
         }
         let mut ginfo = GlobalInfo::from_analysis(&da);
-        ginfo.asm_register = Some(reg_name.clone());
+        ginfo.asm_register = Some(Rc::from(reg_name.as_str()));
         ginfo.var.address_space = decl.address_space;
         self.globals.insert(declarator.name.clone(), ginfo);
         true
@@ -237,23 +238,24 @@ impl Lowerer {
         if !self.globals.contains_key(&declarator.name) {
             return RedeclResult::Proceed { prior_was_weak: false };
         }
+        let decl_name_str: &str = &declarator.name;
         if declarator.init.is_none() {
             if self.emitted_global_names.contains(&declarator.name) {
                 let prior_is_extern = self.module.globals.iter()
-                    .any(|g| g.name == declarator.name && g.is_extern);
+                    .any(|g| &*g.name == decl_name_str && g.is_extern);
                 if prior_is_extern && !decl.is_extern() {
                     // Remove old extern entry and re-emit as defined
                     let prior_was_weak = self.module.globals.iter()
-                        .find(|g| g.name == declarator.name)
+                        .find(|g| &*g.name == decl_name_str)
                         .is_some_and(|g| g.is_weak);
-                    self.module.globals.retain(|g| g.name != declarator.name);
+                    self.module.globals.retain(|g| &*g.name != decl_name_str);
                     self.emitted_global_names.remove(&declarator.name);
                     return RedeclResult::Proceed { prior_was_weak };
                 }
                 // Propagate __weak to already-emitted global if this redeclaration carries it.
                 if declarator.attrs.is_weak() {
                     for g in &mut self.module.globals {
-                        if g.name == declarator.name {
+                        if &*g.name == decl_name_str {
                             g.is_weak = true;
                             break;
                         }
@@ -263,9 +265,9 @@ impl Lowerer {
             }
         } else {
             let prior_was_weak = self.module.globals.iter()
-                .find(|g| g.name == declarator.name)
+                .find(|g| &*g.name == decl_name_str)
                 .is_some_and(|g| g.is_weak);
-            self.module.globals.retain(|g| g.name != declarator.name);
+            self.module.globals.retain(|g| &*g.name != decl_name_str);
             self.emitted_global_names.remove(&declarator.name);
             return RedeclResult::Proceed { prior_was_weak };
         }

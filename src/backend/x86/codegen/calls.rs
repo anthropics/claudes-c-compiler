@@ -4,7 +4,7 @@ use crate::ir::reexports::{IrConst, Operand, Value};
 use crate::common::types::IrType;
 use crate::backend::call_abi::{CallAbiConfig, CallArgClass, compute_stack_push_bytes};
 use crate::backend::generation::is_i128_type;
-use super::emit::{X86Codegen, X86_ARG_REGS};
+use super::emit::{X86Codegen, X86_ARG_REGS, phys_reg_name};
 
 impl X86Codegen {
     pub(super) fn call_abi_config_impl(&self) -> CallAbiConfig {
@@ -133,8 +133,18 @@ impl X86Codegen {
                     }
                 }
                 CallArgClass::Stack => {
-                    self.operand_to_rax(&args[si]);
-                    self.state.emit("    pushq %rax");
+                    // If operand is in a register, push directly without routing through %rax
+                    if let Operand::Value(ref v) = args[si] {
+                        if let Some(&reg) = self.reg_assignments.get(&v.0) {
+                            self.state.emit_fmt(format_args!("    pushq %{}", phys_reg_name(reg)));
+                        } else {
+                            self.operand_to_rax(&args[si]);
+                            self.state.emit("    pushq %rax");
+                        }
+                    } else {
+                        self.operand_to_rax(&args[si]);
+                        self.state.emit("    pushq %rax");
+                    }
                 }
                 _ => {}
             }
@@ -224,13 +234,14 @@ impl X86Codegen {
                     float_count += 1;
                 }
                 CallArgClass::FloatReg { reg_idx } => {
+                    // For float args, we still need %rax as an intermediate to movq into xmm
                     self.operand_to_rax(arg);
                     self.state.out.emit_instr_reg_reg("    movq", "rax", xmm_regs[reg_idx]);
                     float_count += 1;
                 }
                 CallArgClass::IntReg { reg_idx } => {
-                    self.operand_to_rax(arg);
-                    self.state.out.emit_instr_reg_reg("    movq", "rax", X86_ARG_REGS[reg_idx]);
+                    // Load directly into the argument register, bypassing %rax
+                    self.operand_to_named_reg(arg, X86_ARG_REGS[reg_idx]);
                 }
                 _ => {}
             }

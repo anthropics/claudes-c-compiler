@@ -153,12 +153,12 @@ string literals, and linker directives for a translation unit.
 | `string_literals` | `Vec<(String, String)>` | String literals as `(label, value)` pairs |
 | `wide_string_literals` | `Vec<(String, Vec<u32>)>` | Wide string literals `L"..."` as `(label, u32 chars)` |
 | `char16_string_literals` | `Vec<(String, Vec<u16>)>` | `char16_t` string literals `u"..."` as `(label, u16 chars)` |
-| `constructors` | `Vec<String>` | Functions with `__attribute__((constructor))` |
-| `destructors` | `Vec<String>` | Functions with `__attribute__((destructor))` |
-| `aliases` | `Vec<(String, String, bool)>` | Symbol aliases: `(alias_name, target_name, is_weak)` |
+| `constructors` | `Vec<Rc<str>>` | Functions with `__attribute__((constructor))` |
+| `destructors` | `Vec<Rc<str>>` | Functions with `__attribute__((destructor))` |
+| `aliases` | `Vec<(Rc<str>, Rc<str>, bool)>` | Symbol aliases: `(alias_name, target_name, is_weak)` |
 | `toplevel_asm` | `Vec<String>` | Top-level `asm("...")` directives, emitted verbatim |
-| `symbol_attrs` | `Vec<(String, bool, Option<String>)>` | Symbol attribute directives: `(name, is_weak, visibility)` |
-| `symver_directives` | `Vec<(String, String)>` | `__attribute__((symver(...)))` directives: `(symbol_name, version_string)` |
+| `symbol_attrs` | `Vec<(Rc<str>, bool, Option<String>)>` | Symbol attribute directives: `(name, is_weak, visibility)` |
+| `symver_directives` | `Vec<(Rc<str>, Rc<str>)>` | `__attribute__((symver(...)))` directives: `(symbol_name, version_string)` |
 
 `IrModule` provides a `for_each_function` method that runs a transformation on
 each defined (non-declaration) function, returning the total count of changes
@@ -173,7 +173,7 @@ and ABI metadata. It has **23 fields**:
 
 | # | Field | Type | Description |
 |---|-------|------|-------------|
-| 1 | `name` | `String` | Function name |
+| 1 | `name` | `Rc<str>` | Function name (reference-counted for O(1) clone) |
 | 2 | `return_type` | `IrType` | Return type |
 | 3 | `params` | `Vec<IrParam>` | Parameter list |
 | 4 | `blocks` | `Vec<BasicBlock>` | Basic blocks (entry block is `blocks[0]`) |
@@ -543,7 +543,7 @@ side effects (fences, non-temporal stores, loads/stores) are not pure. See the
 
 | Field | Type | Description |
 |-------|------|-------------|
-| `name` | `String` | Symbol name |
+| `name` | `Rc<str>` | Symbol name (reference-counted for O(1) clone) |
 | `ty` | `IrType` | Element type |
 | `size` | `usize` | Size in bytes (for arrays: `elem_size * count`) |
 | `align` | `usize` | Alignment in bytes |
@@ -573,10 +573,10 @@ side effects (fences, non-temporal stores, loads/stores) are not pure. See the
 | `String` | `String` | String literal (stored as bytes with null terminator) |
 | `WideString` | `Vec<u32>` | Wide string literal (`wchar_t` values); backend adds null terminator |
 | `Char16String` | `Vec<u16>` | `char16_t` string literal; backend adds null terminator |
-| `GlobalAddr` | `String` | Address of another global (e.g., `const char *s = "hello"`) |
-| `GlobalAddrOffset` | `(String, i64)` | Address of a global plus a byte offset (e.g., `&arr[3]`, `&s.field`) |
+| `GlobalAddr` | `Rc<str>` | Address of another global (e.g., `const char *s = "hello"`) |
+| `GlobalAddrOffset` | `(Rc<str>, i64)` | Address of a global plus a byte offset (e.g., `&arr[3]`, `&s.field`) |
 | `Compound` | `Vec<GlobalInit>` | Compound initializer sequence for arrays/structs with address expressions (e.g., `int *ptrs[] = {&a, &b, 0}`) |
-| `GlobalLabelDiff` | `(String, String, usize)` | Difference of two labels `(label1, label2, byte_size)` for computed goto dispatch tables; `byte_size` is the width of the resulting integer (4 for int, 8 for long) |
+| `GlobalLabelDiff` | `(Rc<str>, Rc<str>, usize)` | Difference of two labels `(label1, label2, byte_size)` for computed goto dispatch tables; `byte_size` is the width of the resulting integer (4 for int, 8 for long) |
 
 Methods on `GlobalInit`:
 
@@ -889,3 +889,10 @@ Other useful environment variables for debugging the IR pipeline:
    `Vec<Vec<usize>>` because `build_cfg` is called per-function by multiple
    passes (GVN, LICM, if-conversion, mem2reg). The flat layout reduces heap
    allocations from `n+1` to 2 per `build_cfg` call and improves cache locality.
+
+7. **`Rc<str>` for symbol names.** Function names, global names, call targets,
+   and global initializer symbol references use `Rc<str>` instead of `String`.
+   This makes `.clone()` O(1) instead of O(n), shrinks per-instance size from
+   24 to 16 bytes, and auto-derefs to `&str` so most read sites need no changes.
+   Optimization passes (inline, ipcp) that build hash maps keyed by function name
+   benefit from O(1) key cloning.

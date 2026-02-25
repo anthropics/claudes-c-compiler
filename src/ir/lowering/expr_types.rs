@@ -4,6 +4,7 @@
 //! It includes helpers for binary operations, subscript, function call return types,
 //! `_Generic` selections, `sizeof` computation, and CType-level expression type resolution.
 
+use std::rc::Rc;
 use crate::common::fx_hash::FxHashMap;
 use crate::frontend::parser::ast::{
     BinOp,
@@ -532,7 +533,7 @@ impl Lowerer {
 
     /// Helper to get array root name from subscript base/index without needing the full
     /// ArraySubscript expression node.
-    fn get_array_root_name_from_subscript(&self, base: &Expr, index: &Expr) -> Option<String> {
+    fn get_array_root_name_from_subscript(&self, base: &Expr, index: &Expr) -> Option<Rc<str>> {
         // Try base first (normal case: arr[i])
         if let Some(name) = self.get_array_root_name(base) {
             return Some(name);
@@ -555,17 +556,17 @@ impl Lowerer {
             // the seeded `double round(double)` library signature instead of the
             // actual function pointer's signature.
             if self.is_func_ptr_variable(name) {
-                if let Some(ret_ty) = self.func_meta.ptr_sigs.get(name.as_str()).map(|s| s.return_type) {
+                if let Some(ret_ty) = self.func_meta.ptr_sigs.get(&*name).map(|s| s.return_type) {
                     return ret_ty;
                 }
-                if let Some(ret_ty) = self.func_meta.sigs.get(name.as_str()).map(|s| s.return_type) {
+                if let Some(ret_ty) = self.func_meta.sigs.get(&*name).map(|s| s.return_type) {
                     return ret_ty;
                 }
             } else {
-                if let Some(ret_ty) = self.func_meta.sigs.get(name.as_str()).map(|s| s.return_type) {
+                if let Some(ret_ty) = self.func_meta.sigs.get(&*name).map(|s| s.return_type) {
                     return ret_ty;
                 }
-                if let Some(ret_ty) = self.func_meta.ptr_sigs.get(name.as_str()).map(|s| s.return_type) {
+                if let Some(ret_ty) = self.func_meta.ptr_sigs.get(&*name).map(|s| s.return_type) {
                     return ret_ty;
                 }
             }
@@ -573,7 +574,7 @@ impl Lowerer {
                 return ret_ty;
             }
             // Fall back to sema's function signatures for IrType derivation
-            if let Some(func_info) = self.sema_functions.get(name.as_str()) {
+            if let Some(func_info) = self.sema_functions.get(&*name) {
                 return IrType::from_ctype(&func_info.return_type);
             }
         }
@@ -771,7 +772,7 @@ impl Lowerer {
             }
             Expr::FunctionCall(func, args, _) => {
                 if let Expr::Identifier(name, _) = func.as_ref() {
-                    if name == "__builtin_choose_expr" && args.len() >= 3 {
+                    if &**name == "__builtin_choose_expr" && args.len() >= 3 {
                         return self.get_expr_type(self.resolve_builtin_choose_expr(args));
                     }
                     if Self::is_polymorphic_atomic_builtin(name) {
@@ -784,7 +785,7 @@ impl Lowerer {
             }
             Expr::VaArg(_, type_spec, _) => self.resolve_va_arg_type(type_spec),
             Expr::Identifier(name, _) => {
-                if name == "__func__" || name == "__FUNCTION__" || name == "__PRETTY_FUNCTION__" {
+                if &**name == "__func__" || &**name == "__FUNCTION__" || &**name == "__PRETTY_FUNCTION__" {
                     return IrType::Ptr;
                 }
                 if let Some(&val) = self.types.enum_constants.get(name) {
@@ -1107,7 +1108,7 @@ impl Lowerer {
                 }
                 // Fall back to sema's function signatures for function-typed identifiers
                 // (e.g., taking address of a function: &func_name)
-                if let Some(func_info) = self.sema_functions.get(name.as_str()) {
+                if let Some(func_info) = self.sema_functions.get(&*name) {
                     return Some(CType::Function(Box::new(crate::common::types::FunctionType {
                         return_type: func_info.return_type.clone(),
                         params: func_info.params.clone(),
@@ -1258,7 +1259,7 @@ impl Lowerer {
             Expr::Char16StringLiteral(_, _) => Some(CType::Pointer(Box::new(CType::UShort), AddressSpace::Default)),
             Expr::FunctionCall(func, args, _) => {
                 if let Expr::Identifier(name, _) = func.as_ref() {
-                    if name == "__builtin_choose_expr" && args.len() >= 3 {
+                    if &**name == "__builtin_choose_expr" && args.len() >= 3 {
                         return self.get_expr_ctype(self.resolve_builtin_choose_expr(args));
                     }
                     if Self::is_polymorphic_atomic_builtin(name) {
@@ -1269,11 +1270,11 @@ impl Lowerer {
                         }
                     }
                     // First check lowerer's own func_meta (has ABI-adjusted return_ctype)
-                    if let Some(ctype) = self.func_meta.sigs.get(name.as_str()).and_then(|s| s.return_ctype.as_ref()) {
+                    if let Some(ctype) = self.func_meta.sigs.get(&*name).and_then(|s| s.return_ctype.as_ref()) {
                         return Some(ctype.clone());
                     }
                     // Fall back to sema's authoritative function signatures
-                    if let Some(func_info) = self.sema_functions.get(name.as_str()) {
+                    if let Some(func_info) = self.sema_functions.get(&*name) {
                         return Some(func_info.return_type.clone());
                     }
                 }
@@ -1330,7 +1331,7 @@ impl Lowerer {
     /// Optionally accepts a parent scope from an enclosing statement expression,
     /// enabling resolution of nested statement expression patterns like the kernel's
     /// atomic_cmpxchg macro: `typeof(*({ typeof(&obj->member) __ai_ptr = ...; ({ typeof(*__ai_ptr) __ret; ...; __ret; }); }))`
-    fn get_stmt_expr_ctype(&self, compound: &CompoundStmt, parent_scope: Option<&FxHashMap<String, CType>>) -> Option<CType> {
+    fn get_stmt_expr_ctype(&self, compound: &CompoundStmt, parent_scope: Option<&FxHashMap<Rc<str>, CType>>) -> Option<CType> {
         if let Some(BlockItem::Statement(Stmt::Expr(Some(expr)))) = compound.items.last() {
                 // If the last expression is itself a StmtExpr, we must build
                 // the current scope first and pass it down, so inner typeof()
@@ -1370,8 +1371,8 @@ impl Lowerer {
     /// Optionally accepts a parent scope from an enclosing statement expression,
     /// allowing inner declarations that use typeof() on outer variables to resolve
     /// correctly (e.g., `typeof(*__ai_ptr)` where `__ai_ptr` is in the outer scope).
-    fn build_compound_scope(&self, compound: &CompoundStmt, parent_scope: Option<&FxHashMap<String, CType>>) -> FxHashMap<String, CType> {
-        let mut local_scope: FxHashMap<String, CType> = FxHashMap::default();
+    fn build_compound_scope(&self, compound: &CompoundStmt, parent_scope: Option<&FxHashMap<Rc<str>, CType>>) -> FxHashMap<Rc<str>, CType> {
+        let mut local_scope: FxHashMap<Rc<str>, CType> = FxHashMap::default();
 
         // Seed with parent scope so inner typeof expressions can reference
         // variables declared in an enclosing statement expression.
@@ -1426,7 +1427,7 @@ impl Lowerer {
     /// supplementary scope. Returns None on failure instead of falling back to
     /// Int. Used during speculative scope building (build_compound_scope) where
     /// callers need to know if resolution failed to avoid propagating wrong types.
-    fn try_resolve_typeof_with_scope(&self, ts: &TypeSpecifier, scope: &FxHashMap<String, CType>) -> Option<TypeSpecifier> {
+    fn try_resolve_typeof_with_scope(&self, ts: &TypeSpecifier, scope: &FxHashMap<Rc<str>, CType>) -> Option<TypeSpecifier> {
         match ts {
             TypeSpecifier::Typeof(expr) => {
                 if let Some(ctype) = self.get_expr_ctype(expr) {
@@ -1448,10 +1449,10 @@ impl Lowerer {
     /// This handles the common typeof patterns (identifier, deref, address-of, cast)
     /// where the identifier is declared in the same compound statement.
     /// More complex expressions (member access, subscript, etc.) are not supported.
-    fn get_expr_ctype_with_scope(&self, expr: &Expr, scope: &FxHashMap<String, CType>) -> Option<CType> {
+    fn get_expr_ctype_with_scope(&self, expr: &Expr, scope: &FxHashMap<Rc<str>, CType>) -> Option<CType> {
         match expr {
             Expr::Identifier(name, _) => {
-                scope.get(name.as_str()).cloned()
+                scope.get(&*name).cloned()
             }
             Expr::Deref(inner, _) => {
                 if let Some(inner_ct) = self.get_expr_ctype(inner)

@@ -5,6 +5,7 @@
 //! setup for aarch64 and riscv64.
 
 use std::path::PathBuf;
+use std::rc::Rc;
 
 use super::macro_defs::MacroDef;
 use super::pipeline::Preprocessor;
@@ -201,12 +202,12 @@ impl Preprocessor {
 
         for &(name, params, body) in PREDEFINED_FUNC_MACROS {
             self.macros.define(MacroDef {
-                name: name.to_string(),
+                name: Rc::from(name),
                 is_function_like: true,
-                params: params.iter().map(|s| s.to_string()).collect(),
+                params: params.iter().map(|&s| Rc::from(s)).collect(),
                 is_variadic: false,
                 has_named_variadic: false,
-                body: body.to_string(),
+                body: Rc::from(body),
             });
         }
     }
@@ -214,12 +215,12 @@ impl Preprocessor {
     /// Helper to define a simple object-like macro.
     pub(super) fn define_simple_macro(&mut self, name: &str, body: &str) {
         self.macros.define(MacroDef {
-            name: name.to_string(),
+            name: Rc::from(name),
             is_function_like: false,
             params: Vec::new(),
             is_variadic: false,
             has_named_variadic: false,
-            body: body.to_string(),
+            body: Rc::from(body),
         });
     }
 

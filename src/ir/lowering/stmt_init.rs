@@ -21,6 +21,7 @@ use crate::ir::reexports::{
     Operand,
     Value,
 };
+use std::rc::Rc;
 use crate::common::types::{AddressSpace, IrType, CType};
 use super::lower::Lowerer;
 use super::definitions::{GlobalInfo, DeclAnalysis, FuncSig};
@@ -166,7 +167,7 @@ impl Lowerer {
         params: &[ParamDecl],
         variadic: bool,
     ) {
-        self.known_functions.insert(name.to_string());
+        self.known_functions.insert(Rc::from(name));
         let mut ret_ty = self.type_spec_to_ir(ret_type_spec);
         if ptr_count > 0 {
             ret_ty = IrType::Ptr;
@@ -211,7 +212,7 @@ impl Lowerer {
         if ptr_count == 0 {
             let ret_ct = self.type_spec_to_ctype(ret_type_spec);
             if ret_ct.is_complex() {
-                self.types.func_return_ctypes.insert(name.to_string(), ret_ct);
+                self.types.func_return_ctypes.insert(Rc::from(name), ret_ct);
             }
         }
 
@@ -365,7 +366,7 @@ impl Lowerer {
                 return;
             }
         }
-        self.func_meta.sigs.insert(name.to_string(), sig);
+        self.func_meta.sigs.insert(Rc::from(name), sig);
     }
 
     /// Lower an `Initializer::Expr` for a local variable declaration.
@@ -837,7 +838,7 @@ impl Lowerer {
         fname: &str,
         s_layout: &crate::common::types::StructLayout,
     ) {
-        if let Some(field) = s_layout.fields.iter().find(|f| f.name == fname) {
+        if let Some(field) = s_layout.fields.iter().find(|f| &*f.name == fname) {
             let field_offset = base_byte_offset + field.offset;
             if field.ty.is_complex() {
                 let dest_addr = self.emit_gep_offset(alloca, field_offset, IrType::Ptr);
@@ -896,7 +897,7 @@ impl Lowerer {
         fname: &str,
         s_layout: &crate::common::types::StructLayout,
     ) {
-        if let Some(field) = s_layout.fields.iter().find(|f| f.name == fname) {
+        if let Some(field) = s_layout.fields.iter().find(|f| &*f.name == fname) {
             if field.ty.is_complex() {
                 let field_offset = base_byte_offset + field.offset;
                 self.emit_complex_expr_to_offset(e, alloca, field_offset, &field.ty);

@@ -22,7 +22,9 @@ Remaining bottlenecks:
    5% memcpy, 4.5% _int_free, 3% malloc, 1.7% free, etc.).
    Partially fixed: build_cfg uses FlatAdj CSR format, CFG/dominator
    analysis shared via CfgAnalysis. Pipeline clone eliminated.
-   Further: arena/bump allocators, string interning, reuse Vec buffers.
+   PARTIALLY FIXED: Rc<str> string interning for IR names and
+   preprocessor macro names (Phase 3.2, 2026-02-23). See item 4.
+   Further: arena/bump allocators, reuse Vec buffers.
 
 3. PREPROCESSOR (~17.6% of total)
    preprocess_source is the single hottest function. Macro expansion
@@ -31,19 +33,30 @@ Remaining bottlenecks:
    set_file() fast path for __FILE__ (avoids MacroDef alloc per #include),
    reusable directive_expanding set for handle_if/elif/line/error,
    batch slice copies in expand_text/substitute_params inner loops.
-   Further: string interning for macro names in expanding set,
-   reusable Vec<String> for parse_macro_args, MacroDef clone avoidance.
+   PARTIALLY FIXED: MacroDef.name and expanding set now use Rc<str>
+   (Phase 3.2, 2026-02-23). O(1) clone for macro names in the hot
+   expand_text path; eliminates per-expansion String allocation.
+   Further: reusable Vec<String> for parse_macro_args, MacroDef clone
+   avoidance for replacement body tokens.
 
 4. STRING INTERNING (potential ~5% improvement)
    Every identifier token allocates a heap String. Same function/type
    names are re-allocated at each compiler stage (lexer -> AST -> IR).
-   Fix: String interning with u32 symbol IDs would eliminate most of
-   the per-identifier allocation overhead.
+   PARTIALLY FIXED (Phase 3.2, 2026-02-23): IR function names, global
+   names, Call.func, GlobalAddr.name, GlobalInit symbol references, and
+   preprocessor MacroDef.name/expanding sets all converted from String
+   to Rc<str>. This makes .clone() O(1) instead of O(n), reduces per-
+   instance size from 24 to 16 bytes, and eliminates redundant heap
+   allocations in optimization passes (inline, ipcp, dead_statics) and
+   backend symbol collection. ~200 lines changed across ~30 files.
+   Further: Full u32 symbol interning for lexer/AST identifier tokens
+   would address the remaining allocation overhead in early stages.
 
 5. LEXER (~4.2% of total)
    Lexer::tokenize is the 2nd hottest ccc function. Dominated by
    identifier scanning and keyword lookup (~70-arm match).
    Fix: Perfect hash for keywords, reduced from_utf8 overhead.
 
-The native assembler (item 1) and string interning (item 4) are the
-highest-impact remaining changes.
+The highest-impact remaining changes are full u32 symbol interning for
+lexer/AST tokens (item 4), arena/bump allocators (item 2), and the
+perfect hash keyword lookup (item 5).

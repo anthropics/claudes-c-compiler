@@ -1,3 +1,4 @@
+use std::rc::Rc;
 use crate::frontend::parser::ast::{Expr, TypeSpecifier, UnaryOp};
 use crate::ir::reexports::{
     Instruction,
@@ -36,7 +37,7 @@ impl Lowerer {
                     // Static locals: emit fresh GlobalAddr at point of use
                     if let Some(global_name) = static_global_name {
                         let addr = self.fresh_value();
-                        self.emit(Instruction::GlobalAddr { dest: addr, name: global_name });
+                        self.emit(Instruction::GlobalAddr { dest: addr, name: Rc::from(global_name) });
                         return Some(LValue::Address(addr, AddressSpace::Default));
                     }
                     return Some(LValue::Variable(alloca));
@@ -44,7 +45,7 @@ impl Lowerer {
                 // Static local variables: resolve through mangled name
                 if let Some(mangled) = self.func_state.as_ref().and_then(|fs| fs.static_local_names.get(name).cloned()) {
                     let addr = self.fresh_value();
-                    self.emit(Instruction::GlobalAddr { dest: addr, name: mangled });
+                    self.emit(Instruction::GlobalAddr { dest: addr, name: Rc::from(mangled) });
                     return Some(LValue::Address(addr, AddressSpace::Default));
                 }
                 if let Some(ginfo) = self.globals.get(name) {
@@ -304,7 +305,7 @@ impl Lowerer {
                 if let Some(mangled) = self.func_state.as_ref().and_then(|fs| fs.static_local_names.get(name).cloned()) {
                     if let Some(ginfo) = self.globals.get(&mangled).cloned() {
                         let addr = self.fresh_value();
-                        self.emit(Instruction::GlobalAddr { dest: addr, name: mangled });
+                        self.emit(Instruction::GlobalAddr { dest: addr, name: mangled.clone() });
                         let is_inline_data = ginfo.is_array || ginfo.c_type.as_ref().is_some_and(|ct| ct.is_vector());
                         if is_inline_data {
                             return Operand::Value(addr);
@@ -638,7 +639,7 @@ impl Lowerer {
     /// For Identifier("a"): returns Some("a")
     /// For ArraySubscript(Identifier("a"), _): returns Some("a")
     /// For Deref(Identifier("a")): returns Some("a") (for *arr patterns on multi-dim arrays)
-    pub(super) fn get_array_root_name_from_base(&self, base: &Expr) -> Option<String> {
+    pub(super) fn get_array_root_name_from_base(&self, base: &Expr) -> Option<Rc<str>> {
         match base {
             Expr::Identifier(name, _) => Some(name.clone()),
             Expr::ArraySubscript(inner, _, _) => self.get_array_root_name_from_base(inner),
@@ -649,7 +650,7 @@ impl Lowerer {
 
     /// Get the root array name from a full expression (including outer subscript).
     /// Handles reverse subscript by checking both base and index.
-    pub(super) fn get_array_root_name(&self, expr: &Expr) -> Option<String> {
+    pub(super) fn get_array_root_name(&self, expr: &Expr) -> Option<Rc<str>> {
         match expr {
             Expr::Identifier(name, _) => Some(name.clone()),
             Expr::ArraySubscript(base, index, _) => {

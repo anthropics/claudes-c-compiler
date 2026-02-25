@@ -20,6 +20,7 @@ use crate::ir::reexports::{
     Operand,
     Terminator,
 };
+use std::rc::Rc;
 use crate::common::types::{AddressSpace, IrType, CType};
 use super::lower::Lowerer;
 
@@ -219,7 +220,7 @@ impl Lowerer {
                     .unwrap_or(crate::common::types::target_int_ir_type());
                 let struct_arg_sizes = vec![None; arg_vals.len()];
                 self.emit(Instruction::Call {
-                    func: libc_name.clone(),
+                    func: Rc::from(libc_name.as_str()),
                     info: CallInfo {
                         dest: Some(dest), args: arg_vals, arg_types,
                         return_type, is_variadic: variadic, num_fixed_args: n_fixed,
@@ -330,7 +331,7 @@ impl Lowerer {
                     // type (class 5). expr_ctype may return CType::Int as
                     // fallback since functions aren't stored as variables.
                     if let Expr::Identifier(fname, _) = arg {
-                        if self.known_functions.contains(fname.as_str()) {
+                        if self.known_functions.contains(&*fname) {
                             5i64 // pointer_type_class (function decays to pointer)
                         } else {
                             let ctype = self.expr_ctype(arg);
@@ -520,7 +521,7 @@ impl Lowerer {
         let n_fixed = arg_vals.len(); // All explicitly passed args are "fixed" from our perspective
         let struct_arg_sizes = vec![None; arg_vals.len()];
         self.emit(Instruction::Call {
-            func: libc_chk_name.to_string(),
+            func: Rc::from(libc_chk_name),
             info: CallInfo {
                 dest: Some(dest),
                 args: arg_vals,

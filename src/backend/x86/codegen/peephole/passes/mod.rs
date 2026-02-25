@@ -69,6 +69,13 @@ pub fn peephole_optimize(asm: String) -> String {
         let local_changed = local_patterns::combined_local_pass(&mut store, &mut infos);
         changed |= local_changed;
         changed |= local_patterns::fuse_movq_ext_truncation(&mut store, &mut infos);
+        changed |= local_patterns::narrow_64_to_32(&mut store, &mut infos);
+        changed |= local_patterns::fold_xmm_through_accumulator(&mut store, &mut infos);
+        changed |= local_patterns::fold_address_through_secondary(&mut store, &mut infos);
+        changed |= local_patterns::fold_commutative_through_temp(&mut store, &mut infos);
+        changed |= local_patterns::fold_accumulator_routing(&mut store, &mut infos);
+        changed |= local_patterns::redirect_load_destination(&mut store, &mut infos);
+        changed |= local_patterns::fold_increment_in_place(&mut store, &mut infos);
         if local_changed || pass_count == 0 {
             changed |= push_pop::eliminate_push_pop_pairs(&store, &mut infos);
             changed |= push_pop::eliminate_binop_push_pop_pattern(&mut store, &mut infos);
@@ -80,8 +87,11 @@ pub fn peephole_optimize(asm: String) -> String {
     let global_changed = store_forwarding::global_store_forwarding(&mut store, &mut infos);
     let global_changed = global_changed | copy_propagation::propagate_register_copies(&mut store, &mut infos);
     let global_changed = global_changed | dead_code::eliminate_dead_reg_moves(&store, &mut infos);
+    let global_changed = global_changed | dead_code::eliminate_dead_reg_moves_ext(&store, &mut infos);
+    let global_changed = global_changed | dead_code::eliminate_dead_arg_moves(&store, &mut infos);
     let global_changed = global_changed | dead_code::eliminate_dead_stores(&store, &mut infos);
     let global_changed = global_changed | compare_branch::fuse_compare_and_branch(&mut store, &mut infos);
+    let global_changed = global_changed | compare_branch::fuse_and_test_branch(&mut store, &mut infos);
     // Memory operand folding: fold remaining stack loads into subsequent ALU
     // instructions as memory source operands. This runs after store forwarding
     // has already converted loads that can be forwarded from registers; the
@@ -96,8 +106,21 @@ pub fn peephole_optimize(asm: String) -> String {
             changed2 = false;
             changed2 |= local_patterns::combined_local_pass(&mut store, &mut infos);
             changed2 |= local_patterns::fuse_movq_ext_truncation(&mut store, &mut infos);
+            changed2 |= local_patterns::narrow_64_to_32(&mut store, &mut infos);
+            changed2 |= local_patterns::fold_xmm_through_accumulator(&mut store, &mut infos);
+            changed2 |= local_patterns::fold_address_through_secondary(&mut store, &mut infos);
+            changed2 |= local_patterns::fold_commutative_through_temp(&mut store, &mut infos);
+            changed2 |= local_patterns::fold_double_to_leaq(&mut store, &mut infos);
+            changed2 |= local_patterns::fold_movq_addimm_to_leaq(&mut store, &mut infos);
+            changed2 |= local_patterns::fold_scaled_address_into_load(&mut store, &mut infos);
+            changed2 |= local_patterns::fold_accumulator_routing(&mut store, &mut infos);
+            changed2 |= local_patterns::redirect_load_destination(&mut store, &mut infos);
+            changed2 |= local_patterns::fold_increment_in_place(&mut store, &mut infos);
             changed2 |= dead_code::eliminate_dead_reg_moves(&store, &mut infos);
+            changed2 |= dead_code::eliminate_dead_reg_moves_ext(&store, &mut infos);
+            changed2 |= dead_code::eliminate_dead_arg_moves(&store, &mut infos);
             changed2 |= dead_code::eliminate_dead_stores(&store, &mut infos);
+            changed2 |= compare_branch::fuse_and_test_branch(&mut store, &mut infos);
             changed2 |= memory_fold::fold_memory_operands(&mut store, &mut infos);
             pass_count2 += 1;
         }
@@ -105,6 +128,8 @@ pub fn peephole_optimize(asm: String) -> String {
 
     // Phase 4: Eliminate loop backedge trampoline blocks.
     let trampoline_changed = loop_trampoline::eliminate_loop_trampolines(&mut store, &mut infos);
+    // Phase 4a: Inline multi-level join blocks (SSA phi chains).
+    let trampoline_changed = trampoline_changed | loop_trampoline::inline_join_blocks(&mut store, &mut infos);
 
     // Phase 4b: If trampoline elimination made changes, do another round of local cleanup.
     if trampoline_changed {
@@ -114,7 +139,16 @@ pub fn peephole_optimize(asm: String) -> String {
             changed3 = false;
             changed3 |= local_patterns::combined_local_pass(&mut store, &mut infos);
             changed3 |= local_patterns::fuse_movq_ext_truncation(&mut store, &mut infos);
+            changed3 |= local_patterns::narrow_64_to_32(&mut store, &mut infos);
+            changed3 |= local_patterns::fold_commutative_through_temp(&mut store, &mut infos);
+            changed3 |= local_patterns::fold_double_to_leaq(&mut store, &mut infos);
+            changed3 |= local_patterns::fold_movq_addimm_to_leaq(&mut store, &mut infos);
+            changed3 |= local_patterns::fold_scaled_address_into_load(&mut store, &mut infos);
+            changed3 |= local_patterns::fold_accumulator_routing(&mut store, &mut infos);
+            changed3 |= local_patterns::redirect_load_destination(&mut store, &mut infos);
+            changed3 |= local_patterns::fold_increment_in_place(&mut store, &mut infos);
             changed3 |= dead_code::eliminate_dead_reg_moves(&store, &mut infos);
+            changed3 |= dead_code::eliminate_dead_arg_moves(&store, &mut infos);
             changed3 |= dead_code::eliminate_dead_stores(&store, &mut infos);
             changed3 |= memory_fold::fold_memory_operands(&mut store, &mut infos);
             pass_count3 += 1;

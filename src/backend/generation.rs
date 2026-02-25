@@ -9,6 +9,7 @@
 //! These functions are arch-independent — they use the `ArchCodegen` trait to call
 //! into the backend-specific implementations.
 
+use std::rc::Rc;
 use crate::ir::reexports::{
     BasicBlock,
     GlobalInit,
@@ -158,15 +159,15 @@ fn build_gep_fold_map(func: &IrFunction, use_counts: &[u32]) -> FxHashMap<u32, G
 /// TLS symbols are excluded because they require special access patterns
 /// (%fs:/@TPOFF on x86-64, %gs:/@NTPOFF on i686, etc.) and must not be
 /// folded into plain RIP-relative accesses.
-fn build_global_addr_map(func: &IrFunction, tls_symbols: &FxHashSet<String>) -> FxHashMap<u32, String> {
+fn build_global_addr_map(func: &IrFunction, tls_symbols: &FxHashSet<Rc<str>>) -> FxHashMap<u32, String> {
     let mut map: FxHashMap<u32, String> = FxHashMap::default();
     for block in &func.blocks {
         for inst in &block.instructions {
             match inst {
                 Instruction::GlobalAddr { dest, name } => {
                     // Skip TLS symbols - they must go through emit_tls_global_addr
-                    if !tls_symbols.contains(name.as_str()) {
-                        map.insert(dest.0, name.clone());
+                    if !tls_symbols.contains(&**name) {
+                        map.insert(dest.0, name.to_string());
                     }
                 }
                 Instruction::GetElementPtr { dest, base, offset: Operand::Const(c), .. } => {
@@ -575,10 +576,10 @@ fn collect_symbol_sets(cg: &mut dyn ArchCodegen, module: &IrModule) {
         }
     }
     for (label, _) in &module.string_literals {
-        state.local_symbols.insert(label.clone());
+        state.local_symbols.insert(Rc::from(label.as_str()));
     }
     for (label, _) in &module.wide_string_literals {
-        state.local_symbols.insert(label.clone());
+        state.local_symbols.insert(Rc::from(label.as_str()));
     }
 }
 
@@ -626,7 +627,7 @@ fn build_and_emit_dwarf_file_table(
 
 /// Collect the set of symbols actually referenced in this translation unit.
 /// We only emit .weak/.hidden directives for referenced symbols, matching GCC behavior.
-fn collect_referenced_symbols(module: &IrModule) -> FxHashSet<String> {
+fn collect_referenced_symbols(module: &IrModule) -> FxHashSet<Rc<str>> {
     let mut refs = FxHashSet::default();
 
     // Symbols referenced in function bodies
@@ -644,7 +645,7 @@ fn collect_referenced_symbols(module: &IrModule) -> FxHashSet<String> {
                     Instruction::InlineAsm { input_symbols, .. } => {
                         for s in input_symbols.iter().flatten() {
                             let base = s.split('+').next().unwrap_or(s);
-                            refs.insert(base.to_string());
+                            refs.insert(Rc::from(base));
                         }
                     }
                     _ => {}
@@ -655,7 +656,7 @@ fn collect_referenced_symbols(module: &IrModule) -> FxHashSet<String> {
 
     // Symbols referenced in global initializers
     for global in &module.globals {
-        fn collect_global_refs(init: &GlobalInit, refs: &mut FxHashSet<String>) {
+        fn collect_global_refs(init: &GlobalInit, refs: &mut FxHashSet<Rc<str>>) {
             match init {
                 GlobalInit::GlobalAddr(name) | GlobalInit::GlobalAddrOffset(name, _) => {
                     refs.insert(name.clone());
@@ -678,7 +679,7 @@ fn collect_referenced_symbols(module: &IrModule) -> FxHashSet<String> {
     // Symbols referenced in toplevel asm (conservative substring match)
     for asm_str in &module.toplevel_asm {
         for (sym_name, _, _) in &module.symbol_attrs {
-            if asm_str.contains(sym_name.as_str()) {
+            if asm_str.contains(&**sym_name) {
                 refs.insert(sym_name.clone());
             }
         }
@@ -700,9 +701,9 @@ fn collect_referenced_symbols(module: &IrModule) -> FxHashSet<String> {
 
 /// Emit visibility directives for declaration-only (extern) functions with
 /// non-default visibility, but only if they are actually referenced.
-fn emit_extern_visibility_directives(cg: &mut dyn ArchCodegen, module: &IrModule, referenced_symbols: &FxHashSet<String>) {
+fn emit_extern_visibility_directives(cg: &mut dyn ArchCodegen, module: &IrModule, referenced_symbols: &FxHashSet<Rc<str>>) {
     for func in &module.functions {
-        if func.is_declaration && referenced_symbols.contains(&func.name) {
+        if func.is_declaration && referenced_symbols.contains(&*func.name) {
             cg.state().emit_visibility(&func.name, &func.visibility);
         }
     }
@@ -768,9 +769,9 @@ fn emit_symver_directives(cg: &mut dyn ArchCodegen, module: &IrModule) {
 }
 
 /// Emit .weak/.hidden directives for declaration symbols that are referenced.
-fn emit_symbol_attrs(cg: &mut dyn ArchCodegen, module: &IrModule, referenced_symbols: &FxHashSet<String>) {
+fn emit_symbol_attrs(cg: &mut dyn ArchCodegen, module: &IrModule, referenced_symbols: &FxHashSet<Rc<str>>) {
     for (name, is_weak, visibility) in &module.symbol_attrs {
-        if !referenced_symbols.contains(name) {
+        if !referenced_symbols.contains(&**name) {
             continue;
         }
         if *is_weak {
@@ -1092,9 +1093,9 @@ fn generate_instruction(cg: &mut dyn ArchCodegen, inst: &Instruction, gep_fold_m
             // not symbol(%rip).
             let is_dead = dead_global_addrs.contains(&dest.0)
                 && !cg.state_ref().needs_got_for_addr(name)
-                && !cg.state_ref().tls_symbols.contains(name.as_str());
+                && !cg.state_ref().tls_symbols.contains(&**name);
             if !is_dead {
-                if cg.state_ref().tls_symbols.contains(name.as_str()) {
+                if cg.state_ref().tls_symbols.contains(&**name) {
                     cg.emit_tls_global_addr(dest, name);
                 } else if cg.state_ref().code_model_kernel && !global_addr_ptr_set.contains(&dest.0) {
                     cg.emit_global_addr_absolute(dest, name);

@@ -7,6 +7,7 @@
 //! - `classify_struct_return`: shared sret/two-reg classification logic
 //! - Helpers: maybe_narrow_call_result, is_function_variadic, get_func_ptr_return_ir_type
 
+use std::rc::Rc;
 use crate::frontend::parser::ast::Expr;
 use crate::ir::reexports::{
     CallInfo,
@@ -168,7 +169,7 @@ impl Lowerer {
                 }
             } else {
                 // Direct function call - look up by function name
-                let sig = self.func_meta.sigs.get(name.as_str());
+                let sig = self.func_meta.sigs.get(&*name);
                 (
                     sig.and_then(|s| s.sret_size),
                     sig.and_then(|s| s.two_reg_ret_size),
@@ -201,9 +202,9 @@ impl Lowerer {
         // Decompose complex double/float arguments into (real, imag) pairs for ABI compliance
         let param_ctypes_for_decompose = if let Expr::Identifier(name, _) = stripped_func {
             let sig_for_decompose = if self.is_func_ptr_variable(name) {
-                self.func_meta.ptr_sigs.get(name.as_str()).or_else(|| self.func_meta.sigs.get(name.as_str()))
+                self.func_meta.ptr_sigs.get(&*name).or_else(|| self.func_meta.sigs.get(&*name))
             } else {
-                self.func_meta.sigs.get(name.as_str())
+                self.func_meta.sigs.get(&*name)
             };
             sig_for_decompose.map(|s| s.param_ctypes.clone()).filter(|v| !v.is_empty())
         } else {
@@ -233,9 +234,9 @@ impl Lowerer {
             let variadic = call_is_variadic;
             let n_fixed = if variadic {
                 let variadic_sig = if self.is_func_ptr_variable(name) {
-                    self.func_meta.ptr_sigs.get(name.as_str()).or_else(|| self.func_meta.sigs.get(name.as_str()))
+                    self.func_meta.ptr_sigs.get(&*name).or_else(|| self.func_meta.sigs.get(&*name))
                 } else {
-                    self.func_meta.sigs.get(name.as_str())
+                    self.func_meta.sigs.get(&*name)
                 };
                 if let Some(sig) = variadic_sig {
                     if !sig.param_ctypes.is_empty() {
@@ -427,10 +428,10 @@ impl Lowerer {
         // Extract function name from direct calls, or the underlying variable name
         // from indirect calls through function pointers (e.g., (*afp)(args) -> "afp").
         let func_name = match func {
-            Expr::Identifier(name, _) => Some(name.as_str()),
+            Expr::Identifier(name, _) => Some(&*name),
             Expr::Deref(inner, _) => {
                 if let Expr::Identifier(name, _) = inner.as_ref() {
-                    Some(name.as_str())
+                    Some(&*name)
                 } else { None }
             }
             _ => None,
@@ -575,7 +576,7 @@ impl Lowerer {
         }).collect();
 
         // Build struct_arg_sizes: for each arg, check if it's a struct/union by value
-        let func_name = if let Expr::Identifier(name, _) = func { Some(name.as_str()) } else { None };
+        let func_name = if let Expr::Identifier(name, _) = func { Some(&*name) } else { None };
         let struct_arg_sizes: Vec<Option<usize>> = if let Some(ref sizes) = func_name.and_then(|n| self.func_meta.sigs.get(n).map(|s| s.param_struct_sizes.clone())) {
             // Use pre-registered struct sizes from function metadata.
             // For variadic _Complex long double args beyond fixed params, infer size
@@ -756,10 +757,10 @@ impl Lowerer {
                     indirect_ret_ty
                 } else {
                     // Direct call - apply __asm__("label") linker symbol redirect if present
-                    let call_name = self.asm_label_map.get(name.as_str())
+                    let call_name = self.asm_label_map.get(&*name)
                         .cloned()
                         .unwrap_or_else(|| name.clone());
-                    let sig = self.func_meta.sigs.get(name.as_str());
+                    let sig = self.func_meta.sigs.get(&*name);
                     let mut ret_ty = sig.map(|s| s.return_type).unwrap_or(target_int_ir_type());
                     if sig.and_then(|s| s.two_reg_ret_size).is_some() {
                         ret_ty = IrType::I128;
@@ -779,9 +780,9 @@ impl Lowerer {
                             }
                         }
                     }
-                    let callee_is_fastcall = self.fastcall_functions.contains(name.as_str());
+                    let callee_is_fastcall = self.fastcall_functions.contains(&*name);
                     self.emit(Instruction::Call {
-                        func: call_name,
+                        func: Rc::from(call_name),
                         info: CallInfo {
                             dest: Some(dest), args: arg_vals, arg_types,
                             return_type: ret_ty, is_variadic, num_fixed_args,
@@ -843,7 +844,7 @@ impl Lowerer {
                         .expect("func_state must exist during function lowering").instrs;
                     let found = instrs.iter().rev().find_map(|inst| {
                         if let Instruction::GlobalAddr { dest, ref name } = *inst {
-                            if dest == v && self.known_functions.contains(name) {
+                            if dest == v && self.known_functions.contains(&**name) {
                                 return Some(name.clone());
                             }
                         }
@@ -856,10 +857,10 @@ impl Lowerer {
 
                 if let Some(call_name) = direct_func_name {
                     // Emit a direct call instead of indirect.
-                    let call_name = self.asm_label_map.get(call_name.as_str())
+                    let call_name = self.asm_label_map.get(&*call_name)
                         .cloned()
                         .unwrap_or(call_name);
-                    let sig = self.func_meta.sigs.get(call_name.as_str());
+                    let sig = self.func_meta.sigs.get(&*call_name);
                     let mut ret_ty = sig.map(|s| s.return_type).unwrap_or(indirect_ret_ty);
                     if sig.and_then(|s| s.two_reg_ret_size).is_some() {
                         ret_ty = IrType::I128;
@@ -875,9 +876,9 @@ impl Lowerer {
                             }
                         }
                     }
-                    let callee_is_fastcall = self.fastcall_functions.contains(call_name.as_str());
+                    let callee_is_fastcall = self.fastcall_functions.contains(&*call_name);
                     self.emit(Instruction::Call {
-                        func: call_name,
+                        func: Rc::from(call_name),
                         info: CallInfo {
                             dest: Some(dest), args: arg_vals, arg_types,
                             return_type: ret_ty, is_variadic, num_fixed_args,
@@ -919,7 +920,7 @@ impl Lowerer {
         } else {
             // Global function pointer
             let addr = self.fresh_value();
-            self.emit(Instruction::GlobalAddr { dest: addr, name: name.to_string() });
+            self.emit(Instruction::GlobalAddr { dest: addr, name: Rc::from(name) });
             addr
         };
         let ptr_val = self.fresh_value();

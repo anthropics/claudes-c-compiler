@@ -10,6 +10,7 @@
 //!
 //! Also handles VLA parameter stride computation and dimension collection.
 
+use std::rc::Rc;
 use crate::common::fx_hash::FxHashMap;
 use crate::frontend::parser::ast::{
     BlockItem,
@@ -346,7 +347,7 @@ impl Lowerer {
         let is_ptr_to_func_ptr = orig_param.fptr_params.is_some()
             && orig_param.fptr_inner_ptr_depth >= 2;
 
-        let name = orig_param.name.clone().unwrap_or_default();
+        let name: Rc<str> = orig_param.name.clone().unwrap_or_else(|| Rc::from(""));
         self.insert_local_scoped(name, LocalInfo {
             var: VarInfo { ty, elem_size, is_array: false, pointee_type, struct_layout, is_struct: false, array_dim_strides, c_type, is_ptr_to_func_ptr, address_space: AddressSpace::Default, explicit_alignment: None },
             alloca, alloc_size: param_size, is_bool, static_global_name: None, vla_strides: vec![], vla_size: None, asm_register: None, asm_register_has_init: false, cleanup_fn: None,
@@ -388,7 +389,7 @@ impl Lowerer {
         let size = if is_struct { layout.as_ref().map_or(8, |l| l.size) } else { self.sizeof_type(&orig_param.type_spec) };
         let c_type = Some(self.type_spec_to_ctype(&orig_param.type_spec));
 
-        let name = orig_param.name.clone().unwrap_or_default();
+        let name = orig_param.name.clone().unwrap_or_else(|| Rc::from(""));
         self.insert_local_scoped(name, LocalInfo {
             var: VarInfo { ty: IrType::Ptr, elem_size: 0, is_array: false, pointee_type: None, struct_layout: layout, is_struct: true, array_dim_strides: vec![], c_type, is_ptr_to_func_ptr: false, address_space: AddressSpace::Default, explicit_alignment: None },
             alloca, alloc_size: size, is_bool: false, static_global_name: None, vla_strides: vec![], vla_size: None, asm_register: None, asm_register_has_init: false, cleanup_fn: None,
@@ -399,7 +400,7 @@ impl Lowerer {
     /// Register a packed complex float parameter (x86-64 only) as a local variable.
     fn register_packed_complex_float_param(&mut self, orig_param: &ParamDecl, alloca: Value) {
         let ct = self.type_spec_to_ctype(&orig_param.type_spec);
-        let name = orig_param.name.clone().unwrap_or_default();
+        let name = orig_param.name.clone().unwrap_or_else(|| Rc::from(""));
         self.insert_local_scoped(name, LocalInfo {
             var: VarInfo { ty: IrType::Ptr, elem_size: 0, is_array: false, pointee_type: None, struct_layout: None, is_struct: true, array_dim_strides: vec![], c_type: Some(ct), is_ptr_to_func_ptr: false, address_space: AddressSpace::Default, explicit_alignment: None },
             alloca, alloc_size: 8, is_bool: false, static_global_name: None, vla_strides: vec![], vla_size: None, asm_register: None, asm_register_has_init: false, cleanup_fn: None,
@@ -427,7 +428,7 @@ impl Lowerer {
         self.emit(Instruction::GetElementPtr { dest: imag_ptr, base: complex_alloca, offset: Operand::Const(IrConst::I64(comp_size as i64)), ty: IrType::I8 });
         self.emit(Instruction::Store { val: Operand::Value(imag_val), ptr: imag_ptr, ty: comp_ty , seg_override: AddressSpace::Default });
 
-        let name = orig_param.name.clone().unwrap_or_default();
+        let name = orig_param.name.clone().unwrap_or_else(|| Rc::from(""));
         self.func_mut().locals.insert(name, LocalInfo {
             var: VarInfo { ty: IrType::Ptr, elem_size: 0, is_array: false, pointee_type: None, struct_layout: None, is_struct: true, array_dim_strides: vec![], c_type: Some(ct), is_ptr_to_func_ptr: false, address_space: AddressSpace::Default, explicit_alignment: None },
             alloca: complex_alloca, alloc_size: complex_size, is_bool: false, static_global_name: None, vla_strides: vec![], vla_size: None, asm_register: None, asm_register_has_init: false, cleanup_fn: None,
@@ -442,7 +443,7 @@ impl Lowerer {
         if !func.is_kr { return; }
         for param in &func.params {
             let declared_ty = self.type_spec_to_ir(&param.type_spec);
-            let name = param.name.clone().unwrap_or_default();
+            let name: Rc<str> = param.name.clone().unwrap_or_else(|| Rc::from(""));
             let local_info = match self.func_mut().locals.get(&name).cloned() { Some(i) => i, None => continue };
             match declared_ty {
                 IrType::F32 => {
@@ -571,7 +572,7 @@ impl Lowerer {
         };
         // Collect __attribute__((symver("..."))) directives
         if let Some(ref sv) = func.attrs.symver {
-            self.module.symver_directives.push((func.name.clone(), sv.clone()));
+            self.module.symver_directives.push((func.name.clone(), Rc::from(sv.as_str())));
         }
         self.module.functions.push(ir_func);
         self.pop_scope();
@@ -598,7 +599,7 @@ impl Lowerer {
     /// compute strides at runtime and store them in the LocalInfo.
     fn compute_vla_param_strides(&mut self, func: &FunctionDef) {
         // Collect VLA info first, then emit code (avoids borrow issues)
-        let mut vla_params: Vec<(String, Vec<VlaDimInfo>)> = Vec::new();
+        let mut vla_params: Vec<(Rc<str>, Vec<VlaDimInfo>)> = Vec::new();
 
         for param in &func.params {
             let param_name = match &param.name {
@@ -693,13 +694,13 @@ impl Lowerer {
             if let TypeSpecifier::Array(elem, size_expr) = resolved {
                 let (is_vla, dim_name, const_size) = if let Some(expr) = size_expr {
                     if let Some(val) = self.expr_as_array_size(expr) {
-                        (false, String::new(), Some(val))
+                        (false, Rc::from(""), Some(val))
                     } else {
                         let name = Self::extract_dim_expr_name(expr);
                         (true, name, None)
                     }
                 } else {
-                    (false, String::new(), None)
+                    (false, Rc::from(""), None)
                 };
 
                 let base_elem_size = self.sizeof_type(elem);
@@ -719,10 +720,10 @@ impl Lowerer {
     }
 
     /// Extract variable name from a VLA dimension expression.
-    fn extract_dim_expr_name(expr: &Expr) -> String {
+    fn extract_dim_expr_name(expr: &Expr) -> Rc<str> {
         match expr {
             Expr::Identifier(name, _) => name.clone(),
-            _ => String::new(),
+            _ => Rc::from(""),
         }
     }
 
@@ -737,7 +738,7 @@ impl Lowerer {
     /// This information is used by `lower_goto_stmt` to determine which cleanup
     /// scopes need to be exited: only scopes deeper than the target label's depth
     /// should have their cleanup destructors called.
-    fn prescan_label_depths(body: &CompoundStmt) -> FxHashMap<String, usize> {
+    fn prescan_label_depths(body: &CompoundStmt) -> FxHashMap<Rc<str>, usize> {
         let mut result = FxHashMap::default();
         // depth starts at 1 because lower_function calls push_scope() before
         // lower_compound_stmt, and then lower_compound_stmt calls push_scope again
@@ -746,7 +747,7 @@ impl Lowerer {
         result
     }
 
-    fn prescan_compound_stmt(compound: &CompoundStmt, depth: usize, result: &mut FxHashMap<String, usize>) {
+    fn prescan_compound_stmt(compound: &CompoundStmt, depth: usize, result: &mut FxHashMap<Rc<str>, usize>) {
         // Match the lowering behavior: only push a scope (increment depth) when the
         // compound statement contains declarations. Declaration-free compound statements
         // don't push a scope in lower_compound_stmt, so we must not increment depth here.
@@ -760,7 +761,7 @@ impl Lowerer {
         }
     }
 
-    fn prescan_stmt(stmt: &Stmt, depth: usize, result: &mut FxHashMap<String, usize>) {
+    fn prescan_stmt(stmt: &Stmt, depth: usize, result: &mut FxHashMap<Rc<str>, usize>) {
         match stmt {
             Stmt::Label(name, inner_stmt, _) => {
                 // Record the label at the current scope depth.

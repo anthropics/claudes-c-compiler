@@ -280,7 +280,7 @@ impl Lowerer {
     /// Look up a struct/union layout by tag name, returning a cheap Rc clone.
     fn get_struct_union_layout_by_tag(&self, kind: &str, tag: &str) -> Option<RcLayout> {
         let key = format!("{}.{}", kind, tag);
-        self.types.borrow_struct_layouts().get(&key).cloned()
+        self.types.borrow_struct_layouts().get(key.as_str()).cloned()
     }
 
     /// Get the struct/union layout for a resolved TypeSpecifier.
@@ -291,7 +291,8 @@ impl Lowerer {
             TypeSpecifier::Struct(tag, Some(fields), is_packed, pragma_pack, _) => {
                 // Use cached layout for tagged structs
                 if let Some(tag) = tag {
-                    if let Some(layout) = self.types.borrow_struct_layouts().get(&format!("struct.{}", tag)) {
+                    let key = format!("struct.{}", tag);
+                    if let Some(layout) = self.types.borrow_struct_layouts().get(key.as_str()) {
                         return Some(layout.clone());
                     }
                 }
@@ -301,7 +302,8 @@ impl Lowerer {
             TypeSpecifier::Union(tag, Some(fields), is_packed, pragma_pack, _) => {
                 // Use cached layout for tagged unions
                 if let Some(tag) = tag {
-                    if let Some(layout) = self.types.borrow_struct_layouts().get(&format!("union.{}", tag)) {
+                    let key = format!("union.{}", tag);
+                    if let Some(layout) = self.types.borrow_struct_layouts().get(key.as_str()) {
                         return Some(layout.clone());
                     }
                 }
@@ -882,7 +884,7 @@ impl Lowerer {
     }
 
     /// Get the innermost element size for a CType::Array chain.
-    fn ctype_innermost_elem_size(ctype: &CType, layouts: &crate::common::fx_hash::FxHashMap<String, RcLayout>) -> usize {
+    fn ctype_innermost_elem_size(ctype: &CType, layouts: &crate::common::fx_hash::FxHashMap<Rc<str>, RcLayout>) -> usize {
         let mut current = ctype;
         while let CType::Array(inner, _) = current {
             current = inner.as_ref();

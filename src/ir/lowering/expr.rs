@@ -9,6 +9,7 @@
 //! - `expr_calls`: function call lowering, arguments, dispatch
 //! - `expr_assign`: assignment, compound assignment, bitfield helpers
 
+use std::rc::Rc;
 use crate::frontend::parser::ast::{
     BinOp,
     Expr,
@@ -211,14 +212,14 @@ impl Lowerer {
             self.intern_string_literal(s)
         };
         let dest = self.fresh_value();
-        self.emit(Instruction::GlobalAddr { dest, name: label });
+        self.emit(Instruction::GlobalAddr { dest, name: Rc::from(label) });
         Operand::Value(dest)
     }
 
     fn lower_char16_string_literal(&mut self, s: &str) -> Operand {
         let label = self.intern_char16_string_literal(s);
         let dest = self.fresh_value();
-        self.emit(Instruction::GlobalAddr { dest, name: label });
+        self.emit(Instruction::GlobalAddr { dest, name: Rc::from(label) });
         Operand::Value(dest)
     }
 
@@ -246,7 +247,7 @@ impl Lowerer {
         Operand::Value(result)
     }
 
-    fn load_global_var(&mut self, global_name: String, ginfo: &GlobalInfo) -> Operand {
+    fn load_global_var(&mut self, global_name: Rc<str>, ginfo: &GlobalInfo) -> Operand {
         let addr = self.fresh_value();
         self.emit(Instruction::GlobalAddr { dest: addr, name: global_name });
         if ginfo.is_array || ginfo.is_struct {
@@ -308,7 +309,7 @@ impl Lowerer {
 
             if let Some(global_name) = static_global_name {
                 let addr = self.fresh_value();
-                self.emit(Instruction::GlobalAddr { dest: addr, name: global_name });
+                self.emit(Instruction::GlobalAddr { dest: addr, name: Rc::from(global_name) });
                 if is_array || is_struct || is_vector {
                     return Operand::Value(addr);
                 }
@@ -342,14 +343,14 @@ impl Lowerer {
             if let Some(ref reg_name) = ginfo.asm_register {
                 return self.read_global_register(reg_name, ginfo.ty);
             }
-            return self.load_global_var(name.to_string(), &ginfo);
+            return self.load_global_var(Rc::from(name), &ginfo);
         }
 
         // Note: implicit declaration warnings are emitted during sema, not here.
         // Apply __asm__("label") linker symbol redirect if present.
         let resolved_name = self.asm_label_map.get(name)
             .cloned()
-            .unwrap_or_else(|| name.to_string());
+            .unwrap_or_else(|| Rc::from(name));
         let dest = self.fresh_value();
         self.emit(Instruction::GlobalAddr { dest, name: resolved_name });
         Operand::Value(dest)

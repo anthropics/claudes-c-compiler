@@ -15,6 +15,7 @@ use crate::ir::reexports::{
     Operand,
     Value,
 };
+use std::rc::Rc;
 use crate::common::types::{AddressSpace, IrType};
 use super::lower::Lowerer;
 
@@ -32,7 +33,7 @@ impl Lowerer {
     fn emit_f128_classify_libcall(&mut self, func_name: &str, arg_val: Operand) -> Value {
         let dest = self.fresh_value();
         self.emit(Instruction::Call {
-            func: func_name.to_string(),
+            func: Rc::from(func_name),
             info: CallInfo {
                 dest: Some(dest),
                 args: vec![arg_val],

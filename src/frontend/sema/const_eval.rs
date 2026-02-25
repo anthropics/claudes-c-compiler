@@ -18,6 +18,7 @@
 //! - Pointer arithmetic on global addresses
 //!   These remain in the lowerer since they require IR-level state.
 
+use std::rc::Rc;
 use crate::common::types::CType;
 use crate::common::types::AddressSpace;
 use crate::common::const_arith;
@@ -60,7 +61,7 @@ pub struct SemaConstEval<'a> {
     /// Symbol table for variable type lookup.
     pub symbols: &'a SymbolTable,
     /// Function signatures for return type resolution in sizeof(expr).
-    pub functions: &'a FxHashMap<String, FunctionInfo>,
+    pub functions: &'a FxHashMap<Rc<str>, FunctionInfo>,
     /// Pre-computed constant values from bottom-up sema walk (memoization cache).
     pub const_values: Option<&'a FxHashMap<ExprId, IrConst>>,
     /// Pre-computed expression types from bottom-up sema walk.
@@ -372,7 +373,7 @@ impl<'a> SemaConstEval<'a> {
             Expr::FunctionCall(func, args, _) => {
                 if let Expr::Identifier(name, _) = func.as_ref() {
                     shared_const_eval::eval_builtin_call(
-                        name.as_str(), args, &|e| self.eval_const_expr(e),
+                        &**name, args, &|e| self.eval_const_expr(e),
                     )
                 } else {
                     None
@@ -752,7 +753,7 @@ impl<'a> SemaConstEval<'a> {
     /// Build an EnumType for a packed enum from its variants or type context.
     fn resolve_packed_enum_type(
         &self,
-        name: &Option<String>,
+        name: &Option<Rc<str>>,
         variants: &Option<Vec<crate::frontend::parser::ast::EnumVariant>>,
     ) -> crate::common::types::EnumType {
         // Try looking up previously registered packed enum
@@ -817,7 +818,7 @@ impl<'a> SemaConstEval<'a> {
                 // Look up cached layout for tagged structs
                 if let Some(tag) = tag {
                     let key = format!("struct.{}", tag);
-                    if let Some(layout) = self.types.borrow_struct_layouts().get(&key) {
+                    if let Some(layout) = self.types.borrow_struct_layouts().get(key.as_str()) {
                         return Some(layout.size);
                     }
                 }
@@ -843,7 +844,7 @@ impl<'a> SemaConstEval<'a> {
             TypeSpecifier::Union(tag, fields, is_packed, pragma_pack, struct_aligned) => {
                 if let Some(tag) = tag {
                     let key = format!("union.{}", tag);
-                    if let Some(layout) = self.types.borrow_struct_layouts().get(&key) {
+                    if let Some(layout) = self.types.borrow_struct_layouts().get(key.as_str()) {
                         return Some(layout.size);
                     }
                 }
@@ -942,7 +943,7 @@ impl<'a> SemaConstEval<'a> {
             TypeSpecifier::Struct(tag, fields, is_packed, pragma_pack, struct_aligned) => {
                 if let Some(tag) = tag {
                     let key = format!("struct.{}", tag);
-                    if let Some(layout) = self.types.borrow_struct_layouts().get(&key) {
+                    if let Some(layout) = self.types.borrow_struct_layouts().get(key.as_str()) {
                         return layout.align;
                     }
                 }
@@ -966,7 +967,7 @@ impl<'a> SemaConstEval<'a> {
             TypeSpecifier::Union(tag, fields, is_packed, pragma_pack, struct_aligned) => {
                 if let Some(tag) = tag {
                     let key = format!("union.{}", tag);
-                    if let Some(layout) = self.types.borrow_struct_layouts().get(&key) {
+                    if let Some(layout) = self.types.borrow_struct_layouts().get(key.as_str()) {
                         return layout.align;
                     }
                 }

@@ -909,7 +909,7 @@ mod tests {
 
     /// Helper to create a simple loop: preheader -> header -> body -> header, header -> exit
     fn make_loop_func() -> IrFunction {
-        let mut func = IrFunction::new("test_loop".to_string(), IrType::I32, vec![], false);
+        let mut func = IrFunction::new("test_loop".into(), IrType::I32, vec![], false);
 
         // Block 0 (preheader): i = 0, n = 10
         func.blocks.push(BasicBlock {
@@ -1085,7 +1085,7 @@ mod tests {
         //
         // exit:
         //   ret %2
-        let mut func = IrFunction::new("test_load_hoist".to_string(), IrType::I32, vec![], false);
+        let mut func = IrFunction::new("test_load_hoist".into(), IrType::I32, vec![], false);
 
         // Block 0 (entry): alloca + store + init
         func.blocks.push(BasicBlock {
@@ -1187,7 +1187,7 @@ mod tests {
     #[test]
     fn test_licm_does_not_hoist_load_from_modified_alloca() {
         // Test: load from an alloca that IS stored to in the loop should NOT be hoisted.
-        let mut func = IrFunction::new("test_no_hoist".to_string(), IrType::I32, vec![], false);
+        let mut func = IrFunction::new("test_no_hoist".into(), IrType::I32, vec![], false);
 
         // Block 0: alloca + initial store
         func.blocks.push(BasicBlock {
@@ -1291,7 +1291,7 @@ mod tests {
         //
         // exit:
         //   ret 0
-        let mut func = IrFunction::new("test_asm_output".to_string(), IrType::I32, vec![], false);
+        let mut func = IrFunction::new("test_asm_output".into(), IrType::I32, vec![], false);
 
         // Block 0 (entry): alloca for succeeded
         func.blocks.push(BasicBlock {
@@ -1410,7 +1410,7 @@ mod tests {
         //   ret 0
         use crate::common::types::AddressSpace;
 
-        let mut func = IrFunction::new("test_promoted_asm".to_string(), IrType::I32, vec![], false);
+        let mut func = IrFunction::new("test_promoted_asm".into(), IrType::I32, vec![], false);
 
         // Block 0 (entry): globaladdr + branch
         func.blocks.push(BasicBlock {
@@ -1418,7 +1418,7 @@ mod tests {
             instructions: vec![
                 Instruction::GlobalAddr {
                     dest: Value(0),
-                    name: "addr".to_string(),
+                    name: "addr".into(),
                 },
             ],
             terminator: Terminator::Branch(BlockId(1)),

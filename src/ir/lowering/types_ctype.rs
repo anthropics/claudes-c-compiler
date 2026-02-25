@@ -4,6 +4,7 @@
 //! pointer parameter handling, struct/union-to-CType conversion, and
 //! the TypeConvertContext trait implementation.
 
+use std::rc::Rc;
 use crate::common::type_builder;
 use crate::frontend::parser::ast::{
     DerivedDeclarator,
@@ -72,9 +73,9 @@ impl Lowerer {
                 // For anonymous structs (key like "__anon_struct_N"), use the
                 // full key as the tag so get_struct_layout_for_type can find it.
                 if let Some(tag) = key.strip_prefix("struct.") {
-                    TypeSpecifier::Struct(Some(tag.to_string()), None, false, None, None)
+                    TypeSpecifier::Struct(Some(Rc::from(tag)), None, false, None, None)
                 } else {
-                    TypeSpecifier::Struct(Some(key.to_string()), None, false, None, None)
+                    TypeSpecifier::Struct(Some(key.clone()), None, false, None, None)
                 }
             }
             CType::Union(key) => {
@@ -82,9 +83,9 @@ impl Lowerer {
                 // For anonymous unions (key like "__anon_struct_N"), use the
                 // full key as the tag so get_struct_layout_for_type can find it.
                 if let Some(tag) = key.strip_prefix("union.") {
-                    TypeSpecifier::Union(Some(tag.to_string()), None, false, None, None)
+                    TypeSpecifier::Union(Some(Rc::from(tag)), None, false, None, None)
                 } else {
-                    TypeSpecifier::Union(Some(key.to_string()), None, false, None, None)
+                    TypeSpecifier::Union(Some(key.clone()), None, false, None, None)
                 }
             }
             CType::Enum(et) => {
@@ -145,7 +146,7 @@ impl Lowerer {
                 return_ctype
             };
 
-            let param_types: Vec<(CType, Option<String>)> = fptr_params.iter()
+            let param_types: Vec<(CType, Option<Rc<str>>)> = fptr_params.iter()
                 .map(|p| (self.type_spec_to_ctype(&p.type_spec), p.name.clone()))
                 .collect();
             let func_type = CType::Function(Box::new(crate::common::types::FunctionType {
@@ -173,7 +174,7 @@ impl Lowerer {
             // function type is adjusted to pointer-to-function type.
             if let Some(fti) = self.types.function_typedefs.get(tname).cloned() {
                 let return_ctype = self.type_spec_to_ctype(&fti.return_type);
-                let param_types: Vec<(CType, Option<String>)> = fti.params.iter()
+                let param_types: Vec<(CType, Option<Rc<str>>)> = fti.params.iter()
                     .map(|p| (self.param_ctype(p), p.name.clone()))
                     .collect();
                 let func_type = CType::Function(Box::new(crate::common::types::FunctionType {
@@ -220,7 +221,7 @@ impl Lowerer {
         // Look up the stored function pointer typedef info
         if let Some(fti) = self.types.func_ptr_typedef_info.get(tname) {
             let return_ctype = self.type_spec_to_ctype(&fti.return_type);
-            let param_types: Vec<(CType, Option<String>)> = fti.params.iter()
+            let param_types: Vec<(CType, Option<Rc<str>>)> = fti.params.iter()
                 .map(|p| (self.type_spec_to_ctype(&p.type_spec), p.name.clone()))
                 .collect();
             let func_type = CType::Function(Box::new(crate::common::types::FunctionType {
@@ -248,7 +249,7 @@ impl Lowerer {
     /// `pragma_pack` is the #pragma pack(N) alignment, if any.
     fn struct_or_union_to_ctype(
         &self,
-        name: &Option<String>,
+        name: &Option<Rc<str>>,
         fields: &Option<Vec<StructFieldDecl>>,
         is_union: bool,
         is_packed: bool,
@@ -256,8 +257,8 @@ impl Lowerer {
         struct_aligned: Option<usize>,
     ) -> CType {
         let prefix = if is_union { "union" } else { "struct" };
-        let wrap = |key: String| -> CType {
-            if is_union { CType::Union(key.into()) } else { CType::Struct(key.into()) }
+        let wrap = |key: Rc<str>| -> CType {
+            if is_union { CType::Union(key) } else { CType::Struct(key) }
         };
         // __attribute__((packed)) forces alignment 1; #pragma pack(N) caps to N.
         let max_field_align = if is_packed { Some(1) } else { pragma_pack };
@@ -269,8 +270,8 @@ impl Lowerer {
             // scope undo-log with a redundant shadow entry).
             // Only skip when the existing layout has fields (not a forward-declaration stub).
             if let Some(tag) = name {
-                let cache_key = format!("{}.{}", prefix, tag);
-                if let Some(existing) = self.types.borrow_struct_layouts().get(&cache_key) {
+                let cache_key: Rc<str> = format!("{}.{}", prefix, tag).into();
+                if let Some(existing) = self.types.borrow_struct_layouts().get(&*cache_key) {
                     if !existing.fields.is_empty() {
                         let result = wrap(cache_key.clone());
                         self.types.ctype_cache.borrow_mut().insert(cache_key, result.clone());
@@ -312,11 +313,11 @@ impl Lowerer {
                     layout.size = (layout.size + mask) & !mask;
                 }
             }
-            let key = if let Some(tag) = name {
-                format!("{}.{}", prefix, tag)
+            let key: Rc<str> = if let Some(tag) = name {
+                format!("{}.{}", prefix, tag).into()
             } else {
                 let id = self.types.next_anon_struct_id();
-                format!("__anon_struct_{}", id)
+                format!("__anon_struct_{}", id).into()
             };
             self.types.insert_struct_layout_scoped_from_ref(&key, layout);
             self.types.invalidate_ctype_cache_scoped_from_ref(&key);
@@ -329,17 +330,17 @@ impl Lowerer {
             // of prepending the struct/union prefix. This avoids creating a
             // mismatched key like "struct.__anon_struct_N" when the real layout
             // is stored at "__anon_struct_N".
-            let key = if tag.starts_with("__anon_struct_") || tag.starts_with("__anon_union_") {
+            let key: Rc<str> = if tag.starts_with("__anon_struct_") || tag.starts_with("__anon_union_") {
                 tag.clone()
             } else {
-                format!("{}.{}", prefix, tag)
+                format!("{}.{}", prefix, tag).into()
             };
             // Check cache first
-            if let Some(cached) = self.types.ctype_cache.borrow().get(&key) {
+            if let Some(cached) = self.types.ctype_cache.borrow().get(&*key) {
                 return cached.clone();
             }
             // Forward declaration: insert an empty layout if not already present
-            if self.types.borrow_struct_layouts().get(&key).is_none() {
+            if self.types.borrow_struct_layouts().get(&*key).is_none() {
                 let empty_layout = StructLayout {
                     fields: Vec::new(),
                     size: 0,
@@ -347,7 +348,7 @@ impl Lowerer {
                     is_union,
                     is_transparent_union: false,
                 };
-                self.types.insert_struct_layout_from_ref(&key, empty_layout);
+                self.types.insert_struct_layout_from_ref(key.clone(), empty_layout);
             }
             let result = wrap(key.clone());
             self.types.ctype_cache.borrow_mut().insert(key, result.clone());
@@ -355,7 +356,7 @@ impl Lowerer {
         } else {
             // Anonymous forward declaration (no name, no fields)
             let id = self.types.next_anon_struct_id();
-            let key = format!("__anon_struct_{}", id);
+            let key: Rc<str> = format!("__anon_struct_{}", id).into();
             let empty_layout = StructLayout {
                 fields: Vec::new(),
                 size: 0,
@@ -363,7 +364,7 @@ impl Lowerer {
                 is_union,
                 is_transparent_union: false,
             };
-            self.types.insert_struct_layout_from_ref(&key, empty_layout);
+            self.types.insert_struct_layout_from_ref(key.clone(), empty_layout);
             wrap(key)
         }
     }
@@ -410,7 +411,7 @@ impl type_builder::TypeConvertContext for Lowerer {
 
     fn resolve_struct_or_union(
         &self,
-        name: &Option<String>,
+        name: &Option<Rc<str>>,
         fields: &Option<Vec<StructFieldDecl>>,
         is_union: bool,
         is_packed: bool,
@@ -420,7 +421,7 @@ impl type_builder::TypeConvertContext for Lowerer {
         self.struct_or_union_to_ctype(name, fields, is_union, is_packed, pragma_pack, struct_aligned)
     }
 
-    fn resolve_enum(&self, name: &Option<String>, variants: &Option<Vec<EnumVariant>>, is_packed: bool) -> CType {
+    fn resolve_enum(&self, name: &Option<Rc<str>>, variants: &Option<Vec<EnumVariant>>, is_packed: bool) -> CType {
         // Check if this is a forward reference to a known packed enum
         let effective_packed = is_packed || name.as_ref()
             .and_then(|n| self.types.packed_enum_types.get(n))

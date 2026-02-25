@@ -1800,6 +1800,57 @@ fn expand_gas_macros_with_state(
             continue;
         }
 
+        // .ifnb arg / .ifb arg / .endif — test if macro argument is non-blank / blank
+        if trimmed == ".ifnb" || trimmed == ".ifb"
+            || trimmed.starts_with(".ifnb ") || trimmed.starts_with(".ifnb\t")
+            || trimmed.starts_with(".ifb ") || trimmed.starts_with(".ifb\t")
+        {
+            let is_ifnb = trimmed.starts_with(".ifnb");
+            let dir_len = if is_ifnb { ".ifnb".len() } else { ".ifb".len() };
+            let arg = if trimmed.len() > dir_len { trimmed[dir_len..].trim() } else { "" };
+            let cond = if is_ifnb { !arg.is_empty() } else { arg.is_empty() };
+            let mut branches: Vec<(bool, Vec<String>)> = vec![(cond, Vec::new())];
+            let mut current_idx = 0;
+            let mut depth = 1;
+            i += 1;
+            while i < lines.len() {
+                let inner = strip_comment(&lines[i]).trim().to_string();
+                if is_if_start(&inner) {
+                    depth += 1;
+                    branches[current_idx].1.push(lines[i].clone());
+                } else if inner == ".endif" {
+                    depth -= 1;
+                    if depth == 0 {
+                        break;
+                    }
+                    branches[current_idx].1.push(lines[i].clone());
+                } else if depth == 1 && (inner.starts_with(".elseif ") || inner.starts_with(".elseif\t")) {
+                    let elseif_rest = inner[".elseif".len()..].trim();
+                    let elseif_cond = eval_if_expr(elseif_rest, symbols);
+                    branches.push((elseif_cond, Vec::new()));
+                    current_idx += 1;
+                } else if inner == ".else" && depth == 1 {
+                    branches.push((true, Vec::new()));
+                    current_idx += 1;
+                } else {
+                    branches[current_idx].1.push(lines[i].clone());
+                }
+                i += 1;
+            }
+            let empty: Vec<String> = Vec::new();
+            let mut chosen_lines: &Vec<String> = &empty;
+            for (bcond, blines) in &branches {
+                if *bcond {
+                    chosen_lines = blines;
+                    break;
+                }
+            }
+            let expanded = expand_gas_macros_with_state(chosen_lines, macros, symbols)?;
+            result.extend(expanded);
+            i += 1;
+            continue;
+        }
+
         // .error "message" - assembler error directive
         if trimmed.starts_with(".error ") || trimmed.starts_with(".error\t") {
             return Err(format!("assembler error: {}", trimmed[".error".len()..].trim()));
@@ -2116,6 +2167,8 @@ fn is_if_start(trimmed: &str) -> bool {
     trimmed.starts_with(".if ") || trimmed.starts_with(".if\t") || trimmed.starts_with(".if(")
         || trimmed.starts_with(".ifc ") || trimmed.starts_with(".ifc\t")
         || trimmed.starts_with(".ifdef ") || trimmed.starts_with(".ifndef ")
+        || trimmed == ".ifnb" || trimmed.starts_with(".ifnb ") || trimmed.starts_with(".ifnb\t")
+        || trimmed == ".ifb" || trimmed.starts_with(".ifb ") || trimmed.starts_with(".ifb\t")
 }
 
 /// Evaluate a `.if` expression for the x86 assembler.

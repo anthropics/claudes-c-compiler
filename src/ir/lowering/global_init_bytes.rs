@@ -4,6 +4,7 @@
 //! variable initialization lowering. It handles writing constants, bitfields,
 //! complex numbers, struct layouts, and array fills into byte buffers.
 
+use std::rc::Rc;
 use crate::frontend::parser::ast::{
     Designator,
     Expr,
@@ -216,7 +217,7 @@ impl Lowerer {
             match desig {
                 Designator::Field(name) => {
                     let sub_layout = self.get_struct_layout_for_ctype(&current_ty)?;
-                    let resolution = sub_layout.resolve_init_field(Some(name.as_str()), 0, &*self.types.borrow_struct_layouts())?;
+                    let resolution = sub_layout.resolve_init_field(Some(&**name), 0, &*self.types.borrow_struct_layouts())?;
                     match resolution {
                         crate::common::types::InitFieldResolution::Direct(fi) => {
                             byte_offset += sub_layout.fields[fi].offset;
@@ -229,7 +230,7 @@ impl Lowerer {
                             let anon_field = &sub_layout.fields[anon_field_idx];
                             byte_offset += anon_field.offset;
                             let anon_layout = self.get_struct_layout_for_ctype(&anon_field.ty)?;
-                            let inner_fi = anon_layout.resolve_init_field_idx(Some(inner_name.as_str()), 0, &*self.types.borrow_struct_layouts())?;
+                            let inner_fi = anon_layout.resolve_init_field_idx(Some(&*inner_name), 0, &*self.types.borrow_struct_layouts())?;
                             byte_offset += anon_layout.fields[inner_fi].offset;
                             current_ty = anon_layout.fields[inner_fi].ty.clone();
                             bit_offset = anon_layout.fields[inner_fi].bit_offset;
@@ -399,7 +400,7 @@ impl Lowerer {
                             // Actually we can recursively call ourselves
                             let sub_item = InitializerItem {
                                 designators: {
-                                    let mut d = vec![Designator::Field(String::new())]; // dummy field
+                                    let mut d = vec![Designator::Field(Rc::from(""))]; // dummy field
                                     d.extend(further_indices);
                                     d
                                 },
