@@ -231,9 +231,15 @@ impl IrConst {
         }
     }
 
-    /// Returns true if this constant is one (integer only).
+    /// Returns true if this constant is one (integer or float).
     pub fn is_one(&self) -> bool {
-        matches!(self, IrConst::I8(1) | IrConst::I16(1) | IrConst::I32(1) | IrConst::I64(1) | IrConst::I128(1))
+        match self {
+            IrConst::I8(1) | IrConst::I16(1) | IrConst::I32(1) | IrConst::I64(1) | IrConst::I128(1) => true,
+            IrConst::F32(v) => *v == 1.0,
+            IrConst::F64(v) => *v == 1.0,
+            IrConst::LongDouble(v, _) => *v == 1.0,
+            _ => false,
+        }
     }
 
     /// Returns true if this constant is nonzero (for truthiness checks in const eval).
