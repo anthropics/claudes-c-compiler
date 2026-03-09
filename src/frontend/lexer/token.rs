@@ -77,6 +77,9 @@ pub enum TokenKind {
     Noreturn,
     StaticAssert,
     ThreadLocal,
+    // C23 keywords
+    True,
+    False,
 
     // GCC extensions
     Typeof,
@@ -272,6 +275,9 @@ impl std::fmt::Display for TokenKind {
             TokenKind::Noreturn => write!(f, "'_Noreturn'"),
             TokenKind::StaticAssert => write!(f, "'_Static_assert'"),
             TokenKind::ThreadLocal => write!(f, "'_Thread_local'"),
+            // C23 keywords
+            TokenKind::True => write!(f, "'true'"),
+            TokenKind::False => write!(f, "'false'"),
 
             // GCC extensions
             TokenKind::Typeof => write!(f, "'typeof'"),
@@ -425,13 +431,15 @@ impl TokenKind {
             "_Alignas" => Some(TokenKind::Alignas),
             "_Alignof" => Some(TokenKind::Alignof),
             "_Atomic" => Some(TokenKind::Atomic),
-            "_Bool" => Some(TokenKind::Bool),
+            "_Bool" | "bool" => Some(TokenKind::Bool),
             "_Complex" | "__complex__" | "__complex" => Some(TokenKind::Complex),
             "_Generic" => Some(TokenKind::Generic),
             "_Imaginary" => Some(TokenKind::Imaginary),
             "_Noreturn" | "__noreturn__" => Some(TokenKind::Noreturn),
             "_Static_assert" | "static_assert" => Some(TokenKind::StaticAssert),
             "_Thread_local" | "__thread" => Some(TokenKind::ThreadLocal),
+            "true" => Some(TokenKind::True),
+            "false" => Some(TokenKind::False),
             "typeof" if gnu_extensions => Some(TokenKind::Typeof),
             "__typeof__" | "__typeof" => Some(TokenKind::Typeof),
             "asm" if gnu_extensions => Some(TokenKind::Asm),

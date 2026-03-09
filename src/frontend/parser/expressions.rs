@@ -602,6 +602,16 @@ impl Parser {
                 self.advance();
                 Expr::CharLiteral(c, span)
             }
+            TokenKind::True => {
+                let span = self.peek_span();
+                self.advance();
+                Expr::IntLiteral(1, span)
+            }
+            TokenKind::False => {
+                let span = self.peek_span();
+                self.advance();
+                Expr::IntLiteral(0, span)
+            }
             TokenKind::Identifier(name) => {
                 let name = name.clone();
                 let span = self.peek_span();
