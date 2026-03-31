@@ -35,6 +35,41 @@ source. The target architecture is selected by the binary name at runtime:
 | `ccc-riscv` | RISC-V 64 |
 | `ccc-i686` | i686 (32-bit x86) |
 
+## Docker
+
+Use a Linux container when your host is not Linux (e.g. macOS) or you do not
+have Rust installed locally. The image builds CCC from source and installs
+`gcc` plus glibc development headers so real programs (e.g. `#include <stdio.h>`)
+link correctly.
+
+```bash
+# Build the image (from the repository root)
+docker build -t ccc:latest .
+
+# Compile a file from your working tree (output appears on the host in $PWD)
+docker run --rm -v "$PWD":/work -w /work ccc:latest -o hello examples/docker/hello.c
+
+# Run the resulting ELF inside Linux (same image)
+docker run --rm -v "$PWD":/work -w /work --entrypoint ./hello ccc:latest
+```
+
+The default container entrypoint picks `ccc-x86`, `ccc-arm`, and so on from
+`uname -m`, so the same image works on x86_64 and AArch64 (including Apple
+silicon) without manually choosing the compiler binary.
+
+For an interactive shell (overrides the entrypoint):
+
+```bash
+docker run -it --entrypoint /bin/bash -v "$PWD":/work -w /work ccc:latest
+# then e.g. ccc-arm -o hello examples/docker/hello.c && ./hello
+```
+
+For an amd64 CCC targeting x86_64 Linux regardless of your machine:
+
+```bash
+docker build --platform linux/amd64 -t ccc:amd64 .
+```
+
 ## Quick Start
 
 Compile and run a simple C program:

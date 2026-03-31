@@ -1,5 +1,8 @@
 /target/
 Cargo.lock
+
+# Local try-compile at repo root (e.g. Docker -o hello hello.c)
+/hello
 *.o
 *.s
 *.core
