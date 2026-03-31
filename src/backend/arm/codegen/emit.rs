@@ -1427,7 +1427,7 @@ impl ArmCodegen {
         for (i, _) in args.iter().enumerate() {
             match arg_classes[i] {
                 CallArgClass::I128RegPair { .. } => {
-                    if !int_reg_idx.is_multiple_of(2) { int_reg_idx += 1; }
+                    if int_reg_idx % 2 != 0 { int_reg_idx += 1; }
                     int_reg_idx += 2;
                 }
                 CallArgClass::StructByValReg { size, .. } => {

@@ -966,7 +966,7 @@ pub fn emit_shared_library(
         0, shstrtab_file_offset, shstrtab_data.len() as u64, 0, 0, 1, 0));
 
     // Write section headers
-    while !elf.len().is_multiple_of(8) { elf.push(0); }
+    while elf.len() % 8 != 0 { elf.push(0); }
     let shdr_offset = elf.len() as u64;
     let shdr_count = section_headers.len();
 
