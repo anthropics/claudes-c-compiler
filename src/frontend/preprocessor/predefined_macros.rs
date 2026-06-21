@@ -269,12 +269,20 @@ impl Preprocessor {
             "/usr/local/include",
             // x86_64 multiarch (default, removed by set_target for other arches)
             "/usr/include/x86_64-linux-gnu",
-            // GCC headers (common versions)
+            // GCC headers — Debian/Ubuntu triples
+            "/usr/lib/gcc/x86_64-linux-gnu/15/include",
+            "/usr/lib/gcc/x86_64-linux-gnu/14/include",
+            "/usr/lib/gcc/x86_64-linux-gnu/13/include",
             "/usr/lib/gcc/x86_64-linux-gnu/12/include",
             "/usr/lib/gcc/x86_64-linux-gnu/11/include",
-            "/usr/lib/gcc/x86_64-linux-gnu/13/include",
-            "/usr/lib/gcc/x86_64-linux-gnu/14/include",
             "/usr/lib/gcc/x86_64-linux-gnu/10/include",
+            // GCC headers — Fedora triples (x86_64-redhat-linux)
+            "/usr/lib/gcc/x86_64-redhat-linux/15/include",
+            "/usr/lib/gcc/x86_64-redhat-linux/14/include",
+            "/usr/lib/gcc/x86_64-redhat-linux/13/include",
+            "/usr/lib/gcc/x86_64-redhat-linux/12/include",
+            "/usr/lib/gcc/x86_64-redhat-linux/11/include",
+            "/usr/lib/gcc/x86_64-redhat-linux/10/include",
             "/usr/include",
         ];
         for candidate in &candidates {
@@ -470,10 +478,11 @@ impl Preprocessor {
                     !s.contains("x86_64")
                 });
                 let aarch64_paths = [
-                    "/usr/lib/gcc-cross/aarch64-linux-gnu/11/include",
-                    "/usr/lib/gcc-cross/aarch64-linux-gnu/12/include",
-                    "/usr/lib/gcc-cross/aarch64-linux-gnu/13/include",
+                    "/usr/lib/gcc-cross/aarch64-linux-gnu/15/include",
                     "/usr/lib/gcc-cross/aarch64-linux-gnu/14/include",
+                    "/usr/lib/gcc-cross/aarch64-linux-gnu/13/include",
+                    "/usr/lib/gcc-cross/aarch64-linux-gnu/12/include",
+                    "/usr/lib/gcc-cross/aarch64-linux-gnu/11/include",
                     "/usr/aarch64-linux-gnu/include",
                     "/usr/include/aarch64-linux-gnu",
                 ];
@@ -524,10 +533,11 @@ impl Preprocessor {
                     !s.contains("x86_64")
                 });
                 let riscv_paths = [
-                    "/usr/lib/gcc-cross/riscv64-linux-gnu/11/include",
-                    "/usr/lib/gcc-cross/riscv64-linux-gnu/12/include",
-                    "/usr/lib/gcc-cross/riscv64-linux-gnu/13/include",
+                    "/usr/lib/gcc-cross/riscv64-linux-gnu/15/include",
                     "/usr/lib/gcc-cross/riscv64-linux-gnu/14/include",
+                    "/usr/lib/gcc-cross/riscv64-linux-gnu/13/include",
+                    "/usr/lib/gcc-cross/riscv64-linux-gnu/12/include",
+                    "/usr/lib/gcc-cross/riscv64-linux-gnu/11/include",
                     "/usr/riscv64-linux-gnu/include",
                     "/usr/include/riscv64-linux-gnu",
                 ];
@@ -610,14 +620,16 @@ impl Preprocessor {
                     !s.contains("x86_64")
                 });
                 let i686_paths = [
-                    "/usr/lib/gcc-cross/i686-linux-gnu/11/include",
-                    "/usr/lib/gcc-cross/i686-linux-gnu/12/include",
-                    "/usr/lib/gcc-cross/i686-linux-gnu/13/include",
+                    "/usr/lib/gcc-cross/i686-linux-gnu/15/include",
                     "/usr/lib/gcc-cross/i686-linux-gnu/14/include",
-                    "/usr/lib/gcc/i686-linux-gnu/11/include",
-                    "/usr/lib/gcc/i686-linux-gnu/12/include",
-                    "/usr/lib/gcc/i686-linux-gnu/13/include",
+                    "/usr/lib/gcc-cross/i686-linux-gnu/13/include",
+                    "/usr/lib/gcc-cross/i686-linux-gnu/12/include",
+                    "/usr/lib/gcc-cross/i686-linux-gnu/11/include",
+                    "/usr/lib/gcc/i686-linux-gnu/15/include",
                     "/usr/lib/gcc/i686-linux-gnu/14/include",
+                    "/usr/lib/gcc/i686-linux-gnu/13/include",
+                    "/usr/lib/gcc/i686-linux-gnu/12/include",
+                    "/usr/lib/gcc/i686-linux-gnu/11/include",
                     "/usr/i686-linux-gnu/include",
                     "/usr/include/i386-linux-gnu",
                 ];
