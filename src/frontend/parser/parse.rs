@@ -17,6 +17,8 @@ use crate::common::types::AddressSpace;
 use crate::frontend::lexer::token::{Token, TokenKind};
 use super::ast::*;
 
+const MAX_REQUESTED_ALIGNMENT: i64 = 1 << 31;
+
 /// GCC __attribute__((mode(...))) integer mode specifier.
 /// Controls the bit-width of an integer type regardless of the base type keyword.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -1129,7 +1131,8 @@ impl Parser {
         }
         let enums = if self.enum_constants.is_empty() { None } else { Some(&self.enum_constants) };
         let tag_aligns = if self.struct_tag_alignments.is_empty() { None } else { Some(&self.struct_tag_alignments) };
-        Self::eval_const_int_expr_with_enums(&expr, enums, tag_aligns).map(|v| v as usize)
+        let value = Self::eval_const_int_expr_with_enums(&expr, enums, tag_aligns)?;
+        self.validate_requested_alignment(value, expr.span())
     }
 
     /// Parse the parenthesized argument of `_Alignas(...)`.
@@ -1166,7 +1169,23 @@ impl Parser {
         }
         let enums = if self.enum_constants.is_empty() { None } else { Some(&self.enum_constants) };
         let tag_aligns = if self.struct_tag_alignments.is_empty() { None } else { Some(&self.struct_tag_alignments) };
-        Self::eval_const_int_expr_with_enums(&expr, enums, tag_aligns).map(|v| v as usize)
+        let value = Self::eval_const_int_expr_with_enums(&expr, enums, tag_aligns)?;
+        self.validate_requested_alignment(value, expr.span())
+    }
+
+    fn validate_requested_alignment(&mut self, value: i64, span: Span) -> Option<usize> {
+        if value < 0 || (value != 0 && !(value as u64).is_power_of_two()) {
+            self.emit_error("requested alignment is not a positive power of 2", span);
+            return None;
+        }
+        if value > MAX_REQUESTED_ALIGNMENT {
+            self.emit_error(
+                format!("requested alignment is larger than {} bytes", MAX_REQUESTED_ALIGNMENT),
+                span,
+            );
+            return None;
+        }
+        Some(value as usize)
     }
 
     /// Try to compute sizeof for a type specifier. Returns None for types
@@ -1303,6 +1322,62 @@ impl Parser {
             TypeSpecifier::ComplexDouble => 8,
             TypeSpecifier::Array(elem, _) => Self::preferred_alignof_type_spec(elem, tag_aligns),
             _ => Self::alignof_type_spec(ts, tag_aligns),
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::frontend::lexer::scan::Lexer;
+
+    fn parse_error_count(src: &str) -> usize {
+        let tokens = Lexer::new(src, 0).tokenize();
+        let mut parser = Parser::new(tokens);
+        parser.parse();
+        parser.error_count
+    }
+
+    #[test]
+    fn rejects_invalid_requested_alignment() {
+        for src in [
+            "struct {} _Alignas(-1) x;",
+            "_Alignas(-1) int x;",
+            "_Alignas(3) int x;",
+            "struct S { char _Alignas(-1) c; };",
+            "int main(void) { _Alignas(-1) int x; return x; }",
+            "int x __attribute__((aligned(-1)));",
+            "int x __attribute__((aligned(3)));",
+            "_Alignas(-9223372036854775807 - 1) int x;",
+        ] {
+            assert!(parse_error_count(src) > 0, "expected a diagnostic for: {src}");
+        }
+    }
+
+    #[test]
+    fn rejects_requested_alignment_above_the_maximum() {
+        assert!(parse_error_count("_Alignas(4294967296) int x;") > 0);
+        assert!(parse_error_count("_Alignas(4611686018427387904) int x;") > 0);
+        assert_eq!(parse_error_count("_Alignas(2147483648) int x;"), 0);
+    }
+
+    #[test]
+    fn accepts_valid_requested_alignment() {
+        for src in [
+            "_Alignas(0) int x;",
+            "_Alignas(1) char x;",
+            "_Alignas(16) int x;",
+            "_Alignas(double) char x;",
+            "_Alignas(sizeof(long)) char x;",
+            "_Alignas(1 << 5) int x;",
+            "enum { A = 32 }; _Alignas(A) int x;",
+            "typedef double d64; _Alignas(d64) char x;",
+            "struct S { long a; double b; }; _Alignas(struct S) char x;",
+            "int x __attribute__((aligned(32)));",
+            "int main(void) { _Alignas(64) int x = 0; return x; }",
+            "int main(void) { static _Alignas(128) int x = 0; return x; }",
+        ] {
+            assert_eq!(parse_error_count(src), 0, "unexpected diagnostic for: {src}");
         }
     }
 }
