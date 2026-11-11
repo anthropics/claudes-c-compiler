@@ -73,6 +73,7 @@ downstream lexer uses these markers to maintain accurate source locations.
 | `add_quote_include_path(path)` | Append to the `-iquote` search list. |
 | `add_system_include_path(path)` | Append to the `-isystem` search list. |
 | `add_after_include_path(path)` | Append to the `-idirafter` search list. |
+| `set_nostdinc(nostdinc)` | Skip the default system paths (`-nostdinc`). |
 | `set_target(target)` | Switch architecture (`"aarch64"`, `"riscv64"`, `"i686"`, `"i386"`), updating predefined macros and include paths. |
 | `set_pic(enabled)` | Define or undefine `__PIC__`/`__pic__`. |
 | `set_optimize(opt, size)` | Define `__OPTIMIZE__` and `__OPTIMIZE_SIZE__`. |
@@ -316,9 +317,15 @@ The search order is GCC-compatible and depends on the include style:
 3. Default system paths.
 4. `-idirafter` paths.
 
+With `-nostdinc` (`set_nostdinc(true)`), the default system paths are skipped
+for both include styles and for `#include_next`, so only the explicitly
+specified directories are searched. This includes the bundled headers: they
+are found again only if their directory is passed explicitly.
+
 Path resolution results are cached in an `include_resolve_cache`
 (`FxHashMap`) keyed by `(include_path, is_system, current_dir)` to avoid
-repeated filesystem `stat()` calls.
+repeated filesystem `stat()` calls. `set_nostdinc` clears the cache when it
+changes the search list.
 
 Paths are made absolute **without resolving symlinks** (`make_absolute`
 instead of `canonicalize`), matching GCC behavior where `#include "..."`

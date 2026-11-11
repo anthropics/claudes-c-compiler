@@ -552,11 +552,11 @@ impl Preprocessor {
     /// `current_file` is the full path to the file containing the #include_next.
     pub(super) fn resolve_include_next_path(&self, include_path: &str, current_file: Option<&PathBuf>) -> Option<PathBuf> {
         // Collect all search paths in order:
-        // -iquote -> -I -> -isystem -> default system -> -idirafter
+        // -iquote -> -I -> -isystem -> default system (unless -nostdinc) -> -idirafter
         let all_paths: Vec<&Path> = self.quote_include_paths.iter()
             .chain(self.include_paths.iter())
             .chain(self.isystem_include_paths.iter())
-            .chain(self.system_include_paths.iter())
+            .chain(self.default_system_search_paths().iter())
             .chain(self.after_include_paths.iter())
             .map(|p| p.as_path())
             .collect();
@@ -647,14 +647,24 @@ impl Preprocessor {
         //   2. -iquote paths
         //   3. -I paths
         //   4. -isystem paths
-        //   5. Default system paths
+        //   5. Default system paths (skipped with -nostdinc)
         //   6. -idirafter paths
         //
         // For system includes (#include <...>), search in this order:
         //   1. -I paths
         //   2. -isystem paths
-        //   3. Default system paths
+        //   3. Default system paths (skipped with -nostdinc)
         //   4. -idirafter paths
+
+        // An absolute path names the file directly. It must not depend on
+        // there being a directory to search, which -nostdinc can leave empty.
+        let absolute = Path::new(include_path);
+        if absolute.is_absolute() {
+            if absolute.is_file() {
+                return Some(make_absolute(absolute));
+            }
+            return None;
+        }
 
         if !is_system {
             // Step 1: Search relative to the current file's directory
@@ -701,8 +711,8 @@ impl Preprocessor {
             }
         }
 
-        // Step 5: Search default system include paths
-        for dir in &self.system_include_paths {
+        // Step 5: Search default system include paths (none with -nostdinc)
+        for dir in self.default_system_search_paths() {
             let candidate = dir.join(include_path);
             if candidate.is_file() {
                 return Some(make_absolute(&candidate));
@@ -718,6 +728,17 @@ impl Preprocessor {
         }
 
         None
+    }
+
+    /// The default system include paths to search, in order.
+    /// Empty under `-nostdinc`, which leaves only the directories that were
+    /// specified explicitly (-I, -iquote, -isystem, -idirafter).
+    fn default_system_search_paths(&self) -> &[PathBuf] {
+        if self.nostdinc {
+            &[]
+        } else {
+            &self.system_include_paths
+        }
     }
 
     /// Inject compiler-builtin macros for well-known standard headers.
@@ -828,5 +849,133 @@ impl Preprocessor {
             }
             _ => {}
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// Scratch directory holding headers for one test; removed on drop.
+    struct HeaderDir(PathBuf);
+
+    impl HeaderDir {
+        fn new(test: &str, kind: &str, headers: &[(&str, &str)]) -> Self {
+            let dir = std::env::temp_dir()
+                .join(format!("ccc_include_test_{}_{}_{}", std::process::id(), test, kind));
+            std::fs::create_dir_all(&dir).expect("create header directory");
+            // Lookups return cleaned absolute paths; canonicalize so that
+            // expected paths compare equal even if $TMPDIR is a symlink.
+            let dir = dir.canonicalize().expect("canonicalize header directory");
+            for (name, content) in headers {
+                std::fs::write(dir.join(name), content).expect("write header");
+            }
+            Self(dir)
+        }
+
+        fn file(&self, name: &str) -> PathBuf {
+            self.0.join(name)
+        }
+    }
+
+    impl Drop for HeaderDir {
+        fn drop(&mut self) {
+            let _ = std::fs::remove_dir_all(&self.0);
+        }
+    }
+
+    /// A preprocessor whose only default system include path is `system`,
+    /// so the tests do not depend on the headers installed on the host.
+    fn preprocessor_with_system_dir(system: &HeaderDir) -> Preprocessor {
+        let mut preprocessor = Preprocessor::new();
+        preprocessor.system_include_paths = vec![system.0.clone()];
+        preprocessor
+    }
+
+    #[test]
+    fn test_nostdinc_skips_default_system_paths() {
+        let system = HeaderDir::new("skips_default", "system", &[("sys_only.h", "")]);
+        let found = Some(system.file("sys_only.h"));
+        let mut preprocessor = preprocessor_with_system_dir(&system);
+
+        // Both include forms fall through to the default system paths.
+        assert_eq!(preprocessor.resolve_include_path("sys_only.h", true), found);
+        assert_eq!(preprocessor.resolve_include_path("sys_only.h", false), found);
+
+        // The lookups above are now cached; -nostdinc must not reuse them.
+        preprocessor.set_nostdinc(true);
+        assert_eq!(preprocessor.resolve_include_path("sys_only.h", true), None);
+        assert_eq!(preprocessor.resolve_include_path("sys_only.h", false), None);
+
+        preprocessor.set_nostdinc(false);
+        assert_eq!(preprocessor.resolve_include_path("sys_only.h", true), found);
+        assert_eq!(preprocessor.resolve_include_path("sys_only.h", false), found);
+    }
+
+    #[test]
+    fn test_nostdinc_stops_include_next_at_explicit_paths() {
+        let user = HeaderDir::new("include_next", "user", &[("wrapped.h", "")]);
+        let system = HeaderDir::new("include_next", "system", &[("wrapped.h", "")]);
+        let mut preprocessor = preprocessor_with_system_dir(&system);
+        preprocessor.add_include_path(user.0.to_str().expect("temp path is valid UTF-8"));
+        let including_file = user.file("wrapped.h");
+
+        assert_eq!(
+            preprocessor.resolve_include_next_path("wrapped.h", Some(&including_file)),
+            Some(system.file("wrapped.h")),
+        );
+
+        preprocessor.set_nostdinc(true);
+        assert_eq!(
+            preprocessor.resolve_include_next_path("wrapped.h", Some(&including_file)),
+            None,
+        );
+    }
+
+    #[test]
+    fn test_nostdinc_still_resolves_absolute_paths() {
+        let dir = HeaderDir::new("absolute_path", "any", &[("absolute.h", "")]);
+        let header = dir.file("absolute.h");
+        let header_name = header.to_str().expect("temp path is valid UTF-8");
+        let missing = dir.file("missing.h");
+        let missing_name = missing.to_str().expect("temp path is valid UTF-8");
+
+        // An absolute path is not looked up in any include directory, so it
+        // resolves even when -nostdinc leaves no directory to search.
+        let mut preprocessor = Preprocessor::new();
+        preprocessor.set_nostdinc(true);
+        assert_eq!(preprocessor.resolve_include_path(header_name, true), Some(header.clone()));
+        assert_eq!(preprocessor.resolve_include_path(header_name, false), Some(header));
+        assert_eq!(preprocessor.resolve_include_path(missing_name, true), None);
+        assert_eq!(preprocessor.resolve_include_path(missing_name, false), None);
+    }
+
+    #[test]
+    fn test_nostdinc_reports_missing_system_header() {
+        let system = HeaderDir::new("missing_header", "system", &[
+            ("sys_only.h", "int from_system_header;\n"),
+        ]);
+        let source = concat!(
+            "#if __has_include(<sys_only.h>)\n",
+            "int has_system_header;\n",
+            "#endif\n",
+            "#include <sys_only.h>\n",
+        );
+
+        let mut preprocessor = preprocessor_with_system_dir(&system);
+        let output = preprocessor.preprocess(source);
+        assert!(preprocessor.errors().is_empty());
+        assert!(output.contains("int has_system_header;"));
+        assert!(output.contains("int from_system_header;"));
+
+        let mut preprocessor = preprocessor_with_system_dir(&system);
+        preprocessor.set_nostdinc(true);
+        let output = preprocessor.preprocess(source);
+        assert!(!output.contains("int has_system_header;"));
+        assert!(!output.contains("int from_system_header;"));
+        let messages: Vec<&str> = preprocessor.errors().iter()
+            .map(|error| error.message.as_str())
+            .collect();
+        assert_eq!(messages, ["sys_only.h: No such file or directory"]);
     }
 }

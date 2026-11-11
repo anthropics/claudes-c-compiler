@@ -175,9 +175,10 @@ pub struct Driver {
     /// When true, `# <line> "<file>"` directives are stripped from -E output.
     /// Used by the Linux kernel's cc-version.sh to detect the compiler.
     pub(super) suppress_line_markers: bool,
-    /// Whether -nostdinc was passed. When delegating to gcc for assembly
-    /// preprocessing, this must be forwarded to prevent system header
-    /// interference.
+    /// Whether -nostdinc was passed. Disables the default system include
+    /// paths (including the bundled headers) in the preprocessor. When
+    /// delegating to gcc for assembly preprocessing, this must be forwarded
+    /// to prevent system header interference.
     pub(super) nostdinc: bool,
     /// Macro undefinitions from -U flags. These need to be forwarded when
     /// delegating preprocessing to gcc (e.g., -Uriscv for kernel linker scripts).
@@ -861,6 +862,9 @@ impl Driver {
         for path in &self.after_include_paths {
             preprocessor.add_after_include_path(path);
         }
+        // -nostdinc: search only the include directories named on the command
+        // line, not the bundled headers or the default system directories.
+        preprocessor.set_nostdinc(self.nostdinc);
     }
 
     /// Process force-included files (-include flag) through the preprocessor before
@@ -868,7 +872,7 @@ impl Driver {
     /// `#include "file"` appeared at the top of the primary source file.
     /// The file is searched in this order:
     /// 1. Current working directory (for relative paths)
-    /// 2. Include paths (-I, -isystem, system defaults, -idirafter)
+    /// 2. Include paths (-I, -isystem, system defaults unless -nostdinc, -idirafter)
     pub(super) fn process_force_includes(&self, preprocessor: &mut Preprocessor) -> Result<(), String> {
         for path in &self.force_includes {
             let resolved = if std::path::Path::new(path).is_absolute() {
@@ -1136,5 +1140,153 @@ impl Driver {
 impl Default for Driver {
     fn default() -> Self {
         Self::new()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::path::{Path, PathBuf};
+
+    /// Every binary name the driver maps to a distinct target.
+    const TARGET_BINARIES: [&str; 4] = ["ccc", "ccc-arm", "ccc-riscv", "ccc-i686"];
+
+    /// A header that only exists in the bundled include directory, so lookups
+    /// for it do not depend on which system headers the host has installed.
+    const BUNDLED_HEADER: &str = "emmintrin.h";
+
+    /// Scratch directory holding headers for one test; removed on drop.
+    struct HeaderDir(PathBuf);
+
+    impl HeaderDir {
+        fn new(test: &str, kind: &str, header: &str) -> Self {
+            let dir = std::env::temp_dir()
+                .join(format!("ccc_driver_test_{}_{}_{}", std::process::id(), test, kind));
+            std::fs::create_dir_all(&dir).expect("create header directory");
+            // Lookups return cleaned absolute paths; canonicalize so that
+            // expected paths compare equal even if $TMPDIR is a symlink.
+            let dir = dir.canonicalize().expect("canonicalize header directory");
+            std::fs::write(dir.join(header), "/* test header */\n").expect("write header");
+            Self(dir)
+        }
+
+        fn path(&self) -> &Path {
+            &self.0
+        }
+
+        fn arg(&self) -> &str {
+            self.0.to_str().expect("temp path is valid UTF-8")
+        }
+    }
+
+    impl Drop for HeaderDir {
+        fn drop(&mut self) {
+            let _ = std::fs::remove_dir_all(&self.0);
+        }
+    }
+
+    /// Build the preprocessor the driver uses for `<argv0> <flags> -c input.c`.
+    fn preprocessor_for(argv0: &str, flags: &[&str]) -> Preprocessor {
+        let mut args = vec![argv0.to_string()];
+        args.extend(flags.iter().map(|flag| flag.to_string()));
+        args.extend(["-c".to_string(), "input.c".to_string()]);
+
+        let mut driver = Driver::new();
+        let early_exit = driver.parse_cli_args(&args).expect("command line should parse");
+        assert!(!early_exit, "a compile command is not a query");
+
+        let mut preprocessor = Preprocessor::new();
+        driver.configure_preprocessor(&mut preprocessor);
+        preprocessor
+    }
+
+    fn bundled_include_dir() -> PathBuf {
+        Preprocessor::bundled_include_dir().expect("bundled include directory ships with the source tree")
+    }
+
+    #[test]
+    fn test_default_search_path_includes_bundled_headers() {
+        let expected = bundled_include_dir().join(BUNDLED_HEADER);
+        for argv0 in TARGET_BINARIES {
+            let mut preprocessor = preprocessor_for(argv0, &[]);
+            assert_eq!(
+                preprocessor.resolve_include_path(BUNDLED_HEADER, true),
+                Some(expected.clone()),
+                "{}: <{}> should resolve by default", argv0, BUNDLED_HEADER,
+            );
+        }
+    }
+
+    #[test]
+    fn test_nostdinc_disables_default_include_paths() {
+        for argv0 in TARGET_BINARIES {
+            let mut preprocessor = preprocessor_for(argv0, &["-nostdinc"]);
+            for header in [BUNDLED_HEADER, "stddef.h", "stdio.h"] {
+                assert_eq!(
+                    preprocessor.resolve_include_path(header, true), None,
+                    "{} -nostdinc: <{}> must not resolve", argv0, header,
+                );
+                assert_eq!(
+                    preprocessor.resolve_include_path(header, false), None,
+                    "{} -nostdinc: \"{}\" must not resolve", argv0, header,
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn test_nostdinc_keeps_explicit_include_paths() {
+        let test = "nostdinc_keeps_explicit";
+        let dash_i = HeaderDir::new(test, "I", "dash_i.h");
+        let iquote = HeaderDir::new(test, "iquote", "iquote.h");
+        let isystem = HeaderDir::new(test, "isystem", "isystem.h");
+        let idirafter = HeaderDir::new(test, "idirafter", "idirafter.h");
+
+        for argv0 in TARGET_BINARIES {
+            // -nostdinc is order-independent: put it after the path flags.
+            let mut preprocessor = preprocessor_for(argv0, &[
+                "-I", dash_i.arg(),
+                "-iquote", iquote.arg(),
+                "-isystem", isystem.arg(),
+                "-idirafter", idirafter.arg(),
+                "-nostdinc",
+            ]);
+
+            for (dir, header) in [
+                (&dash_i, "dash_i.h"),
+                (&isystem, "isystem.h"),
+                (&idirafter, "idirafter.h"),
+            ] {
+                assert_eq!(
+                    preprocessor.resolve_include_path(header, true),
+                    Some(dir.path().join(header)),
+                    "{} -nostdinc: <{}> should still resolve", argv0, header,
+                );
+            }
+            // -iquote directories are only searched for the quoted form.
+            assert_eq!(
+                preprocessor.resolve_include_path("iquote.h", false),
+                Some(iquote.path().join("iquote.h")),
+                "{} -nostdinc: \"iquote.h\" should still resolve", argv0,
+            );
+            assert_eq!(preprocessor.resolve_include_path("iquote.h", true), None);
+        }
+    }
+
+    /// `-nostdinc -isystem $(ccc -print-file-name=include)` is how the Linux
+    /// kernel re-enables compiler-provided headers such as <arm_neon.h>.
+    #[test]
+    fn test_nostdinc_with_explicit_bundled_dir_finds_bundled_headers() {
+        let bundled = bundled_include_dir();
+        let bundled_arg = bundled.to_str().expect("bundled path is valid UTF-8");
+        for argv0 in TARGET_BINARIES {
+            let mut preprocessor = preprocessor_for(argv0, &["-nostdinc", "-isystem", bundled_arg]);
+            assert_eq!(
+                preprocessor.resolve_include_path(BUNDLED_HEADER, true),
+                Some(bundled.join(BUNDLED_HEADER)),
+                "{}: explicitly listed bundled directory should be searched", argv0,
+            );
+            assert_eq!(preprocessor.resolve_include_path("stdio.h", true), None);
+        }
     }
 }
