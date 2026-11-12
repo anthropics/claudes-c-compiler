@@ -50,7 +50,7 @@ Three widths of float, each mirrored by an imaginary counterpart (GCC `_Complex`
 | `ImaginaryLiteralF32(f64)` | `_Complex float` imaginary part (`fi`/`if` suffix) |
 | `ImaginaryLiteralLongDouble(f64, [u8; 16])` | `_Complex long double` imaginary part (`li`/`il` suffix) |
 
-The `[u8; 16]` payload on long-double variants is computed by `common::long_double::parse_long_double_to_f128_bytes`, which produces a full-precision binary128 representation so that downstream codegen does not lose mantissa bits through an f64 round-trip.
+The `[u8; 16]` payload on long-double variants holds the constant in binary128 encoding so that downstream codegen does not lose mantissa bits through an f64 round-trip. Decimal constants get it from `common::long_double::parse_long_double_to_f128_bytes`. Hexadecimal constants get it from `common::long_double::hex_float_to_long_double`, which on x87 targets (x86-64, i686) stores the value already rounded to the 64-bit x87 significand.
 
 ### 3. String and Character Literals
 
@@ -179,13 +179,7 @@ otherwise -->  lex_decimal_number
 
 ### Hexadecimal Integers and Hex Floats
 
-`lex_hex_number` consumes `0x` then hex digits. It looks ahead for a `.` or `p`/`P` to decide between integer and hex-float. Hex floats follow the C99 format `0x<int>.<frac>p<exp>` and are converted via:
-
-```
-value = (int_part + frac_part) * 2^exp
-```
-
-where `frac_part = hex_frac_digits / 16^(number_of_frac_digits)`.
+`lex_hex_number` consumes `0x` then hex digits. It looks ahead for a `.` or `p`/`P` to decide between integer and hex-float. Hex floats follow the C99 format `0x<int>.<frac>p<exp>`. The lexer only finds the extent of the token and its `f`/`F`/`l`/`L` suffix; the value is then computed from the exact digit string (`common::long_double::hex_float_to_f64`, `hex_float_to_f32` and `hex_float_to_long_double`) with a single round-to-nearest-even to the type of the constant (C11 6.4.4.2p3: a hexadecimal floating constant is correctly rounded). The conversion is exact for any number of digits and any exponent: digits beyond what the format can hold only act as a sticky bit, results below the smallest normal number become subnormals, and results that are too large become infinity. A `long double` constant is rounded to the target's format, which is why the lexer consults the target's long double format: binary128 on AArch64/RISC-V, the 64-bit x87 significand on x86-64/i686.
 
 Hex floats use a simplified suffix parser that recognizes `f`/`F` and `l`/`L` but does not handle imaginary suffixes (`i`/`j`). This matches typical usage -- imaginary hex floats are extremely rare in practice.
 
