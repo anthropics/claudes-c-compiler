@@ -121,6 +121,20 @@ impl Lowerer {
             return init;
         }
 
+        // GCC &&label extension in a scalar static local: `static void *p = &&L;`
+        // Same handling as the aggregate paths (collect_compound_init_element,
+        // resolve_ptr_field_init): record the block so CFG simplify keeps it.
+        // Labels only exist inside a function, so this needs func_state.
+        if self.func_state.is_some() {
+            if let Expr::LabelAddr(label_name, _) = Self::strip_casts(expr) {
+                let scoped_label = self.get_or_create_user_label(label_name);
+                if let Some(ref mut fs) = self.func_state {
+                    fs.global_init_label_blocks.push(scoped_label);
+                }
+                return GlobalInit::GlobalAddr(scoped_label.as_label());
+            }
+        }
+
         // &(compound_literal) at file scope
         if let Expr::AddressOf(inner, _) = expr {
             if let Expr::CompoundLiteral(ref cl_type_spec, ref cl_init, _) = inner.as_ref() {
@@ -481,6 +495,14 @@ impl Lowerer {
         if let Some(val) = self.eval_const_expr(expr) {
             let expr_ty = self.get_expr_type(expr);
             return Some(GlobalInit::Scalar(self.coerce_const_to_type_with_src(val, base_ty, expr_ty)));
+        }
+        // A braced pointer initializer means the same as the unbraced one
+        // (C11 6.7.9p11), so the string literal forms must work here too:
+        // `char *p = { "s" };`, `{ "s" + 1 }`, `{ &"s"[2] }`, `{ &"s" }`.
+        if base_ty == IrType::Ptr {
+            if let Some(addr_init) = self.eval_string_literal_addr_expr(expr) {
+                return Some(addr_init);
+            }
         }
         self.eval_global_addr_expr(expr)
     }
@@ -1080,6 +1102,14 @@ impl Lowerer {
             Expr::AddressOf(inner, _) => {
                 if let Expr::ArraySubscript(base, index, _) = inner.as_ref() {
                     self.eval_string_literal_with_offset(base, index, false)
+                } else if matches!(inner.as_ref(),
+                    Expr::StringLiteral(..) | Expr::WideStringLiteral(..) | Expr::Char16StringLiteral(..))
+                {
+                    // &"str" points at the whole array: a string literal is not
+                    // converted to a pointer when it is the operand of `&`
+                    // (C11 6.3.2.1p3), and an array starts where its first
+                    // element does.
+                    self.eval_string_literal_addr_expr(inner)
                 } else {
                     None
                 }
@@ -1934,5 +1964,190 @@ impl Lowerer {
                 }
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::backend::Target;
+    use crate::ir::lowering::test_util::lower_source;
+    use crate::ir::module::IrModule;
+
+    fn global_init<'a>(module: &'a IrModule, name: &str) -> &'a GlobalInit {
+        &module.globals.iter().find(|g| g.name == name)
+            .unwrap_or_else(|| panic!("global `{}`", name)).init
+    }
+
+    /// The label of the string literal that `init` points at, which must be
+    /// one of the module's interned narrow strings with contents `text`.
+    fn assert_points_at_string(module: &IrModule, init: &GlobalInit, text: &str, offset: i64) {
+        let (label, off) = match init {
+            GlobalInit::GlobalAddr(l) => (l, 0),
+            GlobalInit::GlobalAddrOffset(l, o) => (l, *o),
+            other => panic!("expected an address of a string literal, got {:?}", other),
+        };
+        assert_eq!(off, offset, "byte offset into the string");
+        assert!(module.string_literals.iter().any(|(l, s)| l == label && s == text),
+            "{:?} is not the label of the string {:?}", label, text);
+    }
+
+    /// The initializer of static local `name` declared in function `func`
+    /// (lowered to a global called `func.name.N`).
+    fn static_local_init<'a>(module: &'a IrModule, func: &str, name: &str) -> &'a GlobalInit {
+        let prefix = format!("{}.{}.", func, name);
+        &module.globals.iter().find(|g| g.name.starts_with(&prefix))
+            .unwrap_or_else(|| panic!("static local `{}` in `{}`", name, func)).init
+    }
+
+    // --- &&label in a scalar static local ---------------------------------
+
+    /// `static void *p = &&L;` must hold the address of L, and L's block must
+    /// be recorded so CFG simplification does not delete it as unreachable.
+    #[test]
+    fn test_static_local_label_address_is_recorded_and_kept() {
+        let m = lower_source(Target::X86_64,
+            "int f(void) { static void *p = &&L; goto *p; L: return 1; }\n");
+        let func = m.functions.iter().find(|f| f.name == "f").unwrap();
+        let init = static_local_init(&m, "f", "p");
+        match init {
+            GlobalInit::GlobalAddr(label) => assert!(
+                func.global_init_label_blocks.iter().any(|b| &b.as_label() == label),
+                "label {:?} not in global_init_label_blocks {:?}", label, func.global_init_label_blocks),
+            other => panic!("expected GlobalAddr of the label, got {:?}", other),
+        }
+    }
+
+    /// A cast around the label address does not hide it.
+    #[test]
+    fn test_static_local_cast_label_address() {
+        let m = lower_source(Target::X86_64,
+            "int f(void) { static void *p = (void *)&&L; goto *p; L: return 1; }\n");
+        let func = m.functions.iter().find(|f| f.name == "f").unwrap();
+        assert!(matches!(static_local_init(&m, "f", "p"), GlobalInit::GlobalAddr(l)
+            if func.global_init_label_blocks.iter().any(|b| &b.as_label() == l)));
+    }
+
+    /// Must not change: a label address inside a static local array was
+    /// already recorded.
+    #[test]
+    fn test_static_local_label_table_still_recorded() {
+        let m = lower_source(Target::X86_64,
+            "int f(int k) { static void *t[] = { &&A, &&B }; goto *t[k]; A: return 1; B: return 2; }\n");
+        let func = m.functions.iter().find(|f| f.name == "f").unwrap();
+        assert!(matches!(static_local_init(&m, "f", "t"), GlobalInit::Compound(_)));
+        assert_eq!(func.global_init_label_blocks.len(), 2);
+    }
+
+    // --- &"string" ---------------------------------------------------------
+
+    /// `&"Hello"` is a pointer to the whole array (C11 6.3.2.1p3), which
+    /// starts at the same address as the string literal itself.
+    #[test]
+    fn test_address_of_string_literal_scalar() {
+        let m = lower_source(Target::X86_64, "char (*c)[] = &\"Hello\";\n");
+        assert_points_at_string(&m, global_init(&m, "c"), "Hello", 0);
+    }
+
+    /// The same, in a static local.
+    #[test]
+    fn test_address_of_string_literal_static_local() {
+        let m = lower_source(Target::X86_64,
+            "char (*f(void))[6] { static char (*c)[6] = &\"Hello\"; return c; }\n");
+        assert_points_at_string(&m, static_local_init(&m, "f", "c"), "Hello", 0);
+    }
+
+    /// `&"xyz"` as a struct member needs a relocation, so the struct must not
+    /// be serialized to plain bytes.
+    #[test]
+    fn test_address_of_string_literal_in_struct_field() {
+        let m = lower_source(Target::X86_64,
+            "struct S { char (*p)[4]; int k; } s = { &\"xyz\", 3 };\n");
+        match global_init(&m, "s") {
+            GlobalInit::Compound(parts) => {
+                let addr = parts.iter()
+                    .find(|p| matches!(p, GlobalInit::GlobalAddr(_) | GlobalInit::GlobalAddrOffset(..)))
+                    .unwrap_or_else(|| panic!("no relocation in {:?}", parts));
+                assert_points_at_string(&m, addr, "xyz", 0);
+            }
+            other => panic!("expected Compound, got {:?}", other),
+        }
+    }
+
+    /// `&"Hello"[1]` as a struct member is also an address constant.
+    #[test]
+    fn test_address_of_string_literal_element_in_struct_field() {
+        let m = lower_source(Target::X86_64,
+            "struct S { const char *p; int k; } s = { &\"Hello\"[1], 4 };\n");
+        match global_init(&m, "s") {
+            GlobalInit::Compound(parts) => {
+                let addr = parts.iter()
+                    .find(|p| matches!(p, GlobalInit::GlobalAddr(_) | GlobalInit::GlobalAddrOffset(..)))
+                    .unwrap_or_else(|| panic!("no relocation in {:?}", parts));
+                assert_points_at_string(&m, addr, "Hello", 1);
+            }
+            other => panic!("expected Compound, got {:?}", other),
+        }
+    }
+
+    /// Must not change: `&"Hello"[3]` outside a struct already worked.
+    #[test]
+    fn test_address_of_string_literal_element_scalar() {
+        let m = lower_source(Target::X86_64, "const char *p = &\"Hello\"[3];\n");
+        assert_points_at_string(&m, global_init(&m, "p"), "Hello", 3);
+    }
+
+    // --- braced scalar initializers (C11 6.7.9p11) --------------------------
+
+    /// `T x = { e };` means the same as `T x = e;` for a scalar, so a braced
+    /// `"Hello" + 1` is the address of the string plus one.
+    #[test]
+    fn test_braced_string_literal_with_offset() {
+        let m = lower_source(Target::X86_64, "char *baz = { \"Hello\" + 1 };\n");
+        assert_points_at_string(&m, global_init(&m, "baz"), "Hello", 1);
+    }
+
+    /// Braces around a plain string literal, including nested braces.
+    #[test]
+    fn test_braced_string_literal_pointer() {
+        let m = lower_source(Target::X86_64,
+            "char *a = { \"abc\" };\nchar *b = { { \"def\" } };\n");
+        assert_points_at_string(&m, global_init(&m, "a"), "abc", 0);
+        assert_points_at_string(&m, global_init(&m, "b"), "def", 0);
+    }
+
+    /// Braced `&"Hello"[3]`.
+    #[test]
+    fn test_braced_address_of_string_literal_element() {
+        let m = lower_source(Target::X86_64, "const char *p = { &\"Hello\"[3] };\n");
+        assert_points_at_string(&m, global_init(&m, "p"), "Hello", 3);
+    }
+
+    /// Must not change: a braced integer constant for a pointer keeps its
+    /// value whatever the pointed-to type is. `_Bool`, `long double` and
+    /// `_Complex` conversions apply to objects of those types, not to pointers
+    /// to them.
+    #[test]
+    fn test_braced_pointer_constant_keeps_its_value() {
+        let m = lower_source(Target::X86_64, concat!(
+            "_Bool *bp = { (_Bool *)16 };\n",
+            "long double *lp = { (long double *)32 };\n",
+            "_Complex double *zp = { (_Complex double *)48 };\n",
+        ));
+        assert!(matches!(global_init(&m, "bp"), GlobalInit::Scalar(c) if c.to_i64() == Some(16)));
+        assert!(matches!(global_init(&m, "lp"), GlobalInit::Scalar(c) if c.to_i64() == Some(32)));
+        assert!(matches!(global_init(&m, "zp"), GlobalInit::Scalar(c) if c.to_i64() == Some(48)));
+    }
+
+    /// Must not change: braced integer, null pointer and global-address
+    /// initializers.
+    #[test]
+    fn test_braced_scalars_still_resolve() {
+        let m = lower_source(Target::X86_64,
+            "int gi;\nint x = { 5 };\nint y = { { 7 } };\nint *ip = { &gi };\nvoid *np = { 0 };\n");
+        assert!(matches!(global_init(&m, "x"), GlobalInit::Scalar(c) if c.to_i64() == Some(5)));
+        assert!(matches!(global_init(&m, "y"), GlobalInit::Scalar(c) if c.to_i64() == Some(7)));
+        assert!(matches!(global_init(&m, "ip"), GlobalInit::GlobalAddr(n) if n == "gi"));
+        assert!(matches!(global_init(&m, "np"), GlobalInit::Scalar(c) if c.to_i64() == Some(0)));
     }
 }
