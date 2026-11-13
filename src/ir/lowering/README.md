@@ -50,6 +50,7 @@ expressions, type conversions, ABI conventions, and global initializers. The
 | `const_eval_init_size.rs` | Initializer size constant evaluation |
 | `pointer_analysis.rs` | Pointer type analysis: pointee sizing, struct layout resolution, `ctype_size`/`ctype_align` wrappers |
 | `ref_collection.rs` | Pre-pass to collect referenced static/inline functions for dead code elimination |
+| `test_util.rs` | Test-only helper (`lower_source`): runs the lexer, parser, sema and lowering on a C snippet and returns the `IrModule` |
 
 ## Architecture
 

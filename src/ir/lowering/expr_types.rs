@@ -765,7 +765,12 @@ impl Lowerer {
             Expr::Comma(_, rhs, _) => self.get_expr_type(rhs),
             Expr::PostfixOp(_, inner, _) => self.get_expr_type(inner),
             Expr::AddressOf(_, _) => IrType::Ptr,
-            Expr::Sizeof(_, _) => if is_32bit { IrType::U32 } else { IrType::U64 },
+            // sizeof and every alignof form have type size_t (C11 6.5.3.4p5), not the
+            // signed pointer-width default below.
+            Expr::Sizeof(_, _) | Expr::Alignof(_, _) | Expr::AlignofExpr(_, _)
+            | Expr::GnuAlignof(_, _) | Expr::GnuAlignofExpr(_, _) => {
+                if is_32bit { IrType::U32 } else { IrType::U64 }
+            }
             Expr::GenericSelection(controlling, associations, _) => {
                 self.resolve_generic_selection_type(controlling, associations)
             }
@@ -1523,3 +1528,143 @@ impl Lowerer {
     }
 }
 
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::backend::Target;
+    use crate::ir::lowering::test_util::lower_source;
+    use crate::ir::reexports::{Instruction, IrBinOp, IrCmpOp};
+    use crate::ir::module::IrModule;
+
+    /// All instructions of function `name`, in block order.
+    fn instructions_of(module: &IrModule, name: &str) -> Vec<Instruction> {
+        let func = module.functions.iter().find(|f| f.name == name).expect("function in module");
+        func.blocks.iter().flat_map(|b| b.instructions.iter().cloned()).collect()
+    }
+
+    /// The (predicate, operand type) of every comparison in function `name`.
+    fn cmps_of(module: &IrModule, name: &str) -> Vec<(IrCmpOp, IrType)> {
+        instructions_of(module, name).into_iter().filter_map(|inst| match inst {
+            Instruction::Cmp { op, ty, .. } => Some((op, ty)),
+            _ => None,
+        }).collect()
+    }
+
+    /// The opcode of every binary operation in function `name`.
+    fn binops_of(module: &IrModule, name: &str) -> Vec<IrBinOp> {
+        instructions_of(module, name).into_iter().filter_map(|inst| match inst {
+            Instruction::BinOp { op, .. } => Some(op),
+            _ => None,
+        }).collect()
+    }
+
+    /// The (source type, destination type) of every cast in function `name`.
+    fn casts_of(module: &IrModule, name: &str) -> Vec<(IrType, IrType)> {
+        instructions_of(module, name).into_iter().filter_map(|inst| match inst {
+            Instruction::Cast { from_ty, to_ty, .. } => Some((from_ty, to_ty)),
+            _ => None,
+        }).collect()
+    }
+
+    // `int n` is converted to size_t (C11 6.3.1.8p1), so the comparison must be
+    // unsigned. Each of the four alignof AST variants is pinned separately.
+
+    #[test]
+    fn test_alignof_type_vs_int_compares_as_size_t() {
+        let m = lower_source(Target::X86_64, "int f(int n) { return _Alignof(int) > n; }");
+        assert_eq!(cmps_of(&m, "f"), vec![(IrCmpOp::Ugt, IrType::U64)]);
+    }
+
+    #[test]
+    fn test_alignof_expr_vs_int_compares_as_size_t() {
+        let m = lower_source(Target::X86_64, "int f(int n) { return _Alignof(n) > n; }");
+        assert_eq!(cmps_of(&m, "f"), vec![(IrCmpOp::Ugt, IrType::U64)]);
+    }
+
+    #[test]
+    fn test_gnu_alignof_type_vs_int_compares_as_size_t() {
+        let m = lower_source(Target::X86_64, "int f(int n) { return __alignof__(int) > n; }");
+        assert_eq!(cmps_of(&m, "f"), vec![(IrCmpOp::Ugt, IrType::U64)]);
+    }
+
+    #[test]
+    fn test_gnu_alignof_expr_vs_int_compares_as_size_t() {
+        let m = lower_source(Target::X86_64, "int f(int n) { return __alignof__(n) > n; }");
+        assert_eq!(cmps_of(&m, "f"), vec![(IrCmpOp::Ugt, IrType::U64)]);
+    }
+
+    #[test]
+    fn test_alignof_on_right_hand_side_compares_as_size_t() {
+        let m = lower_source(Target::X86_64, "int f(int n) { return n < _Alignof(int); }");
+        assert_eq!(cmps_of(&m, "f"), vec![(IrCmpOp::Ult, IrType::U64)]);
+    }
+
+    /// The motivating case: `_Alignof(char) - 2` wraps around to a huge
+    /// unsigned value, so `> 0` is true and the compare must be unsigned.
+    #[test]
+    fn test_alignof_constant_subtraction_compares_unsigned() {
+        let m = lower_source(Target::X86_64, "int f(void) { return _Alignof(char) - 2 > 0; }");
+        assert_eq!(cmps_of(&m, "f"), vec![(IrCmpOp::Ugt, IrType::U64)]);
+    }
+
+    #[test]
+    fn test_alignof_unary_minus_compares_unsigned() {
+        let m = lower_source(Target::X86_64, "int f(void) { return -_Alignof(int) > 0; }");
+        assert_eq!(cmps_of(&m, "f"), vec![(IrCmpOp::Ugt, IrType::U64)]);
+    }
+
+    // The same type also selects the shift, division and remainder opcodes.
+
+    #[test]
+    fn test_alignof_arithmetic_uses_unsigned_shift_div_rem() {
+        let m = lower_source(Target::X86_64,
+            "unsigned long long f(int n) { return (_Alignof(int) - n) >> 1; }\n\
+             unsigned long long g(int n) { return (_Alignof(int) - n) / 2; }\n\
+             unsigned long long h(int n) { return (_Alignof(int) - n) % 7; }\n");
+        // Shifts, division and remainder take their signedness from the opcode.
+        assert!(binops_of(&m, "f").contains(&IrBinOp::LShr));
+        assert!(!binops_of(&m, "f").contains(&IrBinOp::AShr));
+        assert!(binops_of(&m, "g").contains(&IrBinOp::UDiv));
+        assert!(!binops_of(&m, "g").contains(&IrBinOp::SDiv));
+        assert!(binops_of(&m, "h").contains(&IrBinOp::URem));
+        assert!(!binops_of(&m, "h").contains(&IrBinOp::SRem));
+    }
+
+    // size_t is 32 bits wide on i686, so the result must be U32 there.
+
+    #[test]
+    fn test_alignof_vs_int_compares_as_u32_on_i686() {
+        let m = lower_source(Target::I686, "int f(int n) { return _Alignof(int) > n; }");
+        assert_eq!(cmps_of(&m, "f"), vec![(IrCmpOp::Ugt, IrType::U32)]);
+    }
+
+    /// Widening a 32-bit size_t must zero-extend, giving 4294967295 and not -1.
+    #[test]
+    fn test_alignof_widens_with_zero_extension_on_i686() {
+        let m = lower_source(Target::I686,
+            "unsigned long long f(void) { return (unsigned long long)(_Alignof(char) - 2); }");
+        assert_eq!(casts_of(&m, "f"), vec![(IrType::U32, IrType::U64)]);
+    }
+
+    // Guards: behaviour that must not change. These pass without the fix.
+
+    /// `sizeof` already had its own size_t arm; it must keep it.
+    #[test]
+    fn test_sizeof_vs_int_still_compares_as_size_t() {
+        let m = lower_source(Target::X86_64, "int f(int n) { return sizeof(int) > n; }");
+        assert_eq!(cmps_of(&m, "f"), vec![(IrCmpOp::Ugt, IrType::U64)]);
+    }
+
+    /// An explicit cast to a signed type opts out of size_t arithmetic.
+    #[test]
+    fn test_alignof_cast_to_long_still_compares_signed() {
+        let m = lower_source(Target::X86_64, "int f(long n) { return (long)_Alignof(int) > n; }");
+        assert_eq!(cmps_of(&m, "f"), vec![(IrCmpOp::Sgt, IrType::I64)]);
+    }
+
+    #[test]
+    fn test_alignof_cast_to_int_still_compares_signed() {
+        let m = lower_source(Target::X86_64, "int f(int n) { return (int)_Alignof(int) > n; }");
+        assert_eq!(cmps_of(&m, "f"), vec![(IrCmpOp::Sgt, IrType::I32)]);
+    }
+}
