@@ -69,6 +69,8 @@ pub struct Preprocessor {
     pub(super) after_include_paths: Vec<PathBuf>,
     /// System include paths (default search paths)
     pub(super) system_include_paths: Vec<PathBuf>,
+    /// Whether the default system include paths are skipped (-nostdinc)
+    pub(super) nostdinc: bool,
     /// Files currently being processed (for recursion detection)
     pub(super) include_stack: Vec<PathBuf>,
     /// Files that have been included with #pragma once
@@ -135,6 +137,7 @@ impl Preprocessor {
             isystem_include_paths: Vec::new(),
             after_include_paths: Vec::new(),
             system_include_paths: Self::default_system_include_paths(),
+            nostdinc: false,
             include_stack: Vec::new(),
             pragma_once_files: FxHashSet::default(),
             resolve_includes: true,
@@ -725,6 +728,20 @@ impl Preprocessor {
     /// These paths are searched last, after all other include paths.
     pub fn add_after_include_path(&mut self, path: &str) {
         self.after_include_paths.push(PathBuf::from(path));
+    }
+
+    /// Enable or disable `-nostdinc`.
+    /// When enabled, the default system include paths (the bundled header
+    /// directory and the host/cross system directories) are not searched. Only
+    /// the directories added with -I, -iquote, -isystem and -idirafter remain;
+    /// quoted includes are still looked up next to the including file and the
+    /// main source file first.
+    pub fn set_nostdinc(&mut self, nostdinc: bool) {
+        if self.nostdinc != nostdinc {
+            self.nostdinc = nostdinc;
+            // Cached lookups may have resolved through the default system paths.
+            self.include_resolve_cache.clear();
+        }
     }
 
     /// Process a force-included file (-include flag). This preprocesses the file content

@@ -684,6 +684,15 @@ include directory (containing intrinsic headers like `arm_neon.h`,
 `emmintrin.h`, etc.) so that build systems pick up compatible headers instead
 of the host GCC's headers which use incompatible builtins.
 
+The bundled directory is searched by default, ahead of the host system
+directories. `-nostdinc` disables all of these defaults, as in GCC, so
+`-nostdinc -isystem $(ccc -print-file-name=include)` (the Linux kernel's idiom
+for `<arm_neon.h>`) searches only the bundled directory. That directory holds
+intrinsic headers only: the freestanding C headers (`<stddef.h>`,
+`<stdarg.h>`, ...) come from the host GCC installation. A build that uses the
+idiom and also includes one of those headers has to name the host GCC include
+directory with a second `-isystem`; nothing adds it automatically.
+
 ### _FORTIFY_SOURCE Suppression
 
 The driver unconditionally undefines `_FORTIFY_SOURCE` because glibc's
