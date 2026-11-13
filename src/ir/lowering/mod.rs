@@ -41,3 +41,6 @@ mod pointer_analysis;
 mod ref_collection;
 
 pub(crate) use lower::Lowerer;
+
+#[cfg(test)]
+pub(crate) mod test_util;
