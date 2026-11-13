@@ -484,6 +484,7 @@ impl Parser {
         mut ctx: DeclContext,
     ) -> Option<ExternalDecl> {
         let mut declarators = Vec::new();
+        self.declare_declarator_name(&name, false);
         let init = if self.consume_if(&TokenKind::Assign) {
             Some(self.parse_initializer())
         } else {
@@ -561,6 +562,7 @@ impl Parser {
         while self.consume_if(&TokenKind::Comma) {
             let (dname, dderived) = self.parse_declarator();
             let (d_ctor, d_dtor, _, d_common, _, d_asm_reg) = self.parse_asm_and_attributes();
+            self.declare_declarator_name(&dname, false);
             ctx.is_common = ctx.is_common || d_common;
             let d_weak = self.attrs.parsing_weak();
             let d_alias = self.attrs.parsing_alias_target.take();
@@ -616,11 +618,12 @@ impl Parser {
             }
         }
 
-        // Register typedef names
+        // Typedef names were registered per declarator (declare_declarator_name);
+        // only the storage-class flag is left to clear.
         let is_typedef = self.attrs.parsing_typedef();
         let is_transparent_union = self.attrs.parsing_transparent_union();
         self.attrs.set_transparent_union(false);
-        self.register_typedefs(&declarators);
+        self.attrs.set_typedef(false);
 
         self.expect_after(&TokenKind::Semicolon, "after declaration");
         let mut d = Declaration::new(
@@ -701,6 +704,7 @@ impl Parser {
             for a in [decl_aligned, skip_aligned].iter().copied().flatten() {
                 alignment = Some(alignment.map_or(a, |prev| prev.max(a)));
             }
+            self.declare_declarator_name(&name, true);
             let init = if self.consume_if(&TokenKind::Assign) {
                 Some(self.parse_initializer())
             } else {
@@ -749,23 +753,10 @@ impl Parser {
             type_spec
         };
 
-        // Register typedef names or shadow them for variable declarations
+        // Typedef names were registered or shadowed per declarator
+        // (declare_declarator_name); only the storage-class flag is left to clear.
         let is_typedef = self.attrs.parsing_typedef();
-        if self.attrs.parsing_typedef() {
-            for decl in &declarators {
-                if !decl.name.is_empty() {
-                    self.typedefs.insert(decl.name.clone());
-                    self.shadowed_typedefs.remove(&decl.name);
-                }
-            }
-            self.attrs.set_typedef(false);
-        } else {
-            for decl in &declarators {
-                if !decl.name.is_empty() && self.typedefs.contains(&decl.name) {
-                    self.shadowed_typedefs.insert(decl.name.clone());
-                }
-            }
-        }
+        self.attrs.set_typedef(false);
 
         self.expect_after(&TokenKind::Semicolon, "after declaration");
         // Merge alignment from _Alignas (captured in parsed_alignas during type specifier parsing)
@@ -1147,15 +1138,19 @@ impl Parser {
         }
     }
 
-    /// Register typedef names from declarators, if parsing_typedef is set.
-    fn register_typedefs(&mut self, declarators: &[InitDeclarator]) {
+    /// Bring a declarator's name into scope as soon as the declarator is
+    /// complete, i.e. before its initializer and before any later declarator
+    /// of the same declaration is parsed (C11 6.2.1p7).  A typedef name
+    /// becomes a type name.  Any other name hides an outer typedef of the
+    /// same spelling; that is only done at block scope (`shadow`), where such
+    /// a redeclaration is valid.
+    fn declare_declarator_name(&mut self, name: &Option<String>, shadow: bool) {
+        let Some(name) = name.as_ref().filter(|n| !n.is_empty()) else { return };
         if self.attrs.parsing_typedef() {
-            for decl in declarators {
-                if !decl.name.is_empty() {
-                    self.typedefs.insert(decl.name.clone());
-                }
-            }
-            self.attrs.set_typedef(false);
+            self.typedefs.insert(name.clone());
+            self.shadowed_typedefs.remove(name);
+        } else if shadow && self.typedefs.contains(name) {
+            self.shadowed_typedefs.insert(name.clone());
         }
     }
 
@@ -1278,4 +1273,234 @@ impl Parser {
         // evaluable at parse time but are valid constant expressions.
     }
 
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::frontend::lexer::scan::Lexer;
+
+    /// Parse a translation unit and return it with the parser's error count.
+    fn parse(src: &str) -> (TranslationUnit, usize) {
+        let tokens = Lexer::new(src, 0).tokenize();
+        let mut parser = Parser::new(tokens);
+        let tu = parser.parse();
+        (tu, parser.error_count)
+    }
+
+    fn collect_block_declarators<'a>(block: &'a CompoundStmt, out: &mut Vec<&'a InitDeclarator>) {
+        for item in &block.items {
+            match item {
+                BlockItem::Declaration(d) => out.extend(d.declarators.iter()),
+                BlockItem::Statement(Stmt::Compound(inner)) => collect_block_declarators(inner, out),
+                _ => {}
+            }
+        }
+    }
+
+    /// Find the block-scope declarator `name` in the first function definition,
+    /// looking through nested compound statements.
+    fn local_declarator<'a>(tu: &'a TranslationUnit, name: &str) -> &'a InitDeclarator {
+        let func = tu.decls.iter().find_map(|d| match d {
+            ExternalDecl::FunctionDef(f) => Some(f),
+            _ => None,
+        }).expect("no function definition");
+        let mut all = Vec::new();
+        collect_block_declarators(&func.body, &mut all);
+        all.into_iter().find(|d| d.name == name).expect("local declarator not found")
+    }
+
+    fn file_declarator<'a>(tu: &'a TranslationUnit, name: &str) -> &'a InitDeclarator {
+        tu.decls.iter().find_map(|d| match d {
+            ExternalDecl::Declaration(decl) => decl.declarators.iter().find(|i| i.name == name),
+            _ => None,
+        }).expect("file-scope declarator not found")
+    }
+
+    fn init_expr(d: &InitDeclarator) -> &Expr {
+        match d.init.as_ref().expect("declarator has no initializer") {
+            Initializer::Expr(e) => e,
+            Initializer::List(_) => panic!("expected an expression initializer"),
+        }
+    }
+
+    fn is_sizeof_type(e: &Expr) -> bool {
+        matches!(e, Expr::Sizeof(arg, _) if matches!(**arg, SizeofArg::Type(_)))
+    }
+
+    fn is_sizeof_expr(e: &Expr) -> bool {
+        matches!(e, Expr::Sizeof(arg, _) if matches!(**arg, SizeofArg::Expr(_)))
+    }
+
+    /// The size expression of the first array declarator, e.g. `sizeof(T)` in `U[sizeof(T)]`.
+    fn array_size(d: &InitDeclarator) -> &Expr {
+        match d.derived.first() {
+            Some(DerivedDeclarator::Array(Some(size))) => size,
+            other => panic!("expected an array declarator, got {:?}", other),
+        }
+    }
+
+    fn is_typedef_name_param(params: &[ParamDecl], typedef_name: &str) -> bool {
+        params.len() == 1
+            && params[0].name.is_none()
+            && matches!(&params[0].type_spec, TypeSpecifier::TypedefName(n) if n == typedef_name)
+    }
+
+    /// C11 6.2.1p7: the scope of `x` begins right after its declarator, so the
+    /// initializers of later declarators in the same declaration see the
+    /// variable, while earlier initializers still see the typedef.
+    #[test]
+    fn test_local_declarator_shadows_typedef_for_later_initializer() {
+        let (tu, errors) = parse(
+            "typedef char x; void f(void) { int a = sizeof(x), x = 5, c = sizeof(x); }");
+        assert_eq!(errors, 0);
+        assert!(is_sizeof_type(init_expr(local_declarator(&tu, "a"))));
+        assert!(is_sizeof_expr(init_expr(local_declarator(&tu, "c"))));
+    }
+
+    /// C11 6.2.1p7: the declarator's own initializer is already in the scope
+    /// of the declared identifier.
+    #[test]
+    fn test_local_declarator_shadows_typedef_in_own_initializer() {
+        let (tu, errors) = parse("typedef char x; void f(void) { int x = sizeof(x); }");
+        assert_eq!(errors, 0);
+        assert!(is_sizeof_expr(init_expr(local_declarator(&tu, "x"))));
+    }
+
+    #[test]
+    fn test_local_static_declarator_shadows_typedef_in_own_initializer() {
+        let (tu, errors) = parse("typedef char x; void f(void) { static int x = sizeof(x); }");
+        assert_eq!(errors, 0);
+        assert!(is_sizeof_expr(init_expr(local_declarator(&tu, "x"))));
+    }
+
+    /// `(x) - 1` is a subtraction, not a cast of `-1` to the typedef `x`.
+    #[test]
+    fn test_local_shadowing_variable_in_parens_is_not_a_cast() {
+        let (tu, errors) = parse("typedef long x; void f(void) { int x = 3, y = (x) - 1; }");
+        assert_eq!(errors, 0);
+        assert!(matches!(init_expr(local_declarator(&tu, "y")), Expr::BinaryOp(BinOp::Sub, ..)));
+    }
+
+    /// Must not change: an array size inside the declarator of `x` is parsed
+    /// before the declarator is complete, so it still names the typedef.
+    #[test]
+    fn test_local_array_size_in_declarator_still_sees_typedef() {
+        let (tu, errors) = parse("typedef double x; void f(void) { char x[sizeof(x)]; }");
+        assert_eq!(errors, 0);
+        assert!(is_sizeof_type(array_size(local_declarator(&tu, "x"))));
+    }
+
+    /// Must not change: the shadow ends with the block that declared it.
+    #[test]
+    fn test_local_shadow_ends_at_block_exit() {
+        let (tu, errors) = parse(
+            "typedef char x; void f(void) { { int x = 1; } int y = sizeof(x); }");
+        assert_eq!(errors, 0);
+        assert!(is_sizeof_type(init_expr(local_declarator(&tu, "y"))));
+    }
+
+    /// Must not change: a declaration that does not reuse a typedef name
+    /// leaves the typedef visible to all of its initializers.
+    #[test]
+    fn test_local_declaration_without_collision_keeps_typedef_visible() {
+        let (tu, errors) = parse(
+            "typedef long T; void f(void) { int a = sizeof(T), b = sizeof(T); }");
+        assert_eq!(errors, 0);
+        assert!(is_sizeof_type(init_expr(local_declarator(&tu, "a"))));
+        assert!(is_sizeof_type(init_expr(local_declarator(&tu, "b"))));
+    }
+
+    /// A typedef name declared by an earlier declarator is a type name for the
+    /// later declarators of the same declaration.
+    #[test]
+    fn test_local_typedef_visible_to_later_declarator() {
+        let (tu, errors) = parse(
+            "int T; void f(void) { typedef char T, U[sizeof(T)]; }");
+        assert_eq!(errors, 0);
+        assert!(is_sizeof_type(array_size(local_declarator(&tu, "U"))));
+    }
+
+    #[test]
+    fn test_local_typedef_in_param_list_of_later_declarator() {
+        let (tu, errors) = parse("void f(void) { typedef double A, (*B)(A); }");
+        assert_eq!(errors, 0);
+        match local_declarator(&tu, "B").derived.last() {
+            Some(DerivedDeclarator::FunctionPointer(params, _)) => {
+                assert!(is_typedef_name_param(params, "A"));
+            }
+            other => panic!("expected a function pointer declarator, got {:?}", other),
+        }
+    }
+
+    #[test]
+    fn test_file_scope_typedef_in_param_list_of_later_declarator() {
+        let (tu, errors) = parse("typedef double A, (*B)(A);");
+        assert_eq!(errors, 0);
+        match file_declarator(&tu, "B").derived.last() {
+            Some(DerivedDeclarator::FunctionPointer(params, _)) => {
+                assert!(is_typedef_name_param(params, "A"));
+            }
+            other => panic!("expected a function pointer declarator, got {:?}", other),
+        }
+    }
+
+    /// `(A)2.5` in the array size of `B` is a cast because `A` is already a
+    /// typedef name there.
+    #[test]
+    fn test_file_scope_typedef_usable_as_cast_in_later_declarator() {
+        let (tu, errors) = parse("typedef int A, B[(A)2.5 + 1];");
+        assert_eq!(errors, 0);
+        match array_size(file_declarator(&tu, "B")) {
+            Expr::BinaryOp(BinOp::Add, lhs, _, _) => assert!(matches!(**lhs, Expr::Cast(..))),
+            other => panic!("expected an addition, got {:?}", other),
+        }
+    }
+
+    /// Must not change: a file-scope typedef followed by an ordinary
+    /// declarator that uses it in its initializer.
+    #[test]
+    fn test_file_scope_typedef_in_later_declaration_initializer() {
+        let (tu, errors) = parse("typedef char x; int a = sizeof(x), b = sizeof(x);");
+        assert_eq!(errors, 0);
+        assert!(is_sizeof_type(init_expr(file_declarator(&tu, "a"))));
+        assert!(is_sizeof_type(init_expr(file_declarator(&tu, "b"))));
+    }
+
+    /// The block-scope declaration of the first function definition that
+    /// declares `name`, looking only at the function body's own items.
+    fn local_declaration<'a>(tu: &'a TranslationUnit, name: &str) -> &'a Declaration {
+        let func = tu.decls.iter().find_map(|d| match d {
+            ExternalDecl::FunctionDef(f) => Some(f),
+            _ => None,
+        }).expect("no function definition");
+        func.body.items.iter().find_map(|item| match item {
+            BlockItem::Declaration(d) if d.declarators.iter().any(|i| i.name == name) => Some(d),
+            _ => None,
+        }).expect("local declaration not found")
+    }
+
+    /// The attribute of a later declarator is parsed after the earlier
+    /// declarators are in scope, so `sizeof(x)` names the variable `x` (an
+    /// expression), not the typedef `x`.
+    #[test]
+    fn test_local_attribute_of_later_declarator_sees_shadowing_variable() {
+        let (tu, errors) = parse(
+            "typedef char x[16]; void f(void) { int x = 0, y __attribute__((aligned(sizeof(x)))); }");
+        assert_eq!(errors, 0);
+        assert!(local_declaration(&tu, "y").alignment_sizeof_type.is_none());
+    }
+
+    /// Must not change: the attribute of the declarator that declares `x`
+    /// itself is parsed before `x` enters scope, so it still names the typedef.
+    #[test]
+    fn test_local_attribute_of_own_declarator_still_sees_typedef() {
+        let (tu, errors) = parse(
+            "typedef char x[16]; void f(void) { int x __attribute__((aligned(sizeof(x)))) = 0; }");
+        assert_eq!(errors, 0);
+        assert!(matches!(
+            &local_declaration(&tu, "x").alignment_sizeof_type,
+            Some(TypeSpecifier::TypedefName(n)) if n == "x"
+        ));
+    }
 }

@@ -255,8 +255,13 @@ The parser resolves this with four mechanisms:
 2. **Typedef shadowing.**  When a local variable declaration uses a name that
    shadows a typedef (e.g., `int size_t = 42;`), the name is added to
    `shadowed_typedefs`.  The `is_type_specifier()` check excludes shadowed
-   names, so subsequent uses parse as identifiers.  The shadowing set is
-   saved/restored at compound statement boundaries to handle scope correctly.
+   names, so subsequent uses parse as identifiers.  This happens per
+   declarator, as soon as the declarator is complete and before its
+   initializer is parsed (C11 6.2.1p7), so in
+   `typedef char x; { int a = sizeof(x), x = 5, c = sizeof(x); }` the
+   `sizeof(x)` in `a` names the typedef and the one in `c` names the variable.
+   The shadowing set is saved/restored at compound statement boundaries to
+   handle scope correctly.
 
 3. **Label vs. declaration.**  A typedef name followed by `:` is a label, not
    a declaration (e.g., `size_t: stmt;`).  The `is_typedef_label()` check
@@ -466,8 +471,10 @@ A `DeclContext` struct groups per-declaration attribute state (alignment,
 many individual parameters between `parse_external_decl` and
 `parse_declaration_rest`.
 
-When a `typedef` declaration is parsed, the declared names are added to the
-`typedefs` set, making them available for disambiguation in subsequent parsing.
+When a `typedef` declaration is parsed, each declared name is added to the
+`typedefs` set as soon as its declarator is complete, making it available for
+disambiguation in the later declarators of the same declaration as well as in
+subsequent parsing.
 
 ### Attribute Merging
 
