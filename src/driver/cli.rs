@@ -379,6 +379,9 @@ impl Driver {
                         return Err("-iquote requires an argument".to_string());
                     }
                 }
+                arg if arg.starts_with("-iquote") => {
+                    self.quote_include_paths.push(arg["-iquote".len()..].to_string());
+                }
 
                 // System include paths (-isystem)
                 "-isystem" => {
@@ -389,6 +392,9 @@ impl Driver {
                         return Err("-isystem requires an argument".to_string());
                     }
                 }
+                arg if arg.starts_with("-isystem") => {
+                    self.isystem_include_paths.push(arg["-isystem".len()..].to_string());
+                }
 
                 // After include paths (-idirafter)
                 "-idirafter" => {
@@ -398,6 +404,9 @@ impl Driver {
                     } else {
                         return Err("-idirafter requires an argument".to_string());
                     }
+                }
+                arg if arg.starts_with("-idirafter") => {
+                    self.after_include_paths.push(arg["-idirafter".len()..].to_string());
                 }
 
                 // Library search paths
@@ -714,5 +723,37 @@ impl Driver {
     /// Add a -I include path from command line.
     pub fn add_include_path(&mut self, path: &str) {
         self.include_paths.push(path.to_string());
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// Parse `ccc <flags> -c input.c` into a driver.
+    fn parse(flags: &[&str]) -> Driver {
+        let mut args = vec!["ccc".to_string()];
+        args.extend(flags.iter().map(|flag| flag.to_string()));
+        args.extend(["-c".to_string(), "input.c".to_string()]);
+
+        let mut driver = Driver::new();
+        let early_exit = driver.parse_cli_args(&args).expect("command line should parse");
+        assert!(!early_exit, "a compile command is not a query");
+        driver
+    }
+
+    /// Like -I, the directory of -isystem, -iquote and -idirafter may be the
+    /// next argument or be joined to the option (GCC and Clang accept both).
+    #[test]
+    fn test_include_dir_options_accept_joined_directory() {
+        let driver = parse(&[
+            "-isystemsys/joined", "-isystem", "sys/separate",
+            "-iquotequote/joined", "-iquote", "quote/separate",
+            "-idirafterafter/joined", "-idirafter", "after/separate",
+        ]);
+        assert_eq!(driver.isystem_include_paths, ["sys/joined", "sys/separate"]);
+        assert_eq!(driver.quote_include_paths, ["quote/joined", "quote/separate"]);
+        assert_eq!(driver.after_include_paths, ["after/joined", "after/separate"]);
+        assert_eq!(driver.input_files, ["input.c"]);
     }
 }
