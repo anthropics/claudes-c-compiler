@@ -2,6 +2,7 @@
 //!
 //! This pass identifies diamond-shaped CFG patterns:
 //!
+//! ```text
 //!     pred_block:
 //!         ...
 //!         condbranch %cond, true_block, false_block
@@ -17,13 +18,16 @@
 //!     merge_block:
 //!         %result = phi [true_val, true_block], [false_val, false_block]
 //!         ...
+//! ```
 //!
 //! And converts them to:
 //!
+//! ```text
 //!     pred_block:
 //!         ...
 //!         %result = select %cond, true_val, false_val
 //!         branch merge_block
+//! ```
 //!
 //! This eliminates branches in favor of conditional moves (cmov/csel),
 //! which is critical for performance in tight loops with simple conditionals
@@ -401,9 +405,11 @@ fn detect_diamond(
 
 /// Detect a triangle pattern: pred branches to arm and merge directly.
 ///
+/// ```text
 ///     pred: CondBranch(cond, arm, merge)   -- or (cond, merge, arm)
 ///     arm:  side-effect-free instructions + Branch(merge)
 ///     merge: phi [arm_val, arm], [pred_val, pred]
+/// ```
 ///
 /// This handles ternaries like `a >= t ? a - t : 0` where the false arm
 /// is a constant and doesn't need its own block.
