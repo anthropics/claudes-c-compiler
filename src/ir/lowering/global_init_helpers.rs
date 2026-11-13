@@ -64,6 +64,11 @@ pub(super) fn expr_contains_string_literal(expr: &Expr) -> bool {
             expr_contains_string_literal(lhs) || expr_contains_string_literal(rhs)
         }
         Expr::Cast(_, inner, _) => expr_contains_string_literal(inner),
+        // &"str" and &"str"[N] are addresses into the string literal.
+        Expr::AddressOf(inner, _) => match inner.as_ref() {
+            Expr::ArraySubscript(base, _, _) => expr_contains_string_literal(base),
+            other => expr_contains_string_literal(other),
+        },
         _ => false,
     }
 }

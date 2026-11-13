@@ -59,6 +59,7 @@ impl Lowerer {
     /// This handles patterns like:
     /// - `&x` (address of a global variable)
     /// - `func` (function name used as pointer)
+    /// - `*func`, `**func`, `&*func`, `*&func` (all designate `func`)
     /// - `arr` (array name decays to pointer)
     /// - `arr[i]` (multidimensional array subscript, sub-array decays to pointer)
     /// - `&arr[3]` (address of array element with constant index)
@@ -100,6 +101,8 @@ impl Lowerer {
                     Expr::PointerMemberAccess(base, field, _) => {
                         self.resolve_pointer_member_access_addr(base, field)
                     }
+                    // &*f is equivalent to f (C11 6.5.3.2p3); see the Deref arm below
+                    Expr::Deref(_, _) => self.eval_global_addr_expr(inner),
                     // &(compound_literal) - look up previously materialized compound literal
                     Expr::CompoundLiteral(_, _, _) => {
                         let key = inner.as_ref() as *const Expr as usize;
@@ -159,6 +162,30 @@ impl Lowerer {
             // (type *)expr -> try evaluating the inner expression
             Expr::Cast(_, inner, _) => {
                 self.eval_global_addr_expr(inner)
+            }
+            // *f where f is a function designator: the result is the function
+            // itself (C11 6.5.3.2p4), which converts back to a function pointer
+            // (C11 6.3.2.1p4), so `*f`, `**f` and `*&f` are all the address of f
+            // (an address constant, C11 6.6p9). Only function designators are
+            // handled: `*p` for an object pointer or array is a load, not an
+            // address. A local variable, parameter or static local of the same
+            // name hides the function (C11 6.2.1p4) and is an object, so it is
+            // not handled here: constant folding in function bodies and inline
+            // asm memory operands reach this function with locals in scope.
+            Expr::Deref(inner, _) => {
+                let mut base = inner.as_ref();
+                while let Expr::Deref(b, _) | Expr::AddressOf(b, _) = base {
+                    base = b.as_ref();
+                }
+                match base {
+                    Expr::Identifier(name, _) if self.known_functions.contains(name)
+                        && !self.func_state.as_ref().is_some_and(|fs| {
+                            fs.locals.contains_key(name) || fs.static_local_names.contains_key(name)
+                        }) => {
+                        self.eval_global_addr_expr(base)
+                    }
+                    _ => None,
+                }
             }
             // Compound literal -> check if it was materialized as an anonymous global
             // by materialize_compound_literals_in_expr(), then fall back to trying
@@ -971,5 +998,154 @@ impl Lowerer {
             }
             _ => None,
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::backend::Target;
+    use crate::ir::lowering::test_util::lower_source;
+    use crate::ir::module::IrModule;
+
+    fn global_init<'a>(module: &'a IrModule, name: &str) -> &'a GlobalInit {
+        &module.globals.iter().find(|g| g.name == name)
+            .unwrap_or_else(|| panic!("global `{}`", name)).init
+    }
+
+    fn assert_addr(init: &GlobalInit, expected: &str) {
+        assert!(matches!(init, GlobalInit::GlobalAddr(n) if n == expected),
+            "expected GlobalAddr({:?}), got {:?}", expected, init);
+    }
+
+    /// `*f` on a function designator is the function itself (C11 6.5.3.2p4),
+    /// so `*puts` is an address constant naming `puts`.
+    #[test]
+    fn test_deref_of_function_designator_is_function_address() {
+        let m = lower_source(Target::X86_64,
+            "int puts(const char *);\nint (*g)(const char *) = *puts;\n");
+        assert_addr(global_init(&m, "g"), "puts");
+    }
+
+    /// `**f` and `***f` are the same function as `f` (C11 6.3.2.1p4).
+    #[test]
+    fn test_repeated_deref_of_function_designator() {
+        let m = lower_source(Target::X86_64,
+            "int f(void);\nint (*a)(void) = **f;\nint (*b)(void) = ***f;\n");
+        assert_addr(global_init(&m, "a"), "f");
+        assert_addr(global_init(&m, "b"), "f");
+    }
+
+    /// `&*f` is equivalent to `f` (C11 6.5.3.2p3).
+    #[test]
+    fn test_address_of_deref_of_function_designator() {
+        let m = lower_source(Target::X86_64,
+            "int f(void);\nint (*g)(void) = &*f;\n");
+        assert_addr(global_init(&m, "g"), "f");
+    }
+
+    /// `*&f` dereferences a pointer to function and yields `f` again.
+    #[test]
+    fn test_deref_of_address_of_function_designator() {
+        let m = lower_source(Target::X86_64,
+            "int f(void);\nint (*g)(void) = *&f;\n");
+        assert_addr(global_init(&m, "g"), "f");
+    }
+
+    /// A cast around a dereferenced function designator keeps the address.
+    #[test]
+    fn test_cast_of_deref_of_function_designator() {
+        let m = lower_source(Target::X86_64,
+            "int f(void);\nvoid *g = (void *)**f;\n");
+        assert_addr(global_init(&m, "g"), "f");
+    }
+
+    /// The same expression inside an aggregate initializer must also become a
+    /// relocation, not a zero.
+    #[test]
+    fn test_deref_of_function_designator_in_aggregates() {
+        let m = lower_source(Target::X86_64, "\
+int f(void);
+int g(void);
+struct S { int (*fp)(void); int x; } s = { *f, 5 };
+int (*arr[])(void) = { *f, **g };
+");
+        let has_addr = |init: &GlobalInit, name: &str| match init {
+            GlobalInit::Compound(parts) => parts.iter()
+                .any(|p| matches!(p, GlobalInit::GlobalAddr(n) if n == name)),
+            _ => false,
+        };
+        assert!(has_addr(global_init(&m, "s"), "f"), "got {:?}", global_init(&m, "s"));
+        let arr = global_init(&m, "arr");
+        assert!(has_addr(arr, "f") && has_addr(arr, "g"), "got {:?}", arr);
+    }
+
+    /// A static local pointer takes the same path with function state present.
+    #[test]
+    fn test_deref_of_function_designator_in_static_local() {
+        let m = lower_source(Target::X86_64,
+            "int f(void);\nint (*get(void))(void) { static int (*p)(void) = *f; return p; }\n");
+        let init = &m.globals.iter().find(|g| g.name.starts_with("get.p."))
+            .expect("static local `p`").init;
+        assert_addr(init, "f");
+    }
+
+    /// Must not change: the plain and `&` spellings were already address constants.
+    #[test]
+    fn test_function_designator_and_address_still_resolve() {
+        let m = lower_source(Target::X86_64,
+            "int f(void);\nint (*a)(void) = f;\nint (*b)(void) = &f;\n");
+        assert_addr(global_init(&m, "a"), "f");
+        assert_addr(global_init(&m, "b"), "f");
+    }
+
+    /// A static local array that shadows a function name is an object, so
+    /// `*f` and `&*f` must not resolve to the function `f` (C11 6.2.1p4).
+    #[test]
+    fn test_deref_of_static_local_shadowing_function_is_not_function_address() {
+        let m = lower_source(Target::X86_64, "\
+int f(void);
+int main(void) { static int f[3] = {4, 5, 6}; static int *q = &*f; static int *r = *&f; return *q + *r; }
+");
+        for name in ["q", "r"] {
+            let init = &m.globals.iter().find(|g| g.name.starts_with(&format!("main.{}.", name)))
+                .unwrap_or_else(|| panic!("static local `{}`", name)).init;
+            assert!(!matches!(init, GlobalInit::GlobalAddr(n) if n == "f"),
+                "`{}` was initialized with the address of the shadowed function: {:?}", name, init);
+        }
+    }
+
+    /// Inline asm memory operands are also resolved through
+    /// eval_global_addr_expr, with automatic variables in scope. A parameter
+    /// or local that hides a function is an object, so `*(*f + 2)` and `*&*f`
+    /// must not turn into a reference to the symbol of the function `f`.
+    #[test]
+    fn test_deref_of_local_shadowing_function_is_not_function_address() {
+        use crate::ir::reexports::Instruction;
+        let m = lower_source(Target::X86_64, "\
+int f(void);
+int g(int **f) { int r; __asm__(\"movl %1, %0\" : \"=r\"(r) : \"m\"(*(*f + 2))); return r; }
+int h(void) { int a = 1; int *f = &a; int r; __asm__(\"movl %1, %0\" : \"=r\"(r) : \"m\"(*&*f)); return r; }
+");
+        for name in ["g", "h"] {
+            let func = m.functions.iter().find(|f| f.name == name).unwrap();
+            let symbols: Vec<_> = func.blocks.iter().flat_map(|b| b.instructions.iter())
+                .filter_map(|inst| match inst {
+                    Instruction::InlineAsm { input_symbols, .. } => Some(input_symbols.clone()),
+                    _ => None,
+                }).collect();
+            assert_eq!(symbols, vec![vec![None]],
+                "the memory operand in `{}` names a symbol instead of the local", name);
+        }
+    }
+
+    /// Must not change: dereferencing an object pointer is a load, never an
+    /// address constant naming the pointer variable itself.
+    #[test]
+    fn test_deref_of_object_pointer_is_not_an_address_constant() {
+        let m = lower_source(Target::X86_64,
+            "int *q;\nint v = *q;\n");
+        assert!(!matches!(global_init(&m, "v"), GlobalInit::GlobalAddr(_) | GlobalInit::GlobalAddrOffset(..)),
+            "got {:?}", global_init(&m, "v"));
     }
 }
