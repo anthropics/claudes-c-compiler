@@ -487,7 +487,11 @@ impl<'a> ExprParser<'a> {
                 self.advance(); // :
             }
             let else_val = self.parse_ternary();
-            if cond.0 != 0 { then_val } else { else_val }
+            // The result has the common type of both arms (C99 6.5.15p5), so
+            // it is unsigned if either arm is, whichever arm is selected.
+            let is_unsigned = then_val.1 || else_val.1;
+            let value = if cond.0 != 0 { then_val.0 } else { else_val.0 };
+            (value, is_unsigned)
         } else {
             cond
         }
@@ -808,5 +812,34 @@ impl<'a> ExprParser<'a> {
                 (0, false)
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// The conditional operator converts its second and third operands to a
+    /// common type (C99 6.5.15p5), so one unsigned arm makes the result
+    /// unsigned even when the signed arm is the one selected.
+    #[test]
+    fn test_ternary_result_has_common_type_of_both_arms() {
+        // -1 converted to uintmax_t is UINTMAX_MAX.
+        assert!(!eval_const_expr("(1 ? -1 : 0u) < 0"));
+        assert!(eval_const_expr("(1 ? -1 : 0u) > 0"));
+        assert!(!eval_const_expr("(0 ? 0u : -1) < 0"));
+        assert!(eval_const_expr("(0 ? 1u : -1) / 2 == 9223372036854775807"));
+        // A literal too large for intmax_t is unsigned without a suffix.
+        assert!(!eval_const_expr("(1 ? -1 : 0xFFFFFFFFFFFFFFFF) < 0"));
+        // The common type propagates out of a nested conditional.
+        assert!(!eval_const_expr("(1 ? (1 ? -1 : 0) : 0u) < 0"));
+    }
+
+    #[test]
+    fn test_ternary_with_signed_arms_stays_signed() {
+        assert!(eval_const_expr("(1 ? -1 : 0) < 0"));
+        assert!(eval_const_expr("(0 ? 0 : -1) < 0"));
+        // The type of the condition does not affect the result type.
+        assert!(eval_const_expr("(1u ? -1 : 0) < 0"));
     }
 }
