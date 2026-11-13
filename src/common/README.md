@@ -628,6 +628,14 @@ stored mantissa bits.
   binary exponents, and decimal floats via a big-integer algorithm that
   preserves all 112 bits of mantissa precision. Uses a pure-Rust `BigUint`
   implementation with no external dependencies.
+- `hex_float_to_f64(text)`, `hex_float_to_f32(text)`,
+  `hex_float_to_long_double(text, long_double_is_f128)` -- Convert a hex float
+  constant (with `0x` prefix, no sign) to `double`, `float` or the target's
+  `long double`. The digit string is read exactly (any length, any exponent)
+  and rounded once to nearest-even, including subnormals and overflow to
+  infinity. For x87 targets the 64-bit-significand result is stored exactly
+  in the binary128 carrier. Hex float parsing in
+  `parse_long_double_to_f128_bytes` uses the same rounding.
 
 Internal preprocessing (`preparse_long_double`) strips suffixes, detects
 signs, and classifies the input as hex, infinity, NaN, or decimal, shared

@@ -5,6 +5,7 @@
 //!
 //! This module provides:
 //! - Parsing decimal/hex strings to x87 80-bit or f128 128-bit format
+//! - Correctly rounded conversion of hex float constants to f32, f64 and long double
 //! - Conversion between x87, f128, and f64 formats
 //! - Full-precision arithmetic on x87 and f128 (pure software, no inline asm)
 //! - Conversion from floating-point bytes to integer types
@@ -766,99 +767,219 @@ fn encode_f128(negative: bool, binary_exp: i32, mantissa113: u128) -> [u8; 16] {
     val.to_le_bytes()
 }
 
-/// Parse a hex float string (0x..p..) to f128 format.
+/// Parse a hex float string (0x..p..) to f128 format, rounded to nearest even.
 fn parse_hex_float_to_f128(negative: bool, text: &str) -> [u8; 16] {
-    // Skip "0x" or "0X"
-    let text = &text[2..];
+    let value = scan_hex_float(text);
+    let magnitude = encode_binary(round_to_format(&value, F128_FORMAT), F128_FORMAT);
+    let sign_bit: u128 = if negative { 1u128 << 127 } else { 0 };
+    (sign_bit | magnitude).to_le_bytes()
+}
 
+// =============================================================================
+// Hexadecimal floating constants
+// =============================================================================
+//
+// C11 6.4.4.2p3: the significand of a hexadecimal floating constant is
+// interpreted as an exact rational number scaled by 2^exponent, and when
+// FLT_RADIX is a power of 2 the result is correctly rounded (to nearest even
+// in the default rounding mode, which is what this compiler uses). The code
+// below therefore rounds once, from the exact digit string, to the target
+// format, rather than assembling the value through intermediate floating
+// point operations that would each round.
+
+/// The parameters of a binary interchange format that rounding depends on.
+#[derive(Clone, Copy)]
+struct BinaryFormat {
+    /// Significand bits, including the leading bit that is implicit in IEEE encodings.
+    precision: u32,
+    /// Exponent bias. The largest finite exponent is `bias`, the smallest
+    /// normal exponent is `1 - bias` and the all-ones exponent field is
+    /// infinity.
+    bias: i64,
+}
+
+const F32_FORMAT: BinaryFormat = BinaryFormat { precision: 24, bias: 127 };
+const F64_FORMAT: BinaryFormat = BinaryFormat { precision: 53, bias: 1023 };
+/// The x87 extended format has the exponent range of binary128 but only a
+/// 64-bit significand (with an explicit leading bit). It is used for rounding
+/// only; the result is stored in the binary128 carrier format.
+const X87_FORMAT: BinaryFormat = BinaryFormat { precision: 64, bias: 16383 };
+const F128_FORMAT: BinaryFormat = BinaryFormat { precision: 113, bias: 16383 };
+
+/// The exact value of a hex float's digits: `(mantissa + f) * 2^exp2` with
+/// `0 <= f < 1`, where `f` is nonzero exactly when `sticky` is set.
+struct HexFloatValue {
+    mantissa: u128,
+    exp2: i64,
+    sticky: bool,
+}
+
+/// A value rounded to some `BinaryFormat`.
+enum Rounded {
+    /// The magnitude `significand * 2^lsb_exp`, with `significand < 2^precision`.
+    /// A zero significand is zero.
+    Finite { significand: u128, lsb_exp: i64 },
+    /// The rounded magnitude is too large for the format.
+    Infinity,
+}
+
+/// Read the digits of a hex float (`0x<int>.<frac>p<exp>`, without sign; the
+/// "0x" prefix and everything after the exponent are optional/ignored).
+///
+/// The first 124 or more bits after the leading zeros go into `mantissa`
+/// (that is enough for any supported format plus rounding bits). Later digits
+/// only record that the value is not exactly `mantissa * 2^exp2` in `sticky`;
+/// integer digits among them still scale the exponent, so no digit is lost or
+/// misweighted however long the constant is.
+fn scan_hex_float(text: &str) -> HexFloatValue {
+    let text = text.strip_prefix("0x").or_else(|| text.strip_prefix("0X")).unwrap_or(text);
     let bytes = text.as_bytes();
-    let mut hex_digits: Vec<u8> = Vec::with_capacity(32);
-    let mut decimal_point_offset: Option<usize> = None;
+    let mut value = HexFloatValue { mantissa: 0, exp2: 0, sticky: false };
+    let mut seen_point = false;
     let mut i = 0;
-
     while i < bytes.len() {
-        if bytes[i] == b'.' {
-            decimal_point_offset = Some(hex_digits.len());
-            i += 1;
-        } else if bytes[i].is_ascii_hexdigit() {
-            let d = if bytes[i] >= b'0' && bytes[i] <= b'9' {
-                bytes[i] - b'0'
-            } else if bytes[i] >= b'a' && bytes[i] <= b'f' {
-                bytes[i] - b'a' + 10
+        if bytes[i] == b'.' && !seen_point {
+            seen_point = true;
+        } else if let Some(digit) = (bytes[i] as char).to_digit(16) {
+            if value.mantissa >> 124 == 0 {
+                value.mantissa = (value.mantissa << 4) | digit as u128;
+                if seen_point {
+                    value.exp2 -= 4;
+                }
             } else {
-                bytes[i] - b'A' + 10
-            };
-            hex_digits.push(d);
-            i += 1;
+                value.sticky |= digit != 0;
+                if !seen_point {
+                    value.exp2 += 4;
+                }
+            }
         } else {
             break;
         }
+        i += 1;
     }
 
-    // Parse binary exponent (p/P)
-    let mut exp2: i32 = 0;
     if i < bytes.len() && (bytes[i] == b'p' || bytes[i] == b'P') {
         i += 1;
-        let exp_neg = if i < bytes.len() && bytes[i] == b'-' {
+        let exp_neg = i < bytes.len() && bytes[i] == b'-';
+        if i < bytes.len() && (bytes[i] == b'-' || bytes[i] == b'+') {
             i += 1;
-            true
-        } else {
-            if i < bytes.len() && bytes[i] == b'+' {
-                i += 1;
-            }
-            false
-        };
+        }
+        let mut exp: i64 = 0;
         while i < bytes.len() && bytes[i].is_ascii_digit() {
-            exp2 = exp2.saturating_mul(10).saturating_add((bytes[i] - b'0') as i32);
+            // Saturate: an exponent this large is out of range for every format
+            // whatever the mantissa is, and the cap avoids i64 overflow.
+            exp = (exp * 10 + (bytes[i] - b'0') as i64).min(1 << 40);
             i += 1;
         }
-        if exp_neg {
-            exp2 = -exp2;
-        }
+        value.exp2 += if exp_neg { -exp } else { exp };
     }
+    value
+}
 
-    // Build the mantissa from hex digits (at most 32 hex digits = 128 bits)
-    let mut mantissa: u128 = 0;
-    let mut bits_read: u32 = 0;
-    for &d in &hex_digits {
-        if bits_read + 4 <= 128 {
-            mantissa = (mantissa << 4) | (d as u128);
-            bits_read += 4;
-        }
-    }
-
+/// Round `value` to `format` with round-to-nearest, ties-to-even, including
+/// gradual underflow to subnormals and overflow to infinity.
+fn round_to_format(value: &HexFloatValue, format: BinaryFormat) -> Rounded {
+    let precision = format.precision as i64;
+    let mantissa = value.mantissa;
     if mantissa == 0 {
-        return make_f128_zero(negative);
+        return Rounded::Finite { significand: 0, lsb_exp: 0 };
     }
 
-    // Each hex digit after the point contributes 4 bits of binary fraction
-    let frac_hex_digits = if let Some(dp) = decimal_point_offset {
-        (hex_digits.len() - dp) as i32
+    // Exponent of the leading bit, and of the last significand bit: below
+    // the smallest normal exponent the spacing stays fixed (subnormals).
+    let msb_exp = value.exp2 + 127 - mantissa.leading_zeros() as i64;
+    let mut lsb_exp = (msb_exp - (precision - 1)).max(1 - format.bias - (precision - 1));
+
+    // Number of low bits of `mantissa` that lie below the last significand bit.
+    let shift = lsb_exp - value.exp2;
+    let mut significand = if shift <= 0 {
+        // Nothing is discarded. (`sticky` is only ever set for 125 or more
+        // mantissa bits, which always need a positive shift.)
+        mantissa << (-shift) as u32
     } else {
-        0
+        let (kept, half, below_half) = if shift > 128 {
+            (0, false, true)
+        } else if shift == 128 {
+            (0, mantissa >> 127 != 0, mantissa << 1 != 0)
+        } else {
+            let s = shift as u32;
+            (mantissa >> s, (mantissa >> (s - 1)) & 1 == 1, mantissa & ((1u128 << (s - 1)) - 1) != 0)
+        };
+        if half && (below_half || value.sticky || kept & 1 == 1) { kept + 1 } else { kept }
     };
-    let binary_exp = exp2 - frac_hex_digits * 4;
 
-    // Normalize mantissa to have bit 112 set (for 113-bit mantissa).
-    // The unbiased IEEE exponent is: binary_exp + (bl - 1), where bl is the
-    // actual bit length of the mantissa. This accounts for the position of the
-    // most significant bit relative to the binary point.
-    // Note: we use bl (actual bit length) not bits_used (total hex digit bits),
-    // since leading zero hex digits don't affect the exponent.
-    let bl = 128 - mantissa.leading_zeros();
-    let adj_exp = binary_exp + (bl as i32 - 1);
-    if bl > 113 {
-        // Too many bits, shift right (loses precision)
-        let excess = bl - 113;
-        mantissa >>= excess;
-        encode_f128(negative, adj_exp, mantissa)
-    } else if bl < 113 && bl > 0 {
-        let deficit = 113 - bl;
-        mantissa <<= deficit;
-        encode_f128(negative, adj_exp, mantissa)
-    } else {
-        encode_f128(negative, adj_exp, mantissa)
+    // Rounding up can carry out of the significand.
+    if significand >> precision != 0 {
+        significand >>= 1;
+        lsb_exp += 1;
     }
+    if significand == 0 {
+        return Rounded::Finite { significand: 0, lsb_exp: 0 };
+    }
+    if lsb_exp + (127 - significand.leading_zeros() as i64) > format.bias {
+        return Rounded::Infinity;
+    }
+    Rounded::Finite { significand, lsb_exp }
+}
+
+/// The IEEE 754 bit pattern of a rounded magnitude (sign bit clear), for
+/// binary32, binary64 and binary128.
+fn encode_binary(rounded: Rounded, format: BinaryFormat) -> u128 {
+    let frac_bits = format.precision - 1;
+    match rounded {
+        Rounded::Infinity => ((2 * format.bias + 1) as u128) << frac_bits,
+        Rounded::Finite { significand, lsb_exp } => {
+            if significand >> frac_bits == 0 {
+                // Zero or subnormal: biased exponent 0, no implicit bit.
+                significand
+            } else {
+                let biased_exp = (lsb_exp + frac_bits as i64 + format.bias) as u128;
+                (biased_exp << frac_bits) | (significand & ((1u128 << frac_bits) - 1))
+            }
+        }
+    }
+}
+
+/// Value of the hex float constant `text` (unsigned, with "0x" prefix) as a
+/// `double`, rounded once from the exact value.
+pub fn hex_float_to_f64(text: &str) -> f64 {
+    let value = scan_hex_float(text);
+    f64::from_bits(encode_binary(round_to_format(&value, F64_FORMAT), F64_FORMAT) as u64)
+}
+
+/// Value of the hex float constant `text` (unsigned, with "0x" prefix) as a
+/// `float`, rounded once from the exact value. Going through `double` would
+/// round twice and can give a different result.
+pub fn hex_float_to_f32(text: &str) -> f32 {
+    let value = scan_hex_float(text);
+    f32::from_bits(encode_binary(round_to_format(&value, F32_FORMAT), F32_FORMAT) as u32)
+}
+
+/// Value of the hex float constant `text` (unsigned, with "0x" prefix) as a
+/// `long double` of the target. Returns the f64 approximation and the
+/// binary128 carrier bytes that long double tokens hold.
+///
+/// The constant is rounded once from the exact value to the target's format:
+/// binary128 if `long_double_is_f128`, otherwise the 64-bit x87 significand.
+/// An x87 result is stored exactly in the carrier, so the later (truncating)
+/// conversion `f128_bytes_to_x87_bytes` does not lose anything. The f64
+/// approximation is that long double value converted to double, i.e. rounded
+/// a second time, as a cast would do (C11 6.3.1.5p1).
+pub fn hex_float_to_long_double(text: &str, long_double_is_f128: bool) -> (f64, [u8; 16]) {
+    let value = scan_hex_float(text);
+    let format = if long_double_is_f128 { F128_FORMAT } else { X87_FORMAT };
+    let (approx_bits, carrier) = match round_to_format(&value, format) {
+        Rounded::Infinity => (encode_binary(Rounded::Infinity, F64_FORMAT), encode_binary(Rounded::Infinity, F128_FORMAT)),
+        Rounded::Finite { significand, lsb_exp } => {
+            // The rounded value is exact here, so there is no sticky tail.
+            let exact = HexFloatValue { mantissa: significand, exp2: lsb_exp, sticky: false };
+            (
+                encode_binary(round_to_format(&exact, F64_FORMAT), F64_FORMAT),
+                encode_binary(round_to_format(&exact, F128_FORMAT), F128_FORMAT),
+            )
+        }
+    };
+    (f64::from_bits(approx_bits as u64), carrier.to_le_bytes())
 }
 
 /// Construct raw f128 bytes from sign, biased exponent, and stored mantissa (no implicit bit).
@@ -3365,5 +3486,42 @@ mod known_value_tests {
         // The truncated value is slightly below 2^(-16382), so it's the largest
         // subnormal in f128 - this is expected behavior for truncated decimal input
         assert_eq!(biased_exp2, 0, "truncated LDBL_MIN string is subnormal in f128 (expected)");
+    }
+}
+
+#[cfg(test)]
+mod hex_float_tests {
+    use super::*;
+
+    fn f128_hex(text: &str) -> u128 {
+        u128::from_le_bytes(parse_long_double_to_f128_bytes(text))
+    }
+
+    #[test]
+    fn test_hex_f128_parse_mantissa_wider_than_128_bits() {
+        // 34 digits of ones scaled back to 1.0; the exponent depends on every digit.
+        assert_eq!(f128_hex("0xffffffffffffffffffffffffffffffffffp-136L"), 0x3fff0000000000000000000000000000);
+        assert_eq!(f128_hex("0x10000000000000000000000000000000000p0L"), 0x40870000000000000000000000000000);
+    }
+
+    #[test]
+    fn test_hex_f128_parse_rounds_to_nearest_even() {
+        assert_eq!(f128_hex("0x1.0000000000000000000000000000ffp0L"), 0x3fff0000000000000000000000000001);
+        assert_eq!(f128_hex("0x1.00000000000000000000000000008p0L"), 0x3fff0000000000000000000000000000);
+        assert_eq!(f128_hex("0x1.00000000000000000000000000018p0L"), 0x3fff0000000000000000000000000002);
+    }
+
+    #[test]
+    fn test_hex_f128_parse_subnormal_rounds() {
+        assert_eq!(f128_hex("0x1.8p-16494L"), 2);
+        assert_eq!(f128_hex("0x1p-16495L"), 0);
+        assert_eq!(f128_hex("0x1.0000000000000001p-16495L"), 1);
+    }
+
+    #[test]
+    fn test_hex_f128_parse_overflow_and_sign() {
+        assert_eq!(f128_hex("0x1p16384L"), 0x7fff0000000000000000000000000000);
+        assert_eq!(f128_hex("-0x1p16384L"), 0xffff0000000000000000000000000000);
+        assert_eq!(f128_hex("-0x1.8p1L"), 0xc0008000000000000000000000000000);
     }
 }

@@ -1,5 +1,7 @@
 use crate::common::encoding::decode_pua_byte;
+use crate::common::long_double::{hex_float_to_f32, hex_float_to_f64, hex_float_to_long_double};
 use crate::common::source::Span;
+use crate::common::types::target_long_double_is_f128;
 use super::token::{Token, TokenKind};
 
 /// C lexer that tokenizes source input with source locations.
@@ -191,7 +193,7 @@ impl Lexer {
         let has_p = self.pos < self.input.len() && (self.input[self.pos] == b'p' || self.input[self.pos] == b'P');
 
         if has_dot && after_dot_has_p || has_p {
-            return self.lex_hex_float(start, hex_start, has_dot);
+            return self.lex_hex_float(start, has_dot);
         }
 
         // Regular hex integer
@@ -201,64 +203,42 @@ impl Lexer {
     }
 
     /// Lex a hex float literal: 0x<int_hex>.<frac_hex>p<+/->exp
-    fn lex_hex_float(&mut self, start: usize, hex_start: usize, has_dot: bool) -> Token {
-        let int_hex = std::str::from_utf8(&self.input[hex_start..self.pos]).unwrap_or("0");
-
-        let frac_hex = if has_dot {
+    fn lex_hex_float(&mut self, start: usize, has_dot: bool) -> Token {
+        // The integer digits were already consumed by lex_hex_number.
+        if has_dot {
             self.pos += 1; // skip '.'
-            let frac_start = self.pos;
             while self.pos < self.input.len() && self.input[self.pos].is_ascii_hexdigit() {
                 self.pos += 1;
             }
-            std::str::from_utf8(&self.input[frac_start..self.pos]).unwrap_or("")
-        } else {
-            ""
-        };
+        }
 
-        // Parse 'p'/'P' exponent (mandatory for hex floats)
-        let exp: i64 = if self.pos < self.input.len() && (self.input[self.pos] == b'p' || self.input[self.pos] == b'P') {
+        // Skip the 'p'/'P' exponent (mandatory for hex floats)
+        if self.pos < self.input.len() && (self.input[self.pos] == b'p' || self.input[self.pos] == b'P') {
             self.pos += 1;
-            let exp_neg = if self.pos < self.input.len() && self.input[self.pos] == b'-' {
+            if self.pos < self.input.len() && (self.input[self.pos] == b'-' || self.input[self.pos] == b'+') {
                 self.pos += 1;
-                true
-            } else {
-                if self.pos < self.input.len() && self.input[self.pos] == b'+' {
-                    self.pos += 1;
-                }
-                false
-            };
-            let exp_start = self.pos;
+            }
             while self.pos < self.input.len() && self.input[self.pos].is_ascii_digit() {
                 self.pos += 1;
             }
-            let exp_str = std::str::from_utf8(&self.input[exp_start..self.pos]).unwrap_or("0");
-            let e: i64 = exp_str.parse().unwrap_or(0);
-            if exp_neg { -e } else { e }
-        } else {
-            0
-        };
+        }
 
-        // Convert hex float to f64: value = (int_part + frac_part) * 2^exp
-        let int_val = u64::from_str_radix(int_hex, 16).unwrap_or(0) as f64;
-        let frac_val: f64 = if !frac_hex.is_empty() {
-            let frac_int = u64::from_str_radix(frac_hex, 16).unwrap_or(0) as f64;
-            frac_int / (16.0_f64).powi(frac_hex.len() as i32)
-        } else {
-            0.0
-        };
-        let value = (int_val + frac_val) * (2.0_f64).powi(exp as i32);
+        // Convert from the exact digit string, rounding once to the type of
+        // the constant (C11 6.4.4.2p3). The suffix is lexed afterwards: 'f'
+        // would otherwise be read as a digit.
+        let text_end = self.pos;
 
         // Check float suffix: f/F = float, l/L = long double
         let float_kind = self.parse_simple_float_suffix();
         let span = Span::new(start as u32, self.pos as u32, self.file_id);
+        let text = std::str::from_utf8(&self.input[start..text_end]).unwrap_or("0x0p0");
         match float_kind {
-            1 => Token::new(TokenKind::FloatLiteralF32(value), span),
+            1 => Token::new(TokenKind::FloatLiteralF32(hex_float_to_f32(text) as f64), span),
             2 => {
-                let hex_text = std::str::from_utf8(&self.input[start..self.pos]).unwrap_or("0x0p0");
-                let f128_bytes = crate::common::long_double::parse_long_double_to_f128_bytes(hex_text);
-                Token::new(TokenKind::FloatLiteralLongDouble(value, f128_bytes), span)
+                let (approx, f128_bytes) = hex_float_to_long_double(text, target_long_double_is_f128());
+                Token::new(TokenKind::FloatLiteralLongDouble(approx, f128_bytes), span)
             }
-            _ => Token::new(TokenKind::FloatLiteral(value), span),
+            _ => Token::new(TokenKind::FloatLiteral(hex_float_to_f64(text)), span),
         }
     }
 
@@ -1184,5 +1164,350 @@ fn hex_digit_val(c: u8) -> u8 {
         b'a'..=b'f' => c - b'a' + 10,
         b'A'..=b'F' => c - b'A' + 10,
         _ => 0,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::common::long_double::f128_bytes_to_x87_bytes;
+    use crate::common::types::{set_target_long_double_is_f128, target_long_double_is_f128};
+
+    /// Lex `src`, which must be exactly one token, and return its kind.
+    fn lex_single(src: &str) -> TokenKind {
+        let tokens = Lexer::new(src, 0).tokenize();
+        assert_eq!(tokens.len(), 2, "expected one token plus EOF for {:?}", src);
+        tokens[0].kind.clone()
+    }
+
+    /// IEEE binary64 bit pattern of the double constant `src`.
+    fn double_bits(src: &str) -> u64 {
+        match lex_single(src) {
+            TokenKind::FloatLiteral(v) => v.to_bits(),
+            kind => panic!("expected a double literal for {:?}, got {:?}", src, kind),
+        }
+    }
+
+    /// IEEE binary32 bit pattern of the float constant `src`, as the rest of
+    /// the compiler sees it (the token carries an f64 that is narrowed later).
+    fn float_bits(src: &str) -> u32 {
+        match lex_single(src) {
+            TokenKind::FloatLiteralF32(v) => (v as f32).to_bits(),
+            kind => panic!("expected a float literal for {:?}, got {:?}", src, kind),
+        }
+    }
+
+    /// Lex the long double constant `src` for a target whose long double is
+    /// binary128 (`is_f128`) or x87 extended, returning the token payload.
+    fn long_double(src: &str, is_f128: bool) -> (f64, [u8; 16]) {
+        let saved = target_long_double_is_f128();
+        set_target_long_double_is_f128(is_f128);
+        let kind = lex_single(src);
+        set_target_long_double_is_f128(saved);
+        match kind {
+            TokenKind::FloatLiteralLongDouble(approx, bytes) => (approx, bytes),
+            kind => panic!("expected a long double literal for {:?}, got {:?}", src, kind),
+        }
+    }
+
+    /// Binary128 bit pattern of the long double constant `src` on an
+    /// AArch64/RISC-V style target.
+    fn f128_bits(src: &str) -> u128 {
+        u128::from_le_bytes(long_double(src, true).1)
+    }
+
+    /// (sign and exponent, significand) of the long double constant `src` on
+    /// an x87 target, after the conversion the x86 backends apply to the token.
+    fn x87_bits(src: &str) -> (u16, u64) {
+        let x87 = f128_bytes_to_x87_bytes(&long_double(src, false).1);
+        (u16::from_le_bytes([x87[8], x87[9]]), u64::from_le_bytes(x87[..8].try_into().unwrap()))
+    }
+
+    // ---- double: digit strings that do not fit in 64 bits ----
+
+    #[test]
+    fn test_hex_double_integer_digits_wider_than_64_bits() {
+        // The integer part used to be parsed with u64::from_str_radix and
+        // silently became 0 once it needed more than 64 bits.
+        assert_eq!(double_bits("0x10000000000000000p-64"), 0x3ff0000000000000);
+        assert_eq!(double_bits("0xffffffffffffffffffffp-80"), 0x3ff0000000000000);
+        assert_eq!(double_bits("0x123456789abcdef0123p0"), 0x44723456789abcdf);
+    }
+
+    #[test]
+    fn test_hex_double_fraction_digits_wider_than_64_bits() {
+        // The fraction used to be parsed with u64::from_str_radix as well, so
+        // 17 fraction digits turned 1.5 into 1.0.
+        assert_eq!(double_bits("0x1.80000000000000000p0"), 0x3ff8000000000000);
+        assert_eq!(double_bits("0x1.000000000000000000000000000000000000000000000000001p0"), 0x3ff0000000000000);
+    }
+
+    #[test]
+    fn test_hex_double_long_digit_string_with_leading_zeros() {
+        // Leading zero digits do not count toward the significant bits.
+        assert_eq!(double_bits("0x0.0000000000000000000000000000000000000000001p+172"), 0x3ff0000000000000);
+    }
+
+    // ---- double: rounding ----
+
+    #[test]
+    fn test_hex_double_ties_round_to_even() {
+        // 1 + 2^-53 is exactly halfway between 1 and 1 + 2^-52; 1 + 3 * 2^-53
+        // is halfway between 1 + 2^-52 and 1 + 2^-51.
+        assert_eq!(double_bits("0x1.00000000000008p0"), 0x3ff0000000000000);
+        assert_eq!(double_bits("0x1.00000000000018p0"), 0x3ff0000000000002);
+    }
+
+    #[test]
+    fn test_hex_double_just_above_tie_rounds_up() {
+        // A nonzero digit far beyond the 53rd bit still breaks the tie.
+        assert_eq!(double_bits("0x1.00000000000008000000001p0"), 0x3ff0000000000001);
+    }
+
+    #[test]
+    fn test_hex_double_rounds_once() {
+        // 2^53 + 1.5 must round to 2^53 + 2, not to 2^53 + 1 (which is not
+        // representable) and then again.
+        assert_eq!(double_bits("0x20000000000001.8p0"), 0x4340000000000001);
+    }
+
+    // ---- double: range ----
+
+    #[test]
+    fn test_hex_double_overflow_rounds_to_infinity() {
+        // C11 6.4.4.2p3: the result is correctly rounded, so DBL_MAX plus
+        // half an ulp ties to the even neighbour, 2^1024, which overflows.
+        assert_eq!(double_bits("0x1.fffffffffffff7ffp1023"), 0x7fefffffffffffff);
+        assert_eq!(double_bits("0x1.fffffffffffff8p1023"), 0x7ff0000000000000);
+        assert_eq!(double_bits("0x0.1p1028"), 0x7ff0000000000000);
+    }
+
+    #[test]
+    fn test_hex_double_exponent_beyond_i32_saturates() {
+        assert_eq!(double_bits("0x1p99999999999999999999"), 0x7ff0000000000000);
+        assert_eq!(double_bits("0x1p4294967296"), 0x7ff0000000000000);
+        assert_eq!(double_bits("0x1p-99999999999999999999"), 0);
+        assert_eq!(double_bits("0x1p-4294967296"), 0);
+    }
+
+    #[test]
+    fn test_hex_double_scaling_does_not_overflow_intermediate() {
+        // The mantissa brings these back into range although 2^1074 and
+        // 2^1024 alone are not representable.
+        assert_eq!(double_bits("0x0.0000000000001p1074"), 0x7fd0000000000000);
+        assert_eq!(double_bits("0x0.8p1024"), 0x7fe0000000000000);
+    }
+
+    #[test]
+    fn test_hex_double_subnormals_are_kept() {
+        // 2^-1074 is the smallest subnormal; 2.0_f64.powi(-1074) used to
+        // underflow to 0.
+        assert_eq!(double_bits("0x1p-1074"), 1);
+        assert_eq!(double_bits("0x100p-1082"), 1);
+        assert_eq!(double_bits("0x1.ffffffffffffep-1023"), 0x000fffffffffffff);
+    }
+
+    #[test]
+    fn test_hex_double_subnormal_rounding() {
+        // Exactly half of the smallest subnormal ties to even (0); anything
+        // above it rounds up; 1.5 * 2^-1074 ties to 2 * 2^-1074.
+        assert_eq!(double_bits("0x1p-1075"), 0);
+        assert_eq!(double_bits("0x1.0000000000000001p-1075"), 1);
+        assert_eq!(double_bits("0x1.8p-1074"), 2);
+        // Largest subnormal plus half a subnormal ulp rounds up to DBL_MIN.
+        assert_eq!(double_bits("0x1.fffffffffffff8p-1023"), 0x0010000000000000);
+    }
+
+    // ---- double: values that were already right and must not change ----
+
+    #[test]
+    fn test_hex_double_common_forms_unchanged() {
+        assert_eq!(double_bits("0x1.0000000000001p0"), 0x3ff0000000000001);
+        assert_eq!(double_bits("0xABCDEFp-4"), 0x412579bde0000000);
+        assert_eq!(double_bits("0x.8p1"), 0x3ff0000000000000);
+        assert_eq!(double_bits("0x1.p3"), 0x4020000000000000);
+        assert_eq!(double_bits("0x1P+4"), 0x4030000000000000);
+        assert_eq!(double_bits("0x0p0"), 0);
+        assert_eq!(double_bits("0x00000000000000000000000001p0"), 0x3ff0000000000000);
+        assert_eq!(double_bits("0x0.00000000000000000000000001p104"), 0x3ff0000000000000);
+    }
+
+    #[test]
+    fn test_hex_double_limits_unchanged() {
+        assert_eq!(double_bits("0x1.fffffffffffffp1023"), f64::MAX.to_bits());
+        assert_eq!(double_bits("0X1.FFFFFFFFFFFFFP+1023"), f64::MAX.to_bits());
+        assert_eq!(double_bits("0x1p-1022"), f64::MIN_POSITIVE.to_bits());
+        assert_eq!(double_bits("0x1p-52"), f64::EPSILON.to_bits());
+    }
+
+    // ---- float ----
+
+    #[test]
+    fn test_hex_float_rounds_directly_to_binary32() {
+        // Both constants lie just above the halfway point between 1 and
+        // 1 + 2^-23.  Rounding through double first loses the tail and then
+        // ties to even, giving 1.0f.
+        assert_eq!(float_bits("0x1.0000010000000001p0f"), 0x3f800001);
+        assert_eq!(float_bits("0x1.00000100000000000000001p0F"), 0x3f800001);
+    }
+
+    #[test]
+    fn test_hex_float_ties_round_to_even() {
+        assert_eq!(float_bits("0x1.000001p0f"), 0x3f800000);
+        assert_eq!(float_bits("0x1.000003p0f"), 0x3f800002);
+    }
+
+    #[test]
+    fn test_hex_float_mantissa_wider_than_64_bits() {
+        assert_eq!(float_bits("0x10000000000000000p-64f"), 0x3f800000);
+    }
+
+    #[test]
+    fn test_hex_float_range() {
+        assert_eq!(float_bits("0x1.fffffep127f"), f32::MAX.to_bits());
+        // FLT_MAX plus half an ulp ties to the even neighbour, 2^128, which
+        // is not representable and so rounds to infinity.
+        assert_eq!(float_bits("0x1.ffffffp127f"), 0x7f800000);
+        assert_eq!(float_bits("0x1p-149f"), 1);
+        assert_eq!(float_bits("0x1.8p-149f"), 2);
+        assert_eq!(float_bits("0x1p-150f"), 0);
+    }
+
+    #[test]
+    fn test_hex_float_plain_value_unchanged() {
+        assert_eq!(float_bits("0x1.5p3f"), 0x41280000);
+    }
+
+    // ---- long double, binary128 targets (AArch64, RISC-V) ----
+
+    #[test]
+    fn test_hex_f128_digits_wider_than_113_bits() {
+        // More than 32 hex digits: the exponent used to be miscounted and the
+        // extra digits dropped.
+        assert_eq!(f128_bits("0x10000000000000000p-64L"), 0x3fff0000000000000000000000000000);
+        assert_eq!(f128_bits("0x10000000000000000000000000000000000p0L"), 0x40870000000000000000000000000000);
+        assert_eq!(f128_bits("0xffffffffffffffffffffffffffffffffffp-136L"), 0x3fff0000000000000000000000000000);
+        assert_eq!(f128_bits("0x1.000000000000000000000000000000000001p0L"), 0x3fff0000000000000000000000000000);
+    }
+
+    #[test]
+    fn test_hex_f128_rounds_to_nearest_even() {
+        // Bit 113 after the leading one is 2^-113, half an ulp of 1.0L.
+        assert_eq!(f128_bits("0x1.0000000000000000000000000000ffp0L"), 0x3fff0000000000000000000000000001);
+        assert_eq!(f128_bits("0x1.00000000000000000000000000008p0L"), 0x3fff0000000000000000000000000000);
+        assert_eq!(f128_bits("0x1.00000000000000000000000000018p0L"), 0x3fff0000000000000000000000000002);
+        assert_eq!(f128_bits("0x1.00000000000000000000000000008000001p0L"), 0x3fff0000000000000000000000000001);
+    }
+
+    #[test]
+    fn test_hex_f128_overflow() {
+        assert_eq!(f128_bits("0x1.ffffffffffffffffffffffffffffp16383L"), 0x7ffeffffffffffffffffffffffffffff);
+        assert_eq!(f128_bits("0x1.ffffffffffffffffffffffffffff8p16383L"), 0x7fff0000000000000000000000000000);
+        assert_eq!(f128_bits("0x1p16384L"), 0x7fff0000000000000000000000000000);
+        assert_eq!(f128_bits("0x1p99999999999999999999L"), 0x7fff0000000000000000000000000000);
+    }
+
+    #[test]
+    fn test_hex_f128_subnormal_rounding() {
+        // The subnormal path used to truncate instead of rounding.
+        assert_eq!(f128_bits("0x1p-16494L"), 1);
+        assert_eq!(f128_bits("0x1.8p-16494L"), 2);
+        assert_eq!(f128_bits("0x1p-16495L"), 0);
+        assert_eq!(f128_bits("0x1p-99999999999999999999L"), 0);
+        assert_eq!(f128_bits("0x1p-16382L"), 0x00010000000000000000000000000000);
+    }
+
+    #[test]
+    fn test_hex_f128_common_values_unchanged() {
+        assert_eq!(f128_bits("0x1.5p3L"), 0x40025000000000000000000000000000);
+        assert_eq!(f128_bits("0x1p16383L"), 0x7ffe0000000000000000000000000000);
+    }
+
+    // ---- long double, x87 targets (x86-64, i686) ----
+
+    #[test]
+    fn test_hex_x87_rounds_to_nearest_even() {
+        // The significand has 64 bits; the old conversion truncated the
+        // binary128 value instead of rounding.
+        assert_eq!(x87_bits("0x1.00000000000000018p0L"), (0x3fff, 0x8000000000000001));
+        assert_eq!(x87_bits("0x1.0000000000000001p0L"), (0x3fff, 0x8000000000000000));
+        assert_eq!(x87_bits("0x1.0000000000000003p0L"), (0x3fff, 0x8000000000000002));
+        assert_eq!(x87_bits("0x1.00000000000000008p0L"), (0x3fff, 0x8000000000000000));
+    }
+
+    #[test]
+    fn test_hex_x87_rounding_carries_into_exponent() {
+        assert_eq!(x87_bits("0x1.ffffffffffffffffp0L"), (0x4000, 0x8000000000000000));
+        assert_eq!(x87_bits("0x1.fffffffffffffffep0L"), (0x3fff, 0xffffffffffffffff));
+    }
+
+    #[test]
+    fn test_hex_x87_rounds_once_from_the_exact_value() {
+        // 1 + 2^-64 + 2^-116 is above the x87 halfway point, but rounding to
+        // binary128 first would drop the 2^-116 and leave an exact tie.
+        assert_eq!(x87_bits("0x1.00000000000000010000000000001p0L"), (0x3fff, 0x8000000000000001));
+    }
+
+    #[test]
+    fn test_hex_x87_digits_wider_than_113_bits() {
+        assert_eq!(x87_bits("0x10000000000000000000000000000000000p0L"), (0x4087, 0x8000000000000000));
+        assert_eq!(x87_bits("0xffffffffffffffffffffffffffffffffffp-136L"), (0x3fff, 0x8000000000000000));
+    }
+
+    #[test]
+    fn test_hex_x87_range() {
+        assert_eq!(x87_bits("0x1p16383L"), (0x7ffe, 0x8000000000000000));
+        // Beyond the x87 range, which is the same as the binary128 range.
+        assert_eq!(x87_bits("0x1p16384L"), (0x7fff, 0x8000000000000000));
+        assert_eq!(x87_bits("0x1p99999999999999999999L"), (0x7fff, 0x8000000000000000));
+        assert_eq!(x87_bits("0x1p-16382L"), (1, 0x8000000000000000));
+        assert_eq!(x87_bits("0x1p-16445L"), (0, 1));
+        // Smaller than the x87 minimum subnormal, although binary128 could hold it.
+        assert_eq!(x87_bits("0x1p-16494L"), (0, 0));
+        assert_eq!(x87_bits("0x1p-99999999999999999999L"), (0, 0));
+    }
+
+    #[test]
+    fn test_hex_x87_common_values_unchanged() {
+        assert_eq!(x87_bits("0x1.5p3L"), (0x4002, 0xa800000000000000));
+    }
+
+    // ---- the f64 approximation carried by long double tokens ----
+
+    #[test]
+    fn test_hex_long_double_approximation_is_rounded_from_the_long_double() {
+        // 1 + 2^-53 + 2^-104: x87 rounds the 2^-104 away, leaving an exact
+        // double tie (1.0); binary128 keeps it, so the double is 1 + 2^-52.
+        let src = "0x1.000000000000080000000000001p0L";
+        assert_eq!(long_double(src, false).0.to_bits(), 0x3ff0000000000000);
+        assert_eq!(long_double(src, true).0.to_bits(), 0x3ff0000000000001);
+    }
+
+    #[test]
+    fn test_hex_long_double_approximation_range() {
+        assert_eq!(long_double("0x1p-16445L", false).0, 0.0);
+        assert_eq!(long_double("0x1p16383L", true).0, f64::INFINITY);
+        assert_eq!(long_double("0x1.5p3L", true).0, 10.5);
+    }
+
+    // ---- token boundaries ----
+
+    #[test]
+    fn test_hex_float_suffix_selects_token_kind() {
+        assert!(matches!(lex_single("0x1p0"), TokenKind::FloatLiteral(_)));
+        assert!(matches!(lex_single("0x1p0f"), TokenKind::FloatLiteralF32(_)));
+        assert!(matches!(lex_single("0x1p0F"), TokenKind::FloatLiteralF32(_)));
+        assert!(matches!(lex_single("0x1p0l"), TokenKind::FloatLiteralLongDouble(_, _)));
+        // 'f' is a hex digit, but after the exponent it is the suffix.
+        assert_eq!(float_bits("0x1fp0f"), 0x41f80000);
+    }
+
+    #[test]
+    fn test_hex_float_token_stops_after_suffix() {
+        let tokens = Lexer::new("0x1p-64 + 0x10000000000000000p-64f;", 0).tokenize();
+        assert_eq!(tokens.len(), 4 + 1);
+        assert_eq!(tokens[0].kind, TokenKind::FloatLiteral(f64::from_bits(0x3bf0000000000000)));
+        assert_eq!(tokens[2].kind, TokenKind::FloatLiteralF32(1.0));
+        assert_eq!(tokens[3].kind, TokenKind::Semicolon);
     }
 }
