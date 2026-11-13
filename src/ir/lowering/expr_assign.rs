@@ -606,10 +606,15 @@ impl Lowerer {
         } else if val_ty != op_ty && val_ty.is_float() && op_ty.is_float() {
             Operand::Value(self.emit_cast_val(loaded, val_ty, op_ty))
         } else if !op_ty.is_float() && ir_ty.size() < op_ty.size() {
-            // Widen the LHS to the operation type.
+            // Widen the LHS to the operation type. The LHS is first converted to the
+            // common type (C11 6.3.1.8), which preserves its value (6.3.1.3p1/p2):
+            // a signed LHS narrower than the common type is sign-extended even if the
+            // common type is unsigned. Only then is it widened to the operation type,
+            // following the signedness of the common type. Shifts (6.5.7) have no
+            // common type: the LHS is promoted by its own type.
             if op_ty == IrType::I128 || op_ty == IrType::U128 {
                 // Widen to 128-bit: first promote to I64/U64, then cast to 128-bit
-                let from_64 = if ir_ty.is_unsigned() || common_ty.is_unsigned() {
+                let from_64 = if ir_ty.is_unsigned() {
                     IrType::U64
                 } else {
                     IrType::I64
@@ -621,22 +626,19 @@ impl Lowerer {
                 };
                 Operand::Value(self.emit_cast_val(loaded_64, from_64, op_ty))
             } else {
-                let extend_unsigned = if is_shift {
-                    ir_ty.is_unsigned()
-                } else {
-                    common_ty.is_unsigned() || ir_ty.is_unsigned()
-                };
-                let from_ty = if extend_unsigned {
-                    match ir_ty {
-                        IrType::I32 => IrType::U32,
-                        IrType::I16 => IrType::U16,
-                        IrType::I8 => IrType::U8,
-                        _ => ir_ty,
+                let mut src = loaded;
+                let mut from_ty = ir_ty;
+                if !is_shift {
+                    if ir_ty.size() >= common_ty.size() {
+                        // Already as wide as the common type: only the signedness changes.
+                        from_ty = common_ty;
+                    } else if ir_ty.is_signed() && common_ty.is_unsigned() && common_ty.size() < op_ty.size() {
+                        // E.g. short -> unsigned int, carried in a 64-bit operation.
+                        src = Operand::Value(self.emit_cast_val(loaded, ir_ty, common_ty));
+                        from_ty = common_ty;
                     }
-                } else {
-                    ir_ty
-                };
-                Operand::Value(self.emit_cast_val(loaded, from_ty, op_ty))
+                }
+                Operand::Value(self.emit_cast_val(src, from_ty, op_ty))
             }
         } else {
             loaded
@@ -907,5 +909,189 @@ impl Lowerer {
         }
 
         Operand::Value(result_alloca)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use std::collections::HashMap;
+
+    use crate::backend::Target;
+    use crate::common::types::IrType;
+    use crate::ir::reexports::{Instruction, IrBinOp, Operand, Value};
+    use crate::ir::lowering::test_util::lower_source;
+
+    use IrType::{I8, I16, I32, I64, I128, U8, U16, U32, U64, U128};
+
+    /// Lower `source` for `target` and return the integer casts, innermost
+    /// first, that produce the left operand of the first `op` instruction in
+    /// the function `f`. An empty list means the operand is used as loaded.
+    fn lhs_cast_chain(target: Target, source: &str, op: IrBinOp) -> Vec<(IrType, IrType)> {
+        let module = lower_source(target, source);
+        let func = module.functions.iter().find(|f| f.name == "f").expect("function `f`");
+        let mut casts: HashMap<Value, (Operand, IrType, IrType)> = HashMap::new();
+        for block in &func.blocks {
+            for inst in &block.instructions {
+                if let Instruction::Cast { dest, src, from_ty, to_ty } = inst {
+                    casts.insert(*dest, (*src, *from_ty, *to_ty));
+                }
+            }
+        }
+        let lhs = func.blocks.iter()
+            .flat_map(|b| b.instructions.iter())
+            .find_map(|inst| match inst {
+                Instruction::BinOp { op: o, lhs, .. } if *o == op => Some(*lhs),
+                _ => None,
+            })
+            .unwrap_or_else(|| panic!("no {:?} in `f`", op));
+        let mut chain = Vec::new();
+        let mut cur = lhs;
+        while let Operand::Value(v) = cur {
+            match casts.get(&v) {
+                Some((src, from_ty, to_ty)) => {
+                    chain.push((*from_ty, *to_ty));
+                    cur = *src;
+                }
+                None => break,
+            }
+        }
+        chain.reverse();
+        chain
+    }
+
+    // ----- Signed LHS, unsigned common type (C11 6.3.1.8, 6.3.1.3p2) -----
+
+    #[test]
+    fn test_compound_div_int_by_size_t_sign_extends_lhs() {
+        // int x; x /= sizeof(int): -8 must become 0xFFFFFFFFFFFFFFF8, not 0xFFFFFFF8.
+        let src = "int f(int x) { x /= sizeof(int); return x; }";
+        for target in [Target::X86_64, Target::Aarch64, Target::Riscv64] {
+            assert_eq!(lhs_cast_chain(target, src, IrBinOp::UDiv), vec![(I32, I64)], "{:?}", target);
+        }
+    }
+
+    #[test]
+    fn test_compound_rem_int_by_unsigned_long_sign_extends_lhs() {
+        let src = "int f(int x, unsigned long n) { x %= n; return x; }";
+        assert_eq!(lhs_cast_chain(Target::X86_64, src, IrBinOp::URem), vec![(I32, I64)]);
+    }
+
+    #[test]
+    fn test_compound_div_int_by_unsigned_long_long_sign_extends_lhs_on_i686() {
+        // long is 32 bits on i686, so `unsigned long long` is the first type wider than int.
+        let src = "int f(int x) { x /= 4ULL; return x; }";
+        assert_eq!(lhs_cast_chain(Target::I686, src, IrBinOp::UDiv), vec![(I32, I64)]);
+    }
+
+    #[test]
+    fn test_compound_div_short_by_unsigned_int_converts_through_common_type() {
+        // short s = -8; s /= 4u: s becomes (unsigned)-8 = 0xFFFFFFF8, which is then
+        // carried zero-extended in the 64-bit operation.
+        let src = "short f(short s) { s /= 4u; return s; }";
+        assert_eq!(lhs_cast_chain(Target::X86_64, src, IrBinOp::UDiv), vec![(I16, U32), (U32, I64)]);
+    }
+
+    #[test]
+    fn test_compound_div_short_by_unsigned_int_on_i686() {
+        // The operation is 32 bits wide, so sign-extending to it is already the conversion.
+        let src = "short f(short s) { s /= 4u; return s; }";
+        assert_eq!(lhs_cast_chain(Target::I686, src, IrBinOp::UDiv), vec![(I16, I32)]);
+    }
+
+    #[test]
+    fn test_compound_rem_signed_char_by_unsigned_int_converts_through_common_type() {
+        let src = "signed char f(signed char c) { c %= 3u; return c; }";
+        assert_eq!(lhs_cast_chain(Target::X86_64, src, IrBinOp::URem), vec![(I8, U32), (U32, I64)]);
+    }
+
+    #[test]
+    fn test_compound_div_short_by_unsigned_long_sign_extends_lhs() {
+        let src = "short f(short s, unsigned long n) { s /= n; return s; }";
+        assert_eq!(lhs_cast_chain(Target::X86_64, src, IrBinOp::UDiv), vec![(I16, I64)]);
+    }
+
+    #[test]
+    fn test_compound_div_long_long_by_unsigned_long_on_i686() {
+        // long long is wider than the 32-bit unsigned long, so the common type is long long.
+        let src = "long long f(long long x, unsigned long n) { x /= n; return x; }";
+        assert_eq!(lhs_cast_chain(Target::I686, src, IrBinOp::SDiv), vec![]);
+    }
+
+    #[test]
+    fn test_compound_div_int_by_unsigned_int128_sign_extends_lhs() {
+        let src = "int f(int x, unsigned __int128 n) { x /= n; return x; }";
+        assert_eq!(lhs_cast_chain(Target::X86_64, src, IrBinOp::UDiv), vec![(I32, I64), (I64, U128)]);
+    }
+
+    #[test]
+    fn test_compound_div_long_by_unsigned_int128_sign_extends_lhs() {
+        let src = "long f(long x, unsigned __int128 n) { x /= n; return x; }";
+        assert_eq!(lhs_cast_chain(Target::X86_64, src, IrBinOp::UDiv), vec![(I64, U128)]);
+    }
+
+    // ----- Operands that were already converted correctly -----
+
+    #[test]
+    fn test_compound_div_int_by_unsigned_int_zero_extends_in_wide_operation() {
+        // Common type unsigned int: the 32-bit pattern is the value, so it is zero-extended.
+        let src = "int f(int x) { x /= 4u; return x; }";
+        assert_eq!(lhs_cast_chain(Target::X86_64, src, IrBinOp::UDiv), vec![(U32, I64)]);
+    }
+
+    #[test]
+    fn test_compound_div_unsigned_lhs_zero_extends() {
+        let src = "unsigned short f(unsigned short s) { s /= sizeof(int); return s; }";
+        assert_eq!(lhs_cast_chain(Target::X86_64, src, IrBinOp::UDiv), vec![(U16, I64)]);
+        let src = "unsigned f(unsigned x) { x /= sizeof(int); return x; }";
+        assert_eq!(lhs_cast_chain(Target::X86_64, src, IrBinOp::UDiv), vec![(U32, I64)]);
+    }
+
+    #[test]
+    fn test_compound_div_signed_common_type_sign_extends() {
+        let src = "int f(int x) { x /= 4; return x; }";
+        assert_eq!(lhs_cast_chain(Target::X86_64, src, IrBinOp::SDiv), vec![(I32, I64)]);
+        let src = "short f(short s) { s /= 4; return s; }";
+        assert_eq!(lhs_cast_chain(Target::X86_64, src, IrBinOp::SDiv), vec![(I16, I64)]);
+    }
+
+    #[test]
+    fn test_compound_div_same_width_operands_need_no_cast() {
+        let src = "long f(long x, unsigned long n) { x /= n; return x; }";
+        assert_eq!(lhs_cast_chain(Target::X86_64, src, IrBinOp::UDiv), vec![]);
+        let src = "unsigned long f(unsigned long x, int n) { x /= n; return x; }";
+        assert_eq!(lhs_cast_chain(Target::X86_64, src, IrBinOp::UDiv), vec![]);
+    }
+
+    #[test]
+    fn test_compound_shift_promotes_lhs_by_its_own_type() {
+        // 6.5.7: there is no common type, the left operand keeps its own signedness.
+        let src = "int f(int x, unsigned long n) { x >>= n; return x; }";
+        assert_eq!(lhs_cast_chain(Target::X86_64, src, IrBinOp::AShr), vec![(I32, I64)]);
+        let src = "unsigned f(unsigned x, long n) { x >>= n; return x; }";
+        assert_eq!(lhs_cast_chain(Target::X86_64, src, IrBinOp::LShr), vec![(U32, I64)]);
+        let src = "short f(short s, unsigned n) { s >>= n; return s; }";
+        assert_eq!(lhs_cast_chain(Target::X86_64, src, IrBinOp::AShr), vec![(I16, I64)]);
+        // An unsigned char promotes to (signed) int, so the shift is arithmetic on a zero-extended value.
+        let src = "unsigned char f(unsigned char c, unsigned long n) { c >>= n; return c; }";
+        assert_eq!(lhs_cast_chain(Target::X86_64, src, IrBinOp::AShr), vec![(U8, I64)]);
+    }
+
+    #[test]
+    fn test_compound_div_int_by_signed_int128_sign_extends_lhs() {
+        // Signed common type: plain sign extension all the way.
+        let src = "int f(int x, __int128 n) { x /= n; return x; }";
+        assert_eq!(lhs_cast_chain(Target::X86_64, src, IrBinOp::SDiv), vec![(I32, I64), (I64, I128)]);
+    }
+
+    #[test]
+    fn test_compound_shift_by_unsigned_int128_sign_extends_signed_lhs() {
+        // The count is __int128, so the operation is 128 bits wide, but the left
+        // operand is promoted by its own type (6.5.7): long -8 >> 1 is -4.
+        let src = "long f(long x, unsigned __int128 n) { x >>= n; return x; }";
+        assert_eq!(lhs_cast_chain(Target::X86_64, src, IrBinOp::AShr), vec![(I64, U128)]);
+        let src = "int f(int x, unsigned __int128 n) { x >>= n; return x; }";
+        assert_eq!(lhs_cast_chain(Target::X86_64, src, IrBinOp::AShr), vec![(I32, I64), (I64, U128)]);
+        let src = "unsigned f(unsigned x, unsigned __int128 n) { x >>= n; return x; }";
+        assert_eq!(lhs_cast_chain(Target::X86_64, src, IrBinOp::LShr), vec![(U32, U64), (U64, U128)]);
     }
 }
