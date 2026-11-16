@@ -1604,7 +1604,7 @@ fn eliminate_push_pop_pairs(store: &LineStore, infos: &mut [LineInfo]) -> bool {
 
             match infos[j].kind {
                 LineKind::Push { .. } => { depth += 1; }
-                LineKind::Pop { reg } if depth > 0 => { depth -= 1; }
+                LineKind::Pop { _reg } if depth > 0 => { depth -= 1; }
                 LineKind::Pop { reg } if reg == push_reg && depth == 0 => {
                     // Found matching pop
                     if safe {
