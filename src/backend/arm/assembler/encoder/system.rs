@@ -252,10 +252,40 @@ pub(crate) fn parse_generic_sysreg(name: &str) -> Result<u32, String> {
         let crn: u32 = parts[2][1..].parse().map_err(|_| format!("unsupported system register: {}", name))?;
         let crm: u32 = parts[3][1..].parse().map_err(|_| format!("unsupported system register: {}", name))?;
         let op2: u32 = parts[4].parse().map_err(|_| format!("unsupported system register: {}", name))?;
+        // Each field must fit its architectural width; sysreg_encoding masks, so an
+        // out-of-range value would otherwise alias a different register.
+        if op0 > 3 || op1 > 7 || crn > 15 || crm > 15 || op2 > 7 {
+            return Err(format!("unsupported system register: {}", name));
+        }
         let enc = sysreg_encoding(op0, op1, crn, crm, op2);
         Ok(enc)
     } else {
         Err(format!("unsupported system register: {}", name))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn generic_sysreg_in_range_fields_are_accepted() {
+        assert_eq!(parse_generic_sysreg("s0_0_c0_c0_0"), Ok(0));
+        assert_eq!(parse_generic_sysreg("s3_7_c15_c15_7"), Ok(0xffff));
+    }
+
+    #[test]
+    fn generic_sysreg_out_of_range_fields_are_rejected() {
+        // Each of these used to be masked to a valid register instead of being rejected.
+        for name in [
+            "s4_0_c0_c0_0",
+            "s0_8_c0_c0_0",
+            "s0_0_c16_c0_0",
+            "s0_0_c0_c16_0",
+            "s0_0_c0_c0_8",
+        ] {
+            assert!(parse_generic_sysreg(name).is_err(), "{} should be rejected", name);
+        }
     }
 }
 
